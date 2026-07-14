@@ -1,0 +1,185 @@
+// Prisma schema — Autores Independentes do Brasil
+// Migra o "fake backend" localStorage (aib-data.js) para Postgres real.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Author {
+  id        String   @id @default(cuid())
+  nome      String
+  email     String   @unique
+  senhaHash String
+  genero    String   @default("Romance")
+  cidade    String?
+  bio       String?
+  fotoUrl   String?
+  bannerUrl String?
+
+  anoEntrada         Int
+  plano              String  @default("Gratuito")
+  planoCiclo         String?
+  planoValorCentavos Int?
+
+  avaliacaoMedia Float?
+  avaliacoesQtd  Int     @default(0)
+  seguidores     Int     @default(0)
+  verificado     Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  books       Book[]
+  eventos     AuthorEvent[]
+  fotos       AuthorPhoto[]
+  orders      Order[]
+  conversas   Conversation[]
+  avaliacoes  Review[]
+  resetTokens PasswordResetToken[]
+}
+
+model Book {
+  id            String  @id @default(cuid())
+  authorId      String
+  author        Author  @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  titulo        String
+  genero        String
+  precoCentavos Int
+  estoque       Int     @default(0)
+  capaUrl       String?
+  descricao     String?
+
+  createdAt DateTime @default(now())
+  orders    Order[]
+
+  @@index([authorId])
+}
+
+model AuthorEvent {
+  id       String @id @default(cuid())
+  authorId String
+  author   Author @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  nome     String
+  dia      Int
+  mes      String
+  local    String
+  status   String @default("Pendente")
+
+  createdAt DateTime @default(now())
+
+  @@index([authorId])
+}
+
+model AuthorPhoto {
+  id        String @id @default(cuid())
+  authorId  String
+  author    Author @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  titulo    String
+  categoria String
+  url       String
+
+  createdAt DateTime @default(now())
+
+  @@index([authorId])
+}
+
+model Order {
+  id            String  @id @default(cuid())
+  authorId      String
+  author        Author  @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  bookId        String?
+  book          Book?   @relation(fields: [bookId], references: [id], onDelete: SetNull)
+  livro         String
+  comprador     String
+  valorCentavos Int
+  status        String  @default("Pago")
+
+  createdAt DateTime @default(now())
+
+  @@index([authorId])
+}
+
+model Conversation {
+  id       String @id @default(cuid())
+  authorId String
+  author   Author @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  nome     String
+  unread   Boolean @default(true)
+
+  createdAt DateTime  @default(now())
+  mensagens Message[]
+
+  @@index([authorId])
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  de             String
+  texto          String
+
+  createdAt DateTime @default(now())
+
+  @@index([conversationId])
+}
+
+model Review {
+  id       String @id @default(cuid())
+  authorId String
+  author   Author @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  nome     String
+  texto    String
+  estrelas Int    @default(5)
+
+  createdAt DateTime @default(now())
+
+  @@index([authorId])
+}
+
+model CollectiveEvent {
+  id        String  @id @default(cuid())
+  nome      String
+  dia       Int
+  mes       String
+  categoria String
+  local     String
+  periodo   String?
+
+  createdAt DateTime @default(now())
+}
+
+model CollectiveGalleryPhoto {
+  id        String @id @default(cuid())
+  titulo    String
+  categoria String
+  url       String
+
+  createdAt DateTime @default(now())
+}
+
+model Admin {
+  id        String @id @default(cuid())
+  email     String @unique
+  senhaHash String
+
+  createdAt DateTime @default(now())
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  authorId  String
+  author    Author    @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([authorId])
+}
