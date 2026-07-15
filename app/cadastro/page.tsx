@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import PublicHeader from "@/components/PublicHeader";
 import CadastroWizard from "@/components/CadastroWizard";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = { title: "Criar cadastro" };
 
 export default function CadastroPage() {

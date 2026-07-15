@@ -4,6 +4,8 @@ import { prisma } from "@/lib/db";
 import AdminLoginGate from "@/components/admin/AdminLoginGate";
 import AdminApp from "@/components/admin/AdminApp";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = { title: "Administração" };
 
 export default async function AdminPage() {

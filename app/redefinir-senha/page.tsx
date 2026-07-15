@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import PublicHeader from "@/components/PublicHeader";
 import RedefinirSenhaForm from "@/components/RedefinirSenhaForm";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = { title: "Redefinir senha" };
 
 export default async function RedefinirSenhaPage({

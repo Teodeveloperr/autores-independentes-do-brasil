@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import PublicHeader from "@/components/PublicHeader";
 import PublicFooter from "@/components/PublicFooter";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = { title: "Blog" };
 
 export default function BlogPage() {

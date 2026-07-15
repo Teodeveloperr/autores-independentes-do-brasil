@@ -5,6 +5,8 @@ import PublicFooter from "@/components/PublicFooter";
 import { prisma } from "@/lib/db";
 import { initials } from "@/lib/format";
 
+export const dynamic = "force-dynamic";
+
 export default async function HomePage() {
   const authors = await prisma.author.findMany({
     orderBy: { createdAt: "desc" },

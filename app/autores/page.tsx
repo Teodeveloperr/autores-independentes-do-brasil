@@ -5,6 +5,8 @@ import PublicFooter from "@/components/PublicFooter";
 import { prisma } from "@/lib/db";
 import { initials } from "@/lib/format";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = { title: "Autores" };
 
 export default async function AutoresPage() {

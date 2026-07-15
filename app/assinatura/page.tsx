@@ -4,6 +4,8 @@ import PublicHeader from "@/components/PublicHeader";
 import PublicFooter from "@/components/PublicFooter";
 import { getCurrentAuthor } from "@/lib/auth";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = { title: "Planos e Assinaturas" };
 
 export default async function AssinaturaPage() {

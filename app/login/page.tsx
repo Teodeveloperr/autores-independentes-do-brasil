@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import PublicHeader from "@/components/PublicHeader";
 import LoginForm from "@/components/LoginForm";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = { title: "Login" };
 
 export default function LoginPage() {

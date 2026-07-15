@@ -3,6 +3,8 @@ import { requireAuthor } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import PainelApp from "@/components/painel/PainelApp";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = { title: "Meu Painel" };
 
 export default async function PainelPage() {

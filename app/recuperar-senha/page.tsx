@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import PublicHeader from "@/components/PublicHeader";
 import RecuperarSenhaForm from "@/components/RecuperarSenhaForm";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = { title: "Recuperar senha" };
 
 export default function RecuperarSenhaPage() {

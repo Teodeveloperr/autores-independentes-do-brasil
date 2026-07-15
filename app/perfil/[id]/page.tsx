@@ -6,6 +6,8 @@ import PerfilTabs from "@/components/PerfilTabs";
 import { prisma } from "@/lib/db";
 import { brl } from "@/lib/format";
 
+export const dynamic = "force-dynamic";
+
 export async function generateMetadata({
   params,
 }: {
