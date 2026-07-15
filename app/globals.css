@@ -68,6 +68,8 @@ img {
   .responsive-flex-row > .flex-fixed-basis {
     flex: 1 1 auto !important;
     width: 100% !important;
+    position: static !important;
+    top: auto !important;
   }
 }
 
