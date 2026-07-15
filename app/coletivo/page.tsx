@@ -11,6 +11,7 @@ export default function ColetivoPage() {
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
       <PublicHeader active="coletivo" />
       <section style={{ background: "white", padding: "60px 40px", flex: 1 }}>
+      <div style={{ maxWidth: "1280px", width: "100%", margin: "0 auto" }}>
         <h1 style={{ fontSize: "48px", fontWeight: 700, color: "#002776", marginBottom: "32px" }}>Nossa história</h1>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "60px", alignItems: "center", marginBottom: "60px" }}>
           <div>
@@ -49,6 +50,7 @@ export default function ColetivoPage() {
           <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#DDD", display: "inline-block" }} />
           <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#DDD", display: "inline-block" }} />
         </div>
+      </div>
       </section>
       <PublicFooter />
     </div>

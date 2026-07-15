@@ -16,6 +16,7 @@ export default async function AssinaturaPage() {
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", background: "#002776" }}>
       <PublicHeader active="planos" />
       <section style={{ background: "#002776", color: "white", padding: "60px 40px", flex: 1 }}>
+      <div style={{ maxWidth: "1280px", width: "100%", margin: "0 auto" }}>
         <div style={{ textAlign: "center", marginBottom: "48px" }}>
           <h1 style={{ fontSize: "42px", fontWeight: 700, marginBottom: "16px" }}>Planos e Assinaturas</h1>
           <p style={{ fontSize: "16px", lineHeight: 1.6, maxWidth: "600px", margin: "0 auto" }}>
@@ -85,6 +86,7 @@ export default async function AssinaturaPage() {
         <p style={{ textAlign: "center", fontSize: "13px", color: "rgba(255,255,255,0.7)", marginTop: "32px" }}>
           Pagamento seguro • Cancele quando quiser • Sem taxa de adesão
         </p>
+      </div>
       </section>
       <PublicFooter variant="minimal" />
     </div>

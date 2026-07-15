@@ -42,7 +42,7 @@ export default async function PerfilPage({ params }: { params: Promise<{ id: str
             borderRadius: "8px",
             marginBottom: "32px",
             position: "relative",
-            maxWidth: "1200px",
+            maxWidth: "1280px",
             marginLeft: "auto",
             marginRight: "auto",
             background: author.bannerUrl ? `center / cover no-repeat url(${author.bannerUrl})` : "#E0E0E0",
@@ -54,7 +54,7 @@ export default async function PerfilPage({ params }: { params: Promise<{ id: str
             </div>
           )}
         </div>
-        <div style={{ display: "flex", gap: "32px", marginBottom: "40px", maxWidth: "1200px", marginLeft: "auto", marginRight: "auto" }}>
+        <div style={{ display: "flex", gap: "32px", marginBottom: "40px", maxWidth: "1280px", marginLeft: "auto", marginRight: "auto" }}>
           <div style={{ flex: "0 0 200px" }}>
             <div
               style={{

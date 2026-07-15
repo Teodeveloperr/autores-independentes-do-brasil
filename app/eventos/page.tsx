@@ -14,6 +14,7 @@ export default async function EventosPage() {
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
       <PublicHeader active="eventos" />
       <section style={{ background: "#002776", color: "white", padding: "40px", flex: 1 }}>
+      <div style={{ maxWidth: "1280px", width: "100%", margin: "0 auto" }}>
         <h1 style={{ fontSize: "36px", fontWeight: 700, marginBottom: "16px" }}>Eventos</h1>
         <p style={{ fontSize: "16px", marginBottom: "40px" }}>
           Acompanhe os próximos eventos do coletivo e participe de encontros, feiras, palestras e outras atividades literárias em todo o Brasil
@@ -75,6 +76,7 @@ export default async function EventosPage() {
             </div>
           </div>
         </div>
+      </div>
       </section>
       <PublicFooter />
     </div>

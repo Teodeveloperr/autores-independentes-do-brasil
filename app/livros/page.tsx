@@ -19,6 +19,7 @@ export default async function LivrosPage() {
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
       <PublicHeader active="livros" />
       <section style={{ background: "#002776", color: "white", padding: "40px", flex: 1 }}>
+      <div style={{ maxWidth: "1280px", width: "100%", margin: "0 auto" }}>
         <h1 style={{ fontSize: "36px", fontWeight: 700, marginBottom: "16px" }}>Todos os livros</h1>
         <p style={{ fontSize: "16px", marginBottom: "40px" }}>
           Descubra obras incríveis de autores independentes de todos o Brasil.
@@ -103,6 +104,7 @@ export default async function LivrosPage() {
             </div>
           </div>
         </div>
+      </div>
       </section>
       <PublicFooter />
     </div>

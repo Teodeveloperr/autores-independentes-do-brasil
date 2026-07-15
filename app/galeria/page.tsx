@@ -14,6 +14,7 @@ export default async function GaleriaPage() {
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
       <PublicHeader active="galeria" />
       <section style={{ background: "#002776", color: "white", padding: "40px", flex: 1 }}>
+      <div style={{ maxWidth: "1280px", width: "100%", margin: "0 auto" }}>
         <h1 style={{ fontSize: "36px", fontWeight: 700, marginBottom: "16px" }}>Galeria</h1>
         <p style={{ fontSize: "16px", marginBottom: "40px" }}>
           Momentos que celebram a literatura, os autores independentes e o poder das palavras.
@@ -54,6 +55,7 @@ export default async function GaleriaPage() {
             </div>
           )}
         </div>
+      </div>
       </section>
       <PublicFooter />
     </div>
