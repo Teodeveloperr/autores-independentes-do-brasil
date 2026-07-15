@@ -17,6 +17,8 @@ export default async function HomePage() {
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
       <PublicHeader active="home" showContato={false} />
 
+      <div style={{ maxWidth: "1280px", width: "100%", margin: "0 auto" }}>
+
       <section style={{ background: "white", padding: "60px 40px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "60px", alignItems: "center" }}>
         <div>
           <h1 style={{ fontSize: "42px", fontWeight: 700, color: "#002776", lineHeight: 1.3, marginBottom: "24px" }}>
@@ -200,6 +202,8 @@ export default async function HomePage() {
           </form>
         </div>
       </section>
+
+      </div>
 
       <PublicFooter showAdminLink />
     </div>
