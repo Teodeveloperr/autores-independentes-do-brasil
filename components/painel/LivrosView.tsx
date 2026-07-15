@@ -32,7 +32,7 @@ export default function LivrosView({ author }: { author: AuthorWithRelations }) 
   return (
     <div>
       <h2 style={{ fontSize: "22px", fontWeight: 700, color: "#002776", marginBottom: "20px" }}>Meus Livros</h2>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1.4fr", gap: "20px", alignItems: "start" }}>
+      <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1.4fr", gap: "20px", alignItems: "start" }}>
         <form
           action={(fd) => {
             fd.set("capaUrl", capa.url);
@@ -102,7 +102,7 @@ export default function LivrosView({ author }: { author: AuthorWithRelations }) 
         </form>
         <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
           {author.books.map((b) => (
-            <div key={b.id} style={{ background: "white", borderRadius: "10px", padding: "16px", display: "flex", gap: "16px", alignItems: "center" }}>
+            <div key={b.id} style={{ background: "white", borderRadius: "10px", padding: "16px", display: "flex", gap: "16px", alignItems: "center", flexWrap: "wrap" }}>
               <div
                 style={{
                   width: "56px",

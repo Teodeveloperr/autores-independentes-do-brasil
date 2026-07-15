@@ -15,7 +15,7 @@ export default async function AssinaturaPage() {
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", background: "#002776" }}>
       <PublicHeader active="planos" />
-      <section style={{ background: "#002776", color: "white", padding: "60px 40px", flex: 1 }}>
+      <section className="section-pad-lg" style={{ background: "#002776", color: "white", padding: "60px 40px", flex: 1 }}>
       <div style={{ maxWidth: "1280px", width: "100%", margin: "0 auto" }}>
         <div style={{ textAlign: "center", marginBottom: "48px" }}>
           <h1 style={{ fontSize: "42px", fontWeight: 700, marginBottom: "16px" }}>Planos e Assinaturas</h1>
@@ -23,7 +23,7 @@ export default async function AssinaturaPage() {
             Escolha o plano ideal para levar suas histórias mais longe. Cancele quando quiser, sem multas.
           </p>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "24px", maxWidth: "1100px", margin: "0 auto", alignItems: "start" }}>
+        <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "24px", maxWidth: "1100px", margin: "0 auto", alignItems: "start" }}>
           <div style={{ background: "white", color: "#262626", borderRadius: "8px", padding: "32px", display: "flex", flexDirection: "column", gap: "20px" }}>
             <div>
               <div style={{ fontWeight: 700, fontSize: "18px", marginBottom: "8px" }}>Gratuito</div>

@@ -35,7 +35,7 @@ export default async function PerfilPage({ params }: { params: Promise<{ id: str
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
       <PublicHeader active="autores" />
-      <section style={{ background: "white", padding: "40px", flex: 1 }}>
+      <section className="section-pad-lg" style={{ background: "white", padding: "40px", flex: 1 }}>
         <div
           style={{
             height: "260px",
@@ -54,8 +54,8 @@ export default async function PerfilPage({ params }: { params: Promise<{ id: str
             </div>
           )}
         </div>
-        <div style={{ display: "flex", gap: "32px", marginBottom: "40px", maxWidth: "1280px", marginLeft: "auto", marginRight: "auto" }}>
-          <div style={{ flex: "0 0 200px" }}>
+        <div className="responsive-flex-row" style={{ display: "flex", gap: "32px", marginBottom: "40px", maxWidth: "1280px", marginLeft: "auto", marginRight: "auto" }}>
+          <div className="flex-fixed-basis" style={{ flex: "0 0 200px" }}>
             <div
               style={{
                 width: "200px",
@@ -83,7 +83,7 @@ export default async function PerfilPage({ params }: { params: Promise<{ id: str
           </div>
           <div style={{ flex: 1 }}>
             <p style={{ fontSize: "14px", color: "#444", lineHeight: 1.7, marginBottom: "24px", maxWidth: "640px" }}>{author.bio}</p>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "24px", marginBottom: "40px" }}>
+            <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "24px", marginBottom: "40px" }}>
               <div>
                 <div style={{ fontSize: "24px", fontWeight: 700, color: "#009B3A" }}>{author.avaliacaoMedia?.toFixed(1) ?? "—"}</div>
                 <div style={{ fontSize: "12px", color: "#666" }}>({author.avaliacoesQtd} avaliações)</div>

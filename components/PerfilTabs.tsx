@@ -37,7 +37,7 @@ export default function PerfilTabs({
 
       {tab === "livros" &&
         (books.length > 0 ? (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px" }}>
+          <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px" }}>
             {books.map((b) => (
               <div key={b.id} style={{ background: "#F6F6F6", padding: "12px", borderRadius: "4px", textAlign: "center" }}>
                 <div
@@ -63,7 +63,7 @@ export default function PerfilTabs({
 
       {tab === "galeria" &&
         (fotos.length > 0 ? (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "14px" }}>
+          <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "14px" }}>
             {fotos.map((f) => (
               <div key={f.id} title={f.titulo} style={{ background: `center / cover no-repeat url(${f.url})`, aspectRatio: "1", borderRadius: "4px" }} />
             ))}

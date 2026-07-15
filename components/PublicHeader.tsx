@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { getCurrentAuthor } from "@/lib/auth";
+import MobileNavPanel from "./MobileNavPanel";
 
 type NavKey =
   | "home"
@@ -33,10 +34,18 @@ export default async function PublicHeader({
   cta?: { href: string; label: string };
 }) {
   const author = await getCurrentAuthor();
+  const resolvedCta = cta ?? { href: "/login", label: "LOGIN/CADASTRO" };
+
+  const mobileLinks = [
+    ...NAV_ITEMS.map((item) => ({ key: item.key, label: item.label, href: item.href, active: active === item.key })),
+    ...(author ? [{ key: "painel", label: "MEU PAINEL", href: "/painel", active: false }] : []),
+    ...(showContato ? [{ key: "contato", label: "CONTATO", href: "/#contato", active: false }] : []),
+  ];
 
   return (
     <header
       style={{
+        position: "relative",
         background: "white",
         padding: "14px 24px",
         display: "flex",
@@ -44,6 +53,7 @@ export default async function PublicHeader({
         alignItems: "center",
         borderBottom: "1px solid #E0E0E0",
         gap: "16px",
+        flexWrap: "wrap",
       }}
     >
       <Link href="/" style={{ textDecoration: "none" }}>
@@ -57,8 +67,8 @@ export default async function PublicHeader({
         />
       </Link>
       <nav
+        className="nav-desktop"
         style={{
-          display: "flex",
           gap: "16px",
           fontSize: "13px",
           fontWeight: 500,
@@ -91,7 +101,8 @@ export default async function PublicHeader({
         )}
       </nav>
       <Link
-        href={cta?.href ?? "/login"}
+        href={resolvedCta.href}
+        className="nav-desktop"
         style={{
           background: "#002776",
           color: "white",
@@ -102,8 +113,9 @@ export default async function PublicHeader({
           textDecoration: "none",
         }}
       >
-        {cta?.label ?? "LOGIN/CADASTRO"}
+        {resolvedCta.label}
       </Link>
+      <MobileNavPanel links={mobileLinks} cta={resolvedCta} />
     </header>
   );
 }

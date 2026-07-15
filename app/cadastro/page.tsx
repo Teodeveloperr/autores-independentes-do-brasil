@@ -10,8 +10,8 @@ export default function CadastroPage() {
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", background: "#002776" }}>
       <PublicHeader showContato={false} />
-      <section style={{ background: "#002776", color: "white", padding: "48px 40px", flex: 1, display: "flex", alignItems: "flex-start", gap: "48px" }}>
-        <div style={{ flex: "0 0 380px", position: "sticky", top: "48px" }}>
+      <section className="responsive-flex-row section-pad-lg" style={{ background: "#002776", color: "white", padding: "48px 40px", flex: 1, display: "flex", alignItems: "flex-start", gap: "48px" }}>
+        <div className="flex-fixed-basis" style={{ flex: "0 0 380px", position: "sticky", top: "48px" }}>
           <h1 style={{ fontSize: "40px", fontWeight: 700, lineHeight: 1.2, marginBottom: "24px" }}>
             Junte-se ao
             <br />

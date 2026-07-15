@@ -15,7 +15,7 @@ export default async function AutoresPage() {
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
       <PublicHeader active="autores" />
-      <section style={{ background: "white", padding: "40px", flex: 1 }}>
+      <section className="section-pad-lg" style={{ background: "white", padding: "40px", flex: 1 }}>
       <div style={{ maxWidth: "1280px", width: "100%", margin: "0 auto" }}>
         <h1 style={{ fontSize: "36px", fontWeight: 700, color: "#002776", marginBottom: "40px" }}>Nossos Autores</h1>
         <div style={{ display: "flex", gap: "24px", marginBottom: "40px", flexWrap: "wrap" }}>
@@ -28,7 +28,7 @@ export default async function AutoresPage() {
           <input type="text" placeholder="Buscar autor..." style={{ marginLeft: "auto", padding: "8px 16px", border: "1px solid #DDD", borderRadius: "4px", fontSize: "14px" }} />
         </div>
         {authors.length > 0 ? (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "24px" }}>
+          <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "24px" }}>
             {authors.map((a) => (
               <div key={a.id} style={{ background: "#F6F6F6", padding: "24px", borderRadius: "8px", textAlign: "center" }}>
                 <div

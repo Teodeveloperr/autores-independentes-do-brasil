@@ -13,14 +13,14 @@ export default async function GaleriaPage() {
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
       <PublicHeader active="galeria" />
-      <section style={{ background: "#002776", color: "white", padding: "40px", flex: 1 }}>
+      <section className="section-pad-lg" style={{ background: "#002776", color: "white", padding: "40px", flex: 1 }}>
       <div style={{ maxWidth: "1280px", width: "100%", margin: "0 auto" }}>
         <h1 style={{ fontSize: "36px", fontWeight: 700, marginBottom: "16px" }}>Galeria</h1>
         <p style={{ fontSize: "16px", marginBottom: "40px" }}>
           Momentos que celebram a literatura, os autores independentes e o poder das palavras.
         </p>
-        <div style={{ background: "white", color: "#262626", padding: "32px", borderRadius: "8px" }}>
-          <div style={{ display: "flex", gap: "24px", marginBottom: "24px", borderBottom: "2px solid #DDD", paddingBottom: "16px", fontSize: "13px" }}>
+        <div className="section-pad-md" style={{ background: "white", color: "#262626", padding: "32px", borderRadius: "8px" }}>
+          <div style={{ display: "flex", gap: "24px", marginBottom: "24px", borderBottom: "2px solid #DDD", paddingBottom: "16px", fontSize: "13px", flexWrap: "wrap" }}>
             <button style={{ background: "white", padding: 0, fontWeight: 600, color: "#009B3A" }}>📸 Todas as fotos</button>
             <button style={{ background: "white", padding: 0, color: "#666" }}>📅 Bienais</button>
             <button style={{ background: "white", padding: 0, color: "#666" }}>🎤 Lançamentos</button>
@@ -29,9 +29,9 @@ export default async function GaleriaPage() {
             <button style={{ background: "white", padding: 0, color: "#666" }}>🎬 Eventos</button>
             <button style={{ background: "white", padding: 0, color: "#666" }}>⭐ Outros</button>
           </div>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px", flexWrap: "wrap", gap: "12px" }}>
             <div style={{ color: "#262626" }}>{fotos.length} foto{fotos.length === 1 ? "" : "s"} encontrada{fotos.length === 1 ? "" : "s"}</div>
-            <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+            <div style={{ display: "flex", gap: "12px", alignItems: "center", flexWrap: "wrap" }}>
               <input type="text" placeholder="Buscar fotos..." style={{ padding: "8px 16px", border: "1px solid #DDD", borderRadius: "4px", fontSize: "13px" }} />
               <select style={{ padding: "8px", border: "1px solid #DDD", borderRadius: "4px", fontSize: "13px" }}>
                 <option>Mais recentes</option>
@@ -40,7 +40,7 @@ export default async function GaleriaPage() {
             </div>
           </div>
           {fotos.length > 0 ? (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "16px" }}>
+            <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "16px" }}>
               {fotos.map((f) => (
                 <div
                   key={f.id}

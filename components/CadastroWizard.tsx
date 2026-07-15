@@ -126,7 +126,7 @@ export default function CadastroWizard() {
   });
 
   return (
-    <div style={{ flex: 1, background: "white", color: "#262626", padding: "40px 48px", borderRadius: "12px", maxWidth: "720px" }}>
+    <div className="section-pad-md" style={{ flex: 1, background: "white", color: "#262626", padding: "40px 48px", borderRadius: "12px", maxWidth: "720px", width: "100%" }}>
       <div style={{ display: "flex", alignItems: "center", marginBottom: "32px" }}>
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "6px", flexShrink: 0 }}>
           <div style={circle(step === 1, step > 1)}>1</div>
@@ -159,7 +159,7 @@ export default function CadastroWizard() {
               <label style={labelStyle}>E-mail</label>
               <input name="email" type="email" required placeholder="seunome@email.com" style={inputStyle} defaultValue={step1Data?.email} />
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+            <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
               <div>
                 <label style={labelStyle}>Gênero literário principal</label>
                 <select name="genero" style={inputStyle} defaultValue={step1Data?.genero ?? "Romance"}>
@@ -177,7 +177,7 @@ export default function CadastroWizard() {
               <label style={labelStyle}>Bio breve (opcional)</label>
               <textarea name="bio" placeholder="Fale um pouco sobre você e sua escrita..." style={{ ...inputStyle, minHeight: "70px", resize: "vertical" }} defaultValue={step1Data?.bio} />
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+            <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
               <div>
                 <label style={labelStyle}>Senha</label>
                 <input name="senha" type="password" required placeholder="Crie uma senha" style={inputStyle} />
@@ -322,7 +322,7 @@ export default function CadastroWizard() {
                     <label style={labelStyle}>Número do cartão</label>
                     <input type="text" placeholder="0000 0000 0000 0000" style={inputStyle} />
                   </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+                  <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
                     <div>
                       <label style={labelStyle}>Validade</label>
                       <input type="text" placeholder="MM/AA" style={inputStyle} />

@@ -32,7 +32,7 @@ export default function AdminAgendaView({ eventos }: { eventos: CollectiveEvent[
       <p style={{ fontSize: "13px", color: "#666", marginBottom: "20px" }}>
         Estes eventos aparecem na página pública &quot;Eventos&quot; para todos os visitantes.
       </p>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1.4fr", gap: "20px", alignItems: "start" }}>
+      <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1.4fr", gap: "20px", alignItems: "start" }}>
         <form action={onSubmit} style={{ background: "white", borderRadius: "10px", padding: "24px", display: "flex", flexDirection: "column", gap: "14px" }}>
           <div style={{ fontWeight: 700, color: "#002776", marginBottom: "4px" }}>📅 Novo evento</div>
           <div>
@@ -75,7 +75,7 @@ export default function AdminAgendaView({ eventos }: { eventos: CollectiveEvent[
         </form>
         <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
           {eventos.map((ev) => (
-            <div key={ev.id} style={{ background: "white", borderRadius: "10px", padding: "16px", display: "flex", gap: "16px", alignItems: "center" }}>
+            <div key={ev.id} style={{ background: "white", borderRadius: "10px", padding: "16px", display: "flex", gap: "16px", alignItems: "center", flexWrap: "wrap" }}>
               <div style={{ background: "#F6F6F6", border: "1px solid #E0E0E0", borderRadius: "6px", padding: "8px 14px", textAlign: "center", flexShrink: 0 }}>
                 <div style={{ fontSize: "20px", fontWeight: 700, color: "#C0392B" }}>{ev.dia}</div>
                 <div style={{ fontSize: "11px", fontWeight: 700, color: "#666" }}>{ev.mes}</div>

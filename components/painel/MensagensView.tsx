@@ -30,7 +30,7 @@ export default function MensagensView({ author }: { author: AuthorWithRelations 
   }
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "320px 1fr", gap: "20px", height: "560px" }}>
+    <div className="chat-grid" style={{ display: "grid", gridTemplateColumns: "320px 1fr", gap: "20px", height: "560px" }}>
       <div style={{ background: "white", borderRadius: "10px", overflowY: "auto", padding: "8px", display: "flex", flexDirection: "column", gap: "4px" }}>
         {author.conversas.map((c) => (
           <button

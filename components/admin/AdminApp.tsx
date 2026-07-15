@@ -36,8 +36,8 @@ export default function AdminApp({
   const totalLivros = autores.reduce((sum, a) => sum + a._count.books, 0);
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", background: "#F6F6F6" }}>
-      <aside style={{ flex: "0 0 250px", background: "#262626", color: "white", padding: "24px 16px", display: "flex", flexDirection: "column", gap: "6px" }}>
+    <div className="app-shell" style={{ display: "flex", minHeight: "100vh", background: "#F6F6F6" }}>
+      <aside className="app-sidebar" style={{ flex: "0 0 250px", background: "#262626", color: "white", padding: "24px 16px", display: "flex", flexDirection: "column", gap: "6px" }}>
         <Link href="/" style={{ marginBottom: "20px", display: "block" }}>
           <Image src="/logo.png" alt="Logo" width={200} height={56} style={{ height: "56px", width: "100%", objectFit: "contain", background: "white", borderRadius: "8px", padding: "6px" }} />
         </Link>
@@ -62,10 +62,10 @@ export default function AdminApp({
           <div style={{ fontSize: "13px", color: "#666" }}>Gerencie a agenda, a galeria e acompanhe os autores da plataforma.</div>
         </div>
 
-        <div style={{ padding: "28px 32px", flex: 1 }}>
+        <div className="section-pad-md" style={{ padding: "28px 32px", flex: 1, minWidth: 0 }}>
           {view === "dash" && (
             <div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "20px", marginBottom: "28px" }}>
+              <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "20px", marginBottom: "28px" }}>
                 <div style={{ background: "white", borderRadius: "10px", padding: "20px" }}>
                   <div style={{ fontSize: "12px", color: "#666", marginBottom: "8px" }}>✍️ Autores cadastrados</div>
                   <div style={{ fontSize: "28px", fontWeight: 700, color: "#002776" }}>{autores.length}</div>
@@ -83,7 +83,7 @@ export default function AdminApp({
                   <div style={{ fontSize: "28px", fontWeight: 700, color: "#002776" }}>{fotos.length}</div>
                 </div>
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
+              <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
                 <div style={{ background: "white", borderRadius: "10px", padding: "24px" }}>
                   <div style={{ fontWeight: 700, color: "#002776", marginBottom: "16px" }}>Ações rápidas</div>
                   <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>

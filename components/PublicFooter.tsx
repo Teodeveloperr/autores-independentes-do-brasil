@@ -28,8 +28,9 @@ export default function PublicFooter({
   }
 
   return (
-    <footer style={{ background: "#002776", color: "white", padding: "40px", marginTop: "60px" }}>
+    <footer className="section-pad-md" style={{ background: "#002776", color: "white", padding: "40px", marginTop: "60px" }}>
       <div
+        className="responsive-grid"
         style={{
           display: "grid",
           gridTemplateColumns: "1fr 1fr 1fr",

@@ -26,7 +26,7 @@ export default function AdminGaleriaView({ fotos }: { fotos: CollectiveGalleryPh
       <p style={{ fontSize: "13px", color: "#666", marginBottom: "20px" }}>
         Estas fotos aparecem na página pública &quot;Galeria&quot; para todos os visitantes.
       </p>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1.4fr", gap: "20px", alignItems: "start" }}>
+      <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1.4fr", gap: "20px", alignItems: "start" }}>
         <form
           action={(fd) => {
             fd.set("url", foto.url);
@@ -80,7 +80,7 @@ export default function AdminGaleriaView({ fotos }: { fotos: CollectiveGalleryPh
             {pending ? "Adicionando..." : "Adicionar à galeria"}
           </button>
         </form>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "14px" }}>
+        <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "14px" }}>
           {fotos.map((f) => (
             <div key={f.id} style={{ background: "white", borderRadius: "10px", overflow: "hidden" }}>
               <div style={{ aspectRatio: "4/3", background: `center / cover no-repeat url(${f.url})` }} />

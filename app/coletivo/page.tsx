@@ -10,10 +10,10 @@ export default function ColetivoPage() {
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
       <PublicHeader active="coletivo" />
-      <section style={{ background: "white", padding: "60px 40px", flex: 1 }}>
+      <section className="section-pad-lg" style={{ background: "white", padding: "60px 40px", flex: 1 }}>
       <div style={{ maxWidth: "1280px", width: "100%", margin: "0 auto" }}>
         <h1 style={{ fontSize: "48px", fontWeight: 700, color: "#002776", marginBottom: "32px" }}>Nossa história</h1>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "60px", alignItems: "center", marginBottom: "60px" }}>
+        <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "60px", alignItems: "center", marginBottom: "60px" }}>
           <div>
             <p style={{ fontSize: "16px", color: "#262626", lineHeight: 1.8, marginBottom: "24px" }}>
               Nosso coletivo nasceu do encontro de vozes diferentes com o mesmo sonho, tornar a literatura independente, plural e transformadora.
@@ -24,8 +24,8 @@ export default function ColetivoPage() {
           </div>
           <div style={{ background: "#E0E0E0", aspectRatio: "16/9", borderRadius: "8px" }} />
         </div>
-        <div style={{ background: "#002776", color: "white", padding: "60px", borderRadius: "8px", textAlign: "center" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "60px" }}>
+        <div className="section-pad-md" style={{ background: "#002776", color: "white", padding: "60px", borderRadius: "8px", textAlign: "center" }}>
+          <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "60px" }}>
             <div>
               <div style={{ fontSize: "56px", fontWeight: 700, marginBottom: "8px" }}>50+</div>
               <div style={{ fontSize: "16px", fontWeight: 600 }}>AUTORES</div>
@@ -40,7 +40,7 @@ export default function ColetivoPage() {
             </div>
           </div>
         </div>
-        <div style={{ marginTop: "60px", display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "24px" }}>
+        <div className="responsive-grid" style={{ marginTop: "60px", display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "24px" }}>
           <div style={{ background: "#E0E0E0", aspectRatio: "1", borderRadius: "8px" }} />
           <div style={{ background: "#E0E0E0", aspectRatio: "1", borderRadius: "8px" }} />
           <div style={{ background: "#E0E0E0", aspectRatio: "1", borderRadius: "8px" }} />

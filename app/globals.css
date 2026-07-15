@@ -41,3 +41,113 @@ input::placeholder,
 textarea::placeholder {
   color: #b7bcc4;
 }
+
+/* ---- Responsividade ---- */
+
+img {
+  max-width: 100%;
+}
+
+/* Grids de N colunas: em telas médias vira 2 colunas, em telas pequenas vira 1 */
+@media (max-width: 900px) {
+  .responsive-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+@media (max-width: 560px) {
+  .responsive-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* Linhas flex (grids 2 colunas feitos com display:flex) que devem empilhar */
+@media (max-width: 900px) {
+  .responsive-flex-row {
+    flex-direction: column !important;
+  }
+  .responsive-flex-row > .flex-fixed-basis {
+    flex: 1 1 auto !important;
+    width: 100% !important;
+  }
+}
+
+/* Sidebar de app (painel/admin): empilha em cima do conteúdo em telas pequenas */
+@media (max-width: 900px) {
+  .app-shell {
+    flex-direction: column !important;
+  }
+  .app-sidebar {
+    flex: 0 0 auto !important;
+    width: 100% !important;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    gap: 8px !important;
+  }
+  .app-sidebar img {
+    height: 36px !important;
+    width: auto !important;
+    margin-bottom: 0 !important;
+  }
+  .app-sidebar-promo {
+    display: none !important;
+  }
+  .app-sidebar button {
+    width: auto !important;
+    padding: 8px 10px !important;
+    font-size: 12px !important;
+  }
+  .app-topbar {
+    flex-wrap: wrap !important;
+    height: auto !important;
+  }
+}
+
+/* Header público */
+.nav-desktop {
+  display: flex;
+}
+.nav-mobile-toggle {
+  display: none;
+}
+.nav-mobile-panel {
+  display: none;
+}
+@media (max-width: 900px) {
+  .nav-desktop {
+    display: none;
+  }
+  .nav-mobile-toggle {
+    display: flex !important;
+  }
+  .nav-mobile-panel.is-open {
+    display: flex !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .mobile-hide-search {
+    display: none !important;
+  }
+}
+
+/* Grid de mensagens (lista de conversas + chat): empilha em telas pequenas */
+@media (max-width: 700px) {
+  .chat-grid {
+    grid-template-columns: 1fr !important;
+    height: auto !important;
+  }
+  .chat-grid > *:first-child {
+    max-height: 240px;
+  }
+}
+
+/* Reduz padding grande de seções em telas pequenas */
+@media (max-width: 600px) {
+  .section-pad-lg {
+    padding: 32px 20px !important;
+  }
+  .section-pad-md {
+    padding: 24px 16px !important;
+  }
+}

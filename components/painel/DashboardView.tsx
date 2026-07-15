@@ -41,7 +41,7 @@ export default function DashboardView({
 
   return (
     <div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "20px", marginBottom: "24px" }}>
+      <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "20px", marginBottom: "24px" }}>
         <div style={{ background: "white", borderRadius: "10px", padding: "20px", display: "flex", gap: "14px", alignItems: "flex-start" }}>
           <div style={{ width: "46px", height: "46px", borderRadius: "50%", background: "#009B3A", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "20px", flexShrink: 0 }}>📖</div>
           <div>
@@ -76,7 +76,7 @@ export default function DashboardView({
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1.8fr 1.2fr 0.9fr", gap: "20px", marginBottom: "24px" }}>
+      <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "1.8fr 1.2fr 0.9fr", gap: "20px", marginBottom: "24px" }}>
         <div style={{ background: "white", borderRadius: "10px", padding: "24px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
             <div style={{ fontWeight: 700, color: "#002776" }}>Desempenho de vendas</div>
@@ -126,13 +126,13 @@ export default function DashboardView({
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1.8fr 1.2fr 0.9fr", gap: "20px", marginBottom: "24px" }}>
+      <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "1.8fr 1.2fr 0.9fr", gap: "20px", marginBottom: "24px" }}>
         <div style={{ background: "white", borderRadius: "10px", padding: "24px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
             <div style={{ fontWeight: 700, color: "#002776" }}>Seus livros</div>
             <button onClick={() => onNavigate("livros")} style={{ background: "white", fontSize: "12px", fontWeight: 600, color: "#009B3A", padding: 0 }}>Ver todos os livros</button>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "14px" }}>
+          <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "14px" }}>
             {author.books.slice(0, 3).map((b) => (
               <div key={b.id}>
                 <div

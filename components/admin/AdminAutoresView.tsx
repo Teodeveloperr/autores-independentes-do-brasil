@@ -10,7 +10,7 @@ export default function AdminAutoresView({ autores }: { autores: AuthorWithCount
       <h2 style={{ fontSize: "22px", fontWeight: 700, color: "#002776", marginBottom: "20px" }}>Autores do Coletivo</h2>
       <div style={{ background: "white", borderRadius: "10px", overflow: "hidden" }}>
         {autores.map((a) => (
-          <div key={a.id} style={{ display: "flex", gap: "16px", alignItems: "center", padding: "16px 20px", borderBottom: "1px solid #F0F0F0" }}>
+          <div key={a.id} style={{ display: "flex", gap: "16px", alignItems: "center", padding: "16px 20px", borderBottom: "1px solid #F0F0F0", flexWrap: "wrap" }}>
             <div
               style={{
                 width: "44px",

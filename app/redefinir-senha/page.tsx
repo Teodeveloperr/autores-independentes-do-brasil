@@ -16,8 +16,8 @@ export default async function RedefinirSenhaPage({
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", background: "#002776" }}>
       <PublicHeader />
-      <section style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "60px 40px" }}>
-        <div style={{ background: "white", color: "#262626", padding: "48px", borderRadius: "8px", maxWidth: "460px", width: "100%" }}>
+      <section className="section-pad-lg" style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "60px 40px" }}>
+        <div className="section-pad-md" style={{ background: "white", color: "#262626", padding: "48px", borderRadius: "8px", maxWidth: "460px", width: "100%" }}>
           {token ? (
             <RedefinirSenhaForm token={token} />
           ) : (

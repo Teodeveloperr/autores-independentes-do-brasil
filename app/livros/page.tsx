@@ -18,15 +18,15 @@ export default async function LivrosPage() {
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
       <PublicHeader active="livros" />
-      <section style={{ background: "#002776", color: "white", padding: "40px", flex: 1 }}>
+      <section className="section-pad-lg" style={{ background: "#002776", color: "white", padding: "40px", flex: 1 }}>
       <div style={{ maxWidth: "1280px", width: "100%", margin: "0 auto" }}>
         <h1 style={{ fontSize: "36px", fontWeight: 700, marginBottom: "16px" }}>Todos os livros</h1>
         <p style={{ fontSize: "16px", marginBottom: "40px" }}>
           Descubra obras incríveis de autores independentes de todos o Brasil.
         </p>
-        <div style={{ background: "white", color: "#262626", padding: "32px", borderRadius: "8px" }}>
-          <div style={{ display: "flex", gap: "24px" }}>
-            <div style={{ flex: "0 0 200px" }}>
+        <div className="section-pad-md" style={{ background: "white", color: "#262626", padding: "32px", borderRadius: "8px" }}>
+          <div className="responsive-flex-row" style={{ display: "flex", gap: "24px" }}>
+            <div className="flex-fixed-basis" style={{ flex: "0 0 200px" }}>
               <div style={{ fontWeight: 700, marginBottom: "16px" }}>Filtros</div>
               <div style={{ color: "#009B3A", fontSize: "14px", marginBottom: "24px", cursor: "pointer" }}>Limpar filtros</div>
               <div style={{ marginBottom: "24px" }}>
@@ -60,10 +60,10 @@ export default async function LivrosPage() {
               </div>
               <button style={{ background: "#002776", color: "white", padding: "10px", width: "100%", fontWeight: 600, borderRadius: "4px" }}>Aplicar filtros</button>
             </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px", flexWrap: "wrap", gap: "12px" }}>
                 <div style={{ color: "#262626" }}>{books.length} livro{books.length === 1 ? "" : "s"} encontrado{books.length === 1 ? "" : "s"}</div>
-                <div style={{ display: "flex", gap: "12px" }}>
+                <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
                   <input type="text" placeholder="Buscar livro..." style={{ padding: "8px 16px", border: "1px solid #DDD", borderRadius: "4px", fontSize: "13px" }} />
                   <select style={{ padding: "8px", border: "1px solid #DDD", borderRadius: "4px", fontSize: "13px" }}>
                     <option>Mais recentes</option>
@@ -73,7 +73,7 @@ export default async function LivrosPage() {
                 </div>
               </div>
               {books.length > 0 ? (
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "24px" }}>
+                <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "24px" }}>
                   {books.map((b) => (
                     <div key={b.id} style={{ textAlign: "center" }}>
                       <div

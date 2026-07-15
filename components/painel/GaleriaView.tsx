@@ -23,7 +23,7 @@ export default function GaleriaView({ author }: { author: AuthorWithRelations })
   return (
     <div>
       <h2 style={{ fontSize: "22px", fontWeight: 700, color: "#002776", marginBottom: "20px" }}>Minha Galeria de Fotos</h2>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1.4fr", gap: "20px", alignItems: "start" }}>
+      <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1.4fr", gap: "20px", alignItems: "start" }}>
         <form
           action={(fd) => {
             fd.set("url", foto.url);
@@ -77,7 +77,7 @@ export default function GaleriaView({ author }: { author: AuthorWithRelations })
             {pending ? "Adicionando..." : "Adicionar foto"}
           </button>
         </form>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "14px" }}>
+        <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "14px" }}>
           {author.fotos.map((f) => (
             <div key={f.id} style={{ background: "white", borderRadius: "10px", overflow: "hidden" }}>
               <div style={{ aspectRatio: "4/3", background: `center / cover no-repeat url(${f.url})` }} />

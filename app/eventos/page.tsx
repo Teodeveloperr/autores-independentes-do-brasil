@@ -13,16 +13,16 @@ export default async function EventosPage() {
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
       <PublicHeader active="eventos" />
-      <section style={{ background: "#002776", color: "white", padding: "40px", flex: 1 }}>
+      <section className="section-pad-lg" style={{ background: "#002776", color: "white", padding: "40px", flex: 1 }}>
       <div style={{ maxWidth: "1280px", width: "100%", margin: "0 auto" }}>
         <h1 style={{ fontSize: "36px", fontWeight: 700, marginBottom: "16px" }}>Eventos</h1>
         <p style={{ fontSize: "16px", marginBottom: "40px" }}>
           Acompanhe os próximos eventos do coletivo e participe de encontros, feiras, palestras e outras atividades literárias em todo o Brasil
         </p>
-        <div style={{ background: "white", color: "#262626", padding: "32px", borderRadius: "8px" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "40px" }}>
+        <div className="section-pad-md" style={{ background: "white", color: "#262626", padding: "32px", borderRadius: "8px" }}>
+          <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "40px" }}>
             <div>
-              <div style={{ display: "flex", gap: "16px", marginBottom: "24px", borderBottom: "2px solid #DDD", paddingBottom: "16px", fontSize: "13px" }}>
+              <div style={{ display: "flex", gap: "16px", marginBottom: "24px", borderBottom: "2px solid #DDD", paddingBottom: "16px", fontSize: "13px", flexWrap: "wrap" }}>
                 <button style={{ background: "white", padding: 0, fontWeight: 600, color: "#002776" }}>📋 Todos os eventos</button>
                 <button style={{ background: "white", padding: 0, fontWeight: 500, color: "#666" }}>🎓 Palestras</button>
                 <button style={{ background: "white", padding: 0, fontWeight: 500, color: "#666" }}>🎪 Bienais</button>

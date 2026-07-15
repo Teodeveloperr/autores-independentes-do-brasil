@@ -55,7 +55,7 @@ export default function PerfilView({ author }: { author: AuthorWithRelations }) 
           <p style={{ fontSize: "11px", color: "#999", marginTop: "10px" }}>📐 Tamanho recomendado: 1200 × 300px (proporção 4:1). JPG ou PNG, até 5MB.</p>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1.4fr", gap: "20px", alignItems: "start" }}>
+        <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1.4fr", gap: "20px", alignItems: "start" }}>
           <div style={{ background: "white", borderRadius: "10px", padding: "24px", textAlign: "center" }}>
             <div
               style={{

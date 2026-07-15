@@ -52,7 +52,7 @@ export default function PedidosView({ author }: { author: AuthorWithRelations })
       </div>
       <div style={{ background: "white", borderRadius: "10px", overflow: "hidden" }}>
         {pedidos.map((p) => (
-          <div key={p.id} style={{ display: "flex", gap: "16px", alignItems: "center", padding: "16px 20px", borderBottom: "1px solid #F0F0F0" }}>
+          <div key={p.id} style={{ display: "flex", gap: "16px", alignItems: "center", padding: "16px 20px", borderBottom: "1px solid #F0F0F0", flexWrap: "wrap" }}>
             <div style={{ width: "48px", height: "64px", background: "#E0E0E0", borderRadius: "4px", flexShrink: 0 }} />
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontWeight: 700, fontSize: "14px" }}>{p.livro}</div>

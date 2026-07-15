@@ -35,8 +35,8 @@ export default function PainelApp({ author }: { author: AuthorWithRelations }) {
   const nome = author.nome || "Autor(a)";
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", background: "#F6F6F6" }}>
-      <aside style={{ flex: "0 0 250px", background: "#002776", color: "white", padding: "24px 16px", display: "flex", flexDirection: "column", gap: "6px" }}>
+    <div className="app-shell" style={{ display: "flex", minHeight: "100vh", background: "#F6F6F6" }}>
+      <aside className="app-sidebar" style={{ flex: "0 0 250px", background: "#002776", color: "white", padding: "24px 16px", display: "flex", flexDirection: "column", gap: "6px" }}>
         <Link href="/" style={{ marginBottom: "20px", display: "block" }}>
           <Image src="/logo.png" alt="Logo" width={200} height={56} style={{ height: "56px", width: "100%", objectFit: "contain", background: "white", borderRadius: "8px", padding: "6px" }} />
         </Link>
@@ -63,7 +63,7 @@ export default function PainelApp({ author }: { author: AuthorWithRelations }) {
         >
           ➜ Sair
         </button>
-        <div style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.2)", padding: "20px 16px", borderRadius: "8px", marginTop: "20px", textAlign: "center" }}>
+        <div className="app-sidebar-promo" style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.2)", padding: "20px 16px", borderRadius: "8px", marginTop: "20px", textAlign: "center" }}>
           <div style={{ fontWeight: 700, marginBottom: "8px", color: "#FFDF00" }}>Você faz parte de algo maior!</div>
           <p style={{ fontSize: "13px", lineHeight: 1.5, marginBottom: "16px" }}>Juntos, fortalecemos a literatura independente.</p>
           <Link href="/assinatura" style={{ display: "block", background: "#FFDF00", color: "#002776", padding: "8px 16px", fontWeight: 700, borderRadius: "4px", fontSize: "13px" }}>
@@ -73,13 +73,13 @@ export default function PainelApp({ author }: { author: AuthorWithRelations }) {
       </aside>
 
       <main style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
-        <div style={{ background: "white", padding: "16px 32px", display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #E0E0E0", gap: "16px" }}>
+        <div className="app-topbar" style={{ background: "white", padding: "16px 32px", display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #E0E0E0", gap: "16px", flexWrap: "wrap" }}>
           <div>
             <div style={{ fontSize: "20px", fontWeight: 700, color: "#002776" }}>Olá, {firstName(nome)}! 👋</div>
             <div style={{ fontSize: "13px", color: "#666" }}>Bem-vindo(a) ao seu painel. Veja o que está acontecendo hoje.</div>
           </div>
-          <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
-            <input type="text" placeholder="🔍 Buscar no painel..." style={{ padding: "10px 16px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px", width: "220px" }} />
+          <div style={{ display: "flex", gap: "12px", alignItems: "center", flexWrap: "wrap" }}>
+            <input type="text" placeholder="🔍 Buscar no painel..." className="mobile-hide-search" style={{ padding: "10px 16px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px", width: "220px" }} />
             <Link href="/" style={{ border: "1px solid #DDD", padding: "10px 16px", borderRadius: "6px", fontSize: "13px", fontWeight: 600, color: "#002776" }}>
               Ver site público ↗
             </Link>
@@ -109,7 +109,7 @@ export default function PainelApp({ author }: { author: AuthorWithRelations }) {
           </div>
         </div>
 
-        <div style={{ padding: "28px 32px", flex: 1 }}>
+        <div className="section-pad-md" style={{ padding: "28px 32px", flex: 1, minWidth: 0 }}>
           {view === "dash" && <DashboardView author={author} onNavigate={setView} />}
           {view === "perfil" && <PerfilView author={author} />}
           {view === "livros" && <LivrosView author={author} />}

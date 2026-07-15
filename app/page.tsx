@@ -19,7 +19,7 @@ export default async function HomePage() {
 
       <div style={{ maxWidth: "1280px", width: "100%", margin: "0 auto" }}>
 
-      <section style={{ background: "white", padding: "60px 40px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "60px", alignItems: "center" }}>
+      <section className="responsive-grid section-pad-lg" style={{ background: "white", padding: "60px 40px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "60px", alignItems: "center" }}>
         <div>
           <h1 style={{ fontSize: "42px", fontWeight: 700, color: "#002776", lineHeight: 1.3, marginBottom: "24px" }}>
             Literatura
@@ -50,7 +50,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section style={{ background: "#002776", color: "white", padding: "32px 40px", display: "flex", justifyContent: "space-between", alignItems: "center", margin: "0 40px", borderRadius: "8px" }}>
+      <section className="responsive-flex-row section-pad-md" style={{ background: "#002776", color: "white", padding: "32px 40px", display: "flex", justifyContent: "space-between", alignItems: "center", margin: "0 40px", borderRadius: "8px", gap: "16px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
           <div style={{ fontSize: "24px", flexShrink: 0 }}>📅</div>
           <div>
@@ -63,7 +63,7 @@ export default async function HomePage() {
         </Link>
       </section>
 
-      <section style={{ background: "white", padding: "60px 40px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "60px", alignItems: "center", marginTop: "40px" }}>
+      <section className="responsive-grid section-pad-lg" style={{ background: "white", padding: "60px 40px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "60px", alignItems: "center", marginTop: "40px" }}>
         <div>
           <h2 style={{ fontSize: "32px", fontWeight: 700, color: "#002776", marginBottom: "24px" }}>Sobre o coletivo</h2>
           <p style={{ fontSize: "16px", color: "#262626", lineHeight: 1.6 }}>
@@ -78,13 +78,13 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section style={{ background: "white", padding: "60px 40px", marginTop: "40px" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "40px" }}>
+      <section className="section-pad-lg" style={{ background: "white", padding: "60px 40px", marginTop: "40px" }}>
+        <div className="responsive-flex-row" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "40px", gap: "12px" }}>
           <h2 style={{ fontSize: "32px", fontWeight: 700, color: "#002776" }}>Autores em destaque</h2>
           <Link href="/autores" style={{ fontWeight: 600, color: "#002776" }}>VER TODOS OS AUTORES →</Link>
         </div>
         {authors.length > 0 ? (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: "24px" }}>
+          <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: "24px" }}>
             {authors.map((a) => (
               <Link
                 key={a.id}
@@ -124,19 +124,19 @@ export default async function HomePage() {
         )}
       </section>
 
-      <section style={{ background: "white", padding: "60px 40px", marginTop: "40px" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "40px" }}>
+      <section className="section-pad-lg" style={{ background: "white", padding: "60px 40px", marginTop: "40px" }}>
+        <div className="responsive-flex-row" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "40px", gap: "12px" }}>
           <h2 style={{ fontSize: "32px", fontWeight: 700, color: "#002776" }}>Livros recentes</h2>
           <Link href="/livros" style={{ fontWeight: 600, color: "#002776" }}>VER TODOS OS LIVROS →</Link>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "24px" }}>
+        <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "24px" }}>
           {Array.from({ length: 5 }).map((_, i) => (
             <div key={i} style={{ background: "#E0E0E0", aspectRatio: "3/4", borderRadius: "4px" }} />
           ))}
         </div>
       </section>
 
-      <section style={{ background: "white", padding: "60px 40px", marginTop: "40px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "60px" }}>
+      <section className="responsive-grid section-pad-lg" style={{ background: "white", padding: "60px 40px", marginTop: "40px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "60px" }}>
         <div>
           <h3 style={{ fontSize: "24px", fontWeight: 700, color: "#002776", marginBottom: "32px" }}>Próximos eventos</h3>
           <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
@@ -177,7 +177,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section id="contato" style={{ background: "white", padding: "60px 40px", marginTop: "40px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "60px" }}>
+      <section id="contato" className="responsive-grid section-pad-lg" style={{ background: "white", padding: "60px 40px", marginTop: "40px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "60px" }}>
         <div>
           <h2 style={{ fontSize: "32px", fontWeight: 700, color: "#002776", marginBottom: "24px" }}>Contato</h2>
           <h3 style={{ fontSize: "20px", fontWeight: 700, color: "#262626", marginBottom: "16px" }}>Fale conosco</h3>
