@@ -1,0 +1,4 @@
+.env
+.env.local
+.env.vercel-production
+.env.vercel-dev
