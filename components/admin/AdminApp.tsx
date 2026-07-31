@@ -4,10 +4,11 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { adminLogout } from "@/app/admin/actions";
-import type { AdminView, AuthorWithCount, CollectiveEvent, CollectiveGalleryPhoto } from "./types";
+import type { AdminView, Article, AuthorWithCount, CollectiveEvent, CollectiveGalleryPhoto } from "./types";
 import AdminAgendaView from "./AdminAgendaView";
 import AdminGaleriaView from "./AdminGaleriaView";
 import AdminAutoresView from "./AdminAutoresView";
+import AdminBlogView from "./AdminBlogView";
 
 const sidebarBtn = (active: boolean): React.CSSProperties => ({
   display: "flex",
@@ -27,10 +28,12 @@ export default function AdminApp({
   eventos,
   fotos,
   autores,
+  artigos,
 }: {
   eventos: CollectiveEvent[];
   fotos: CollectiveGalleryPhoto[];
   autores: AuthorWithCount[];
+  artigos: Article[];
 }) {
   const [view, setView] = useState<AdminView>("dash");
   const totalLivros = autores.reduce((sum, a) => sum + a._count.books, 0);
@@ -47,6 +50,7 @@ export default function AdminApp({
         <button onClick={() => setView("dash")} style={sidebarBtn(view === "dash")}>📊 Visão geral</button>
         <button onClick={() => setView("agenda")} style={sidebarBtn(view === "agenda")}>📅 Agenda do Coletivo</button>
         <button onClick={() => setView("galeria")} style={sidebarBtn(view === "galeria")}>🖼️ Galeria do Coletivo</button>
+        <button onClick={() => setView("blog")} style={sidebarBtn(view === "blog")}>📝 Blog do Coletivo</button>
         <button onClick={() => setView("autores")} style={sidebarBtn(view === "autores")}>✍️ Autores</button>
         <button
           onClick={() => adminLogout()}
@@ -57,15 +61,20 @@ export default function AdminApp({
       </aside>
 
       <main style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
-        <div style={{ background: "white", padding: "16px 32px", borderBottom: "1px solid #E0E0E0" }}>
-          <div style={{ fontSize: "20px", fontWeight: 700, color: "#002776" }}>Administração do coletivo</div>
-          <div style={{ fontSize: "13px", color: "#666" }}>Gerencie a agenda, a galeria e acompanhe os autores da plataforma.</div>
+        <div style={{ background: "white", padding: "16px 32px", borderBottom: "1px solid #E0E0E0", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "16px", flexWrap: "wrap" }}>
+          <div>
+            <div style={{ fontSize: "20px", fontWeight: 700, color: "#002776" }}>Administração do coletivo</div>
+            <div style={{ fontSize: "13px", color: "#666" }}>Gerencie a agenda, a galeria, o blog e acompanhe os autores da plataforma.</div>
+          </div>
+          <Link href="/" style={{ border: "1px solid #DDD", padding: "10px 16px", borderRadius: "6px", fontSize: "13px", fontWeight: 600, color: "#002776", flexShrink: 0 }}>
+            Ver site público ↗
+          </Link>
         </div>
 
         <div className="section-pad-md" style={{ padding: "28px 32px", flex: 1, minWidth: 0 }}>
           {view === "dash" && (
             <div>
-              <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "20px", marginBottom: "28px" }}>
+              <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "20px", marginBottom: "28px" }}>
                 <div style={{ background: "white", borderRadius: "10px", padding: "20px" }}>
                   <div style={{ fontSize: "12px", color: "#666", marginBottom: "8px" }}>✍️ Autores cadastrados</div>
                   <div style={{ fontSize: "28px", fontWeight: 700, color: "#002776" }}>{autores.length}</div>
@@ -82,6 +91,10 @@ export default function AdminApp({
                   <div style={{ fontSize: "12px", color: "#666", marginBottom: "8px" }}>🖼️ Fotos na galeria</div>
                   <div style={{ fontSize: "28px", fontWeight: 700, color: "#002776" }}>{fotos.length}</div>
                 </div>
+                <div style={{ background: "white", borderRadius: "10px", padding: "20px" }}>
+                  <div style={{ fontSize: "12px", color: "#666", marginBottom: "8px" }}>📝 Artigos no blog</div>
+                  <div style={{ fontSize: "28px", fontWeight: 700, color: "#002776" }}>{artigos.length}</div>
+                </div>
               </div>
               <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
                 <div style={{ background: "white", borderRadius: "10px", padding: "24px" }}>
@@ -92,6 +105,9 @@ export default function AdminApp({
                     </button>
                     <button onClick={() => setView("galeria")} style={{ display: "flex", gap: "8px", alignItems: "center", background: "white", border: "1px solid #DDD", borderRadius: "6px", padding: "10px 12px", fontSize: "13px", fontWeight: 600, textAlign: "left" }}>
                       🖼️ Adicionar foto à galeria do coletivo
+                    </button>
+                    <button onClick={() => setView("blog")} style={{ display: "flex", gap: "8px", alignItems: "center", background: "white", border: "1px solid #DDD", borderRadius: "6px", padding: "10px 12px", fontSize: "13px", fontWeight: 600, textAlign: "left" }}>
+                      📝 Publicar artigo no blog
                     </button>
                     <button onClick={() => setView("autores")} style={{ display: "flex", gap: "8px", alignItems: "center", background: "white", border: "1px solid #DDD", borderRadius: "6px", padding: "10px 12px", fontSize: "13px", fontWeight: 600, textAlign: "left" }}>
                       ✍️ Ver autores cadastrados
@@ -124,6 +140,7 @@ export default function AdminApp({
           )}
           {view === "agenda" && <AdminAgendaView eventos={eventos} />}
           {view === "galeria" && <AdminGaleriaView fotos={fotos} />}
+          {view === "blog" && <AdminBlogView artigos={artigos} />}
           {view === "autores" && <AdminAutoresView autores={autores} />}
         </div>
       </main>

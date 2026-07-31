@@ -82,3 +82,37 @@ export async function removeCollectiveGalleryPhoto(id: string) {
   revalidatePath("/admin");
   revalidatePath("/galeria");
 }
+
+export async function removeAuthor(id: string) {
+  await requireAdmin();
+  await prisma.author.delete({ where: { id } });
+  revalidatePath("/admin");
+  revalidatePath("/autores");
+  revalidatePath("/livros");
+  revalidatePath("/");
+}
+
+export async function addArticle(formData: FormData) {
+  await requireAdmin();
+  const capaUrl = (formData.get("capaUrl") as string) || null;
+
+  await prisma.article.create({
+    data: {
+      titulo: ((formData.get("titulo") as string) || "Artigo").trim(),
+      resumo: ((formData.get("resumo") as string) || "").trim(),
+      categoria: (formData.get("categoria") as string) || "Artigos",
+      autorNome: ((formData.get("autorNome") as string) || "Coletivo").trim(),
+      capaUrl,
+    },
+  });
+
+  revalidatePath("/admin");
+  revalidatePath("/blog");
+}
+
+export async function removeArticle(id: string) {
+  await requireAdmin();
+  await prisma.article.delete({ where: { id } });
+  revalidatePath("/admin");
+  revalidatePath("/blog");
+}

@@ -163,6 +163,17 @@ model CollectiveGalleryPhoto {
   createdAt DateTime @default(now())
 }
 
+model Article {
+  id        String  @id @default(cuid())
+  titulo    String
+  resumo    String
+  categoria String
+  autorNome String
+  capaUrl   String?
+
+  createdAt DateTime @default(now())
+}
+
 model Admin {
   id        String @id @default(cuid())
   email     String @unique

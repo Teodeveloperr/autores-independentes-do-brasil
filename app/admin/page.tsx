@@ -15,14 +15,15 @@ export default async function AdminPage() {
     return <AdminLoginGate />;
   }
 
-  const [eventos, fotos, autores] = await Promise.all([
+  const [eventos, fotos, autores, artigos] = await Promise.all([
     prisma.collectiveEvent.findMany({ orderBy: { createdAt: "desc" } }),
     prisma.collectiveGalleryPhoto.findMany({ orderBy: { createdAt: "desc" } }),
     prisma.author.findMany({
       orderBy: { createdAt: "desc" },
       include: { _count: { select: { books: true } } },
     }),
+    prisma.article.findMany({ orderBy: { createdAt: "desc" } }),
   ]);
 
-  return <AdminApp eventos={eventos} fotos={fotos} autores={autores} />;
+  return <AdminApp eventos={eventos} fotos={fotos} autores={autores} artigos={artigos} />;
 }

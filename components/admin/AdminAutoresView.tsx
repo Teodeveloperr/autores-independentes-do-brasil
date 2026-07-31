@@ -1,10 +1,27 @@
 "use client";
 
+import { useTransition } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { removeAuthor } from "@/app/admin/actions";
 import { initials } from "@/lib/format";
 import type { AuthorWithCount } from "./types";
 
 export default function AdminAutoresView({ autores }: { autores: AuthorWithCount[] }) {
+  const [pending, startTransition] = useTransition();
+  const router = useRouter();
+
+  function onRemove(id: string, nome: string) {
+    const ok = window.confirm(
+      `Remover ${nome} do coletivo? Isso apaga também os livros, eventos, fotos e mensagens dele(a). Essa ação não pode ser desfeita.`
+    );
+    if (!ok) return;
+    startTransition(async () => {
+      await removeAuthor(id);
+      router.refresh();
+    });
+  }
+
   return (
     <div>
       <h2 style={{ fontSize: "22px", fontWeight: 700, color: "#002776", marginBottom: "20px" }}>Autores do Coletivo</h2>
@@ -37,6 +54,14 @@ export default function AdminAutoresView({ autores }: { autores: AuthorWithCount
             <Link href={`/perfil/${a.id}`} style={{ background: "white", border: "1px solid #DDD", borderRadius: "6px", padding: "8px 14px", fontSize: "12px", fontWeight: 600, color: "#002776", flexShrink: 0 }}>
               Ver perfil
             </Link>
+            <button
+              onClick={() => onRemove(a.id, a.nome)}
+              disabled={pending}
+              title="Remover autor(a)"
+              style={{ background: "white", border: "1px solid #DDD", borderRadius: "6px", width: "32px", height: "32px", fontSize: "13px", color: "#C0392B", flexShrink: 0, opacity: pending ? 0.6 : 1 }}
+            >
+              ✕
+            </button>
           </div>
         ))}
         {autores.length === 0 && (
