@@ -8,12 +8,18 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = { title: "Blog" };
 
+const CATEGORIAS = ["Artigos", "Entrevistas", "Dicas", "Mercado", "Autores", "Notícias", "Eventos"];
+
 function formatArticleDate(date: Date) {
   return date.toLocaleDateString("pt-BR", { day: "numeric", month: "long", year: "numeric" });
 }
 
 export default async function BlogPage() {
   const artigos = await prisma.article.findMany({ orderBy: { createdAt: "desc" } });
+  const contagemPorCategoria = CATEGORIAS.map((categoria) => ({
+    categoria,
+    total: artigos.filter((a) => a.categoria === categoria).length,
+  }));
 
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
@@ -63,14 +69,11 @@ export default async function BlogPage() {
             <div>
               <div style={{ fontWeight: 700, marginBottom: "16px" }}>Categorias</div>
               <div style={{ display: "flex", flexDirection: "column", gap: "12px", fontSize: "14px" }}>
-                <a href="#" style={{ color: "#262626" }}>Artigos <span style={{ float: "right", color: "#999" }}>34</span></a>
-                <a href="#" style={{ color: "#262626" }}>Entrevistas <span style={{ float: "right", color: "#999" }}>19</span></a>
-                <a href="#" style={{ color: "#262626" }}>Dicas de Escrita <span style={{ float: "right", color: "#999" }}>16</span></a>
-                <a href="#" style={{ color: "#262626" }}>Mercado Editorial <span style={{ float: "right", color: "#999" }}>14</span></a>
-                <a href="#" style={{ color: "#262626" }}>Histórias de Autores <span style={{ float: "right", color: "#999" }}>23</span></a>
-                <a href="#" style={{ color: "#262626" }}>Notícias <span style={{ float: "right", color: "#999" }}>20</span></a>
-                <a href="#" style={{ color: "#262626" }}>Eventos <span style={{ float: "right", color: "#999" }}>12</span></a>
-                <a href="#">Ver todas as categorias →</a>
+                {contagemPorCategoria.map(({ categoria, total }) => (
+                  <a key={categoria} href="#" style={{ color: "#262626" }}>
+                    {categoria} <span style={{ float: "right", color: "#999" }}>{total}</span>
+                  </a>
+                ))}
               </div>
               <div style={{ marginTop: "32px" }}>
                 <div style={{ fontWeight: 700, marginBottom: "16px" }}>Receba novidades do blog</div>
