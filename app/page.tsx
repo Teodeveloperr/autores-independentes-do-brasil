@@ -2,16 +2,23 @@ import Image from "next/image";
 import Link from "next/link";
 import PublicHeader from "@/components/PublicHeader";
 import PublicFooter from "@/components/PublicFooter";
+import BlogCarousel from "@/components/BlogCarousel";
 import { prisma } from "@/lib/db";
 import { initials } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const authors = await prisma.author.findMany({
-    orderBy: { createdAt: "desc" },
-    take: 6,
-  });
+  const [authors, artigos] = await Promise.all([
+    prisma.author.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 6,
+    }),
+    prisma.article.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 3,
+    }),
+  ]);
 
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
@@ -134,6 +141,20 @@ export default async function HomePage() {
             <div key={i} style={{ background: "#E0E0E0", aspectRatio: "3/4", borderRadius: "4px" }} />
           ))}
         </div>
+      </section>
+
+      <section className="section-pad-lg" style={{ background: "white", padding: "60px 40px", marginTop: "40px" }}>
+        <div className="responsive-flex-row" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "40px", gap: "12px" }}>
+          <h2 style={{ fontSize: "32px", fontWeight: 700, color: "#002776" }}>Blog do Coletivo</h2>
+          <Link href="/blog" style={{ fontWeight: 600, color: "#002776" }}>VER TODOS OS ARTIGOS →</Link>
+        </div>
+        <BlogCarousel artigos={artigos} />
+        <Link
+          href="/blog"
+          style={{ display: "block", textAlign: "center", background: "#009B3A", color: "white", padding: "12px 32px", fontWeight: 700, marginTop: "32px", borderRadius: "4px", width: "100%" }}
+        >
+          VISITAR O BLOG
+        </Link>
       </section>
 
       <section className="responsive-grid section-pad-lg" style={{ background: "white", padding: "60px 40px", marginTop: "40px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "60px" }}>
