@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import PublicHeader from "@/components/PublicHeader";
 import PublicFooter from "@/components/PublicFooter";
+import CounterStats from "@/components/CounterStats";
 
 export const dynamic = "force-dynamic";
 
@@ -25,20 +26,13 @@ export default function ColetivoPage() {
           <div style={{ background: "#E0E0E0", aspectRatio: "16/9", borderRadius: "8px" }} />
         </div>
         <div className="section-pad-md" style={{ background: "#002776", color: "white", padding: "60px", borderRadius: "8px", textAlign: "center" }}>
-          <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "60px" }}>
-            <div>
-              <div style={{ fontSize: "56px", fontWeight: 700, marginBottom: "8px" }}>50+</div>
-              <div style={{ fontSize: "16px", fontWeight: 600 }}>AUTORES</div>
-            </div>
-            <div>
-              <div style={{ fontSize: "56px", fontWeight: 700, marginBottom: "8px" }}>200+</div>
-              <div style={{ fontSize: "16px", fontWeight: 600 }}>LIVROS PUBLICADOS</div>
-            </div>
-            <div>
-              <div style={{ fontSize: "56px", fontWeight: 700, marginBottom: "8px" }}>30</div>
-              <div style={{ fontSize: "16px", fontWeight: 600 }}>PARTICIPAÇÕES EM BIENAIS</div>
-            </div>
-          </div>
+          <CounterStats
+            stats={[
+              { value: 50, suffix: "+", label: "AUTORES" },
+              { value: 200, suffix: "+", label: "LIVROS PUBLICADOS" },
+              { value: 30, label: "PARTICIPAÇÕES EM BIENAIS" },
+            ]}
+          />
         </div>
         <div className="responsive-grid" style={{ marginTop: "60px", display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "24px" }}>
           <div style={{ background: "#E0E0E0", aspectRatio: "1", borderRadius: "8px" }} />
