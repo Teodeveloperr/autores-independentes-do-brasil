@@ -55,19 +55,11 @@ export default function CounterStats({ stats }: { stats: Stat[] }) {
           observer.disconnect();
         }
       },
-      { threshold: 0 }
+      { threshold: 0.3 }
     );
     observer.observe(el);
 
-    // Rede de segurança: se por algum motivo o observer nunca disparar
-    // (ex: elemento já visível ao montar em navegadores/engines exóticos),
-    // ativa a contagem mesmo assim depois de um instante.
-    const fallback = setTimeout(() => setActive(true), 1000);
-
-    return () => {
-      observer.disconnect();
-      clearTimeout(fallback);
-    };
+    return () => observer.disconnect();
   }, []);
 
   return (
