@@ -167,6 +167,7 @@ model Article {
   id        String  @id @default(cuid())
   titulo    String
   resumo    String
+  conteudo  String  @default("")
   categoria String
   autorNome String
   capaUrl   String?

@@ -49,6 +49,10 @@ export default function AdminBlogView({ artigos }: { artigos: Article[] }) {
             <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>Resumo</label>
             <textarea name="resumo" required placeholder="Breve descrição que aparece no card do artigo..." style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px", minHeight: "70px", resize: "vertical" }} />
           </div>
+          <div>
+            <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>Conteúdo do artigo</label>
+            <textarea name="conteudo" required placeholder="Texto completo do artigo, exibido na página do post..." style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px", minHeight: "160px", resize: "vertical" }} />
+          </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
             <div>
               <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>Categoria</label>

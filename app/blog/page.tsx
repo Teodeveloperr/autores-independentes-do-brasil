@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import PublicHeader from "@/components/PublicHeader";
 import PublicFooter from "@/components/PublicFooter";
 import { prisma } from "@/lib/db";
@@ -38,7 +39,7 @@ export default async function BlogPage() {
             {artigos.length > 0 ? (
               <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "24px", alignContent: "start" }}>
                 {artigos.map((a) => (
-                  <div key={a.id} style={{ background: "#F6F6F6", borderRadius: "8px", overflow: "hidden" }}>
+                  <Link key={a.id} href={`/blog/${a.id}`} style={{ background: "#F6F6F6", borderRadius: "8px", overflow: "hidden", color: "inherit", display: "block" }}>
                     <div style={{ background: a.capaUrl ? `center / cover no-repeat url(${a.capaUrl})` : "#E0E0E0", aspectRatio: "1", marginBottom: "16px" }} />
                     <div style={{ padding: "16px" }}>
                       <div style={{ display: "inline-block", background: "#002776", color: "white", padding: "4px 12px", borderRadius: "4px", fontSize: "11px", fontWeight: 600, marginBottom: "12px" }}>
@@ -51,7 +52,7 @@ export default async function BlogPage() {
                         <span>{formatArticleDate(a.createdAt)}</span>
                       </div>
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
             ) : (

@@ -100,6 +100,7 @@ export async function addArticle(formData: FormData) {
     data: {
       titulo: ((formData.get("titulo") as string) || "Artigo").trim(),
       resumo: ((formData.get("resumo") as string) || "").trim(),
+      conteudo: ((formData.get("conteudo") as string) || "").trim(),
       categoria: (formData.get("categoria") as string) || "Artigos",
       autorNome: ((formData.get("autorNome") as string) || "Coletivo").trim(),
       capaUrl,
