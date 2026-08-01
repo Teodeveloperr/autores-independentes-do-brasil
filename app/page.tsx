@@ -62,7 +62,7 @@ export default async function HomePage() {
           <div style={{ fontSize: "24px", flexShrink: 0 }}>📅</div>
           <div>
             <div style={{ fontWeight: 600, marginBottom: "4px" }}>Estaremos na Bienal do Livro de São Paulo!</div>
-            <div style={{ fontSize: "14px" }}>de 6 a 15 de setembro • Espaço Central Norte • São Paulo</div>
+            <div style={{ fontSize: "14px" }}>de 4 a 13 de setembro • Espaço Central Norte • São Paulo</div>
           </div>
         </div>
         <Link href="/eventos" style={{ background: "#FFDF00", color: "#002776", padding: "12px 32px", fontWeight: 700, borderRadius: "4px" }}>
@@ -162,7 +162,7 @@ export default async function HomePage() {
           <h3 style={{ fontSize: "24px", fontWeight: 700, color: "#002776", marginBottom: "32px" }}>Próximos eventos</h3>
           <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
             {[
-              { dia: "03", mes: "SET", nome: "Bienal do Livro de São Paulo", quando: "03 a 13 de setembro • São Paulo/SP" },
+              { dia: "04", mes: "SET", nome: "Bienal do Livro de São Paulo", quando: "04 a 13 de setembro • São Paulo/SP" },
               { dia: "20", mes: "SET", nome: "Lançamento Coletivo", quando: "20 de setembro • Fortaleza/CE" },
               { dia: "10", mes: "OUT", nome: "Sarau Literário", quando: "10 de outubro • Fortaleza/CE" },
             ].map((ev) => (
