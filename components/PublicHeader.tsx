@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { getCurrentAuthor } from "@/lib/auth";
+import { getCurrentAuthor, getCurrentAdmin } from "@/lib/auth";
 import MobileNavPanel from "./MobileNavPanel";
 
 type NavKey =
@@ -33,12 +33,13 @@ export default async function PublicHeader({
   showContato?: boolean;
   cta?: { href: string; label: string };
 }) {
-  const author = await getCurrentAuthor();
+  const [author, admin] = await Promise.all([getCurrentAuthor(), getCurrentAdmin()]);
   const resolvedCta = cta ?? { href: "/login", label: "LOGIN/CADASTRO" };
 
   const mobileLinks = [
     ...NAV_ITEMS.map((item) => ({ key: item.key, label: item.label, href: item.href, active: active === item.key })),
     ...(author ? [{ key: "painel", label: "MEU PAINEL", href: "/painel", active: false }] : []),
+    ...(admin ? [{ key: "admin", label: "PAINEL ADMIN", href: "/admin", active: false }] : []),
     ...(showContato ? [{ key: "contato", label: "CONTATO", href: "/#contato", active: false }] : []),
   ];
 
@@ -92,6 +93,11 @@ export default async function PublicHeader({
         {author && (
           <Link href="/painel" style={{ color: "#009B3A", fontWeight: 600 }}>
             MEU PAINEL
+          </Link>
+        )}
+        {admin && (
+          <Link href="/admin" style={{ color: "#009B3A", fontWeight: 600 }}>
+            PAINEL ADMIN
           </Link>
         )}
         {showContato && (

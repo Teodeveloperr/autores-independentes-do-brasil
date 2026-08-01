@@ -9,12 +9,16 @@ import { initials } from "@/lib/format";
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const [authors, artigos] = await Promise.all([
+  const [authors, artigos, eventos] = await Promise.all([
     prisma.author.findMany({
       orderBy: { createdAt: "desc" },
       take: 6,
     }),
     prisma.article.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 3,
+    }),
+    prisma.collectiveEvent.findMany({
       orderBy: { createdAt: "desc" },
       take: 3,
     }),
@@ -160,20 +164,20 @@ export default async function HomePage() {
       <section className="responsive-grid section-pad-lg" style={{ background: "white", padding: "60px 40px", marginTop: "40px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "60px" }}>
         <div>
           <h3 style={{ fontSize: "24px", fontWeight: 700, color: "#002776", marginBottom: "32px" }}>Próximos eventos</h3>
-          <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-            {[
-              { dia: "04", mes: "SET", nome: "Bienal do Livro de São Paulo", quando: "04 a 13 de setembro • São Paulo/SP" },
-              { dia: "20", mes: "SET", nome: "Lançamento Coletivo", quando: "20 de setembro • Fortaleza/CE" },
-              { dia: "10", mes: "OUT", nome: "Sarau Literário", quando: "10 de outubro • Fortaleza/CE" },
-            ].map((ev) => (
-              <div key={ev.nome} style={{ borderLeft: "4px solid #002776", paddingLeft: "16px" }}>
-                <div style={{ fontSize: "28px", fontWeight: 700, color: "#002776" }}>{ev.dia}</div>
-                <div style={{ fontSize: "12px", color: "#666", textTransform: "uppercase", marginBottom: "8px" }}>{ev.mes}</div>
-                <div style={{ fontWeight: 600, marginBottom: "4px" }}>{ev.nome}</div>
-                <div style={{ fontSize: "14px", color: "#666" }}>{ev.quando}</div>
-              </div>
-            ))}
-          </div>
+          {eventos.length > 0 ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+              {eventos.map((ev) => (
+                <div key={ev.id} style={{ borderLeft: "4px solid #002776", paddingLeft: "16px" }}>
+                  <div style={{ fontSize: "28px", fontWeight: 700, color: "#002776" }}>{String(ev.dia).padStart(2, "0")}</div>
+                  <div style={{ fontSize: "12px", color: "#666", textTransform: "uppercase", marginBottom: "8px" }}>{ev.mes}</div>
+                  <div style={{ fontWeight: 600, marginBottom: "4px" }}>{ev.nome}</div>
+                  <div style={{ fontSize: "14px", color: "#666" }}>{ev.periodo ? `${ev.periodo} • ${ev.local}` : ev.local}</div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p style={{ fontSize: "14px", color: "#666" }}>Nenhum evento cadastrado no momento.</p>
+          )}
           <Link href="/eventos" style={{ display: "block", textAlign: "center", background: "#FFDF00", color: "#002776", padding: "12px 32px", fontWeight: 700, marginTop: "32px", borderRadius: "4px", width: "100%" }}>
             VER AGENDA COMPLETA
           </Link>
