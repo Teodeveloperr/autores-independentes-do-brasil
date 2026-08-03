@@ -14,7 +14,7 @@ export default function ColetivoPage() {
       <section className="section-pad-lg" style={{ background: "white", padding: "60px 40px", flex: 1 }}>
       <div style={{ maxWidth: "1280px", width: "100%", margin: "0 auto" }}>
         <h1 style={{ fontSize: "48px", fontWeight: 700, color: "#002776", marginBottom: "32px" }}>Nossa história</h1>
-        <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "60px", alignItems: "center", marginBottom: "60px" }}>
+        <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "60px", alignItems: "start", marginBottom: "60px" }}>
           <div>
             <p style={{ fontSize: "16px", color: "#262626", lineHeight: 1.8, marginBottom: "24px" }}>
               O Coletivo Autores do Brasil é um ecossistema colaborativo voltado ao fortalecimento da literatura brasileira, reunindo mais de 600 autores, poetas, escritores independentes, ilustradores, revisores, diagramadores, editores, produtores culturais, livreiros, mediadores de leitura e demais profissionais da cadeia produtiva do livro em todo o país.
@@ -26,37 +26,38 @@ export default function ColetivoPage() {
               O ecossistema é composto por diversos grupos temáticos e regionais, canais de comunicação, redes sociais, programas de entrevistas, transmissões ao vivo, divulgação de editais, premiações, concursos literários, feiras, bienais, festivais, chamadas públicas e oportunidades de participação em projetos culturais em todo o Brasil.
             </p>
           </div>
-          <div style={{ background: "#E0E0E0", aspectRatio: "16/9", borderRadius: "8px" }} />
-        </div>
-
-        <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "24px", marginBottom: "60px" }}>
-          {[
-            {
-              icon: "🎯",
-              titulo: "Missão",
-              texto: "Conectar, fortalecer e promover autores e profissionais do livro, criando oportunidades de desenvolvimento, circulação literária e acesso ao mercado cultural.",
-            },
-            {
-              icon: "👁️",
-              titulo: "Visão",
-              texto: "Ser a maior rede colaborativa de autores e profissionais da literatura brasileira, reconhecida pela promoção da diversidade literária, da formação cultural e da democratização do acesso ao livro e à leitura.",
-            },
-            {
-              icon: "💎",
-              titulo: "Valores",
-              texto: "Cooperação, diversidade, inclusão, inovação, democratização cultural, valorização da literatura brasileira, compartilhamento de conhecimento, ética, compromisso social e incentivo permanente à formação de leitores e escritores.",
-            },
-          ].map((item) => (
-            <div
-              key={item.titulo}
-              className="hover-lift"
-              style={{ background: "#F6F6F6", padding: "32px 28px", borderRadius: "8px" }}
-            >
-              <div style={{ fontSize: "32px", marginBottom: "16px" }}>{item.icon}</div>
-              <h3 style={{ fontSize: "20px", fontWeight: 700, color: "#002776", marginBottom: "12px" }}>{item.titulo}</h3>
-              <p style={{ fontSize: "14px", color: "#262626", lineHeight: 1.6 }}>{item.texto}</p>
+          <div>
+            <div style={{ background: "#E0E0E0", aspectRatio: "16/9", borderRadius: "8px", marginBottom: "24px" }} />
+            <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+              {[
+                {
+                  icon: "🎯",
+                  titulo: "Missão",
+                  texto: "Conectar, fortalecer e promover autores e profissionais do livro, criando oportunidades de desenvolvimento, circulação literária e acesso ao mercado cultural.",
+                },
+                {
+                  icon: "👁️",
+                  titulo: "Visão",
+                  texto: "Ser a maior rede colaborativa de autores e profissionais da literatura brasileira, reconhecida pela promoção da diversidade literária, da formação cultural e da democratização do acesso ao livro e à leitura.",
+                },
+                {
+                  icon: "💎",
+                  titulo: "Valores",
+                  texto: "Cooperação, diversidade, inclusão, inovação, democratização cultural, valorização da literatura brasileira, compartilhamento de conhecimento, ética, compromisso social e incentivo permanente à formação de leitores e escritores.",
+                },
+              ].map((item) => (
+                <div
+                  key={item.titulo}
+                  className="hover-lift"
+                  style={{ background: "#F6F6F6", padding: "24px 28px", borderRadius: "8px" }}
+                >
+                  <div style={{ fontSize: "28px", marginBottom: "12px" }}>{item.icon}</div>
+                  <h3 style={{ fontSize: "18px", fontWeight: 700, color: "#002776", marginBottom: "8px" }}>{item.titulo}</h3>
+                  <p style={{ fontSize: "14px", color: "#262626", lineHeight: 1.6 }}>{item.texto}</p>
+                </div>
+              ))}
             </div>
-          ))}
+          </div>
         </div>
 
         <div className="section-pad-md" style={{ background: "#002776", color: "white", padding: "60px", borderRadius: "8px", textAlign: "center", marginBottom: "60px" }}>
