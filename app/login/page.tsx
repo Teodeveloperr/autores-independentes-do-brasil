@@ -21,9 +21,9 @@ export default function LoginPage() {
             <br />e inspira.
           </h1>
           <p style={{ fontSize: "16px", lineHeight: 1.6, marginBottom: "32px" }}>
-            Fará parte coletivo que valoriza autores independentes e leva suas histórias ainda mais longe.
+            Faça parte coletivo que valoriza autores independentes e leva suas histórias ainda mais longe.
           </p>
-          <div style={{ background: "#F6F6F6", padding: "40px", borderRadius: "8px", maxWidth: "400px" }} />
+          <div style={{ background: "#FFDF00", height: "6px", width: "120px", borderRadius: "4px" }} />
         </div>
         <div style={{ flex: 1, background: "white", color: "#262626", padding: "48px", borderRadius: "8px", maxWidth: "500px", width: "100%" }}>
           <h2 style={{ fontSize: "32px", fontWeight: 700, marginBottom: "32px", textAlign: "center" }}>
