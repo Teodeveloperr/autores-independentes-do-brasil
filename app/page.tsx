@@ -66,7 +66,7 @@ export default async function HomePage() {
           <div style={{ fontSize: "24px", flexShrink: 0 }}>📅</div>
           <div>
             <div style={{ fontWeight: 600, marginBottom: "4px" }}>Estaremos na Bienal do Livro de São Paulo!</div>
-            <div style={{ fontSize: "14px" }}>de 4 a 13 de setembro • Espaço Central Norte • São Paulo</div>
+            <div style={{ fontSize: "14px" }}>de 4 a 13 de setembro • Distrito Anhembi • São Paulo</div>
           </div>
         </div>
         <Link href="/eventos" style={{ background: "#FFDF00", color: "#002776", padding: "12px 32px", fontWeight: 700, borderRadius: "4px" }}>
