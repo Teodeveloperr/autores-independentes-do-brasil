@@ -29,6 +29,16 @@ export default function ColetivoPage() {
           <div style={{ background: "#E0E0E0", aspectRatio: "16/9", borderRadius: "8px" }} />
         </div>
 
+        <div className="section-pad-md" style={{ background: "#002776", color: "white", padding: "60px", borderRadius: "8px", textAlign: "center", marginBottom: "60px" }}>
+          <CounterStats
+            stats={[
+              { value: 50, suffix: "+", label: "AUTORES" },
+              { value: 200, suffix: "+", label: "LIVROS PUBLICADOS" },
+              { value: 30, label: "PARTICIPAÇÕES EM BIENAIS" },
+            ]}
+          />
+        </div>
+
         <h3 style={{ fontSize: "24px", fontWeight: 700, color: "#002776", marginBottom: "24px" }}>
           Entre suas ações permanentes estão:
         </h3>
@@ -56,15 +66,6 @@ export default function ColetivoPage() {
           ))}
         </div>
 
-        <div className="section-pad-md" style={{ background: "#002776", color: "white", padding: "60px", borderRadius: "8px", textAlign: "center" }}>
-          <CounterStats
-            stats={[
-              { value: 50, suffix: "+", label: "AUTORES" },
-              { value: 200, suffix: "+", label: "LIVROS PUBLICADOS" },
-              { value: 30, label: "PARTICIPAÇÕES EM BIENAIS" },
-            ]}
-          />
-        </div>
         <div className="responsive-grid" style={{ marginTop: "60px", display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "24px" }}>
           <div style={{ background: "#E0E0E0", aspectRatio: "1", borderRadius: "8px" }} />
           <div style={{ background: "#E0E0E0", aspectRatio: "1", borderRadius: "8px" }} />
