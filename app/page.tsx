@@ -78,7 +78,7 @@ export default async function HomePage() {
         <div>
           <h2 style={{ fontSize: "32px", fontWeight: 700, color: "#002776", marginBottom: "24px" }}>Sobre o coletivo</h2>
           <p style={{ fontSize: "16px", color: "#262626", lineHeight: 1.6 }}>
-            Reunimos escritores de diferentes gêneros e estilos com um mesmo propósito: levar boas histórias a cada vez mais pessoas
+            O Coletivo Autores do Brasil é um ecossistema colaborativo voltado ao fortalecimento da literatura brasileira, reunindo mais de 600 autores, poetas, escritores independentes, ilustradores, revisores, diagramadores, editores, produtores culturais, livreiros, mediadores de leitura e demais profissionais da cadeia produtiva do livro em todo o país.
           </p>
           <Link href="/coletivo" style={{ display: "inline-block", background: "white", border: "2px solid #002776", color: "#002776", padding: "10px 24px", fontWeight: 600, marginTop: "24px", borderRadius: "4px" }}>
             CONHEÇA NOSSA HISTÓRIA
