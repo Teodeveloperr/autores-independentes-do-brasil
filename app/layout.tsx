@@ -1,5 +1,18 @@
 import type { Metadata, Viewport } from "next";
+import { Cinzel, Roboto } from "next/font/google";
 import "./globals.css";
+
+const cinzel = Cinzel({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-cinzel",
+});
+
+const roboto = Roboto({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "700"],
+  variable: "--font-roboto",
+});
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -21,7 +34,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR">
+    <html lang="pt-BR" className={`${cinzel.variable} ${roboto.variable}`}>
       <body>{children}</body>
     </html>
   );
