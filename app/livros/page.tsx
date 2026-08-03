@@ -91,7 +91,7 @@ export default async function LivrosPage() {
                         href={`/perfil/${b.authorId}`}
                         style={{ display: "block", background: "#009B3A", color: "white", padding: "8px", fontSize: "13px", fontWeight: 600, width: "100%", borderRadius: "4px", textDecoration: "none" }}
                       >
-                        Ver detalhes
+                        Adicionar ao carrinho
                       </Link>
                     </div>
                   ))}
