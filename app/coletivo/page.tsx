@@ -28,6 +28,34 @@ export default function ColetivoPage() {
           </div>
           <div style={{ background: "#E0E0E0", aspectRatio: "16/9", borderRadius: "8px" }} />
         </div>
+
+        <h3 style={{ fontSize: "24px", fontWeight: 700, color: "#002776", marginBottom: "24px" }}>
+          Entre suas ações permanentes estão:
+        </h3>
+        <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "20px", marginBottom: "60px" }}>
+          {[
+            { icon: "📢", texto: "Divulgação de editais culturais e literários" },
+            { icon: "📚", texto: "Compartilhamento de oportunidades de publicação e participação em antologias" },
+            { icon: "🎤", texto: "Promoção de eventos literários presenciais e virtuais" },
+            { icon: "🎪", texto: "Cobertura de feiras, bienais e festivais do livro" },
+            { icon: "🎙️", texto: "Entrevistas com autores e profissionais do mercado editorial" },
+            { icon: "🎓", texto: "Formação e capacitação para escritores iniciantes e experientes" },
+            { icon: "📖", texto: "Incentivo à leitura e à produção literária" },
+            { icon: "🤝", texto: "Fortalecimento do networking entre autores e agentes culturais" },
+            { icon: "🚀", texto: "Divulgação de lançamentos de livros e trajetórias literárias" },
+            { icon: "💰", texto: "Circulação de informações sobre leis de incentivo à cultura e mecanismos de financiamento cultural" },
+          ].map((item) => (
+            <div
+              key={item.texto}
+              className="hover-lift"
+              style={{ display: "flex", gap: "16px", alignItems: "center", background: "#F6F6F6", padding: "20px 24px", borderRadius: "8px" }}
+            >
+              <div style={{ fontSize: "28px", flexShrink: 0 }}>{item.icon}</div>
+              <p style={{ fontSize: "15px", color: "#262626", lineHeight: 1.5 }}>{item.texto}</p>
+            </div>
+          ))}
+        </div>
+
         <div className="section-pad-md" style={{ background: "#002776", color: "white", padding: "60px", borderRadius: "8px", textAlign: "center" }}>
           <CounterStats
             stats={[
