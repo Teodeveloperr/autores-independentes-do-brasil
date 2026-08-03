@@ -28,7 +28,7 @@ export default function ColetivoPage() {
           </div>
           <div>
             <div style={{ background: "#E0E0E0", aspectRatio: "16/9", borderRadius: "8px", marginBottom: "24px" }} />
-            <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+            <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px" }}>
               {[
                 {
                   icon: "🎯",
@@ -49,11 +49,11 @@ export default function ColetivoPage() {
                 <div
                   key={item.titulo}
                   className="hover-lift"
-                  style={{ background: "#F6F6F6", padding: "24px 28px", borderRadius: "8px" }}
+                  style={{ background: "#F6F6F6", padding: "12px 10px", borderRadius: "8px" }}
                 >
-                  <div style={{ fontSize: "28px", marginBottom: "12px" }}>{item.icon}</div>
-                  <h3 style={{ fontSize: "18px", fontWeight: 700, color: "#002776", marginBottom: "8px" }}>{item.titulo}</h3>
-                  <p style={{ fontSize: "14px", color: "#262626", lineHeight: 1.6 }}>{item.texto}</p>
+                  <div style={{ fontSize: "18px", marginBottom: "6px" }}>{item.icon}</div>
+                  <h3 style={{ fontSize: "13px", fontWeight: 700, color: "#002776", marginBottom: "4px" }}>{item.titulo}</h3>
+                  <p style={{ fontSize: "10.5px", color: "#262626", lineHeight: 1.4 }}>{item.texto}</p>
                 </div>
               ))}
             </div>
