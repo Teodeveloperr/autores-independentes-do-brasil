@@ -84,8 +84,13 @@ export default async function HomePage() {
             CONHEÇA NOSSA HISTÓRIA
           </Link>
         </div>
-        <div style={{ background: "#E0E0E0", padding: "40px", borderRadius: "8px", textAlign: "center", height: "300px" }}>
-          <div style={{ color: "#999" }}>Foto do coletivo</div>
+        <div style={{ position: "relative", height: "300px", borderRadius: "8px", overflow: "hidden" }}>
+          <Image
+            src="/foto-coletivo-bienal.jpg"
+            alt="Autores do coletivo reunidos no estande da Bienal do Livro"
+            fill
+            style={{ objectFit: "cover" }}
+          />
         </div>
       </section>
 
