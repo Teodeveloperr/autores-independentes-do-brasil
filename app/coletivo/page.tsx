@@ -29,6 +29,36 @@ export default function ColetivoPage() {
           <div style={{ background: "#E0E0E0", aspectRatio: "16/9", borderRadius: "8px" }} />
         </div>
 
+        <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "24px", marginBottom: "60px" }}>
+          {[
+            {
+              icon: "🎯",
+              titulo: "Missão",
+              texto: "Conectar, fortalecer e promover autores e profissionais do livro, criando oportunidades de desenvolvimento, circulação literária e acesso ao mercado cultural.",
+            },
+            {
+              icon: "👁️",
+              titulo: "Visão",
+              texto: "Ser a maior rede colaborativa de autores e profissionais da literatura brasileira, reconhecida pela promoção da diversidade literária, da formação cultural e da democratização do acesso ao livro e à leitura.",
+            },
+            {
+              icon: "💎",
+              titulo: "Valores",
+              texto: "Cooperação, diversidade, inclusão, inovação, democratização cultural, valorização da literatura brasileira, compartilhamento de conhecimento, ética, compromisso social e incentivo permanente à formação de leitores e escritores.",
+            },
+          ].map((item) => (
+            <div
+              key={item.titulo}
+              className="hover-lift"
+              style={{ background: "#F6F6F6", padding: "32px 28px", borderRadius: "8px" }}
+            >
+              <div style={{ fontSize: "32px", marginBottom: "16px" }}>{item.icon}</div>
+              <h3 style={{ fontSize: "20px", fontWeight: 700, color: "#002776", marginBottom: "12px" }}>{item.titulo}</h3>
+              <p style={{ fontSize: "14px", color: "#262626", lineHeight: 1.6 }}>{item.texto}</p>
+            </div>
+          ))}
+        </div>
+
         <div className="section-pad-md" style={{ background: "#002776", color: "white", padding: "60px", borderRadius: "8px", textAlign: "center", marginBottom: "60px" }}>
           <CounterStats
             stats={[
