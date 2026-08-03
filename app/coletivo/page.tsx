@@ -66,6 +66,13 @@ export default function ColetivoPage() {
           ))}
         </div>
 
+        <p style={{ fontSize: "16px", color: "#262626", lineHeight: 1.8, marginBottom: "24px" }}>
+          O coletivo também mantém presença ativa em redes sociais, canais digitais e plataformas de vídeo, ampliando o alcance das produções literárias brasileiras por meio de conteúdos informativos, programas de entrevistas, debates, mesas-redondas, podcasts e transmissões ao vivo com autores de diferentes regiões do país.
+        </p>
+        <p style={{ fontSize: "16px", color: "#262626", lineHeight: 1.8 }}>
+          Com uma atuação pautada pela colaboração e pelo compartilhamento de conhecimento, o Autores do Brasil busca reduzir as barreiras enfrentadas pelos escritores independentes, oferecendo visibilidade, acesso à informação, formação continuada e oportunidades concretas de crescimento profissional.
+        </p>
+
         <div className="responsive-grid" style={{ marginTop: "60px", display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "24px" }}>
           <div style={{ background: "#E0E0E0", aspectRatio: "1", borderRadius: "8px" }} />
           <div style={{ background: "#E0E0E0", aspectRatio: "1", borderRadius: "8px" }} />
