@@ -34,7 +34,6 @@ export default async function AssinaturaPage() {
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: "12px", fontSize: "14px", flex: 1 }}>
               <div style={{ display: "flex", gap: "8px" }}>✅ Perfil de autor na plataforma</div>
-              <div style={{ display: "flex", gap: "8px" }}>✅ Até 2 livros à venda</div>
               <div style={{ display: "flex", gap: "8px" }}>✅ Participação na comunidade</div>
             </div>
             <Link href={cta} style={{ display: "block", textAlign: "center", background: "white", border: "2px solid #002776", color: "#002776", padding: "12px", fontWeight: 600, borderRadius: "4px", textDecoration: "none" }}>
@@ -51,6 +50,9 @@ export default async function AssinaturaPage() {
                 R$ 29,90<span style={{ fontSize: "14px", fontWeight: 500, color: "#666" }}>/mês</span>
               </div>
               <p style={{ fontSize: "13px", color: "#666", marginTop: "8px" }}>Tudo que você precisa para vender e divulgar</p>
+              <div style={{ display: "inline-block", background: "#FFF7D1", color: "#8A6D00", fontSize: "12px", fontWeight: 600, padding: "6px 10px", borderRadius: "4px", marginTop: "10px" }}>
+                💰 No plano anual: de R$ 29,90 por R$ 19,90/mês
+              </div>
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: "12px", fontSize: "14px", flex: 1 }}>
               <div style={{ display: "flex", gap: "8px" }}>✅ Livros ilimitados à venda</div>
@@ -70,6 +72,9 @@ export default async function AssinaturaPage() {
                 R$ 49,90<span style={{ fontSize: "14px", fontWeight: 500, color: "#666" }}>/mês</span>
               </div>
               <p style={{ fontSize: "13px", color: "#666", marginTop: "8px" }}>Máxima visibilidade para suas obras</p>
+              <div style={{ display: "inline-block", background: "#FFF7D1", color: "#8A6D00", fontSize: "12px", fontWeight: 600, padding: "6px 10px", borderRadius: "4px", marginTop: "10px" }}>
+                💰 No plano anual: de R$ 49,90 por R$ 39,90/mês
+              </div>
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: "12px", fontSize: "14px", flex: 1 }}>
               <div style={{ display: "flex", gap: "8px" }}>✅ Tudo do Autor Essencial</div>
