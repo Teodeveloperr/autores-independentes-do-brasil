@@ -33,12 +33,19 @@ a:hover {
 }
 
 .hover-lift {
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, color 0.2s ease;
 }
 
 .hover-lift:hover {
   transform: translateY(-6px);
   box-shadow: 0 10px 24px rgba(0, 39, 118, 0.14);
+  background: #002776 !important;
+  color: #ffffff !important;
+}
+
+.hover-lift:hover * {
+  color: #ffffff !important;
+  transition: color 0.2s ease;
 }
 
 button {
