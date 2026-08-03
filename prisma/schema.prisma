@@ -89,15 +89,18 @@ model AuthorPhoto {
 }
 
 model Order {
-  id            String  @id @default(cuid())
-  authorId      String
-  author        Author  @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  bookId        String?
-  book          Book?   @relation(fields: [bookId], references: [id], onDelete: SetNull)
-  livro         String
-  comprador     String
-  valorCentavos Int
-  status        String  @default("Pago")
+  id                String  @id @default(cuid())
+  authorId          String
+  author            Author  @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  bookId            String?
+  book              Book?   @relation(fields: [bookId], references: [id], onDelete: SetNull)
+  livro             String
+  comprador         String
+  compradorEmail    String?
+  compradorTelefone String?
+  quantidade        Int     @default(1)
+  valorCentavos     Int
+  status            String  @default("Aguardando pagamento")
 
   createdAt DateTime @default(now())
 

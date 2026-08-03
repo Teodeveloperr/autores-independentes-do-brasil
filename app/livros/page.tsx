@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import PublicHeader from "@/components/PublicHeader";
 import PublicFooter from "@/components/PublicFooter";
+import AddToCartButton from "@/components/AddToCartButton";
 import { prisma } from "@/lib/db";
 import { brl } from "@/lib/format";
 
@@ -87,12 +87,16 @@ export default async function LivrosPage() {
                       <div style={{ fontWeight: 600, marginBottom: "4px" }}>{b.titulo}</div>
                       <div style={{ fontSize: "13px", color: "#666", marginBottom: "8px" }}>{b.author.nome}</div>
                       <div style={{ color: "#009B3A", fontWeight: 700, marginBottom: "12px" }}>{brl(b.precoCentavos)}</div>
-                      <Link
-                        href={`/perfil/${b.authorId}`}
-                        style={{ display: "block", background: "#009B3A", color: "white", padding: "8px", fontSize: "13px", fontWeight: 600, width: "100%", borderRadius: "4px", textDecoration: "none" }}
-                      >
-                        Adicionar ao carrinho
-                      </Link>
+                      <AddToCartButton
+                        book={{
+                          bookId: b.id,
+                          authorId: b.authorId,
+                          titulo: b.titulo,
+                          autorNome: b.author.nome,
+                          precoCentavos: b.precoCentavos,
+                          capaUrl: b.capaUrl,
+                        }}
+                      />
                     </div>
                   ))}
                 </div>

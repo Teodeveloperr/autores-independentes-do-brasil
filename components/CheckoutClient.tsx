@@ -1,0 +1,154 @@
+"use client";
+
+import { useState, useTransition } from "react";
+import Link from "next/link";
+import { useCart } from "./CartContext";
+import { criarPedido } from "@/app/checkout/actions";
+import { brl } from "@/lib/format";
+
+export default function CheckoutClient() {
+  const { items, totalCentavos, clearCart } = useCart();
+  const [pending, startTransition] = useTransition();
+  const [erro, setErro] = useState("");
+  const [concluido, setConcluido] = useState(false);
+  const [nome, setNome] = useState("");
+  const [email, setEmail] = useState("");
+  const [telefone, setTelefone] = useState("");
+
+  function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setErro("");
+    startTransition(async () => {
+      try {
+        await criarPedido(
+          items.map((i) => ({
+            bookId: i.bookId,
+            authorId: i.authorId,
+            titulo: i.titulo,
+            precoCentavos: i.precoCentavos,
+            quantidade: i.quantidade,
+          })),
+          { nome, email, telefone }
+        );
+        clearCart();
+        setConcluido(true);
+      } catch (err) {
+        setErro(err instanceof Error ? err.message : "Não foi possível finalizar o pedido.");
+      }
+    });
+  }
+
+  if (concluido) {
+    return (
+      <div className="section-pad-md" style={{ background: "white", color: "#262626", borderRadius: "8px", padding: "60px 40px", textAlign: "center" }}>
+        <div style={{ fontSize: "40px", marginBottom: "16px" }}>✅</div>
+        <h2 style={{ fontSize: "22px", fontWeight: 700, color: "#002776", marginBottom: "12px" }}>Pedido recebido!</h2>
+        <p style={{ fontSize: "14px", color: "#666", maxWidth: "460px", margin: "0 auto 24px" }}>
+          Seu pedido foi registrado como <b>Aguardando pagamento</b>. Assim que o pagamento online estiver disponível na
+          plataforma, você poderá concluí-lo por lá — por enquanto, o(s) autor(es) foram notificados e podem entrar em
+          contato para combinar o pagamento.
+        </p>
+        <Link href="/livros" style={{ display: "inline-block", background: "#002776", color: "white", padding: "12px 24px", fontWeight: 600, borderRadius: "4px" }}>
+          Voltar para os livros
+        </Link>
+      </div>
+    );
+  }
+
+  if (items.length === 0) {
+    return (
+      <div className="section-pad-md" style={{ background: "white", color: "#262626", borderRadius: "8px", padding: "60px 40px", textAlign: "center" }}>
+        <p style={{ fontSize: "16px", color: "#666", marginBottom: "20px" }}>Seu carrinho está vazio.</p>
+        <Link href="/livros" style={{ display: "inline-block", background: "#002776", color: "white", padding: "12px 24px", fontWeight: 600, borderRadius: "4px" }}>
+          Ver livros disponíveis →
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: "40px", alignItems: "start" }}>
+      <form onSubmit={onSubmit} style={{ background: "white", color: "#262626", borderRadius: "8px", padding: "32px", display: "flex", flexDirection: "column", gap: "20px" }}>
+        <div>
+          <div style={{ fontWeight: 700, marginBottom: "16px" }}>Seus dados</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+            <div>
+              <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>Nome completo</label>
+              <input
+                type="text"
+                required
+                value={nome}
+                onChange={(e) => setNome(e.target.value)}
+                style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "14px" }}
+              />
+            </div>
+            <div>
+              <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>E-mail</label>
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "14px" }}
+              />
+            </div>
+            <div>
+              <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>Telefone (opcional)</label>
+              <input
+                type="tel"
+                value={telefone}
+                onChange={(e) => setTelefone(e.target.value)}
+                placeholder="(00) 00000-0000"
+                style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "14px" }}
+              />
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div style={{ fontWeight: 700, marginBottom: "12px" }}>Forma de pagamento</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: "10px", opacity: 0.55 }}>
+            {["Pix", "Cartão de crédito", "Boleto"].map((metodo) => (
+              <label key={metodo} style={{ display: "flex", alignItems: "center", gap: "10px", border: "1px solid #DDD", borderRadius: "6px", padding: "12px", fontSize: "14px" }}>
+                <input type="radio" name="pagamento" disabled />
+                {metodo}
+              </label>
+            ))}
+          </div>
+          <p style={{ fontSize: "12px", color: "#999", marginTop: "8px" }}>
+            🔧 Pagamento online em breve. Por enquanto o pedido fica registrado como &quot;Aguardando pagamento&quot; e o
+            autor combina a forma de pagamento com você.
+          </p>
+        </div>
+
+        {erro && <p style={{ color: "#C0392B", fontSize: "13px" }}>{erro}</p>}
+
+        <button
+          type="submit"
+          disabled={pending}
+          style={{ background: "#009B3A", color: "white", padding: "14px", fontWeight: 700, borderRadius: "4px", fontSize: "15px", opacity: pending ? 0.7 : 1 }}
+        >
+          {pending ? "Enviando..." : "Finalizar pedido"}
+        </button>
+      </form>
+
+      <div style={{ background: "white", color: "#262626", borderRadius: "8px", padding: "24px" }}>
+        <div style={{ fontWeight: 700, marginBottom: "16px" }}>Resumo do pedido</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginBottom: "16px" }}>
+          {items.map((item) => (
+            <div key={item.bookId} style={{ display: "flex", justifyContent: "space-between", fontSize: "13px" }}>
+              <span>
+                {item.titulo} <span style={{ color: "#999" }}>×{item.quantidade}</span>
+              </span>
+              <span style={{ fontWeight: 600 }}>{brl(item.precoCentavos * item.quantidade)}</span>
+            </div>
+          ))}
+        </div>
+        <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 700, fontSize: "16px", borderTop: "1px solid #E0E0E0", paddingTop: "12px" }}>
+          <span>Total</span>
+          <span style={{ color: "#002776" }}>{brl(totalCentavos)}</span>
+        </div>
+      </div>
+    </div>
+  );
+}

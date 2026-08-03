@@ -6,8 +6,9 @@ import { setOrderStatus } from "@/app/painel/actions";
 import { brl } from "@/lib/format";
 import type { AuthorWithRelations } from "./types";
 
-const FILTERS = ["Todos", "Pago", "Aguardando envio", "Enviado", "Entregue"];
+const FILTERS = ["Todos", "Aguardando pagamento", "Pago", "Aguardando envio", "Enviado", "Entregue"];
 const STATUS_COLOR: Record<string, string> = {
+  "Aguardando pagamento": "#C0392B",
   Pago: "#009B3A",
   "Aguardando envio": "#A87900",
   Enviado: "#002776",
@@ -55,9 +56,13 @@ export default function PedidosView({ author }: { author: AuthorWithRelations })
           <div key={p.id} style={{ display: "flex", gap: "16px", alignItems: "center", padding: "16px 20px", borderBottom: "1px solid #F0F0F0", flexWrap: "wrap" }}>
             <div style={{ width: "48px", height: "64px", background: "#E0E0E0", borderRadius: "4px", flexShrink: 0 }} />
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontWeight: 700, fontSize: "14px" }}>{p.livro}</div>
+              <div style={{ fontWeight: 700, fontSize: "14px" }}>
+                {p.livro} {p.quantidade > 1 ? `(x${p.quantidade})` : ""}
+              </div>
               <div style={{ fontSize: "12px", color: "#666" }}>
                 Pedido #{p.id.slice(-6)} • {p.createdAt.toLocaleDateString("pt-BR")} • Comprador: {p.comprador}
+                {p.compradorEmail ? ` (${p.compradorEmail})` : ""}
+                {p.compradorTelefone ? ` • ${p.compradorTelefone}` : ""}
               </div>
             </div>
             <div style={{ fontWeight: 700, color: "#002776", fontSize: "14px", flexShrink: 0 }}>{brl(p.valorCentavos)}</div>
@@ -66,6 +71,7 @@ export default function PedidosView({ author }: { author: AuthorWithRelations })
               onChange={(e) => onStatusChange(p.id, e.target.value)}
               style={{ padding: "6px 10px", borderRadius: "6px", fontSize: "12px", fontWeight: 700, border: "1px solid #DDD", color: STATUS_COLOR[p.status] ?? "#666" }}
             >
+              <option>Aguardando pagamento</option>
               <option>Pago</option>
               <option>Aguardando envio</option>
               <option>Enviado</option>

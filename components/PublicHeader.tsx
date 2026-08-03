@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { getCurrentAuthor, getCurrentAdmin } from "@/lib/auth";
 import MobileNavPanel from "./MobileNavPanel";
+import CartBadge from "./CartBadge";
 
 type NavKey =
   | "home"
@@ -41,6 +42,7 @@ export default async function PublicHeader({
     ...(author ? [{ key: "painel", label: "MEU PAINEL", href: "/painel", active: false }] : []),
     ...(admin ? [{ key: "admin", label: "PAINEL ADMIN", href: "/admin", active: false }] : []),
     ...(showContato ? [{ key: "contato", label: "CONTATO", href: "/#contato", active: false }] : []),
+    { key: "carrinho", label: "🛒 CARRINHO", href: "/carrinho", active: false },
   ];
 
   return (
@@ -105,6 +107,7 @@ export default async function PublicHeader({
             CONTATO
           </Link>
         )}
+        <CartBadge style={{ fontWeight: 600 }} />
       </nav>
       <Link
         href={resolvedCta.href}
