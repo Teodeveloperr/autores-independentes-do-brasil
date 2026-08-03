@@ -17,10 +17,13 @@ export default function ColetivoPage() {
         <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "60px", alignItems: "center", marginBottom: "60px" }}>
           <div>
             <p style={{ fontSize: "16px", color: "#262626", lineHeight: 1.8, marginBottom: "24px" }}>
-              Nosso coletivo nasceu do encontro de vozes diferentes com o mesmo sonho, tornar a literatura independente, plural e transformadora.
+              O Coletivo Autores do Brasil é um ecossistema colaborativo voltado ao fortalecimento da literatura brasileira, reunindo mais de 600 autores, poetas, escritores independentes, ilustradores, revisores, diagramadores, editores, produtores culturais, livreiros, mediadores de leitura e demais profissionais da cadeia produtiva do livro em todo o país.
+            </p>
+            <p style={{ fontSize: "16px", color: "#262626", lineHeight: 1.8, marginBottom: "24px" }}>
+              Mais do que um grupo literário, o Autores do Brasil funciona como uma ampla rede de conexão, formação, divulgação e oportunidades, promovendo o intercâmbio entre profissionais da literatura e aproximando escritores de leitores, instituições culturais, editoras, bibliotecas, escolas e eventos literários.
             </p>
             <p style={{ fontSize: "16px", color: "#262626", lineHeight: 1.8 }}>
-              Acreditamos na força da história para inspirar, questionar e conectar pessoas.
+              O ecossistema é composto por diversos grupos temáticos e regionais, canais de comunicação, redes sociais, programas de entrevistas, transmissões ao vivo, divulgação de editais, premiações, concursos literários, feiras, bienais, festivais, chamadas públicas e oportunidades de participação em projetos culturais em todo o Brasil.
             </p>
           </div>
           <div style={{ background: "#E0E0E0", aspectRatio: "16/9", borderRadius: "8px" }} />
