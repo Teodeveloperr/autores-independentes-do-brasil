@@ -107,11 +107,7 @@ export default async function HomePage() {
         {authors.length > 0 ? (
           <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: "24px" }}>
             {authors.map((a) => (
-              <Link
-                key={a.id}
-                href={`/perfil/${a.id}`}
-                style={{ background: "#F6F6F6", padding: "24px", borderRadius: "8px", textAlign: "center", textDecoration: "none", color: "inherit", display: "block" }}
-              >
+              <div key={a.id} style={{ background: "#F6F6F6", padding: "24px", borderRadius: "8px", textAlign: "center" }}>
                 <div
                   style={{
                     width: "100px",
@@ -129,8 +125,14 @@ export default async function HomePage() {
                   {!a.fotoUrl && initials(a.nome)}
                 </div>
                 <div style={{ fontWeight: 600, marginBottom: "8px", color: "#262626" }}>{a.nome}</div>
-                <div style={{ fontSize: "14px", color: "#666" }}>{a.genero || "—"}</div>
-              </Link>
+                <div style={{ fontSize: "14px", color: "#666", marginBottom: "16px" }}>{a.genero || "—"}</div>
+                <Link
+                  href={`/perfil/${a.id}`}
+                  style={{ display: "block", textAlign: "center", background: "#002776", color: "white", padding: "10px 20px", fontWeight: 600, width: "100%", borderRadius: "4px", textDecoration: "none" }}
+                >
+                  VER PERFIL
+                </Link>
+              </div>
             ))}
           </div>
         ) : (
