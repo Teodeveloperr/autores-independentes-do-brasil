@@ -3,6 +3,7 @@ import Link from "next/link";
 import PublicHeader from "@/components/PublicHeader";
 import PublicFooter from "@/components/PublicFooter";
 import BlogCarousel from "@/components/BlogCarousel";
+import ContactForm from "@/components/ContactForm";
 import { prisma } from "@/lib/db";
 import { initials, brl } from "@/lib/format";
 
@@ -251,15 +252,7 @@ export default async function HomePage() {
           </div>
         </div>
         <div>
-          <form style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-            <input type="text" placeholder="Nome" style={{ padding: "12px", border: "1px solid #DDD", borderRadius: "4px", fontSize: "14px" }} />
-            <input type="email" placeholder="E-mail" style={{ padding: "12px", border: "1px solid #DDD", borderRadius: "4px", fontSize: "14px" }} />
-            <input type="text" placeholder="Assunto" style={{ padding: "12px", border: "1px solid #DDD", borderRadius: "4px", fontSize: "14px" }} />
-            <textarea placeholder="Mensagem" style={{ padding: "12px", border: "1px solid #DDD", borderRadius: "4px", fontSize: "14px", minHeight: "120px", resize: "none" }} />
-            <button type="submit" style={{ background: "#002776", color: "white", padding: "12px", fontWeight: 600, borderRadius: "4px" }}>
-              ENVIAR MENSAGEM
-            </button>
-          </form>
+          <ContactForm />
         </div>
       </section>
 

@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { createAuthorSession } from "@/lib/session";
+import { sendWelcomeEmail } from "@/lib/email";
 
 export type Step1Data = {
   nome: string;
@@ -97,6 +98,13 @@ export async function createAccount(step1: Step1Data, planId: PlanId, cycle: Cyc
       planoValorCentavos: plan.monthly === 0 ? null : precoCentavos,
     },
   });
+
+  try {
+    await sendWelcomeEmail(author.email, author.nome);
+  } catch (err) {
+    // Falha no envio do e-mail não deve impedir o cadastro.
+    console.error("[email] Falha ao enviar e-mail de boas-vindas:", err);
+  }
 
   await createAuthorSession(author.id);
   redirect("/painel");
