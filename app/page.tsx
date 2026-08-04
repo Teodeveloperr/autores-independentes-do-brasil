@@ -40,8 +40,8 @@ export default async function HomePage() {
           <h1 style={{ fontSize: "42px", fontWeight: 700, color: "#002776", lineHeight: 1.3, marginBottom: "24px" }}>
             Literatura
             <br />independente
-            <br />conectando
-            <br />autores e leitores
+            <br /><span style={{ color: "#009B3A" }}>conectando</span>
+            <br /><span style={{ color: "#FFDF00" }}>autores e leitores</span>
           </h1>
           <p style={{ fontSize: "16px", color: "#262626", lineHeight: 1.6, marginBottom: "32px" }}>
             Somos um coletivo de escritores que acredita no poder das palavras para transformar o mundo.
