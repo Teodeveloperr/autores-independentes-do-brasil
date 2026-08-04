@@ -4,15 +4,20 @@ import PublicHeader from "@/components/PublicHeader";
 import PublicFooter from "@/components/PublicFooter";
 import BlogCarousel from "@/components/BlogCarousel";
 import { prisma } from "@/lib/db";
-import { initials } from "@/lib/format";
+import { initials, brl } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const [authors, artigos, eventos] = await Promise.all([
+  const [authors, livros, artigos, eventos] = await Promise.all([
     prisma.author.findMany({
       orderBy: { createdAt: "desc" },
       take: 6,
+    }),
+    prisma.book.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 5,
+      include: { author: true },
     }),
     prisma.article.findMany({
       orderBy: { createdAt: "desc" },
@@ -145,11 +150,34 @@ export default async function HomePage() {
           <h2 style={{ fontSize: "32px", fontWeight: 700, color: "#002776" }}>Livros recentes</h2>
           <Link href="/livros" style={{ fontWeight: 600, color: "#002776" }}>VER TODOS OS LIVROS →</Link>
         </div>
-        <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "24px" }}>
-          {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} style={{ background: "#E0E0E0", aspectRatio: "3/4", borderRadius: "4px" }} />
-          ))}
-        </div>
+        {livros.length > 0 ? (
+          <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "24px" }}>
+            {livros.map((b) => (
+              <Link key={b.id} href="/livros" style={{ display: "block", color: "inherit" }}>
+                <div
+                  style={{
+                    background: b.capaUrl ? `center / cover no-repeat url(${b.capaUrl})` : "#E0E0E0",
+                    aspectRatio: "3/4",
+                    borderRadius: "4px",
+                    marginBottom: "10px",
+                  }}
+                />
+                <div style={{ fontWeight: 600, fontSize: "13px", marginBottom: "2px" }}>{b.titulo}</div>
+                <div style={{ fontSize: "12px", color: "#666", marginBottom: "4px" }}>{b.author.nome}</div>
+                <div style={{ color: "#009B3A", fontWeight: 700, fontSize: "13px" }}>{brl(b.precoCentavos)}</div>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <div style={{ background: "#F6F6F6", borderRadius: "8px", padding: "60px 40px", textAlign: "center" }}>
+            <p style={{ fontSize: "16px", color: "#666", marginBottom: "20px" }}>
+              Ainda não há livros publicados na plataforma.
+            </p>
+            <Link href="/cadastro" style={{ display: "inline-block", background: "#002776", color: "white", padding: "12px 24px", fontWeight: 600, borderRadius: "4px", textDecoration: "none" }}>
+              Seja o primeiro a publicar →
+            </Link>
+          </div>
+        )}
       </section>
 
       <section className="section-pad-lg" style={{ background: "white", padding: "60px 40px", marginTop: "40px" }}>

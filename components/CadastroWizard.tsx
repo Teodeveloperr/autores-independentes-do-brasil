@@ -9,10 +9,10 @@ import {
   type Cycle,
 } from "@/app/cadastro/actions";
 
-const PLANS: { id: PlanId; nome: string; desc: string; monthly: number; badge: string }[] = [
-  { id: "free", nome: "Gratuito", desc: "Para começar sua jornada no coletivo", monthly: 0, badge: "" },
-  { id: "essencial", nome: "Autor Essencial", desc: "Tudo que você precisa para vender e divulgar", monthly: 2990, badge: "MAIS POPULAR" },
-  { id: "premium", nome: "Autor Premium", desc: "Máxima visibilidade para suas obras", monthly: 4990, badge: "" },
+const PLANS: { id: PlanId; nome: string; desc: string; monthly: number; badge: string; disponivel: boolean }[] = [
+  { id: "free", nome: "Gratuito", desc: "Para começar sua jornada no coletivo", monthly: 0, badge: "", disponivel: true },
+  { id: "essencial", nome: "Autor Essencial", desc: "Tudo que você precisa para vender e divulgar", monthly: 2990, badge: "EM BREVE", disponivel: false },
+  { id: "premium", nome: "Autor Premium", desc: "Máxima visibilidade para suas obras", monthly: 4990, badge: "EM BREVE", disponivel: false },
 ];
 
 function brl(centavos: number) {
@@ -41,9 +41,8 @@ const labelStyle: React.CSSProperties = { display: "block", fontSize: "14px", fo
 
 export default function CadastroWizard() {
   const [step, setStep] = useState<1 | 2 | 3>(1);
-  const [cycle, setCycle] = useState<Cycle>("mensal");
-  const [plan, setPlan] = useState<PlanId>("essencial");
-  const [method, setMethod] = useState<"cartao" | "pix">("cartao");
+  const cycle: Cycle = "mensal";
+  const [plan] = useState<PlanId>("free");
   const [step1Data, setStep1Data] = useState<Step1Data | null>(null);
   const [step1Error, setStep1Error] = useState("");
   const [finishError, setFinishError] = useState("");
@@ -102,28 +101,6 @@ export default function CadastroWizard() {
 
   const selPlan = PLANS.find((p) => p.id === plan)!;
   const selPrice = priceFor(selPlan.monthly, cycle);
-  const isFree = plan === "free";
-
-  const cyc = (id: Cycle): React.CSSProperties => ({
-    background: cycle === id ? "white" : "transparent",
-    color: cycle === id ? "#002776" : "#666",
-    fontWeight: cycle === id ? 700 : 500,
-    padding: "8px 16px",
-    borderRadius: "6px",
-    fontSize: "13px",
-    boxShadow: cycle === id ? "0 1px 3px rgba(0,0,0,0.12)" : "none",
-  });
-
-  const methodBtn = (id: "cartao" | "pix"): React.CSSProperties => ({
-    flex: 1,
-    background: method === id ? "#F1F8F4" : "white",
-    border: method === id ? "2px solid #009B3A" : "1px solid #DDD",
-    color: "#262626",
-    padding: "14px",
-    fontWeight: 600,
-    borderRadius: "6px",
-    fontSize: "14px",
-  });
 
   return (
     <div className="section-pad-md" style={{ flex: 1, background: "white", color: "#262626", padding: "40px 48px", borderRadius: "12px", maxWidth: "720px", width: "100%" }}>
@@ -218,17 +195,8 @@ export default function CadastroWizard() {
         <div>
           <h2 style={{ fontSize: "26px", fontWeight: 700, marginBottom: "6px" }}>Escolha seu plano</h2>
           <p style={{ fontSize: "14px", color: "#666", marginBottom: "20px" }}>
-            Selecione o ciclo e o plano ideal. Cancele quando quiser.
+            Por enquanto, apenas o plano Gratuito está disponível para cadastro. Os planos pagos chegam em breve.
           </p>
-          <div style={{ display: "inline-flex", background: "#F0F1F3", borderRadius: "8px", padding: "4px", marginBottom: "24px" }}>
-            <button onClick={() => setCycle("mensal")} style={cyc("mensal")}>Mensal</button>
-            <button onClick={() => setCycle("semestral")} style={cyc("semestral")}>
-              Semestral <span style={{ fontSize: "11px" }}>-10%</span>
-            </button>
-            <button onClick={() => setCycle("anual")} style={cyc("anual")}>
-              Anual <span style={{ fontSize: "11px" }}>-20%</span>
-            </button>
-          </div>
           <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
             {PLANS.map((p) => {
               const pr = priceFor(p.monthly, cycle);
@@ -236,7 +204,7 @@ export default function CadastroWizard() {
               return (
                 <button
                   key={p.id}
-                  onClick={() => setPlan(p.id)}
+                  disabled={!p.disponivel}
                   style={{
                     display: "flex",
                     justifyContent: "space-between",
@@ -248,13 +216,15 @@ export default function CadastroWizard() {
                     borderRadius: "8px",
                     padding: "18px 20px",
                     textAlign: "left",
+                    opacity: p.disponivel ? 1 : 0.55,
+                    cursor: p.disponivel ? "pointer" : "not-allowed",
                   }}
                 >
                   <div style={{ textAlign: "left" }}>
                     <div style={{ fontWeight: 700, fontSize: "16px", display: "flex", alignItems: "center", gap: "10px" }}>
                       {p.nome}
                       {p.badge && (
-                        <span style={{ background: "#FFDF00", color: "#002776", fontSize: "10px", fontWeight: 700, padding: "3px 8px", borderRadius: "10px" }}>
+                        <span style={{ background: p.disponivel ? "#FFDF00" : "#DDD", color: p.disponivel ? "#002776" : "#666", fontSize: "10px", fontWeight: 700, padding: "3px 8px", borderRadius: "10px" }}>
                           {p.badge}
                         </span>
                       )}
@@ -299,87 +269,23 @@ export default function CadastroWizard() {
             </div>
           </div>
 
-          {isFree && (
-            <div style={{ background: "#E9F5EE", border: "1px solid #BFE3CE", borderRadius: "8px", padding: "20px", textAlign: "center", fontSize: "14px", marginBottom: "24px" }}>
-              🎉 O plano <strong>Gratuito</strong> não tem cobrança. Você pode fazer upgrade a qualquer momento pelo seu painel.
+          <div style={{ background: "#E9F5EE", border: "1px solid #BFE3CE", borderRadius: "8px", padding: "20px", textAlign: "center", fontSize: "14px", marginBottom: "24px" }}>
+            🎉 O plano <strong>Gratuito</strong> não tem cobrança. Você pode fazer upgrade assim que os planos pagos estiverem disponíveis.
+          </div>
+
+          {finishError && (
+            <div style={{ color: "#C0392B", fontSize: "13px", background: "#FDEDEC", padding: "10px 14px", borderRadius: "6px", marginBottom: "16px" }}>
+              {finishError}
             </div>
           )}
-
-          {!isFree && (
-            <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-              <div style={{ display: "flex", gap: "12px" }}>
-                <button type="button" onClick={() => setMethod("cartao")} style={methodBtn("cartao")}>💳 Cartão de crédito</button>
-                <button type="button" onClick={() => setMethod("pix")} style={methodBtn("pix")}>⚡ Pix</button>
-              </div>
-
-              {method === "cartao" && (
-                <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-                  <div>
-                    <label style={labelStyle}>Nome no cartão</label>
-                    <input type="text" placeholder="Nome como está no cartão" style={inputStyle} />
-                  </div>
-                  <div>
-                    <label style={labelStyle}>Número do cartão</label>
-                    <input type="text" placeholder="0000 0000 0000 0000" style={inputStyle} />
-                  </div>
-                  <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
-                    <div>
-                      <label style={labelStyle}>Validade</label>
-                      <input type="text" placeholder="MM/AA" style={inputStyle} />
-                    </div>
-                    <div>
-                      <label style={labelStyle}>CVV</label>
-                      <input type="text" placeholder="123" style={inputStyle} />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {method === "pix" && (
-                <div style={{ background: "#F6F6F6", borderRadius: "8px", padding: "28px", textAlign: "center" }}>
-                  <div style={{ width: "140px", height: "140px", background: "white", border: "1px solid #DDD", borderRadius: "8px", margin: "0 auto 16px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "48px" }}>
-                    🔳
-                  </div>
-                  <div style={{ fontSize: "13px", color: "#666" }}>
-                    Escaneie o QR Code com o app do seu banco para concluir o pagamento.
-                  </div>
-                </div>
-              )}
-
-              {finishError && (
-                <div style={{ color: "#C0392B", fontSize: "13px", background: "#FDEDEC", padding: "10px 14px", borderRadius: "6px" }}>
-                  {finishError}
-                </div>
-              )}
-
-              <div style={{ display: "flex", gap: "12px", marginTop: "8px" }}>
-                <button type="button" onClick={() => setStep(2)} style={{ flex: "0 0 auto", background: "white", border: "1px solid #CCC", color: "#262626", padding: "14px 24px", fontWeight: 600, borderRadius: "6px", fontSize: "15px" }}>
-                  ← Voltar
-                </button>
-                <button type="button" onClick={finish} disabled={pending} style={{ flex: 1, background: "#009B3A", color: "white", padding: "14px", fontWeight: 700, borderRadius: "6px", fontSize: "15px", opacity: pending ? 0.7 : 1 }}>
-                  {pending ? "Finalizando..." : "Finalizar cadastro"}
-                </button>
-              </div>
-            </div>
-          )}
-
-          {isFree && (
-            <>
-              {finishError && (
-                <div style={{ color: "#C0392B", fontSize: "13px", background: "#FDEDEC", padding: "10px 14px", borderRadius: "6px", marginBottom: "16px" }}>
-                  {finishError}
-                </div>
-              )}
-              <div style={{ display: "flex", gap: "12px" }}>
-                <button onClick={() => setStep(2)} style={{ flex: "0 0 auto", background: "white", border: "1px solid #CCC", color: "#262626", padding: "14px 24px", fontWeight: 600, borderRadius: "6px", fontSize: "15px" }}>
-                  ← Voltar
-                </button>
-                <button onClick={finish} disabled={pending} style={{ flex: 1, background: "#009B3A", color: "white", padding: "14px", fontWeight: 700, borderRadius: "6px", fontSize: "15px", opacity: pending ? 0.7 : 1 }}>
-                  {pending ? "Finalizando..." : "Concluir cadastro"}
-                </button>
-              </div>
-            </>
-          )}
+          <div style={{ display: "flex", gap: "12px" }}>
+            <button onClick={() => setStep(2)} style={{ flex: "0 0 auto", background: "white", border: "1px solid #CCC", color: "#262626", padding: "14px 24px", fontWeight: 600, borderRadius: "6px", fontSize: "15px" }}>
+              ← Voltar
+            </button>
+            <button onClick={finish} disabled={pending} style={{ flex: 1, background: "#009B3A", color: "white", padding: "14px", fontWeight: 700, borderRadius: "6px", fontSize: "15px", opacity: pending ? 0.7 : 1 }}>
+              {pending ? "Finalizando..." : "Concluir cadastro"}
+            </button>
+          </div>
 
           <p style={{ textAlign: "center", fontSize: "12px", color: "#999", marginTop: "20px" }}>
             🔒 Pagamento seguro · Cancele quando quiser · Sem taxa de adesão

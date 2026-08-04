@@ -74,7 +74,10 @@ export async function createAccount(step1: Step1Data, planId: PlanId, cycle: Cyc
     throw new Error("Senha inválida.");
   }
 
-  const plan = PLANS[planId] ?? PLANS.free;
+  // Gateway de pagamento ainda não integrado: força o plano Gratuito
+  // independentemente do que o cliente enviar.
+  void planId;
+  const plan = PLANS.free;
   const precoCentavos = priceForCycle(plan.monthly, cycle);
   const senhaHash = await bcrypt.hash(step1.senha, 10);
 
