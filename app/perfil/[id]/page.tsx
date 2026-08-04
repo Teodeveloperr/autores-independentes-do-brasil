@@ -102,7 +102,17 @@ export default async function PerfilPage({ params }: { params: Promise<{ id: str
               </div>
             </div>
             <PerfilTabs
-              books={author.books.map((b) => ({ id: b.id, titulo: b.titulo, genero: b.genero, capaUrl: b.capaUrl, preco: brl(b.precoCentavos) }))}
+              books={author.books.map((b) => ({
+                id: b.id,
+                titulo: b.titulo,
+                genero: b.genero,
+                capaUrl: b.capaUrl,
+                preco: brl(b.precoCentavos),
+                precoCentavos: b.precoCentavos,
+                descricao: b.descricao,
+                authorId: author.id,
+                autorNome: author.nome,
+              }))}
               fotos={author.fotos.map((f) => ({ id: f.id, url: f.url, titulo: f.titulo }))}
               eventos={author.eventos.map((e) => ({ id: e.id, nome: e.nome, dia: e.dia, mes: e.mes, local: e.local, status: e.status }))}
               avaliacoes={author.avaliacoes.map((r) => ({ id: r.id, nome: r.nome, texto: r.texto }))}
