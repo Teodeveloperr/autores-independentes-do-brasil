@@ -245,8 +245,8 @@ export default async function HomePage() {
             Entre em contato para parcerias, convites e mais informações
           </p>
           <div style={{ display: "flex", flexDirection: "column", gap: "16px", fontSize: "14px" }}>
-            <div>📧 contato@escritoresdobrasil.com.br</div>
-            <div>📱 (79) 99182 - 1546</div>
+            <div>📧 contato@autoresdobrasil.com.br</div>
+            <div>📱 (85) 99956-6375</div>
             <div>📍 Fortaleza - CE</div>
           </div>
         </div>
