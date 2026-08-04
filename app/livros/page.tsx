@@ -4,6 +4,7 @@ import PublicFooter from "@/components/PublicFooter";
 import AddToCartButton from "@/components/AddToCartButton";
 import { prisma } from "@/lib/db";
 import { brl } from "@/lib/format";
+import { podeVenderLivros } from "@/lib/plans";
 
 export const dynamic = "force-dynamic";
 
@@ -87,16 +88,22 @@ export default async function LivrosPage() {
                       <div style={{ fontWeight: 600, marginBottom: "4px" }}>{b.titulo}</div>
                       <div style={{ fontSize: "13px", color: "#666", marginBottom: "8px" }}>{b.author.nome}</div>
                       <div style={{ color: "#009B3A", fontWeight: 700, marginBottom: "12px" }}>{brl(b.precoCentavos)}</div>
-                      <AddToCartButton
-                        book={{
-                          bookId: b.id,
-                          authorId: b.authorId,
-                          titulo: b.titulo,
-                          autorNome: b.author.nome,
-                          precoCentavos: b.precoCentavos,
-                          capaUrl: b.capaUrl,
-                        }}
-                      />
+                      {podeVenderLivros(b.author.plano) ? (
+                        <AddToCartButton
+                          book={{
+                            bookId: b.id,
+                            authorId: b.authorId,
+                            titulo: b.titulo,
+                            autorNome: b.author.nome,
+                            precoCentavos: b.precoCentavos,
+                            capaUrl: b.capaUrl,
+                          }}
+                        />
+                      ) : (
+                        <div style={{ background: "#F0F0F0", color: "#999", padding: "8px", fontSize: "13px", fontWeight: 600, width: "100%", borderRadius: "4px" }}>
+                          Venda indisponível
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>

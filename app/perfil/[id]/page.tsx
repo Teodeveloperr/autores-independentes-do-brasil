@@ -116,6 +116,7 @@ export default async function PerfilPage({ params }: { params: Promise<{ id: str
               fotos={author.fotos.map((f) => ({ id: f.id, url: f.url, titulo: f.titulo }))}
               eventos={author.eventos.map((e) => ({ id: e.id, nome: e.nome, dia: e.dia, mes: e.mes, local: e.local, status: e.status }))}
               avaliacoes={author.avaliacoes.map((r) => ({ id: r.id, nome: r.nome, texto: r.texto }))}
+              autorPlano={author.plano}
             />
           </div>
         </div>

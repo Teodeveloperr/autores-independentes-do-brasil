@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import AddToCartButton from "./AddToCartButton";
+import { podeVenderLivros } from "@/lib/plans";
 
 type Tab = "livros" | "galeria" | "eventos" | "avaliacoes";
 
@@ -22,14 +23,17 @@ export default function PerfilTabs({
   fotos,
   eventos,
   avaliacoes,
+  autorPlano,
 }: {
   books: BookItem[];
   fotos: { id: string; url: string; titulo: string }[];
   eventos: { id: string; nome: string; dia: number; mes: string; local: string; status: string }[];
   avaliacoes: { id: string; nome: string; texto: string }[];
+  autorPlano: string;
 }) {
   const [tab, setTab] = useState<Tab>("livros");
   const [sinopseBook, setSinopseBook] = useState<BookItem | null>(null);
+  const podeVender = podeVenderLivros(autorPlano);
 
   const tabStyle = (active: boolean): React.CSSProperties => ({
     background: "white",
@@ -71,17 +75,19 @@ export default function PerfilTabs({
                   >
                     Sinopse
                   </button>
-                  <AddToCartButton
-                    book={{
-                      bookId: b.id,
-                      authorId: b.authorId,
-                      titulo: b.titulo,
-                      autorNome: b.autorNome,
-                      precoCentavos: b.precoCentavos,
-                      capaUrl: b.capaUrl,
-                    }}
-                    style={{ flex: 1, width: "auto", padding: "8px", fontSize: "12px" }}
-                  />
+                  {podeVender && (
+                    <AddToCartButton
+                      book={{
+                        bookId: b.id,
+                        authorId: b.authorId,
+                        titulo: b.titulo,
+                        autorNome: b.autorNome,
+                        precoCentavos: b.precoCentavos,
+                        capaUrl: b.capaUrl,
+                      }}
+                      style={{ flex: 1, width: "auto", padding: "8px", fontSize: "12px" }}
+                    />
+                  )}
                 </div>
               </div>
             ))}
