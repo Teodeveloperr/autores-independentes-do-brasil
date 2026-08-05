@@ -76,13 +76,10 @@ export default function LoginForm() {
       </div>
       <a
         href="/api/auth/google"
-        style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "10px", background: "white", border: "1px solid #DDD", padding: "12px", width: "100%", fontWeight: 600, marginBottom: "12px", borderRadius: "4px", color: "#262626", textDecoration: "none" }}
+        style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "10px", background: "white", border: "1px solid #DDD", padding: "12px", width: "100%", fontWeight: 600, borderRadius: "4px", color: "#262626", textDecoration: "none" }}
       >
         <GoogleIcon /> Continuar com Google
       </a>
-      <button style={{ background: "white", border: "1px solid #DDD", padding: "12px", width: "100%", fontWeight: 600, borderRadius: "4px" }}>
-        👍 Continuar com Facebook
-      </button>
       <div style={{ textAlign: "center", marginTop: "24px", fontSize: "14px" }}>
         <p>Ainda não tem uma conta?</p>
         <a

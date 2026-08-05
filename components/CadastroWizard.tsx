@@ -182,15 +182,12 @@ export default function CadastroWizard() {
             ou cadastre-se com
             <div style={{ flex: 1, height: "1px", background: "#DDD" }} />
           </div>
-          <div style={{ display: "flex", gap: "12px" }}>
-            <a
-              href="/api/auth/google"
-              style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", background: "white", border: "1px solid #DDD", padding: "12px", fontWeight: 600, borderRadius: "6px", fontSize: "13px", color: "#262626", textDecoration: "none" }}
-            >
-              <GoogleIcon size={16} /> Google
-            </a>
-            <button style={{ flex: 1, background: "white", border: "1px solid #DDD", padding: "12px", fontWeight: 600, borderRadius: "6px", fontSize: "13px" }}>👍 Facebook</button>
-          </div>
+          <a
+            href="/api/auth/google"
+            style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", background: "white", border: "1px solid #DDD", padding: "12px", fontWeight: 600, borderRadius: "6px", fontSize: "13px", color: "#262626", textDecoration: "none" }}
+          >
+            <GoogleIcon size={16} /> Continuar com Google
+          </a>
           <p style={{ textAlign: "center", marginTop: "20px", fontSize: "14px" }}>
             Já tem uma conta? <a href="/login" style={{ color: "#009B3A", fontWeight: 600 }}>Entrar</a>
           </p>
