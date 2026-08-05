@@ -4,8 +4,7 @@ import { useState, useTransition } from "react";
 import { useImageUpload } from "@/hooks/useImageUpload";
 import { saveProfile } from "@/app/painel/actions";
 import type { AuthorWithRelations } from "./types";
-
-const GENEROS = ["Romance", "Poesia", "Ficção", "Fantasia", "Terror", "Ficção Científica", "Infantil", "Biografia"];
+import { GENEROS } from "@/lib/genres";
 
 export default function PerfilView({ author }: { author: AuthorWithRelations }) {
   const avatar = useImageUpload("avatars", author.fotoUrl ?? "");
@@ -85,19 +84,20 @@ export default function PerfilView({ author }: { author: AuthorWithRelations }) 
               <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>Nome completo</label>
               <input name="nome" type="text" required defaultValue={author.nome} style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px" }} />
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-              <div>
-                <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>Gênero literário</label>
-                <select name="genero" defaultValue={author.genero} style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px" }}>
-                  {GENEROS.map((g) => (
-                    <option key={g}>{g}</option>
-                  ))}
-                </select>
+            <div>
+              <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>Gêneros literários</label>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "8px 14px", padding: "10px", border: "1px solid #DDD", borderRadius: "6px" }}>
+                {GENEROS.map((g) => (
+                  <label key={g} style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "13px", fontWeight: 400 }}>
+                    <input type="checkbox" name="generos" value={g} defaultChecked={author.generos.includes(g)} />
+                    {g}
+                  </label>
+                ))}
               </div>
-              <div>
-                <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>Cidade / UF</label>
-                <input name="cidade" type="text" defaultValue={author.cidade ?? ""} style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px" }} />
-              </div>
+            </div>
+            <div>
+              <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>Cidade / UF</label>
+              <input name="cidade" type="text" defaultValue={author.cidade ?? ""} style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px" }} />
             </div>
             <div>
               <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>Bio</label>

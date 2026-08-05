@@ -15,11 +15,13 @@ export async function logout() {
 export async function saveProfile(formData: FormData) {
   const author = await requireAuthor();
 
+  const generos = formData.getAll("generos") as string[];
+
   await prisma.author.update({
     where: { id: author.id },
     data: {
       nome: ((formData.get("nome") as string) || author.nome).trim(),
-      genero: (formData.get("genero") as string) || author.genero,
+      generos: generos.length > 0 ? generos : author.generos,
       cidade: ((formData.get("cidade") as string) || "").trim(),
       bio: ((formData.get("bio") as string) || "").trim(),
       fotoUrl: (formData.get("fotoUrl") as string) || author.fotoUrl,

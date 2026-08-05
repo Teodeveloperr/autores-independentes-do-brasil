@@ -137,7 +137,7 @@ async function seedAuthors() {
         nome: a.nome,
         email: a.email,
         senhaHash,
-        genero: a.genero,
+        generos: [a.genero],
         cidade: a.cidade,
         bio: a.bio,
         anoEntrada: a.anoEntrada,

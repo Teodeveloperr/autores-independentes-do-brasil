@@ -67,7 +67,7 @@ export default async function PerfilPage({ params }: { params: Promise<{ id: str
             />
             <h1 style={{ fontSize: "22px", fontWeight: 700, color: "#262626", marginBottom: "8px" }}>{author.nome}</h1>
             <p style={{ fontSize: "14px", color: "#666", marginBottom: "4px" }}>
-              Escritor(a) • {author.genero} • {author.cidade}
+              Escritor(a) • {author.generos.join(", ")} • {author.cidade}
             </p>
             <div style={{ display: "flex", gap: "12px", marginBottom: "16px", marginTop: "12px" }}>
               <a href="#" style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "32px", height: "32px", background: "#F6F6F6", borderRadius: "4px" }}>📷</a>

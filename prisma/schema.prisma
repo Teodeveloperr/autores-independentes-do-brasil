@@ -16,7 +16,7 @@ model Author {
   email     String   @unique
   senhaHash String?
   googleId  String?  @unique
-  genero    String   @default("Romance")
+  generos   String[] @default(["Romance"])
   cidade    String?
   bio       String?
   fotoUrl   String?

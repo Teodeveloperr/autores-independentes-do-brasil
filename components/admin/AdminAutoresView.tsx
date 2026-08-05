@@ -47,7 +47,7 @@ export default function AdminAutoresView({ autores }: { autores: AuthorWithCount
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontWeight: 700, fontSize: "14px" }}>{a.nome}</div>
-              <div style={{ fontSize: "12px", color: "#666" }}>{a.genero} • {a.cidade}</div>
+              <div style={{ fontSize: "12px", color: "#666" }}>{a.generos.join(", ")} • {a.cidade}</div>
             </div>
             <div style={{ fontSize: "12px", color: "#666", textAlign: "center", flexShrink: 0, width: "90px" }}>📚 {a._count.books} livros</div>
             <div style={{ fontSize: "12px", fontWeight: 700, textAlign: "center", flexShrink: 0, width: "130px", color: "#009B3A" }}>{a.plano}</div>

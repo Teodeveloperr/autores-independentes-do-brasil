@@ -10,7 +10,7 @@ export type Step1Data = {
   nome: string;
   email: string;
   senha: string;
-  genero: string;
+  generos: string[];
   cidade: string;
   bio: string;
 };
@@ -22,7 +22,7 @@ export async function validateStep1(formData: FormData): Promise<Step1Result> {
   const email = ((formData.get("email") as string) || "").trim().toLowerCase();
   const senha = (formData.get("senha") as string) || "";
   const confirmar = (formData.get("confirmar") as string) || "";
-  const genero = (formData.get("genero") as string) || "Romance";
+  const generos = formData.getAll("generos") as string[];
   const cidade = ((formData.get("cidade") as string) || "").trim() || "Brasil";
   const bio = ((formData.get("bio") as string) || "").trim();
 
@@ -35,13 +35,16 @@ export async function validateStep1(formData: FormData): Promise<Step1Result> {
   if (!email) {
     return { error: "Informe um e-mail válido." };
   }
+  if (generos.length === 0) {
+    return { error: "Selecione ao menos um gênero literário." };
+  }
 
   const existente = await prisma.author.findUnique({ where: { email } });
   if (existente) {
     return { error: "Já existe uma conta cadastrada com esse e-mail." };
   }
 
-  return { ok: true, data: { nome, email, senha, genero, cidade, bio } };
+  return { ok: true, data: { nome, email, senha, generos, cidade, bio } };
 }
 
 export type PlanId = "free" | "essencial" | "premium";
@@ -87,7 +90,7 @@ export async function createAccount(step1: Step1Data, planId: PlanId, cycle: Cyc
       nome: step1.nome,
       email,
       senhaHash,
-      genero: step1.genero,
+      generos: step1.generos,
       cidade: step1.cidade,
       bio:
         step1.bio ||

@@ -9,6 +9,7 @@ import {
   type Cycle,
 } from "@/app/cadastro/actions";
 import GoogleIcon from "./GoogleIcon";
+import { GENEROS } from "@/lib/genres";
 
 const PLANS: { id: PlanId; nome: string; desc: string; monthly: number; badge: string; disponivel: boolean }[] = [
   { id: "free", nome: "Gratuito", desc: "Para começar sua jornada no coletivo", monthly: 0, badge: "", disponivel: true },
@@ -137,19 +138,25 @@ export default function CadastroWizard() {
               <label style={labelStyle}>E-mail</label>
               <input name="email" type="email" required placeholder="seunome@email.com" style={inputStyle} defaultValue={step1Data?.email} />
             </div>
-            <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
-              <div>
-                <label style={labelStyle}>Gênero literário principal</label>
-                <select name="genero" style={inputStyle} defaultValue={step1Data?.genero ?? "Romance"}>
-                  {["Romance", "Poesia", "Ficção", "Fantasia", "Terror", "Ficção Científica", "Infantil", "Biografia"].map((g) => (
-                    <option key={g}>{g}</option>
-                  ))}
-                </select>
+            <div>
+              <label style={labelStyle}>Gêneros literários (selecione um ou mais)</label>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "10px 16px", padding: "12px", border: "1px solid #DDD", borderRadius: "6px" }}>
+                {GENEROS.map((g) => (
+                  <label key={g} style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "14px", fontWeight: 400 }}>
+                    <input
+                      type="checkbox"
+                      name="generos"
+                      value={g}
+                      defaultChecked={step1Data?.generos ? step1Data.generos.includes(g) : g === "Romance"}
+                    />
+                    {g}
+                  </label>
+                ))}
               </div>
-              <div>
-                <label style={labelStyle}>Cidade / UF</label>
-                <input name="cidade" type="text" required placeholder="Ex: São Paulo, SP" style={inputStyle} defaultValue={step1Data?.cidade} />
-              </div>
+            </div>
+            <div>
+              <label style={labelStyle}>Cidade / UF</label>
+              <input name="cidade" type="text" required placeholder="Ex: São Paulo, SP" style={inputStyle} defaultValue={step1Data?.cidade} />
             </div>
             <div>
               <label style={labelStyle}>Bio breve (opcional)</label>
