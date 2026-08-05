@@ -19,6 +19,9 @@ export async function login(_prevState: LoginState, formData: FormData): Promise
   if (!author) {
     return { error: "Não encontramos uma conta com esse e-mail." };
   }
+  if (!author.senhaHash) {
+    return { error: "Esta conta usa login com Google. Clique em \"Continuar com Google\" para entrar." };
+  }
 
   const senhaOk = await bcrypt.compare(senha, author.senhaHash);
   if (!senhaOk) {

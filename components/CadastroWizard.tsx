@@ -8,6 +8,7 @@ import {
   type PlanId,
   type Cycle,
 } from "@/app/cadastro/actions";
+import GoogleIcon from "./GoogleIcon";
 
 const PLANS: { id: PlanId; nome: string; desc: string; monthly: number; badge: string; disponivel: boolean }[] = [
   { id: "free", nome: "Gratuito", desc: "Para começar sua jornada no coletivo", monthly: 0, badge: "", disponivel: true },
@@ -182,7 +183,12 @@ export default function CadastroWizard() {
             <div style={{ flex: 1, height: "1px", background: "#DDD" }} />
           </div>
           <div style={{ display: "flex", gap: "12px" }}>
-            <button style={{ flex: 1, background: "white", border: "1px solid #DDD", padding: "12px", fontWeight: 600, borderRadius: "6px", fontSize: "13px" }}>🔵 Google</button>
+            <a
+              href="/api/auth/google"
+              style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", background: "white", border: "1px solid #DDD", padding: "12px", fontWeight: 600, borderRadius: "6px", fontSize: "13px", color: "#262626", textDecoration: "none" }}
+            >
+              <GoogleIcon size={16} /> Google
+            </a>
             <button style={{ flex: 1, background: "white", border: "1px solid #DDD", padding: "12px", fontWeight: 600, borderRadius: "6px", fontSize: "13px" }}>👍 Facebook</button>
           </div>
           <p style={{ textAlign: "center", marginTop: "20px", fontSize: "14px" }}>

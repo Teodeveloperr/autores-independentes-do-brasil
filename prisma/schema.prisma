@@ -14,7 +14,8 @@ model Author {
   id        String   @id @default(cuid())
   nome      String
   email     String   @unique
-  senhaHash String
+  senhaHash String?
+  googleId  String?  @unique
   genero    String   @default("Romance")
   cidade    String?
   bio       String?

@@ -1,13 +1,22 @@
 "use client";
 
 import { useActionState } from "react";
+import { useSearchParams } from "next/navigation";
 import { login, type LoginState } from "@/app/login/actions";
+import GoogleIcon from "./GoogleIcon";
 
 export default function LoginForm() {
   const [state, formAction, pending] = useActionState<LoginState, FormData>(login, undefined);
+  const searchParams = useSearchParams();
+  const googleError = searchParams.get("erro") === "google";
 
   return (
     <>
+      {googleError && (
+        <div style={{ color: "#C0392B", fontSize: "13px", background: "#FDEDEC", padding: "10px 14px", borderRadius: "6px", marginBottom: "16px" }}>
+          Não foi possível continuar com o Google. Tente novamente.
+        </div>
+      )}
       <form action={formAction} style={{ display: "flex", flexDirection: "column", gap: "16px", marginBottom: "24px" }}>
         <div>
           <label style={{ display: "block", fontSize: "14px", fontWeight: 600, marginBottom: "8px" }}>
@@ -65,9 +74,12 @@ export default function LoginForm() {
         continuar com
         <div style={{ flex: 1, height: "1px", background: "#DDD" }} />
       </div>
-      <button style={{ background: "white", border: "1px solid #DDD", padding: "12px", width: "100%", fontWeight: 600, marginBottom: "12px", borderRadius: "4px" }}>
-        🔵 Continuar com Google
-      </button>
+      <a
+        href="/api/auth/google"
+        style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "10px", background: "white", border: "1px solid #DDD", padding: "12px", width: "100%", fontWeight: 600, marginBottom: "12px", borderRadius: "4px", color: "#262626", textDecoration: "none" }}
+      >
+        <GoogleIcon /> Continuar com Google
+      </a>
       <button style={{ background: "white", border: "1px solid #DDD", padding: "12px", width: "100%", fontWeight: 600, borderRadius: "4px" }}>
         👍 Continuar com Facebook
       </button>
