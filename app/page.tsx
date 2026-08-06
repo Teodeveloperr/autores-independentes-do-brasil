@@ -40,7 +40,7 @@ export default async function HomePage() {
           alt=""
           width={2000}
           height={175}
-          style={{ width: "100%", height: "auto", display: "block" }}
+          style={{ width: "100%", height: "auto", display: "block", transform: "rotate(180deg)" }}
         />
       </div>
 
