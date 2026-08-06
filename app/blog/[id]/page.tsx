@@ -37,7 +37,12 @@ export default async function ArtigoPage({ params }: { params: Promise<{ id: str
           </Link>
           <div className="section-pad-md" style={{ background: "white", color: "#262626", padding: "40px", borderRadius: "8px", maxWidth: "820px", margin: "0 auto" }}>
             {artigo.capaUrl && (
-              <div style={{ background: `center / cover no-repeat url(${artigo.capaUrl})`, aspectRatio: "16/9", borderRadius: "8px", marginBottom: "24px" }} />
+              // eslint-disable-next-line @next/next/no-img-element -- exibida na proporção original, sem corte (imagens de capa têm proporções variadas)
+              <img
+                src={artigo.capaUrl}
+                alt={artigo.titulo}
+                style={{ width: "100%", height: "auto", display: "block", borderRadius: "8px", marginBottom: "24px" }}
+              />
             )}
             <div style={{ display: "inline-block", background: "#002776", color: "white", padding: "4px 12px", borderRadius: "4px", fontSize: "11px", fontWeight: 600, marginBottom: "16px" }}>
               {artigo.categoria}
