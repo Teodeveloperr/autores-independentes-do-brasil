@@ -70,8 +70,8 @@ export default async function HomePage() {
           <Image
             src="/hero-logo.webp"
             alt="Logo do coletivo Autores Independentes do Brasil"
-            width={2000}
-            height={1787}
+            width={1189}
+            height={1263}
             style={{ maxWidth: "100%", height: "auto" }}
           />
         </div>
