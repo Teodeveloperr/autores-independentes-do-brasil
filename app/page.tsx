@@ -34,6 +34,16 @@ export default async function HomePage() {
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
       <PublicHeader active="home" showContato={false} />
 
+      <div style={{ width: "100%", lineHeight: 0 }}>
+        <Image
+          src="/bandeirola.webp"
+          alt=""
+          width={2000}
+          height={175}
+          style={{ width: "100%", height: "auto", display: "block" }}
+        />
+      </div>
+
       <div style={{ maxWidth: "1280px", width: "100%", margin: "0 auto" }}>
 
       <section className="responsive-grid section-pad-lg" style={{ background: "white", padding: "60px 40px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "60px", alignItems: "center" }}>
