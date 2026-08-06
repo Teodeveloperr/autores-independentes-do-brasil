@@ -72,7 +72,7 @@ export default async function HomePage() {
             alt="Logo do coletivo Autores Independentes do Brasil"
             width={1189}
             height={1263}
-            style={{ maxWidth: "100%", height: "auto" }}
+            style={{ width: "60%", maxWidth: "60%", height: "auto" }}
           />
         </div>
       </section>
