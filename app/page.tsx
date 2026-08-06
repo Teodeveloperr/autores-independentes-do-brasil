@@ -34,13 +34,13 @@ export default async function HomePage() {
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
       <PublicHeader active="home" showContato={false} />
 
-      <div style={{ width: "100%", lineHeight: 0, textAlign: "center" }}>
+      <div style={{ width: "100%", lineHeight: 0 }}>
         <Image
           src="/bandeirola.webp"
           alt=""
           width={2000}
           height={175}
-          style={{ width: "85%", height: "auto", display: "inline-block", transform: "rotate(180deg)" }}
+          style={{ width: "100%", height: "auto", display: "block", transform: "rotate(180deg)" }}
         />
       </div>
 
