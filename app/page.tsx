@@ -58,10 +58,10 @@ export default async function HomePage() {
         </div>
         <div style={{ textAlign: "center" }}>
           <Image
-            src="/hero-books.png"
-            alt="Pilha de livros do coletivo Autores Independentes do Brasil com caneca e caderno"
-            width={640}
-            height={480}
+            src="/hero-banner.webp"
+            alt="Banner do coletivo Autores Independentes do Brasil: mais de 100 autores presentes, mais de 300 títulos no stand, sessão de autógrafos e lançamentos"
+            width={2000}
+            height={1000}
             style={{ maxWidth: "100%", height: "auto" }}
           />
         </div>
