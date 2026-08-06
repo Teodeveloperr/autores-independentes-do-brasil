@@ -46,7 +46,7 @@ export default async function HomePage() {
 
       <div style={{ maxWidth: "1280px", width: "100%", margin: "0 auto" }}>
 
-      <section className="responsive-grid section-pad-lg" style={{ background: "white", padding: "60px 40px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "60px", alignItems: "center" }}>
+      <section className="responsive-grid section-pad-lg" style={{ background: "white", padding: "24px 40px 60px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "60px", alignItems: "start" }}>
         <div>
           <h1 style={{ fontSize: "42px", fontWeight: 700, color: "#002776", lineHeight: 1.3, marginBottom: "24px" }}>
             Literatura
