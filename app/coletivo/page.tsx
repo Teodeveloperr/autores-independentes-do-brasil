@@ -27,7 +27,7 @@ export default function ColetivoPage() {
             </p>
           </div>
           <div>
-            <div style={{ background: "center / cover no-repeat url(/coletivo-banner.webp)", aspectRatio: "16/9", borderRadius: "8px", marginBottom: "24px" }} />
+            <div style={{ background: "center / cover no-repeat url(/coletivo-banner.webp)", aspectRatio: "2/1", borderRadius: "8px", marginBottom: "24px" }} />
             <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px" }}>
               {[
                 {
