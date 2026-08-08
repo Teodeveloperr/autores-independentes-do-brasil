@@ -1,17 +1,70 @@
 "use client";
 
-import { useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useImageUpload } from "@/hooks/useImageUpload";
+import { uploadImage } from "@/lib/upload-client";
 import { addArticle, removeArticle } from "@/app/admin/actions";
 import type { Article } from "./types";
 
 const CATEGORIAS = ["Artigos", "Entrevistas", "Dicas", "Mercado", "Autores", "Notícias", "Eventos"];
 
+function wrapSelection(textarea: HTMLTextAreaElement, before: string, after: string = before) {
+  const { selectionStart, selectionEnd, value } = textarea;
+  const selected = value.slice(selectionStart, selectionEnd);
+  textarea.value = value.slice(0, selectionStart) + before + selected + after + value.slice(selectionEnd);
+  const cursorPos = selectionStart + before.length + selected.length + after.length;
+  textarea.focus();
+  textarea.setSelectionRange(cursorPos, cursorPos);
+}
+
+function insertAtCursor(textarea: HTMLTextAreaElement, text: string) {
+  const { selectionStart, selectionEnd, value } = textarea;
+  textarea.value = value.slice(0, selectionStart) + text + value.slice(selectionEnd);
+  const cursorPos = selectionStart + text.length;
+  textarea.focus();
+  textarea.setSelectionRange(cursorPos, cursorPos);
+}
+
+const toolbarBtnStyle: React.CSSProperties = {
+  background: "#F6F6F6",
+  border: "1px solid #DDD",
+  borderRadius: "4px",
+  width: "30px",
+  height: "30px",
+  fontSize: "13px",
+  color: "#262626",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  cursor: "pointer",
+};
+
 export default function AdminBlogView({ artigos }: { artigos: Article[] }) {
   const capa = useImageUpload("blog-capas");
   const [pending, startTransition] = useTransition();
+  const [enviandoImagemConteudo, setEnviandoImagemConteudo] = useState(false);
+  const conteudoRef = useRef<HTMLTextAreaElement>(null);
   const router = useRouter();
+
+  async function onInsertImagemConteudo(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || !conteudoRef.current) return;
+    if (file.size > 5 * 1024 * 1024) {
+      window.alert("A imagem deve ter até 5MB.");
+      return;
+    }
+    setEnviandoImagemConteudo(true);
+    try {
+      const url = await uploadImage(file, "blog-conteudo");
+      insertAtCursor(conteudoRef.current, `\n![](${url})\n`);
+    } catch {
+      window.alert("Não foi possível enviar a imagem. Tente novamente.");
+    } finally {
+      setEnviandoImagemConteudo(false);
+    }
+  }
 
   function onRemove(id: string) {
     const ok = window.confirm("Remover este artigo do blog?");
@@ -51,7 +104,31 @@ export default function AdminBlogView({ artigos }: { artigos: Article[] }) {
           </div>
           <div>
             <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>Conteúdo do artigo</label>
-            <textarea name="conteudo" required placeholder="Texto completo do artigo, exibido na página do post..." style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px", minHeight: "160px", resize: "vertical" }} />
+            <div style={{ display: "flex", gap: "6px", marginBottom: "6px" }}>
+              <button type="button" title="Negrito" style={toolbarBtnStyle} onClick={() => conteudoRef.current && wrapSelection(conteudoRef.current, "**")}>
+                <strong>B</strong>
+              </button>
+              <button type="button" title="Itálico" style={toolbarBtnStyle} onClick={() => conteudoRef.current && wrapSelection(conteudoRef.current, "*")}>
+                <em>I</em>
+              </button>
+              <button type="button" title="Sublinhado" style={toolbarBtnStyle} onClick={() => conteudoRef.current && wrapSelection(conteudoRef.current, "__")}>
+                <u>S</u>
+              </button>
+              <label htmlFor="conteudoImagemInput" title="Inserir imagem" style={{ ...toolbarBtnStyle, opacity: enviandoImagemConteudo ? 0.6 : 1 }}>
+                {enviandoImagemConteudo ? "…" : "🖼️"}
+              </label>
+              <input id="conteudoImagemInput" type="file" accept="image/*" disabled={enviandoImagemConteudo} onChange={onInsertImagemConteudo} style={{ display: "none" }} />
+            </div>
+            <textarea
+              ref={conteudoRef}
+              name="conteudo"
+              required
+              placeholder="Texto completo do artigo, exibido na página do post..."
+              style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px", minHeight: "160px", resize: "vertical" }}
+            />
+            <p style={{ fontSize: "11px", color: "#999", marginTop: "6px" }}>
+              Selecione um trecho de texto e clique em B, I ou S para formatar. O botão 🖼️ insere uma imagem na posição do cursor.
+            </p>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
             <div>

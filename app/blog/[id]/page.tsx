@@ -4,6 +4,7 @@ import Link from "next/link";
 import PublicHeader from "@/components/PublicHeader";
 import PublicFooter from "@/components/PublicFooter";
 import { prisma } from "@/lib/db";
+import { renderArticleContent } from "@/lib/richText";
 
 export const dynamic = "force-dynamic";
 
@@ -54,7 +55,7 @@ export default async function ArtigoPage({ params }: { params: Promise<{ id: str
               <span>{formatArticleDate(artigo.createdAt)}</span>
             </div>
             <p style={{ fontSize: "15px", color: "#444", lineHeight: 1.6, marginBottom: "24px" }}>{artigo.resumo}</p>
-            <div style={{ fontSize: "15px", color: "#262626", lineHeight: 1.8, whiteSpace: "pre-wrap" }}>{artigo.conteudo}</div>
+            <div style={{ fontSize: "15px", color: "#262626", lineHeight: 1.8, whiteSpace: "pre-wrap" }}>{renderArticleContent(artigo.conteudo)}</div>
           </div>
         </div>
       </section>
