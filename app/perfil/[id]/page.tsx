@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import PublicHeader from "@/components/PublicHeader";
 import PublicFooter from "@/components/PublicFooter";
 import PerfilTabs from "@/components/PerfilTabs";
+import EnviarMensagemButton from "@/components/EnviarMensagemButton";
 import { prisma } from "@/lib/db";
 import { brl } from "@/lib/format";
 import { getCurrentAuthor } from "@/lib/auth";
@@ -91,9 +92,7 @@ export default async function PerfilPage({ params }: { params: Promise<{ id: str
             <button style={{ background: "white", border: "2px solid #262626", color: "#262626", padding: "10px", width: "100%", fontWeight: 600, borderRadius: "4px", marginBottom: "12px" }}>
               Compartilhar perfil
             </button>
-            <button style={{ background: "#009B3A", color: "white", padding: "10px", width: "100%", fontWeight: 600, borderRadius: "4px" }}>
-              💬 Enviar mensagem
-            </button>
+            {!isOwner && <EnviarMensagemButton authorId={author.id} />}
           </div>
           <div style={{ flex: 1 }}>
             <p style={{ fontSize: "14px", color: "#444", lineHeight: 1.7, marginBottom: "24px", maxWidth: "640px" }}>{author.bio}</p>
