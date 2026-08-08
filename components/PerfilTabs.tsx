@@ -25,12 +25,14 @@ export default function PerfilTabs({
   eventos,
   avaliacoes,
   autorPlano,
+  isOwner,
 }: {
   books: BookItem[];
   fotos: { id: string; url: string; titulo: string }[];
   eventos: { id: string; nome: string; dia: number; mes: string; local: string; status: string }[];
   avaliacoes: { id: string; nome: string; texto: string }[];
   autorPlano: string;
+  isOwner: boolean;
 }) {
   const [tab, setTab] = useState<Tab>("livros");
   const [sinopseBook, setSinopseBook] = useState<BookItem | null>(null);
@@ -100,7 +102,11 @@ export default function PerfilTabs({
 
       {tab === "galeria" &&
         (!podeExtras ? (
-          <UpgradeNotice recurso="galeria de fotos" />
+          isOwner ? (
+            <UpgradeNotice recurso="galeria de fotos" />
+          ) : (
+            <p style={{ fontSize: "14px", color: "#666" }}>Este(a) autor(a) ainda não adicionou fotos à galeria.</p>
+          )
         ) : fotos.length > 0 ? (
           <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "14px" }}>
             {fotos.map((f) => (
@@ -113,7 +119,11 @@ export default function PerfilTabs({
 
       {tab === "eventos" &&
         (!podeExtras ? (
-          <UpgradeNotice recurso="agenda de eventos" />
+          isOwner ? (
+            <UpgradeNotice recurso="agenda de eventos" />
+          ) : (
+            <p style={{ fontSize: "14px", color: "#666" }}>Este(a) autor(a) ainda não tem eventos agendados.</p>
+          )
         ) : eventos.length > 0 ? (
           <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
             {eventos.map((ev) => (
@@ -136,7 +146,11 @@ export default function PerfilTabs({
 
       {tab === "avaliacoes" &&
         (!podeExtras ? (
-          <UpgradeNotice recurso="avaliações" />
+          isOwner ? (
+            <UpgradeNotice recurso="avaliações" />
+          ) : (
+            <p style={{ fontSize: "14px", color: "#666" }}>Este(a) autor(a) ainda não recebeu avaliações.</p>
+          )
         ) : avaliacoes.length > 0 ? (
           <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
             {avaliacoes.map((rv) => (

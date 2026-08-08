@@ -5,6 +5,7 @@ import PublicFooter from "@/components/PublicFooter";
 import PerfilTabs from "@/components/PerfilTabs";
 import { prisma } from "@/lib/db";
 import { brl } from "@/lib/format";
+import { getCurrentAuthor } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -20,17 +21,22 @@ export async function generateMetadata({
 
 export default async function PerfilPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const author = await prisma.author.findUnique({
-    where: { id },
-    include: {
-      books: { orderBy: { createdAt: "desc" } },
-      eventos: { orderBy: { createdAt: "desc" } },
-      fotos: { orderBy: { createdAt: "desc" } },
-      avaliacoes: { orderBy: { createdAt: "desc" } },
-    },
-  });
+  const [author, currentAuthor] = await Promise.all([
+    prisma.author.findUnique({
+      where: { id },
+      include: {
+        books: { orderBy: { createdAt: "desc" } },
+        eventos: { orderBy: { createdAt: "desc" } },
+        fotos: { orderBy: { createdAt: "desc" } },
+        avaliacoes: { orderBy: { createdAt: "desc" } },
+      },
+    }),
+    getCurrentAuthor(),
+  ]);
 
   if (!author) notFound();
+
+  const isOwner = currentAuthor?.id === author.id;
 
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
@@ -117,6 +123,7 @@ export default async function PerfilPage({ params }: { params: Promise<{ id: str
               eventos={author.eventos.map((e) => ({ id: e.id, nome: e.nome, dia: e.dia, mes: e.mes, local: e.local, status: e.status }))}
               avaliacoes={author.avaliacoes.map((r) => ({ id: r.id, nome: r.nome, texto: r.texto }))}
               autorPlano={author.plano}
+              isOwner={isOwner}
             />
           </div>
         </div>
