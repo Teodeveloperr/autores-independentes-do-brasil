@@ -5,9 +5,8 @@ import { useRouter } from "next/navigation";
 import { useImageUpload } from "@/hooks/useImageUpload";
 import { addBook, removeBook } from "@/app/painel/actions";
 import { brl } from "@/lib/format";
+import { GENEROS } from "@/lib/genres";
 import type { AuthorWithRelations } from "./types";
-
-const GENEROS = ["Romance", "Poesia", "Ficção", "Fantasia", "Terror", "Ficção Científica", "Infantil", "Biografia"];
 
 export default function LivrosView({ author }: { author: AuthorWithRelations }) {
   const capa = useImageUpload("capas");
