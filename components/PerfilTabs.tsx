@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import AddToCartButton from "./AddToCartButton";
-import { podeVenderLivros } from "@/lib/plans";
+import { podeVenderLivros, podeUsarRecursosExtras } from "@/lib/plans";
 
 type Tab = "livros" | "galeria" | "eventos" | "avaliacoes";
 
@@ -34,6 +35,7 @@ export default function PerfilTabs({
   const [tab, setTab] = useState<Tab>("livros");
   const [sinopseBook, setSinopseBook] = useState<BookItem | null>(null);
   const podeVender = podeVenderLivros(autorPlano);
+  const podeExtras = podeUsarRecursosExtras(autorPlano);
 
   const tabStyle = (active: boolean): React.CSSProperties => ({
     background: "white",
@@ -97,7 +99,9 @@ export default function PerfilTabs({
         ))}
 
       {tab === "galeria" &&
-        (fotos.length > 0 ? (
+        (!podeExtras ? (
+          <UpgradeNotice recurso="galeria de fotos" />
+        ) : fotos.length > 0 ? (
           <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "14px" }}>
             {fotos.map((f) => (
               <div key={f.id} title={f.titulo} style={{ background: `center / cover no-repeat url(${f.url})`, aspectRatio: "1", borderRadius: "4px" }} />
@@ -108,7 +112,9 @@ export default function PerfilTabs({
         ))}
 
       {tab === "eventos" &&
-        (eventos.length > 0 ? (
+        (!podeExtras ? (
+          <UpgradeNotice recurso="agenda de eventos" />
+        ) : eventos.length > 0 ? (
           <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
             {eventos.map((ev) => (
               <div key={ev.id} style={{ display: "flex", gap: "16px", alignItems: "center", background: "#F6F6F6", borderRadius: "8px", padding: "16px" }}>
@@ -129,7 +135,9 @@ export default function PerfilTabs({
         ))}
 
       {tab === "avaliacoes" &&
-        (avaliacoes.length > 0 ? (
+        (!podeExtras ? (
+          <UpgradeNotice recurso="avaliações" />
+        ) : avaliacoes.length > 0 ? (
           <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
             {avaliacoes.map((rv) => (
               <div key={rv.id} style={{ borderBottom: "1px solid #E0E0E0", paddingBottom: "16px" }}>
@@ -177,5 +185,22 @@ export default function PerfilTabs({
         </div>
       )}
     </>
+  );
+}
+
+function UpgradeNotice({ recurso }: { recurso: string }) {
+  return (
+    <div style={{ textAlign: "center", background: "#F6F6F6", borderRadius: "8px", padding: "40px 24px" }}>
+      <div style={{ fontSize: "28px", marginBottom: "12px" }}>✨</div>
+      <p style={{ fontSize: "14px", color: "#444", lineHeight: 1.6, maxWidth: "380px", margin: "0 auto 20px" }}>
+        A {recurso} é um recurso premium. Faça upgrade do seu plano e desbloqueie todo o potencial do seu perfil.
+      </p>
+      <Link
+        href="/assinatura"
+        style={{ display: "inline-block", background: "#009B3A", color: "white", padding: "10px 24px", borderRadius: "6px", fontWeight: 600, fontSize: "13px", textDecoration: "none" }}
+      >
+        Fazer upgrade do plano
+      </Link>
+    </div>
   );
 }
