@@ -1,1 +1,1 @@
-export const GENEROS = ["Romance", "Poesia", "Ficção", "Fantasia", "Terror", "Ficção Científica", "Infantil", "Biografia"];
+export const GENEROS = ["Romance", "Poesia", "Ficção", "Fantasia", "Terror", "Ficção Científica", "Infantil", "Biografia", "Não Ficção", "Temas Sociais"];
