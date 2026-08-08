@@ -49,7 +49,10 @@ export default function AutoresGrid({ authors }: { authors: AuthorItem[] }) {
           type="text"
           placeholder="Buscar autor..."
           value={busca}
-          onChange={(e) => setBusca(e.target.value)}
+          onChange={(e) => {
+            setBusca(e.target.value);
+            if (e.target.value.trim()) setGeneroAtivo(null);
+          }}
           style={{ marginLeft: "auto", padding: "8px 16px", border: "1px solid #DDD", borderRadius: "4px", fontSize: "14px" }}
         />
       </div>
