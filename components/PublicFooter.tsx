@@ -98,11 +98,6 @@ export default function PublicFooter({
               ASSINAR
             </button>
           </div>
-          <div style={{ display: "flex", gap: "12px", marginTop: "16px", fontSize: "18px" }}>
-            <a href="#" style={{ color: "white" }}>📱</a>
-            <a href="#" style={{ color: "white" }}>𝕏</a>
-            <a href="#" style={{ color: "white" }}>👍</a>
-          </div>
         </div>
       </div>
       <div
