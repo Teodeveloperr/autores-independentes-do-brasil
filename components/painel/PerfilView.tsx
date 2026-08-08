@@ -103,6 +103,18 @@ export default function PerfilView({ author }: { author: AuthorWithRelations }) 
               <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>Bio</label>
               <textarea name="bio" defaultValue={author.bio ?? ""} style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px", minHeight: "90px", resize: "vertical" }} />
             </div>
+            <div>
+              <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>📷 Instagram</label>
+              <input name="instagramUrl" type="text" placeholder="https://instagram.com/seuusuario" defaultValue={author.instagramUrl ?? ""} style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px" }} />
+            </div>
+            <div>
+              <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>🐦 Twitter / X</label>
+              <input name="twitterUrl" type="text" placeholder="https://x.com/seuusuario" defaultValue={author.twitterUrl ?? ""} style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px" }} />
+            </div>
+            <div>
+              <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>🔗 Site</label>
+              <input name="siteUrl" type="text" placeholder="https://seusite.com.br" defaultValue={author.siteUrl ?? ""} style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px" }} />
+            </div>
             <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
               <button type="submit" disabled={pending} style={{ background: "#009B3A", color: "white", padding: "12px 24px", fontWeight: 700, borderRadius: "6px", fontSize: "14px", opacity: pending ? 0.7 : 1 }}>
                 {pending ? "Salvando..." : "Salvar alterações"}

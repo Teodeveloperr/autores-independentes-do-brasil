@@ -22,6 +22,10 @@ model Author {
   fotoUrl   String?
   bannerUrl String?
 
+  instagramUrl String?
+  twitterUrl   String?
+  siteUrl      String?
+
   anoEntrada         Int
   plano              String  @default("Gratuito")
   planoCiclo         String?

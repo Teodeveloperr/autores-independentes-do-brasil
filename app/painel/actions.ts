@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { requireAuthor } from "@/lib/auth";
 import { deleteAuthorSession } from "@/lib/session";
-import { centavosFromInput } from "@/lib/format";
+import { centavosFromInput, sanitizeExternalUrl } from "@/lib/format";
 
 export async function logout() {
   await deleteAuthorSession();
@@ -26,6 +26,9 @@ export async function saveProfile(formData: FormData) {
       bio: ((formData.get("bio") as string) || "").trim(),
       fotoUrl: (formData.get("fotoUrl") as string) || author.fotoUrl,
       bannerUrl: (formData.get("bannerUrl") as string) || author.bannerUrl,
+      instagramUrl: sanitizeExternalUrl((formData.get("instagramUrl") as string) || ""),
+      twitterUrl: sanitizeExternalUrl((formData.get("twitterUrl") as string) || ""),
+      siteUrl: sanitizeExternalUrl((formData.get("siteUrl") as string) || ""),
     },
   });
 

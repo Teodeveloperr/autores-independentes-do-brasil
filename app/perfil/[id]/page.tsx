@@ -75,11 +75,19 @@ export default async function PerfilPage({ params }: { params: Promise<{ id: str
             <p style={{ fontSize: "14px", color: "#666", marginBottom: "4px" }}>
               Escritor(a) • {author.generos.join(", ")} • {author.cidade}
             </p>
-            <div style={{ display: "flex", gap: "12px", marginBottom: "16px", marginTop: "12px" }}>
-              <a href="#" style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "32px", height: "32px", background: "#F6F6F6", borderRadius: "4px" }}>📷</a>
-              <a href="#" style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "32px", height: "32px", background: "#F6F6F6", borderRadius: "4px" }}>🐦</a>
-              <a href="#" style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "32px", height: "32px", background: "#F6F6F6", borderRadius: "4px" }}>🔗</a>
-            </div>
+            {(author.instagramUrl || author.twitterUrl || author.siteUrl) && (
+              <div style={{ display: "flex", gap: "12px", marginBottom: "16px", marginTop: "12px" }}>
+                {author.instagramUrl && (
+                  <a href={author.instagramUrl} target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "32px", height: "32px", background: "#F6F6F6", borderRadius: "4px" }}>📷</a>
+                )}
+                {author.twitterUrl && (
+                  <a href={author.twitterUrl} target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "32px", height: "32px", background: "#F6F6F6", borderRadius: "4px" }}>🐦</a>
+                )}
+                {author.siteUrl && (
+                  <a href={author.siteUrl} target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "32px", height: "32px", background: "#F6F6F6", borderRadius: "4px" }}>🔗</a>
+                )}
+              </div>
+            )}
             <button style={{ background: "white", border: "2px solid #262626", color: "#262626", padding: "10px", width: "100%", fontWeight: 600, borderRadius: "4px", marginBottom: "12px" }}>
               Compartilhar perfil
             </button>
