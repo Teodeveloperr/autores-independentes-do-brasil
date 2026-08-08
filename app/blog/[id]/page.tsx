@@ -53,7 +53,7 @@ export default async function ArtigoPage({ params }: { params: Promise<{ id: str
               <span>•</span>
               <span>{formatArticleDate(artigo.createdAt)}</span>
             </div>
-            <p style={{ fontSize: "15px", color: "#444", lineHeight: 1.6, marginBottom: "24px", fontWeight: 600 }}>{artigo.resumo}</p>
+            <p style={{ fontSize: "15px", color: "#444", lineHeight: 1.6, marginBottom: "24px" }}>{artigo.resumo}</p>
             <div style={{ fontSize: "15px", color: "#262626", lineHeight: 1.8, whiteSpace: "pre-wrap" }}>{artigo.conteudo}</div>
           </div>
         </div>
