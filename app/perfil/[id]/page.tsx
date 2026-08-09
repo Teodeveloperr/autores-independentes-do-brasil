@@ -4,6 +4,7 @@ import PublicHeader from "@/components/PublicHeader";
 import PublicFooter from "@/components/PublicFooter";
 import PerfilTabs from "@/components/PerfilTabs";
 import EnviarMensagemButton from "@/components/EnviarMensagemButton";
+import InstagramIcon from "@/components/InstagramIcon";
 import { prisma } from "@/lib/db";
 import { brl } from "@/lib/format";
 import { getCurrentAuthor } from "@/lib/auth";
@@ -79,13 +80,15 @@ export default async function PerfilPage({ params }: { params: Promise<{ id: str
             {(author.instagramUrl || author.twitterUrl || author.siteUrl) && (
               <div style={{ display: "flex", gap: "12px", marginBottom: "16px", marginTop: "12px" }}>
                 {author.instagramUrl && (
-                  <a href={author.instagramUrl} target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "32px", height: "32px", background: "#F6F6F6", borderRadius: "4px" }}>📷</a>
+                  <a href={author.instagramUrl} target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "32px", height: "32px", background: "#F6F6F6", borderRadius: "4px" }}>
+                    <InstagramIcon />
+                  </a>
                 )}
                 {author.twitterUrl && (
                   <a href={author.twitterUrl} target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "32px", height: "32px", background: "#F6F6F6", borderRadius: "4px" }}>🐦</a>
                 )}
                 {author.siteUrl && (
-                  <a href={author.siteUrl} target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "32px", height: "32px", background: "#F6F6F6", borderRadius: "4px" }}>🔗</a>
+                  <a href={author.siteUrl} target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "32px", height: "32px", background: "#F6F6F6", borderRadius: "4px" }}>🌐</a>
                 )}
               </div>
             )}
