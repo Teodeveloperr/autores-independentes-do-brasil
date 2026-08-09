@@ -5,6 +5,7 @@ import PublicFooter from "@/components/PublicFooter";
 import PerfilTabs from "@/components/PerfilTabs";
 import EnviarMensagemButton from "@/components/EnviarMensagemButton";
 import InstagramIcon from "@/components/InstagramIcon";
+import CompartilharPerfilButton from "@/components/CompartilharPerfilButton";
 import { prisma } from "@/lib/db";
 import { brl } from "@/lib/format";
 import { getCurrentAuthor } from "@/lib/auth";
@@ -92,9 +93,7 @@ export default async function PerfilPage({ params }: { params: Promise<{ id: str
                 )}
               </div>
             )}
-            <button style={{ background: "white", border: "2px solid #262626", color: "#262626", padding: "10px", width: "100%", fontWeight: 600, borderRadius: "4px", marginBottom: "12px" }}>
-              Compartilhar perfil
-            </button>
+            <CompartilharPerfilButton nome={author.nome} />
             {!isOwner && <EnviarMensagemButton authorId={author.id} />}
           </div>
           <div style={{ flex: 1 }}>
