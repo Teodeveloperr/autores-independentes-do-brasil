@@ -9,7 +9,10 @@ function getBaseUrl() {
 
 async function getValidAccessToken(): Promise<string | null> {
   const token = await prisma.melhorEnvioToken.findUnique({ where: { id: "singleton" } });
-  if (!token) return null;
+  if (!token) {
+    console.error("[melhorenvio] Nenhum token salvo no banco — conexão OAuth não foi concluída ou foi perdida.");
+    return null;
+  }
 
   // Ainda válido com folga de 5 minutos — usa direto.
   if (token.expiresAt.getTime() > Date.now() + 5 * 60 * 1000) {
@@ -18,7 +21,10 @@ async function getValidAccessToken(): Promise<string | null> {
 
   const clientId = process.env.MELHOR_ENVIO_CLIENT_ID;
   const clientSecret = process.env.MELHOR_ENVIO_CLIENT_SECRET;
-  if (!clientId || !clientSecret) return null;
+  if (!clientId || !clientSecret) {
+    console.error("[melhorenvio] MELHOR_ENVIO_CLIENT_ID/MELHOR_ENVIO_CLIENT_SECRET não configurados no ambiente.");
+    return null;
+  }
 
   try {
     const res = await fetch(`${getBaseUrl()}/oauth/token`, {
@@ -31,7 +37,10 @@ async function getValidAccessToken(): Promise<string | null> {
         refresh_token: token.refreshToken,
       }),
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      console.error("[melhorenvio] Falha ao renovar token:", res.status, await res.text());
+      return null;
+    }
 
     const data = (await res.json()) as { access_token: string; refresh_token: string; expires_in: number };
     const expiresAt = new Date(Date.now() + data.expires_in * 1000);
@@ -110,7 +119,10 @@ export async function calcularFrete(
     }>;
 
     const validas = opcoes.filter((o) => !o.error && o.price);
-    if (validas.length === 0) return null;
+    if (validas.length === 0) {
+      console.error("[melhorenvio] Nenhuma opção de frete válida retornada:", JSON.stringify(opcoes));
+      return null;
+    }
 
     const maisBarata = validas.reduce((a, b) => (parseFloat(a.price!) <= parseFloat(b.price!) ? a : b));
 

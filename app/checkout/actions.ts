@@ -74,12 +74,16 @@ export async function calcularFreteCarrinho(items: CheckoutItem[], cepDestino: s
       .filter((p): p is NonNullable<typeof p> => p !== null);
 
     if (!author.enderecoCep || produtos.length !== itensAutor.length) {
+      console.error(
+        `[frete] ${author.nome} indisponível: enderecoCep=${author.enderecoCep ?? "ausente"}, livros com dimensões completas=${produtos.length}/${itensAutor.length}`
+      );
       resultados.push({ authorId, autorNome: author.nome, disponivel: false, precoCentavos: 0, servico: null, prazoDias: null });
       continue;
     }
 
     const cotacao = await calcularFrete(author.enderecoCep, cepLimpo, produtos);
     if (!cotacao) {
+      console.error(`[frete] ${author.nome} indisponível: calcularFrete retornou null (ver logs de [melhorenvio] acima).`);
       resultados.push({ authorId, autorNome: author.nome, disponivel: false, precoCentavos: 0, servico: null, prazoDias: null });
       continue;
     }
