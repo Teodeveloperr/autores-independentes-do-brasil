@@ -66,14 +66,16 @@ model Book {
 }
 
 model AuthorEvent {
-  id       String @id @default(cuid())
-  authorId String
-  author   Author @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  nome     String
-  dia      Int
-  mes      String
-  local    String
-  status   String @default("Pendente")
+  id        String  @id @default(cuid())
+  authorId  String
+  author    Author  @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  nome      String
+  diaInicio Int
+  diaFim    Int?
+  mes       String
+  ano       Int
+  local     String
+  status    String  @default("Pendente")
 
   createdAt DateTime @default(now())
 

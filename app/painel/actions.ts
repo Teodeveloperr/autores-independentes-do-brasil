@@ -66,18 +66,41 @@ export async function removeBook(id: string) {
   revalidatePath("/painel");
 }
 
+function eventDataFromForm(formData: FormData) {
+  const diaInicio = parseInt((formData.get("diaInicio") as string) || "1", 10) || 1;
+  const diaFimRaw = (formData.get("diaFim") as string) || "";
+  const diaFim = diaFimRaw.trim() ? parseInt(diaFimRaw, 10) || null : null;
+
+  return {
+    nome: ((formData.get("nome") as string) || "Evento").trim(),
+    diaInicio,
+    diaFim: diaFim && diaFim > diaInicio ? diaFim : null,
+    mes: (formData.get("mes") as string) || "JAN",
+    ano: parseInt((formData.get("ano") as string) || "", 10) || new Date().getFullYear(),
+    local: ((formData.get("local") as string) || "—").trim(),
+    status: (formData.get("status") as string) || "Pendente",
+  };
+}
+
 export async function addEvent(formData: FormData) {
   const author = await requireAuthor();
 
   await prisma.authorEvent.create({
     data: {
       authorId: author.id,
-      nome: ((formData.get("nome") as string) || "Evento").trim(),
-      dia: parseInt((formData.get("dia") as string) || "1", 10) || 1,
-      mes: (formData.get("mes") as string) || "JAN",
-      local: ((formData.get("local") as string) || "—").trim(),
-      status: (formData.get("status") as string) || "Pendente",
+      ...eventDataFromForm(formData),
     },
+  });
+
+  revalidatePath("/painel");
+}
+
+export async function updateEvent(id: string, formData: FormData) {
+  const author = await requireAuthor();
+
+  await prisma.authorEvent.updateMany({
+    where: { id, authorId: author.id },
+    data: eventDataFromForm(formData),
   });
 
   revalidatePath("/painel");

@@ -1,6 +1,6 @@
 "use client";
 
-import { brl } from "@/lib/format";
+import { brl, formatEventoDia } from "@/lib/format";
 import type { AuthorWithRelations, PainelView } from "./types";
 
 const chipStyle = (status: string): React.CSSProperties => ({
@@ -195,8 +195,8 @@ export default function DashboardView({
             {author.eventos.slice(0, 3).map((ev) => (
               <div key={ev.id} style={{ display: "flex", gap: "10px", alignItems: "flex-start" }}>
                 <div style={{ background: "#F6F6F6", border: "1px solid #E0E0E0", borderRadius: "6px", padding: "6px 10px", textAlign: "center", flexShrink: 0 }}>
-                  <div style={{ fontSize: "16px", fontWeight: 700, color: "#C0392B" }}>{ev.dia}</div>
-                  <div style={{ fontSize: "10px", fontWeight: 700, color: "#666" }}>{ev.mes}</div>
+                  <div style={{ fontSize: "16px", fontWeight: 700, color: "#C0392B" }}>{formatEventoDia(ev.diaInicio, ev.diaFim)}</div>
+                  <div style={{ fontSize: "10px", fontWeight: 700, color: "#666" }}>{ev.mes} {ev.ano}</div>
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 600, fontSize: "12px" }}>{ev.nome}</div>

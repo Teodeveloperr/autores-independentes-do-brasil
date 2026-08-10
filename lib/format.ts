@@ -19,6 +19,10 @@ export function firstName(nome: string) {
   return nome.trim().split(/\s+/)[0] || "Autor(a)";
 }
 
+export function formatEventoDia(diaInicio: number, diaFim: number | null | undefined) {
+  return diaFim && diaFim > diaInicio ? `${diaInicio}-${diaFim}` : String(diaInicio);
+}
+
 export function sanitizeExternalUrl(value: string): string | null {
   const trimmed = value.trim();
   if (!trimmed) return null;

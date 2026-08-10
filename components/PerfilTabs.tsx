@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import AddToCartButton from "./AddToCartButton";
 import { podeVenderLivros, podeUsarRecursosExtras } from "@/lib/plans";
+import { formatEventoDia } from "@/lib/format";
 
 type Tab = "livros" | "galeria" | "eventos" | "avaliacoes";
 
@@ -29,7 +30,7 @@ export default function PerfilTabs({
 }: {
   books: BookItem[];
   fotos: { id: string; url: string; titulo: string }[];
-  eventos: { id: string; nome: string; dia: number; mes: string; local: string; status: string }[];
+  eventos: { id: string; nome: string; diaInicio: number; diaFim: number | null; mes: string; ano: number; local: string; status: string }[];
   avaliacoes: { id: string; nome: string; texto: string }[];
   autorPlano: string;
   isOwner: boolean;
@@ -129,8 +130,8 @@ export default function PerfilTabs({
             {eventos.map((ev) => (
               <div key={ev.id} style={{ display: "flex", gap: "16px", alignItems: "center", background: "#F6F6F6", borderRadius: "8px", padding: "16px" }}>
                 <div style={{ background: "white", border: "1px solid #E0E0E0", borderRadius: "6px", padding: "8px 14px", textAlign: "center", flexShrink: 0 }}>
-                  <div style={{ fontSize: "20px", fontWeight: 700, color: "#C0392B" }}>{ev.dia}</div>
-                  <div style={{ fontSize: "11px", fontWeight: 700, color: "#666" }}>{ev.mes}</div>
+                  <div style={{ fontSize: "20px", fontWeight: 700, color: "#C0392B" }}>{formatEventoDia(ev.diaInicio, ev.diaFim)}</div>
+                  <div style={{ fontSize: "11px", fontWeight: 700, color: "#666" }}>{ev.mes} {ev.ano}</div>
                 </div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontWeight: 700, fontSize: "14px" }}>{ev.nome}</div>
