@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useImageUpload } from "@/hooks/useImageUpload";
-import { addBook, removeBook } from "@/app/painel/actions";
+import { addBook, updateBook, removeBook } from "@/app/painel/actions";
 import { brl } from "@/lib/format";
 import { GENEROS } from "@/lib/genres";
 import type { AuthorWithRelations } from "./types";
@@ -12,22 +12,36 @@ export default function LivrosView({ author }: { author: AuthorWithRelations }) 
   const capa = useImageUpload("capas");
   const [pending, startTransition] = useTransition();
   const [erro, setErro] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
   const router = useRouter();
+
+  const editing = author.books.find((b) => b.id === editingId) ?? null;
+
+  useEffect(() => {
+    capa.setUrl(editing?.capaUrl ?? "");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editingId]);
 
   function onSubmit(formData: FormData) {
     setErro("");
     startTransition(async () => {
       try {
-        await addBook(formData);
-        capa.setUrl("");
+        if (editingId) {
+          await updateBook(editingId, formData);
+          setEditingId(null);
+        } else {
+          await addBook(formData);
+          capa.setUrl("");
+        }
         router.refresh();
       } catch (err) {
-        setErro(err instanceof Error ? err.message : "Não foi possível publicar o livro.");
+        setErro(err instanceof Error ? err.message : "Não foi possível salvar o livro.");
       }
     });
   }
 
   function onRemove(id: string) {
+    if (editingId === id) setEditingId(null);
     startTransition(async () => {
       await removeBook(id);
       router.refresh();
@@ -39,13 +53,16 @@ export default function LivrosView({ author }: { author: AuthorWithRelations }) 
       <h2 style={{ fontSize: "22px", fontWeight: 700, color: "#002776", marginBottom: "20px" }}>Meus Livros</h2>
       <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1.4fr", gap: "20px", alignItems: "start" }}>
         <form
+          key={editingId ?? "new"}
           action={(fd) => {
             fd.set("capaUrl", capa.url);
             onSubmit(fd);
           }}
           style={{ background: "white", borderRadius: "10px", padding: "24px", display: "flex", flexDirection: "column", gap: "14px" }}
         >
-          <div style={{ fontWeight: 700, color: "#002776", marginBottom: "4px" }}>📕 Colocar livro à venda</div>
+          <div style={{ fontWeight: 700, color: "#002776", marginBottom: "4px" }}>
+            {editing ? "✏️ Editar livro" : "📕 Colocar livro à venda"}
+          </div>
           <div>
             <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>Capa do livro</label>
             <label
@@ -77,12 +94,12 @@ export default function LivrosView({ author }: { author: AuthorWithRelations }) 
           </div>
           <div>
             <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>Título do livro</label>
-            <input name="titulo" type="text" required placeholder="Ex: O Caminho das Palavras" style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px" }} />
+            <input name="titulo" type="text" required defaultValue={editing?.titulo} placeholder="Ex: O Caminho das Palavras" style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px" }} />
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
             <div>
               <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>Gênero</label>
-              <select name="genero" style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px" }}>
+              <select name="genero" defaultValue={editing?.genero ?? GENEROS[0]} style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px" }}>
                 {GENEROS.map((g) => (
                   <option key={g}>{g}</option>
                 ))}
@@ -90,31 +107,38 @@ export default function LivrosView({ author }: { author: AuthorWithRelations }) 
             </div>
             <div>
               <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>Preço (R$)</label>
-              <input name="preco" type="text" required placeholder="49,90" style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px" }} />
+              <input name="preco" type="text" required defaultValue={editing ? (editing.precoCentavos / 100).toFixed(2).replace(".", ",") : undefined} placeholder="49,90" style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px" }} />
             </div>
           </div>
           <div>
             <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>Estoque (unidades)</label>
-            <input name="estoque" type="number" required placeholder="20" style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px" }} />
+            <input name="estoque" type="number" required defaultValue={editing?.estoque} placeholder="20" style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px" }} />
           </div>
           <div>
             <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>Sinopse</label>
-            <textarea name="descricao" placeholder="Escreva uma breve sinopse da obra..." style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px", minHeight: "80px", resize: "vertical" }} />
+            <textarea name="descricao" defaultValue={editing?.descricao ?? undefined} placeholder="Escreva uma breve sinopse da obra..." style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px", minHeight: "80px", resize: "vertical" }} />
           </div>
           <div>
             <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>Dimensões para frete</label>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: "8px" }}>
-              <input name="pesoGramas" type="number" required min={1} placeholder="Peso (g)" style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "12px" }} />
-              <input name="alturaCm" type="number" required min={1} placeholder="Altura (cm)" style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "12px" }} />
-              <input name="larguraCm" type="number" required min={1} placeholder="Largura (cm)" style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "12px" }} />
-              <input name="comprimentoCm" type="number" required min={1} placeholder="Compr. (cm)" style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "12px" }} />
+              <input name="pesoGramas" type="number" required min={1} defaultValue={editing?.pesoGramas ?? undefined} placeholder="Peso (g)" style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "12px" }} />
+              <input name="alturaCm" type="number" required min={1} defaultValue={editing?.alturaCm ?? undefined} placeholder="Altura (cm)" style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "12px" }} />
+              <input name="larguraCm" type="number" required min={1} defaultValue={editing?.larguraCm ?? undefined} placeholder="Largura (cm)" style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "12px" }} />
+              <input name="comprimentoCm" type="number" required min={1} defaultValue={editing?.comprimentoCm ?? undefined} placeholder="Compr. (cm)" style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "12px" }} />
             </div>
             <p style={{ fontSize: "11px", color: "#999", marginTop: "6px" }}>Necessário para calcular o frete na hora da compra.</p>
           </div>
           {erro && <p style={{ fontSize: "12px", color: "#C0392B" }}>{erro}</p>}
-          <button type="submit" disabled={pending} style={{ background: "#009B3A", color: "white", padding: "12px", fontWeight: 700, borderRadius: "6px", fontSize: "14px", opacity: pending ? 0.7 : 1 }}>
-            {pending ? "Publicando..." : "Publicar livro à venda"}
-          </button>
+          <div style={{ display: "flex", gap: "10px" }}>
+            {editing && (
+              <button type="button" onClick={() => setEditingId(null)} style={{ flex: "0 0 auto", background: "white", border: "1px solid #DDD", color: "#262626", padding: "12px 20px", fontWeight: 600, borderRadius: "6px", fontSize: "14px" }}>
+                Cancelar
+              </button>
+            )}
+            <button type="submit" disabled={pending} style={{ flex: 1, background: "#009B3A", color: "white", padding: "12px", fontWeight: 700, borderRadius: "6px", fontSize: "14px", opacity: pending ? 0.7 : 1 }}>
+              {pending ? "Salvando..." : editing ? "Salvar alterações" : "Publicar livro à venda"}
+            </button>
+          </div>
         </form>
         <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
           {author.books.map((b) => (
@@ -142,8 +166,14 @@ export default function LivrosView({ author }: { author: AuthorWithRelations }) 
                 <div style={{ fontWeight: 700, fontSize: "14px" }}>{b.titulo}</div>
                 <div style={{ fontSize: "12px", color: "#666" }}>{b.genero}</div>
                 <div style={{ fontSize: "12px", color: "#666" }}>Estoque: {b.estoque} unidades</div>
+                {(!b.pesoGramas || !b.alturaCm || !b.larguraCm || !b.comprimentoCm) && (
+                  <div style={{ fontSize: "11px", color: "#A87900" }}>⚠️ Dimensões de frete pendentes</div>
+                )}
               </div>
               <div style={{ fontWeight: 700, color: "#009B3A", fontSize: "15px" }}>{brl(b.precoCentavos)}</div>
+              <button onClick={() => setEditingId(b.id)} title="Editar livro" style={{ background: "white", border: "1px solid #DDD", borderRadius: "6px", width: "32px", height: "32px", fontSize: "13px", color: "#002776", flexShrink: 0 }}>
+                ✏️
+              </button>
               <button onClick={() => onRemove(b.id)} title="Remover livro" style={{ background: "white", border: "1px solid #DDD", borderRadius: "6px", width: "32px", height: "32px", fontSize: "13px", color: "#C0392B", flexShrink: 0 }}>
                 ✕
               </button>

@@ -42,9 +42,7 @@ export async function saveProfile(formData: FormData) {
   revalidatePath("/painel");
 }
 
-export async function addBook(formData: FormData) {
-  const author = await requireAuthor();
-
+function bookDataFromForm(formData: FormData) {
   const titulo = ((formData.get("titulo") as string) || "").trim() || "Sem título";
   const genero = (formData.get("genero") as string) || "Romance";
   const preco = (formData.get("preco") as string) || "0";
@@ -61,20 +59,39 @@ export async function addBook(formData: FormData) {
     throw new Error("Preencha peso, altura, largura e comprimento do livro para calcular o frete.");
   }
 
+  return {
+    titulo,
+    genero,
+    precoCentavos: centavosFromInput(preco),
+    estoque,
+    capaUrl,
+    descricao,
+    pesoGramas,
+    alturaCm,
+    larguraCm,
+    comprimentoCm,
+  };
+}
+
+export async function addBook(formData: FormData) {
+  const author = await requireAuthor();
+
   await prisma.book.create({
     data: {
       authorId: author.id,
-      titulo,
-      genero,
-      precoCentavos: centavosFromInput(preco),
-      estoque,
-      capaUrl,
-      descricao,
-      pesoGramas,
-      alturaCm,
-      larguraCm,
-      comprimentoCm,
+      ...bookDataFromForm(formData),
     },
+  });
+
+  revalidatePath("/painel");
+}
+
+export async function updateBook(id: string, formData: FormData) {
+  const author = await requireAuthor();
+
+  await prisma.book.updateMany({
+    where: { id, authorId: author.id },
+    data: bookDataFromForm(formData),
   });
 
   revalidatePath("/painel");
