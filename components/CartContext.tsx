@@ -20,6 +20,9 @@ type CartContextValue = {
   clearCart: () => void;
   totalItens: number;
   totalCentavos: number;
+  drawerOpen: boolean;
+  closeDrawer: () => void;
+  lastAdded: CartItem | null;
 };
 
 const CartContext = createContext<CartContextValue | null>(null);
@@ -29,6 +32,8 @@ const STORAGE_KEY = "aib-carrinho";
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [hydrated, setHydrated] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [lastAdded, setLastAdded] = useState<CartItem | null>(null);
 
   useEffect(() => {
     try {
@@ -53,7 +58,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       }
       return [...prev, { ...item, quantidade: 1 }];
     });
+    setLastAdded({ ...item, quantidade: 1 });
+    setDrawerOpen(true);
   }, []);
+
+  const closeDrawer = useCallback(() => setDrawerOpen(false), []);
 
   const removeItem = useCallback((bookId: string) => {
     setItems((prev) => prev.filter((i) => i.bookId !== bookId));
@@ -73,7 +82,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const totalCentavos = items.reduce((sum, i) => sum + i.precoCentavos * i.quantidade, 0);
 
   return (
-    <CartContext.Provider value={{ items, addItem, removeItem, updateQuantidade, clearCart, totalItens, totalCentavos }}>
+    <CartContext.Provider
+      value={{ items, addItem, removeItem, updateQuantidade, clearCart, totalItens, totalCentavos, drawerOpen, closeDrawer, lastAdded }}
+    >
       {children}
     </CartContext.Provider>
   );

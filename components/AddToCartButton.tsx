@@ -34,7 +34,7 @@ export default function AddToCartButton({
         ...style,
       }}
     >
-      {added ? "Adicionado ✓" : "Adicionar ao carrinho"}
+      {added ? "Adicionado ✓" : "Comprar"}
     </button>
   );
 }

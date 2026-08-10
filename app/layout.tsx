@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Cinzel, Roboto } from "next/font/google";
 import { CartProvider } from "@/components/CartContext";
+import CartDrawer from "@/components/CartDrawer";
 import "./globals.css";
 
 const cinzel = Cinzel({
@@ -37,7 +38,10 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" className={`${cinzel.variable} ${roboto.variable}`}>
       <body>
-        <CartProvider>{children}</CartProvider>
+        <CartProvider>
+          {children}
+          <CartDrawer />
+        </CartProvider>
       </body>
     </html>
   );
