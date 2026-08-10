@@ -148,7 +148,11 @@ export default function DashboardView({
                     fontSize: "12px",
                     fontWeight: 600,
                     color: "#555",
-                    background: b.capaUrl ? `center / cover no-repeat url(${b.capaUrl})` : "#E0E0E0",
+                    backgroundColor: b.capaUrl ? "#F6F6F6" : "#E0E0E0",
+                    backgroundImage: b.capaUrl ? `url(${b.capaUrl})` : undefined,
+                    backgroundSize: "contain",
+                    backgroundPosition: "center",
+                    backgroundRepeat: "no-repeat",
                   }}
                 >
                   {!b.capaUrl && b.titulo}

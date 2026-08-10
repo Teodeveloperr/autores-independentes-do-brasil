@@ -67,7 +67,11 @@ export default function PerfilTabs({
                     aspectRatio: "3/4",
                     marginBottom: "8px",
                     borderRadius: "4px",
-                    background: b.capaUrl ? `center / cover no-repeat url(${b.capaUrl})` : "#E0E0E0",
+                    backgroundColor: b.capaUrl ? "#F6F6F6" : "#E0E0E0",
+                    backgroundImage: b.capaUrl ? `url(${b.capaUrl})` : undefined,
+                    backgroundSize: "contain",
+                    backgroundPosition: "center",
+                    backgroundRepeat: "no-repeat",
                   }}
                 />
                 <div style={{ fontWeight: 600, fontSize: "13px", marginBottom: "4px" }}>{b.titulo}</div>

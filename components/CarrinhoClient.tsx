@@ -29,7 +29,11 @@ export default function CarrinhoClient() {
                 height: "86px",
                 borderRadius: "4px",
                 flexShrink: 0,
-                background: item.capaUrl ? `center / cover no-repeat url(${item.capaUrl})` : "#E0E0E0",
+                backgroundColor: item.capaUrl ? "#F6F6F6" : "#E0E0E0",
+                backgroundImage: item.capaUrl ? `url(${item.capaUrl})` : undefined,
+                backgroundSize: "contain",
+                backgroundPosition: "center",
+                backgroundRepeat: "no-repeat",
               }}
             />
             <div style={{ flex: 1, minWidth: "160px" }}>

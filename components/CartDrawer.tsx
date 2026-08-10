@@ -52,7 +52,11 @@ export default function CartDrawer() {
               height: "74px",
               borderRadius: "4px",
               flexShrink: 0,
-              background: lastAdded.capaUrl ? `center / cover no-repeat url(${lastAdded.capaUrl})` : "#E0E0E0",
+              backgroundColor: lastAdded.capaUrl ? "#F6F6F6" : "#E0E0E0",
+              backgroundImage: lastAdded.capaUrl ? `url(${lastAdded.capaUrl})` : undefined,
+              backgroundSize: "contain",
+              backgroundPosition: "center",
+              backgroundRepeat: "no-repeat",
             }}
           />
           <div style={{ flex: 1, minWidth: 0 }}>
