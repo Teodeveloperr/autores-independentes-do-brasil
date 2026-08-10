@@ -1,6 +1,7 @@
 "use server";
 
 import bcrypt from "bcryptjs";
+import { del } from "@vercel/blob";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { createAdminSession, deleteAdminSession } from "@/lib/session";
@@ -85,7 +86,30 @@ export async function removeCollectiveGalleryPhoto(id: string) {
 
 export async function removeAuthor(id: string) {
   await requireAdmin();
+
+  const author = await prisma.author.findUnique({
+    where: { id },
+    include: { books: true, fotos: true },
+  });
+
+  const blobUrls = [
+    author?.fotoUrl,
+    author?.bannerUrl,
+    ...(author?.books.map((b) => b.capaUrl) ?? []),
+    ...(author?.fotos.map((f) => f.url) ?? []),
+  ].filter((url): url is string => !!url && url.includes(".blob.vercel-storage.com"));
+
   await prisma.author.delete({ where: { id } });
+
+  if (blobUrls.length > 0) {
+    try {
+      await del(blobUrls);
+    } catch (err) {
+      // Registros já foram apagados; falha ao limpar arquivos não deve impedir a exclusão.
+      console.error("[admin] Falha ao apagar arquivos do autor removido:", err);
+    }
+  }
+
   revalidatePath("/admin");
   revalidatePath("/autores");
   revalidatePath("/livros");
