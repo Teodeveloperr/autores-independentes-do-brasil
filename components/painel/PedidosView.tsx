@@ -70,8 +70,16 @@ export default function PedidosView({ author }: { author: AuthorWithRelations })
                   {p.compradorComplemento ? ` - ${p.compradorComplemento}` : ""} - {p.compradorBairro}, {p.compradorCidade}/{p.compradorUf} - CEP {p.compradorCep}
                 </div>
               )}
+              {p.freteCentavos != null && (
+                <div style={{ fontSize: "12px", color: "#666" }}>
+                  🚚 Frete: {brl(p.freteCentavos)}{p.freteServico ? ` (${p.freteServico})` : ""}
+                </div>
+              )}
             </div>
-            <div style={{ fontWeight: 700, color: "#002776", fontSize: "14px", flexShrink: 0 }}>{brl(p.valorCentavos)}</div>
+            <div style={{ textAlign: "right", flexShrink: 0 }}>
+              <div style={{ fontWeight: 700, color: "#002776", fontSize: "14px" }}>{brl(p.valorCentavos + (p.freteCentavos ?? 0))}</div>
+              {p.freteCentavos != null && <div style={{ fontSize: "11px", color: "#999" }}>+ {brl(p.freteCentavos)} frete</div>}
+            </div>
             <select
               defaultValue={p.status}
               onChange={(e) => onStatusChange(p.id, e.target.value)}

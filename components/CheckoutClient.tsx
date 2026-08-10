@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useCart } from "./CartContext";
-import { criarPedido } from "@/app/checkout/actions";
+import { criarPedido, calcularFreteCarrinho, type FreteAutor } from "@/app/checkout/actions";
 import { brl } from "@/lib/format";
 import { buscarEnderecoPorCep } from "@/lib/cep";
 
@@ -11,6 +11,8 @@ export default function CheckoutClient() {
   const { items, totalCentavos, clearCart } = useCart();
   const [pending, startTransition] = useTransition();
   const [buscandoCep, setBuscandoCep] = useState(false);
+  const [calculandoFrete, setCalculandoFrete] = useState(false);
+  const [fretes, setFretes] = useState<FreteAutor[]>([]);
   const [erro, setErro] = useState("");
   const [concluido, setConcluido] = useState(false);
   const [nome, setNome] = useState("");
@@ -24,17 +26,37 @@ export default function CheckoutClient() {
   const [cidade, setCidade] = useState("");
   const [uf, setUf] = useState("");
 
+  const freteTotalCentavos = fretes.reduce((sum, f) => sum + (f.disponivel ? f.precoCentavos : 0), 0);
+  const freteIndisponivel = fretes.some((f) => !f.disponivel);
+
+  async function calcularFrete(cepValue: string) {
+    const digits = cepValue.replace(/\D/g, "");
+    if (digits.length !== 8) return;
+    setCalculandoFrete(true);
+    try {
+      const resultado = await calcularFreteCarrinho(
+        items.map((i) => ({ bookId: i.bookId, authorId: i.authorId, titulo: i.titulo, precoCentavos: i.precoCentavos, quantidade: i.quantidade })),
+        cepValue
+      );
+      setFretes(resultado);
+    } finally {
+      setCalculandoFrete(false);
+    }
+  }
+
   async function onCepBlur() {
     const digits = cep.replace(/\D/g, "");
     if (digits.length !== 8) return;
     setBuscandoCep(true);
     const endereco = await buscarEnderecoPorCep(cep);
     setBuscandoCep(false);
-    if (!endereco) return;
-    setRua(endereco.logradouro);
-    setBairro(endereco.bairro);
-    setCidade(endereco.localidade);
-    setUf(endereco.uf);
+    if (endereco) {
+      setRua(endereco.logradouro);
+      setBairro(endereco.bairro);
+      setCidade(endereco.localidade);
+      setUf(endereco.uf);
+    }
+    calcularFrete(cep);
   }
 
   function onSubmit(e: React.FormEvent) {
@@ -51,7 +73,8 @@ export default function CheckoutClient() {
             quantidade: i.quantidade,
           })),
           { nome, email, telefone },
-          { cep, rua, numero, complemento, bairro, cidade, uf }
+          { cep, rua, numero, complemento, bairro, cidade, uf },
+          fretes
         );
         clearCart();
         setConcluido(true);
@@ -253,13 +276,38 @@ export default function CheckoutClient() {
             </div>
           ))}
         </div>
-        <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", color: "#666", marginBottom: "8px" }}>
-          <span>Frete</span>
-          <span>A calcular</span>
+
+        <div style={{ borderTop: "1px solid #E0E0E0", paddingTop: "12px", marginBottom: "8px" }}>
+          {calculandoFrete ? (
+            <div style={{ fontSize: "13px", color: "#666" }}>Calculando frete...</div>
+          ) : fretes.length > 0 ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+              {fretes.map((f) => (
+                <div key={f.authorId} style={{ display: "flex", justifyContent: "space-between", fontSize: "12px", color: "#666" }}>
+                  <span>
+                    Frete ({f.autorNome}){f.servico ? ` — ${f.servico}` : ""}
+                    {f.prazoDias ? ` · ${f.prazoDias} dia${f.prazoDias === 1 ? "" : "s"}` : ""}
+                  </span>
+                  <span style={{ fontWeight: 600, color: "#262626" }}>{f.disponivel ? brl(f.precoCentavos) : "A combinar"}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", color: "#666" }}>
+              <span>Frete</span>
+              <span>Informe o CEP</span>
+            </div>
+          )}
+          {freteIndisponivel && (
+            <p style={{ fontSize: "11px", color: "#999", marginTop: "6px" }}>
+              O frete de alguns itens será combinado diretamente com o autor.
+            </p>
+          )}
         </div>
+
         <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 700, fontSize: "16px", borderTop: "1px solid #E0E0E0", paddingTop: "12px" }}>
           <span>Total</span>
-          <span style={{ color: "#002776" }}>{brl(totalCentavos)}</span>
+          <span style={{ color: "#002776" }}>{brl(totalCentavos + freteTotalCentavos)}</span>
         </div>
       </div>
     </div>

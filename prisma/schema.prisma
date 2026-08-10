@@ -129,6 +129,8 @@ model Order {
 
   quantidade        Int     @default(1)
   valorCentavos     Int
+  freteCentavos     Int?
+  freteServico      String?
   status            String  @default("Aguardando pagamento")
   grupoPedidoId     String?
 
