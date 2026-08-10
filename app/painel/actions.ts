@@ -52,10 +52,14 @@ export async function addBook(formData: FormData) {
   const capaUrl = (formData.get("capaUrl") as string) || null;
   const descricao = ((formData.get("descricao") as string) || "").trim() || null;
 
-  const pesoGramas = parseInt((formData.get("pesoGramas") as string) || "", 10) || null;
-  const alturaCm = parseInt((formData.get("alturaCm") as string) || "", 10) || null;
-  const larguraCm = parseInt((formData.get("larguraCm") as string) || "", 10) || null;
-  const comprimentoCm = parseInt((formData.get("comprimentoCm") as string) || "", 10) || null;
+  const pesoGramas = parseInt((formData.get("pesoGramas") as string) || "", 10) || 0;
+  const alturaCm = parseInt((formData.get("alturaCm") as string) || "", 10) || 0;
+  const larguraCm = parseInt((formData.get("larguraCm") as string) || "", 10) || 0;
+  const comprimentoCm = parseInt((formData.get("comprimentoCm") as string) || "", 10) || 0;
+
+  if (pesoGramas <= 0 || alturaCm <= 0 || larguraCm <= 0 || comprimentoCm <= 0) {
+    throw new Error("Preencha peso, altura, largura e comprimento do livro para calcular o frete.");
+  }
 
   await prisma.book.create({
     data: {
