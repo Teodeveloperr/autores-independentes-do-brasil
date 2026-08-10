@@ -5,15 +5,37 @@ import Link from "next/link";
 import { useCart } from "./CartContext";
 import { criarPedido } from "@/app/checkout/actions";
 import { brl } from "@/lib/format";
+import { buscarEnderecoPorCep } from "@/lib/cep";
 
 export default function CheckoutClient() {
   const { items, totalCentavos, clearCart } = useCart();
   const [pending, startTransition] = useTransition();
+  const [buscandoCep, setBuscandoCep] = useState(false);
   const [erro, setErro] = useState("");
   const [concluido, setConcluido] = useState(false);
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
   const [telefone, setTelefone] = useState("");
+  const [cep, setCep] = useState("");
+  const [rua, setRua] = useState("");
+  const [numero, setNumero] = useState("");
+  const [complemento, setComplemento] = useState("");
+  const [bairro, setBairro] = useState("");
+  const [cidade, setCidade] = useState("");
+  const [uf, setUf] = useState("");
+
+  async function onCepBlur() {
+    const digits = cep.replace(/\D/g, "");
+    if (digits.length !== 8) return;
+    setBuscandoCep(true);
+    const endereco = await buscarEnderecoPorCep(cep);
+    setBuscandoCep(false);
+    if (!endereco) return;
+    setRua(endereco.logradouro);
+    setBairro(endereco.bairro);
+    setCidade(endereco.localidade);
+    setUf(endereco.uf);
+  }
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -28,7 +50,8 @@ export default function CheckoutClient() {
             precoCentavos: i.precoCentavos,
             quantidade: i.quantidade,
           })),
-          { nome, email, telefone }
+          { nome, email, telefone },
+          { cep, rua, numero, complemento, bairro, cidade, uf }
         );
         clearCart();
         setConcluido(true);
@@ -46,7 +69,7 @@ export default function CheckoutClient() {
         <p style={{ fontSize: "14px", color: "#666", maxWidth: "460px", margin: "0 auto 24px" }}>
           Seu pedido foi registrado como <b>Aguardando pagamento</b>. Assim que o pagamento online estiver disponível na
           plataforma, você poderá concluí-lo por lá — por enquanto, o(s) autor(es) foram notificados e podem entrar em
-          contato para combinar o pagamento.
+          contato para combinar o pagamento e o envio.
         </p>
         <Link href="/livros" style={{ display: "inline-block", background: "#002776", color: "white", padding: "12px 24px", fontWeight: 600, borderRadius: "4px" }}>
           Voltar para os livros
@@ -106,6 +129,92 @@ export default function CheckoutClient() {
         </div>
 
         <div>
+          <div style={{ fontWeight: 700, marginBottom: "16px" }}>Endereço de entrega</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+            <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: "12px" }}>
+              <div>
+                <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>CEP</label>
+                <input
+                  type="text"
+                  required
+                  value={cep}
+                  onChange={(e) => setCep(e.target.value)}
+                  onBlur={onCepBlur}
+                  placeholder="00000-000"
+                  style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "14px" }}
+                />
+                {buscandoCep && <p style={{ fontSize: "11px", color: "#999", marginTop: "4px" }}>Buscando endereço...</p>}
+              </div>
+              <div>
+                <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>Rua</label>
+                <input
+                  type="text"
+                  required
+                  value={rua}
+                  onChange={(e) => setRua(e.target.value)}
+                  style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "14px" }}
+                />
+              </div>
+            </div>
+            <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+              <div>
+                <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>Número</label>
+                <input
+                  type="text"
+                  required
+                  value={numero}
+                  onChange={(e) => setNumero(e.target.value)}
+                  style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "14px" }}
+                />
+              </div>
+              <div>
+                <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>Complemento (opcional)</label>
+                <input
+                  type="text"
+                  value={complemento}
+                  onChange={(e) => setComplemento(e.target.value)}
+                  placeholder="Apto, bloco..."
+                  style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "14px" }}
+                />
+              </div>
+            </div>
+            <div>
+              <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>Bairro</label>
+              <input
+                type="text"
+                required
+                value={bairro}
+                onChange={(e) => setBairro(e.target.value)}
+                style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "14px" }}
+              />
+            </div>
+            <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "12px" }}>
+              <div>
+                <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>Cidade</label>
+                <input
+                  type="text"
+                  required
+                  value={cidade}
+                  onChange={(e) => setCidade(e.target.value)}
+                  style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "14px" }}
+                />
+              </div>
+              <div>
+                <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>UF</label>
+                <input
+                  type="text"
+                  required
+                  maxLength={2}
+                  value={uf}
+                  onChange={(e) => setUf(e.target.value.toUpperCase())}
+                  style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "14px", textTransform: "uppercase" }}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div>
           <div style={{ fontWeight: 700, marginBottom: "12px" }}>Forma de pagamento</div>
           <div style={{ display: "flex", flexDirection: "column", gap: "10px", opacity: 0.55 }}>
             {["Pix", "Cartão de crédito", "Boleto"].map((metodo) => (
@@ -143,6 +252,10 @@ export default function CheckoutClient() {
               <span style={{ fontWeight: 600 }}>{brl(item.precoCentavos * item.quantidade)}</span>
             </div>
           ))}
+        </div>
+        <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", color: "#666", marginBottom: "8px" }}>
+          <span>Frete</span>
+          <span>A calcular</span>
         </div>
         <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 700, fontSize: "16px", borderTop: "1px solid #E0E0E0", paddingTop: "12px" }}>
           <span>Total</span>

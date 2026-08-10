@@ -95,6 +95,16 @@ export default function LivrosView({ author }: { author: AuthorWithRelations }) 
             <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>Sinopse</label>
             <textarea name="descricao" placeholder="Escreva uma breve sinopse da obra..." style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px", minHeight: "80px", resize: "vertical" }} />
           </div>
+          <div>
+            <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>Dimensões para frete (opcional)</label>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: "8px" }}>
+              <input name="pesoGramas" type="number" min={0} placeholder="Peso (g)" style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "12px" }} />
+              <input name="alturaCm" type="number" min={0} placeholder="Altura (cm)" style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "12px" }} />
+              <input name="larguraCm" type="number" min={0} placeholder="Largura (cm)" style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "12px" }} />
+              <input name="comprimentoCm" type="number" min={0} placeholder="Compr. (cm)" style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "12px" }} />
+            </div>
+            <p style={{ fontSize: "11px", color: "#999", marginTop: "6px" }}>Usado para calcular o frete quando o envio estiver disponível.</p>
+          </div>
           <button type="submit" disabled={pending} style={{ background: "#009B3A", color: "white", padding: "12px", fontWeight: 700, borderRadius: "6px", fontSize: "14px", opacity: pending ? 0.7 : 1 }}>
             {pending ? "Publicando..." : "Publicar livro à venda"}
           </button>

@@ -26,6 +26,14 @@ model Author {
   twitterUrl   String?
   siteUrl      String?
 
+  enderecoCep         String?
+  enderecoRua         String?
+  enderecoNumero      String?
+  enderecoComplemento String?
+  enderecoBairro      String?
+  enderecoCidade      String?
+  enderecoUf          String?
+
   anoEntrada         Int
   plano              String  @default("Gratuito")
   planoCiclo         String?
@@ -58,6 +66,11 @@ model Book {
   estoque       Int     @default(0)
   capaUrl       String?
   descricao     String?
+
+  pesoGramas    Int?
+  alturaCm      Int?
+  larguraCm     Int?
+  comprimentoCm Int?
 
   createdAt DateTime @default(now())
   orders    Order[]
@@ -105,13 +118,24 @@ model Order {
   comprador         String
   compradorEmail    String?
   compradorTelefone String?
+
+  compradorCep         String?
+  compradorRua         String?
+  compradorNumero      String?
+  compradorComplemento String?
+  compradorBairro      String?
+  compradorCidade      String?
+  compradorUf          String?
+
   quantidade        Int     @default(1)
   valorCentavos     Int
   status            String  @default("Aguardando pagamento")
+  grupoPedidoId     String?
 
   createdAt DateTime @default(now())
 
   @@index([authorId])
+  @@index([grupoPedidoId])
 }
 
 model Conversation {

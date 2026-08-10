@@ -64,6 +64,12 @@ export default function PedidosView({ author }: { author: AuthorWithRelations })
                 {p.compradorEmail ? ` (${p.compradorEmail})` : ""}
                 {p.compradorTelefone ? ` • ${p.compradorTelefone}` : ""}
               </div>
+              {p.compradorRua && (
+                <div style={{ fontSize: "12px", color: "#666" }}>
+                  📦 {p.compradorRua}, {p.compradorNumero}
+                  {p.compradorComplemento ? ` - ${p.compradorComplemento}` : ""} - {p.compradorBairro}, {p.compradorCidade}/{p.compradorUf} - CEP {p.compradorCep}
+                </div>
+              )}
             </div>
             <div style={{ fontWeight: 700, color: "#002776", fontSize: "14px", flexShrink: 0 }}>{brl(p.valorCentavos)}</div>
             <select
