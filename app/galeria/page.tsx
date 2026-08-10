@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import PublicHeader from "@/components/PublicHeader";
 import PublicFooter from "@/components/PublicFooter";
+import GaleriaGrid from "@/components/GaleriaGrid";
 import { prisma } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
@@ -40,15 +41,7 @@ export default async function GaleriaPage() {
             </div>
           </div>
           {fotos.length > 0 ? (
-            <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "16px" }}>
-              {fotos.map((f) => (
-                <div
-                  key={f.id}
-                  title={f.titulo}
-                  style={{ aspectRatio: "1", borderRadius: "4px", background: `center / cover no-repeat url(${f.url})` }}
-                />
-              ))}
-            </div>
+            <GaleriaGrid fotos={fotos} />
           ) : (
             <div style={{ background: "#F6F6F6", borderRadius: "8px", padding: "60px", textAlign: "center", color: "#666", fontSize: "14px" }}>
               Nenhuma foto cadastrada ainda. Volte em breve!

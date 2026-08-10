@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import AddToCartButton from "./AddToCartButton";
+import Lightbox from "./Lightbox";
 import { podeVenderLivros, podeUsarRecursosExtras } from "@/lib/plans";
 import { formatEventoDia } from "@/lib/format";
 
@@ -37,6 +38,7 @@ export default function PerfilTabs({
 }) {
   const [tab, setTab] = useState<Tab>("livros");
   const [sinopseBook, setSinopseBook] = useState<BookItem | null>(null);
+  const [galeriaIndex, setGaleriaIndex] = useState<number | null>(null);
   const podeVender = podeVenderLivros(autorPlano);
   const podeExtras = podeUsarRecursosExtras(autorPlano);
 
@@ -114,8 +116,13 @@ export default function PerfilTabs({
           )
         ) : fotos.length > 0 ? (
           <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "14px" }}>
-            {fotos.map((f) => (
-              <div key={f.id} title={f.titulo} style={{ background: `center / cover no-repeat url(${f.url})`, aspectRatio: "1", borderRadius: "4px" }} />
+            {fotos.map((f, i) => (
+              <div
+                key={f.id}
+                title={f.titulo}
+                onClick={() => setGaleriaIndex(i)}
+                style={{ background: `center / cover no-repeat url(${f.url})`, aspectRatio: "1", borderRadius: "4px", cursor: "pointer" }}
+              />
             ))}
           </div>
         ) : (
@@ -174,6 +181,15 @@ export default function PerfilTabs({
         ) : (
           <p style={{ fontSize: "14px", color: "#666" }}>Este(a) autor(a) ainda não recebeu avaliações.</p>
         ))}
+
+      {galeriaIndex !== null && (
+        <Lightbox
+          fotos={fotos.map((f) => ({ url: f.url, titulo: f.titulo }))}
+          index={galeriaIndex}
+          onClose={() => setGaleriaIndex(null)}
+          onNavigate={setGaleriaIndex}
+        />
+      )}
 
       {sinopseBook && (
         <div
