@@ -33,7 +33,7 @@ export default function PublicFooter({
         className="responsive-grid"
         style={{
           display: "grid",
-          gridTemplateColumns: "1fr 1fr 1fr",
+          gridTemplateColumns: "1fr 1fr",
           gap: "40px",
           maxWidth: "1400px",
           margin: "0 auto",
@@ -70,34 +70,6 @@ export default function PublicFooter({
             <Link href="/galeria" style={{ color: "white" }}>Galeria</Link>
             <Link href="/#contato" style={{ color: "white" }}>Contato</Link>
           </nav>
-        </div>
-        <div>
-          <div style={{ fontWeight: 700, marginBottom: "16px", fontSize: "13px" }}>NEWSLETTER</div>
-          <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-            <input
-              type="email"
-              placeholder="Seu e-mail"
-              style={{
-                width: "100%",
-                padding: "10px",
-                border: "none",
-                borderRadius: "4px",
-                fontSize: "13px",
-              }}
-            />
-            <button
-              style={{
-                background: "#FFDF00",
-                color: "#002776",
-                padding: "10px 16px",
-                fontWeight: 700,
-                borderRadius: "4px",
-                fontSize: "13px",
-              }}
-            >
-              ASSINAR
-            </button>
-          </div>
         </div>
       </div>
       <div
