@@ -26,6 +26,14 @@ export default function AvaliacaoForm({ authorId }: { authorId: string }) {
       <div style={{ fontWeight: 700, fontSize: "14px" }}>Deixe sua avaliação</div>
       <input type="hidden" name="authorId" value={authorId} />
       <input type="hidden" name="estrelas" value={estrelas} />
+      <input
+        name="website"
+        type="text"
+        tabIndex={-1}
+        autoComplete="off"
+        aria-hidden="true"
+        style={{ position: "absolute", left: "-9999px", width: "1px", height: "1px", overflow: "hidden" }}
+      />
       <div style={{ display: "flex", gap: "4px" }}>
         {[1, 2, 3, 4, 5].map((n) => (
           <button

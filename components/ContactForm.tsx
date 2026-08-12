@@ -19,6 +19,14 @@ export default function ContactForm() {
 
   return (
     <form action={formAction} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+      <input
+        name="website"
+        type="text"
+        tabIndex={-1}
+        autoComplete="off"
+        aria-hidden="true"
+        style={{ position: "absolute", left: "-9999px", width: "1px", height: "1px", overflow: "hidden" }}
+      />
       <input name="nome" type="text" required placeholder="Nome" style={inputStyle} />
       <input name="email" type="email" required placeholder="E-mail" style={inputStyle} />
       <input name="assunto" type="text" placeholder="Assunto" style={inputStyle} />

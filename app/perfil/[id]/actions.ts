@@ -3,10 +3,16 @@
 import { prisma } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 import { recalcularAvaliacaoAutor } from "@/lib/reviews";
+import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 
 export type AvaliacaoState = { error?: string; success?: boolean } | undefined;
 
 export async function criarAvaliacao(_prev: AvaliacaoState, formData: FormData): Promise<AvaliacaoState> {
+  // Campo honeypot: invisível para pessoas, mas bots costumam preencher todo input do formulário.
+  if (((formData.get("website") as string) || "").trim()) {
+    return { success: true };
+  }
+
   const authorId = (formData.get("authorId") as string) || "";
   const nome = ((formData.get("nome") as string) || "").trim();
   const texto = ((formData.get("texto") as string) || "").trim();
@@ -14,6 +20,12 @@ export async function criarAvaliacao(_prev: AvaliacaoState, formData: FormData):
 
   if (!authorId) {
     return { error: "Autor inválido." };
+  }
+
+  const ip = await getClientIp();
+  const permitido = await checkRateLimit(`avaliacao:${ip}`, 5, 60);
+  if (!permitido) {
+    return { error: "Muitas avaliações enviadas. Aguarde um pouco e tente novamente." };
   }
   if (!nome || !texto) {
     return { error: "Preencha seu nome e o texto da avaliação." };
