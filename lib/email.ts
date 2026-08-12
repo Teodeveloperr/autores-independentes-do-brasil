@@ -5,13 +5,33 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 const EMAIL_FROM = process.env.EMAIL_FROM || "Autores Independentes do Brasil <contato@autoresdobrasil.com.br>";
 const EMAIL_CONTATO = process.env.EMAIL_CONTATO || "contato@autoresdobrasil.com.br";
 
-/**
- * Stub de e-mail transacional. Nenhuma chave de provedor está configurada ainda.
- * Quando o Resend (ou outro provedor) for integrado, trocar o corpo desta função
- * pela chamada real — a assinatura já é a definitiva usada pelo resto do app.
- */
 export async function sendPasswordResetEmail(to: string, resetUrl: string) {
-  console.log(`[email] (stub) Redefinição de senha para ${to}: ${resetUrl}`);
+  await resend.emails.send({
+    from: EMAIL_FROM,
+    to,
+    subject: "Redefinição de senha — Autores Independentes do Brasil",
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 560px; margin: 0 auto; color: #262626;">
+        <h1 style="color: #002776; font-size: 22px;">Redefinir sua senha</h1>
+        <p style="font-size: 15px; line-height: 1.6;">
+          Recebemos um pedido para redefinir a senha da sua conta no Autores Independentes do Brasil.
+          Clique no botão abaixo para escolher uma nova senha. Este link expira em 1 hora.
+        </p>
+        <p style="margin-top: 32px;">
+          <a href="${resetUrl}"
+             style="background:#009B3A;color:white;padding:12px 24px;border-radius:4px;text-decoration:none;font-weight:bold;">
+            Redefinir minha senha
+          </a>
+        </p>
+        <p style="font-size: 13px; color: #666; margin-top: 32px;">
+          Se você não pediu essa redefinição, pode ignorar este e-mail com segurança — sua senha continua a mesma.
+        </p>
+        <p style="font-size: 13px; color: #666; margin-top: 16px;">
+          Coletivo de escritores valorizando histórias, conectando pessoas.
+        </p>
+      </div>
+    `,
+  });
 }
 
 export async function sendWelcomeEmail(to: string, nome: string) {

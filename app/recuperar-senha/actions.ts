@@ -36,7 +36,11 @@ export async function requestPasswordReset(
 
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
     const resetUrl = `${siteUrl}/redefinir-senha?token=${rawToken}`;
-    await sendPasswordResetEmail(author.email, resetUrl);
+    try {
+      await sendPasswordResetEmail(author.email, resetUrl);
+    } catch (err) {
+      console.error("[recuperar-senha] Falha ao enviar e-mail de redefinição:", err);
+    }
   }
 
   return { sent: true };
