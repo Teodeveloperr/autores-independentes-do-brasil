@@ -21,7 +21,10 @@ export default function PublicFooter({
         }}
       >
         <p style={{ color: "rgba(255,255,255,0.7)" }}>
-          © 2026 Autores Independentes do Brasil. Todos os direitos reservados.
+          © 2026 Autores Independentes do Brasil. Todos os direitos reservados. ·{" "}
+          <Link href="/politica-de-privacidade" style={{ color: "rgba(255,255,255,0.7)" }}>
+            Política de Privacidade
+          </Link>
         </p>
       </footer>
     );
@@ -83,7 +86,10 @@ export default function PublicFooter({
         }}
       >
         <p>
-          © 2026 Autores Independentes do Brasil. Todos os direitos reservados.
+          © 2026 Autores Independentes do Brasil. Todos os direitos reservados. ·{" "}
+          <Link href="/politica-de-privacidade" style={{ color: "rgba(255,255,255,0.7)" }}>
+            Política de Privacidade
+          </Link>
           {showAdminLink && (
             <>
               {" "}

@@ -123,7 +123,7 @@ export default function PainelApp({ author }: { author: AuthorWithRelations }) {
           <span>© 2026 Autores Independentes do Brasil. Todos os direitos reservados.</span>
           <span style={{ display: "flex", gap: "16px" }}>
             <a href="#" style={{ color: "#999" }}>Termos de uso</a>
-            <a href="#" style={{ color: "#999" }}>Política de privacidade</a>
+            <Link href="/politica-de-privacidade" style={{ color: "#999" }}>Política de privacidade</Link>
           </span>
         </div>
       </main>
