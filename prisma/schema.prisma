@@ -228,6 +228,14 @@ model Admin {
   createdAt DateTime @default(now())
 }
 
+model RateLimitAttempt {
+  id        String   @id @default(cuid())
+  chave     String
+  createdAt DateTime @default(now())
+
+  @@index([chave, createdAt])
+}
+
 model PasswordResetToken {
   id        String    @id @default(cuid())
   authorId  String

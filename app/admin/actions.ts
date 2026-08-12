@@ -7,6 +7,7 @@ import { prisma } from "@/lib/db";
 import { createAdminSession, deleteAdminSession } from "@/lib/session";
 import { requireAdmin } from "@/lib/auth";
 import { recalcularAvaliacaoAutor } from "@/lib/reviews";
+import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 
 export type AdminLoginState = { error?: string } | undefined;
 
@@ -15,6 +16,12 @@ export async function adminLogin(
   formData: FormData
 ): Promise<AdminLoginState> {
   const senha = (formData.get("senha") as string) || "";
+
+  const ip = await getClientIp();
+  const permitido = await checkRateLimit(`admin-login:${ip}`, 5, 15);
+  if (!permitido) {
+    return { error: "Muitas tentativas de login. Aguarde alguns minutos e tente novamente." };
+  }
 
   const admin = await prisma.admin.findFirst({ orderBy: { createdAt: "asc" } });
   if (!admin) {

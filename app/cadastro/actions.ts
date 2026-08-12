@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { createAuthorSession } from "@/lib/session";
 import { sendWelcomeEmail } from "@/lib/email";
+import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 
 export type Step1Data = {
   nome: string;
@@ -68,6 +69,12 @@ function cycleLabel(cycle: Cycle) {
 }
 
 export async function createAccount(step1: Step1Data, planId: PlanId, cycle: Cycle) {
+  const ip = await getClientIp();
+  const permitido = await checkRateLimit(`cadastro:${ip}`, 5, 60);
+  if (!permitido) {
+    throw new Error("Muitas tentativas de cadastro a partir deste endereço. Aguarde um pouco e tente novamente.");
+  }
+
   // Revalida tudo no servidor — nunca confiar apenas na validação do passo 1 no cliente.
   const email = step1.email.trim().toLowerCase();
   const existente = await prisma.author.findUnique({ where: { email } });
