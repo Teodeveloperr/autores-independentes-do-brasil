@@ -122,7 +122,7 @@ export default function PainelApp({ author }: { author: AuthorWithRelations }) {
         <div style={{ padding: "16px 32px", borderTop: "1px solid #E0E0E0", display: "flex", justifyContent: "space-between", fontSize: "12px", color: "#999" }}>
           <span>© 2026 Autores Independentes do Brasil. Todos os direitos reservados.</span>
           <span style={{ display: "flex", gap: "16px" }}>
-            <a href="#" style={{ color: "#999" }}>Termos de uso</a>
+            <Link href="/termos-de-uso" style={{ color: "#999" }}>Termos de uso</Link>
             <Link href="/politica-de-privacidade" style={{ color: "#999" }}>Política de privacidade</Link>
           </span>
         </div>

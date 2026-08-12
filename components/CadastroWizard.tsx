@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import {
   validateStep1,
   createAccount,
@@ -173,7 +174,17 @@ export default function CadastroWizard() {
               </div>
             </div>
             <label style={{ display: "flex", gap: "8px", fontSize: "13px", alignItems: "flex-start", marginTop: "4px" }}>
-              <input type="checkbox" required style={{ marginTop: "3px" }} /> Li e concordo com os Termos de Uso e a Política de Privacidade
+              <input type="checkbox" required style={{ marginTop: "3px" }} />
+              <span>
+                Li e concordo com os{" "}
+                <Link href="/termos-de-uso" target="_blank" rel="noopener noreferrer" style={{ color: "#002776", fontWeight: 600 }}>
+                  Termos de Uso
+                </Link>{" "}
+                e a{" "}
+                <Link href="/politica-de-privacidade" target="_blank" rel="noopener noreferrer" style={{ color: "#002776", fontWeight: 600 }}>
+                  Política de Privacidade
+                </Link>
+              </span>
             </label>
             {step1Error && (
               <div style={{ color: "#C0392B", fontSize: "13px", background: "#FDEDEC", padding: "10px 14px", borderRadius: "6px" }}>
