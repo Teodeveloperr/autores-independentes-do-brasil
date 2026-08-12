@@ -17,6 +17,8 @@ export default async function LivrosPage() {
     include: { author: true },
   });
 
+  const autores = Array.from(new Map(books.map((b) => [b.author.id, b.author.nome])).values());
+
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
       <PublicHeader active="livros" />
@@ -61,6 +63,9 @@ export default async function LivrosPage() {
                 <div style={{ fontWeight: 600, marginBottom: "12px" }}>Autor</div>
                 <select style={{ width: "100%", padding: "8px", border: "1px solid #DDD", borderRadius: "4px", fontSize: "13px" }}>
                   <option>Selecionar autor</option>
+                  {autores.map((nome) => (
+                    <option key={nome}>{nome}</option>
+                  ))}
                 </select>
               </div>
               <button style={{ background: "#002776", color: "white", padding: "10px", width: "100%", fontWeight: 600, borderRadius: "4px" }}>Aplicar filtros</button>
