@@ -3,6 +3,7 @@
 import crypto from "node:crypto";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
+import { validarSenha } from "@/lib/password";
 
 export type ResetState = { error?: string; ok?: boolean } | undefined;
 
@@ -18,8 +19,9 @@ export async function resetPassword(_prev: ResetState, formData: FormData): Prom
   if (!token) {
     return { error: "Link de redefinição inválido." };
   }
-  if (senha.length < 4) {
-    return { error: "A senha deve ter pelo menos 4 caracteres." };
+  const erroSenha = validarSenha(senha);
+  if (erroSenha) {
+    return { error: erroSenha };
   }
   if (senha !== confirmar) {
     return { error: "As senhas não coincidem." };

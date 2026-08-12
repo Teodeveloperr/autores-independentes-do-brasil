@@ -166,13 +166,14 @@ export default function CadastroWizard() {
             <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
               <div>
                 <label style={labelStyle}>Senha</label>
-                <input name="senha" type="password" required placeholder="Crie uma senha" style={inputStyle} />
+                <input name="senha" type="password" required minLength={8} placeholder="Crie uma senha" style={inputStyle} />
               </div>
               <div>
                 <label style={labelStyle}>Confirmar senha</label>
-                <input name="confirmar" type="password" required placeholder="Repita a senha" style={inputStyle} />
+                <input name="confirmar" type="password" required minLength={8} placeholder="Repita a senha" style={inputStyle} />
               </div>
             </div>
+            <p style={{ fontSize: "11px", color: "#999", marginTop: "-8px" }}>Mínimo de 8 caracteres, com pelo menos uma letra e um número.</p>
             <label style={{ display: "flex", gap: "8px", fontSize: "13px", alignItems: "flex-start", marginTop: "4px" }}>
               <input type="checkbox" required style={{ marginTop: "3px" }} />
               <span>

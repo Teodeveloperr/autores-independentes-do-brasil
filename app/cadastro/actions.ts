@@ -6,6 +6,7 @@ import { prisma } from "@/lib/db";
 import { createAuthorSession } from "@/lib/session";
 import { sendWelcomeEmail } from "@/lib/email";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
+import { validarSenha } from "@/lib/password";
 
 export type Step1Data = {
   nome: string;
@@ -27,8 +28,9 @@ export async function validateStep1(formData: FormData): Promise<Step1Result> {
   const cidade = ((formData.get("cidade") as string) || "").trim() || "Brasil";
   const bio = ((formData.get("bio") as string) || "").trim();
 
-  if (senha.length < 4) {
-    return { error: "A senha deve ter pelo menos 4 caracteres." };
+  const erroSenha = validarSenha(senha);
+  if (erroSenha) {
+    return { error: erroSenha };
   }
   if (senha !== confirmar) {
     return { error: "As senhas não coincidem." };
@@ -81,8 +83,9 @@ export async function createAccount(step1: Step1Data, planId: PlanId, cycle: Cyc
   if (existente) {
     throw new Error("Já existe uma conta cadastrada com esse e-mail.");
   }
-  if (step1.senha.length < 4) {
-    throw new Error("Senha inválida.");
+  const erroSenha = validarSenha(step1.senha);
+  if (erroSenha) {
+    throw new Error(erroSenha);
   }
 
   // Gateway de pagamento ainda não integrado: força o plano Gratuito

@@ -44,9 +44,11 @@ export default function RedefinirSenhaForm({ token }: { token: string }) {
             name="senha"
             type="password"
             required
+            minLength={8}
             placeholder="Crie uma nova senha"
             style={{ width: "100%", padding: "12px", border: "1px solid #DDD", borderRadius: "4px", fontSize: "14px" }}
           />
+          <p style={{ fontSize: "11px", color: "#999", marginTop: "6px" }}>Mínimo de 8 caracteres, com pelo menos uma letra e um número.</p>
         </div>
         <div>
           <label style={{ display: "block", fontSize: "14px", fontWeight: 600, marginBottom: "8px" }}>
@@ -56,6 +58,7 @@ export default function RedefinirSenhaForm({ token }: { token: string }) {
             name="confirmar"
             type="password"
             required
+            minLength={8}
             placeholder="Repita a nova senha"
             style={{ width: "100%", padding: "12px", border: "1px solid #DDD", borderRadius: "4px", fontSize: "14px" }}
           />
