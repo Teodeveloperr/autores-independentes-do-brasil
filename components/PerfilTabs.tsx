@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import AddToCartButton from "./AddToCartButton";
 import Lightbox from "./Lightbox";
+import AvaliacaoForm from "./AvaliacaoForm";
 import { podeVenderLivros, podeUsarRecursosExtras } from "@/lib/plans";
 import { formatEventoDia } from "@/lib/format";
 
@@ -22,6 +23,7 @@ type BookItem = {
 };
 
 export default function PerfilTabs({
+  authorId,
   books,
   fotos,
   eventos,
@@ -29,10 +31,11 @@ export default function PerfilTabs({
   autorPlano,
   isOwner,
 }: {
+  authorId: string;
   books: BookItem[];
   fotos: { id: string; url: string; titulo: string }[];
   eventos: { id: string; nome: string; diaInicio: number; diaFim: number | null; mes: string; ano: number; local: string; status: string }[];
-  avaliacoes: { id: string; nome: string; texto: string }[];
+  avaliacoes: { id: string; nome: string; texto: string; estrelas: number }[];
   autorPlano: string;
   isOwner: boolean;
 }) {
@@ -163,23 +166,28 @@ export default function PerfilTabs({
           ) : (
             <p style={{ fontSize: "14px", color: "#666" }}>Este(a) autor(a) ainda não recebeu avaliações.</p>
           )
-        ) : avaliacoes.length > 0 ? (
-          <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-            {avaliacoes.map((rv) => (
-              <div key={rv.id} style={{ borderBottom: "1px solid #E0E0E0", paddingBottom: "16px" }}>
-                <div style={{ display: "flex", gap: "12px", alignItems: "center", marginBottom: "6px" }}>
-                  <div style={{ width: "36px", height: "36px", background: "#E0E0E0", borderRadius: "50%" }} />
-                  <div>
-                    <div style={{ fontWeight: 600, fontSize: "13px" }}>{rv.nome}</div>
-                    <div style={{ fontSize: "12px", color: "#FFB800" }}>★★★★★</div>
-                  </div>
-                </div>
-                <p style={{ fontSize: "13px", color: "#444", lineHeight: 1.6 }}>{rv.texto}</p>
-              </div>
-            ))}
-          </div>
         ) : (
-          <p style={{ fontSize: "14px", color: "#666" }}>Este(a) autor(a) ainda não recebeu avaliações.</p>
+          <>
+            {!isOwner && <AvaliacaoForm authorId={authorId} />}
+            {avaliacoes.length > 0 ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                {avaliacoes.map((rv) => (
+                  <div key={rv.id} style={{ borderBottom: "1px solid #E0E0E0", paddingBottom: "16px" }}>
+                    <div style={{ display: "flex", gap: "12px", alignItems: "center", marginBottom: "6px" }}>
+                      <div style={{ width: "36px", height: "36px", background: "#E0E0E0", borderRadius: "50%" }} />
+                      <div>
+                        <div style={{ fontWeight: 600, fontSize: "13px" }}>{rv.nome}</div>
+                        <div style={{ fontSize: "12px", color: "#FFB800" }}>{"★".repeat(rv.estrelas)}{"☆".repeat(5 - rv.estrelas)}</div>
+                      </div>
+                    </div>
+                    <p style={{ fontSize: "13px", color: "#444", lineHeight: 1.6 }}>{rv.texto}</p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p style={{ fontSize: "14px", color: "#666" }}>Este(a) autor(a) ainda não recebeu avaliações.</p>
+            )}
+          </>
         ))}
 
       {galeriaIndex !== null && (

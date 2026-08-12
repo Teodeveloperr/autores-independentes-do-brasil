@@ -117,6 +117,7 @@ export default async function PerfilPage({ params }: { params: Promise<{ id: str
               </div>
             </div>
             <PerfilTabs
+              authorId={author.id}
               books={author.books.map((b) => ({
                 id: b.id,
                 titulo: b.titulo,
@@ -130,7 +131,7 @@ export default async function PerfilPage({ params }: { params: Promise<{ id: str
               }))}
               fotos={author.fotos.map((f) => ({ id: f.id, url: f.url, titulo: f.titulo }))}
               eventos={author.eventos.map((e) => ({ id: e.id, nome: e.nome, diaInicio: e.diaInicio, diaFim: e.diaFim, mes: e.mes, ano: e.ano, local: e.local, status: e.status }))}
-              avaliacoes={author.avaliacoes.map((r) => ({ id: r.id, nome: r.nome, texto: r.texto }))}
+              avaliacoes={author.avaliacoes.map((r) => ({ id: r.id, nome: r.nome, texto: r.texto, estrelas: r.estrelas }))}
               autorPlano={author.plano}
               isOwner={isOwner}
             />
