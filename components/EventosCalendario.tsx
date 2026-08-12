@@ -111,22 +111,25 @@ export default function EventosCalendario({ eventos }: { eventos: EventoCalendar
               {d}
             </div>
           ))}
-          {celulas.map((c, i) => (
-            <div
-              key={i}
-              style={{
-                textAlign: "center",
-                padding: "8px",
-                borderRadius: "4px",
-                color: c.atual ? "#262626" : "#999",
-                background: ehHoje(c.dia, c.atual) ? "#002776" : c.atual && diasComEvento.has(c.dia) ? "#F6F6F6" : undefined,
-                fontWeight: c.atual && diasComEvento.has(c.dia) ? 700 : 400,
-                ...(ehHoje(c.dia, c.atual) ? { color: "white" } : {}),
-              }}
-            >
-              {c.dia}
-            </div>
-          ))}
+          {celulas.map((c, i) => {
+            const temEvento = c.atual && diasComEvento.has(c.dia);
+            return (
+              <div
+                key={i}
+                style={{
+                  textAlign: "center",
+                  padding: "8px",
+                  borderRadius: "4px",
+                  color: temEvento ? "white" : c.atual ? "#262626" : "#999",
+                  background: temEvento ? "#009B3A" : undefined,
+                  border: ehHoje(c.dia, c.atual) ? "2px solid #002776" : undefined,
+                  fontWeight: temEvento ? 700 : 400,
+                }}
+              >
+                {c.dia}
+              </div>
+            );
+          })}
         </div>
       </div>
       <div>
