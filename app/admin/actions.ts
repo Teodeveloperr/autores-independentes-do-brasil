@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { createAdminSession, deleteAdminSession } from "@/lib/session";
 import { requireAdmin } from "@/lib/auth";
+import { recalcularAvaliacaoAutor } from "@/lib/reviews";
 
 export type AdminLoginState = { error?: string } | undefined;
 
@@ -114,6 +115,21 @@ export async function removeAuthor(id: string) {
   revalidatePath("/autores");
   revalidatePath("/livros");
   revalidatePath("/");
+}
+
+export async function removeReview(id: string) {
+  await requireAdmin();
+
+  const review = await prisma.review.findUnique({ where: { id } });
+  if (!review) return;
+
+  await prisma.$transaction(async (tx) => {
+    await tx.review.delete({ where: { id } });
+    await recalcularAvaliacaoAutor(tx, review.authorId);
+  });
+
+  revalidatePath("/admin");
+  revalidatePath(`/perfil/${review.authorId}`);
 }
 
 export async function addArticle(formData: FormData) {

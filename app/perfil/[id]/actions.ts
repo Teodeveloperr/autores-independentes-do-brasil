@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/db";
 import { revalidatePath } from "next/cache";
+import { recalcularAvaliacaoAutor } from "@/lib/reviews";
 
 export type AvaliacaoState = { error?: string; success?: boolean } | undefined;
 
@@ -28,18 +29,7 @@ export async function criarAvaliacao(_prev: AvaliacaoState, formData: FormData):
 
   await prisma.$transaction(async (tx) => {
     await tx.review.create({ data: { authorId, nome, texto, estrelas } });
-    const agregados = await tx.review.aggregate({
-      where: { authorId },
-      _avg: { estrelas: true },
-      _count: true,
-    });
-    await tx.author.update({
-      where: { id: authorId },
-      data: {
-        avaliacaoMedia: agregados._avg.estrelas ?? 0,
-        avaliacoesQtd: agregados._count,
-      },
-    });
+    await recalcularAvaliacaoAutor(tx, authorId);
   });
 
   revalidatePath(`/perfil/${authorId}`);
