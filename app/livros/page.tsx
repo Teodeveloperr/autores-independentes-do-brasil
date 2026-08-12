@@ -5,6 +5,7 @@ import AddToCartButton from "@/components/AddToCartButton";
 import { prisma } from "@/lib/db";
 import { brl } from "@/lib/format";
 import { podeVenderLivros } from "@/lib/plans";
+import { GENEROS } from "@/lib/genres";
 
 export const dynamic = "force-dynamic";
 
@@ -38,6 +39,9 @@ export default async function LivrosPage() {
                 <div style={{ fontWeight: 600, marginBottom: "12px" }}>Gênero literário</div>
                 <select style={{ width: "100%", padding: "8px", border: "1px solid #DDD", borderRadius: "4px", fontSize: "13px" }}>
                   <option>Selecionar gênero</option>
+                  {GENEROS.map((g) => (
+                    <option key={g}>{g}</option>
+                  ))}
                 </select>
               </div>
               <div style={{ marginBottom: "24px" }}>
