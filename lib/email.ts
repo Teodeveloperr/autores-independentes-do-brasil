@@ -1,9 +1,11 @@
 import "server-only";
 import { Resend } from "resend";
+import { brl } from "@/lib/format";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 const EMAIL_FROM = process.env.EMAIL_FROM || "Autores Independentes do Brasil <contato@autoresdobrasil.com.br>";
 const EMAIL_CONTATO = process.env.EMAIL_CONTATO || "contato@autoresdobrasil.com.br";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://autoresdobrasil.com.br";
 
 export async function sendPasswordResetEmail(to: string, resetUrl: string) {
   await resend.emails.send({
@@ -52,13 +54,116 @@ export async function sendWelcomeEmail(to: string, nome: string) {
           se conectar com leitores de todo o Brasil.
         </p>
         <p style="margin-top: 32px;">
-          <a href="${process.env.NEXT_PUBLIC_SITE_URL || "https://autoresdobrasil.com.br"}/painel"
+          <a href="${SITE_URL}/painel"
              style="background:#009B3A;color:white;padding:12px 24px;border-radius:4px;text-decoration:none;font-weight:bold;">
             Acessar meu painel
           </a>
         </p>
         <p style="font-size: 13px; color: #666; margin-top: 32px;">
           Coletivo de escritores valorizando histórias, conectando pessoas.
+        </p>
+      </div>
+    `,
+  });
+}
+
+export type OrderConfirmationItem = { titulo: string; autorNome: string; quantidade: number; precoCentavos: number };
+
+export async function sendOrderConfirmationEmail(
+  to: string,
+  data: { itens: OrderConfirmationItem[]; freteCentavos: number; totalCentavos: number }
+) {
+  const linhasItens = data.itens
+    .map(
+      (i) => `
+        <tr>
+          <td style="padding:8px 0;border-bottom:1px solid #F0F0F0;">
+            ${i.titulo} <span style="color:#999;">×${i.quantidade}</span>
+            <br/><span style="font-size:12px;color:#999;">${i.autorNome}</span>
+          </td>
+          <td style="padding:8px 0;border-bottom:1px solid #F0F0F0;text-align:right;white-space:nowrap;">${brl(i.precoCentavos * i.quantidade)}</td>
+        </tr>`
+    )
+    .join("");
+
+  await resend.emails.send({
+    from: EMAIL_FROM,
+    to,
+    subject: "Pedido recebido — Autores Independentes do Brasil",
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 560px; margin: 0 auto; color: #262626;">
+        <h1 style="color: #002776; font-size: 22px;">Pedido recebido!</h1>
+        <p style="font-size: 15px; line-height: 1.6;">
+          Recebemos seu pedido, registrado como <b>Aguardando pagamento</b>. Como o pagamento online ainda
+          não está disponível na plataforma, o(s) autor(es) foram notificados e vão entrar em contato para
+          combinar a forma de pagamento e o envio.
+        </p>
+        <table style="width:100%;border-collapse:collapse;margin-top:24px;font-size:14px;">
+          ${linhasItens}
+          ${
+            data.freteCentavos > 0
+              ? `<tr><td style="padding:8px 0;color:#666;">Frete</td><td style="padding:8px 0;text-align:right;color:#666;">${brl(data.freteCentavos)}</td></tr>`
+              : ""
+          }
+          <tr>
+            <td style="padding:12px 0 0;font-weight:bold;">Total</td>
+            <td style="padding:12px 0 0;text-align:right;font-weight:bold;color:#002776;">${brl(data.totalCentavos)}</td>
+          </tr>
+        </table>
+        <p style="font-size: 13px; color: #666; margin-top: 32px;">
+          Coletivo de escritores valorizando histórias, conectando pessoas.
+        </p>
+      </div>
+    `,
+  });
+}
+
+export type NewSaleItem = { titulo: string; quantidade: number; precoCentavos: number };
+
+export async function sendNewSaleEmail(
+  to: string,
+  data: {
+    comprador: string;
+    compradorEmail: string;
+    compradorTelefone: string | null;
+    endereco: string;
+    itens: NewSaleItem[];
+    freteCentavos: number | null;
+    freteServico: string | null;
+  }
+) {
+  const linhasItens = data.itens.map((i) => `<li>${i.titulo} ×${i.quantidade} — ${brl(i.precoCentavos * i.quantidade)}</li>`).join("");
+
+  await resend.emails.send({
+    from: EMAIL_FROM,
+    to,
+    subject: "Você tem uma nova venda! — Autores Independentes do Brasil",
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 560px; margin: 0 auto; color: #262626;">
+        <h1 style="color: #002776; font-size: 22px;">Você tem uma nova venda! 🎉</h1>
+        <p style="font-size: 15px; line-height: 1.6;"><b>${data.comprador}</b> acabou de comprar:</p>
+        <ul style="font-size: 15px; line-height: 1.8; padding-left: 20px;">${linhasItens}</ul>
+        ${
+          data.freteCentavos
+            ? `<p style="font-size:15px;">Frete: ${brl(data.freteCentavos)}${data.freteServico ? ` (${data.freteServico})` : ""}</p>`
+            : ""
+        }
+        <p style="font-size: 15px; line-height: 1.6; margin-top:16px;">
+          <b>Contato do comprador:</b><br/>
+          E-mail: ${data.compradorEmail}${data.compradorTelefone ? `<br/>Telefone: ${data.compradorTelefone}` : ""}
+        </p>
+        <p style="font-size: 15px; line-height: 1.6;">
+          <b>Endereço de entrega:</b><br/>
+          ${data.endereco}
+        </p>
+        <p style="margin-top: 32px;">
+          <a href="${SITE_URL}/painel"
+             style="background:#009B3A;color:white;padding:12px 24px;border-radius:4px;text-decoration:none;font-weight:bold;">
+            Ver no painel
+          </a>
+        </p>
+        <p style="font-size: 13px; color: #666; margin-top: 32px;">
+          Entre em contato com o comprador para combinar o pagamento e o envio.
         </p>
       </div>
     `,
