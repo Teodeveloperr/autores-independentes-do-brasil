@@ -90,7 +90,7 @@ export default async function HomePage() {
         </Link>
       </section>
 
-      <section className="responsive-grid section-pad-lg" style={{ background: "white", padding: "60px 40px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "60px", alignItems: "center", marginTop: "40px" }}>
+      <section className="responsive-grid section-pad-lg" style={{ background: "white", padding: "48px 40px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "60px", alignItems: "center", marginTop: "20px" }}>
         <div>
           <h2 style={{ fontSize: "32px", fontWeight: 700, color: "#002776", marginBottom: "24px" }}>Sobre o coletivo</h2>
           <p style={{ fontSize: "16px", color: "#262626", lineHeight: 1.6 }}>
@@ -110,7 +110,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="section-pad-lg" style={{ background: "white", padding: "60px 40px", marginTop: "40px" }}>
+      <section className="section-pad-lg" style={{ background: "white", padding: "48px 40px", marginTop: "20px" }}>
         <div className="responsive-flex-row" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "40px", gap: "12px" }}>
           <h2 style={{ fontSize: "32px", fontWeight: 700, color: "#002776" }}>Autores em destaque</h2>
           <Link href="/autores" style={{ fontWeight: 600, color: "#002776" }}>VER TODOS OS AUTORES →</Link>
@@ -158,7 +158,7 @@ export default async function HomePage() {
         )}
       </section>
 
-      <section className="section-pad-lg" style={{ background: "white", padding: "60px 40px", marginTop: "40px" }}>
+      <section className="section-pad-lg" style={{ background: "white", padding: "48px 40px", marginTop: "20px" }}>
         <div className="responsive-flex-row" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "40px", gap: "12px" }}>
           <h2 style={{ fontSize: "32px", fontWeight: 700, color: "#002776" }}>Livros recentes</h2>
           <Link href="/livros" style={{ fontWeight: 600, color: "#002776" }}>VER TODOS OS LIVROS →</Link>
@@ -197,7 +197,7 @@ export default async function HomePage() {
         )}
       </section>
 
-      <section className="section-pad-lg" style={{ background: "white", padding: "60px 40px", marginTop: "40px" }}>
+      <section className="section-pad-lg" style={{ background: "white", padding: "48px 40px", marginTop: "20px" }}>
         <div className="responsive-flex-row" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "40px", gap: "12px" }}>
           <h2 style={{ fontSize: "32px", fontWeight: 700, color: "#002776" }}>Blog do Coletivo</h2>
           <Link href="/blog" style={{ fontWeight: 600, color: "#002776" }}>VER TODOS OS ARTIGOS →</Link>
@@ -211,7 +211,7 @@ export default async function HomePage() {
         </Link>
       </section>
 
-      <section className="responsive-grid section-pad-lg" style={{ background: "white", padding: "60px 40px", marginTop: "40px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "60px" }}>
+      <section className="responsive-grid section-pad-lg" style={{ background: "white", padding: "48px 40px", marginTop: "20px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "60px" }}>
         <div>
           <h3 style={{ fontSize: "24px", fontWeight: 700, color: "#002776", marginBottom: "32px" }}>Próximos eventos</h3>
           {eventos.length > 0 ? (
@@ -252,7 +252,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section id="contato" className="responsive-grid section-pad-lg" style={{ background: "white", padding: "60px 40px", marginTop: "40px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "60px" }}>
+      <section id="contato" className="responsive-grid section-pad-lg" style={{ background: "white", padding: "48px 40px", marginTop: "20px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "60px" }}>
         <div>
           <h2 style={{ fontSize: "32px", fontWeight: 700, color: "#002776", marginBottom: "24px" }}>Contato</h2>
           <h3 style={{ fontSize: "20px", fontWeight: 700, color: "#262626", marginBottom: "16px" }}>Fale conosco</h3>
