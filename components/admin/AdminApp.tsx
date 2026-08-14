@@ -10,6 +10,7 @@ import AdminGaleriaView from "./AdminGaleriaView";
 import AdminAutoresView from "./AdminAutoresView";
 import AdminBlogView from "./AdminBlogView";
 import AdminAvaliacoesView from "./AdminAvaliacoesView";
+import AdminSegurancaView from "./AdminSegurancaView";
 
 const sidebarBtn = (active: boolean): React.CSSProperties => ({
   display: "flex",
@@ -33,6 +34,7 @@ export default function AdminApp({
   avaliacoes,
   melhorEnvioConectado,
   melhorEnvioFeedback,
+  totpEnabled,
 }: {
   eventos: CollectiveEvent[];
   fotos: CollectiveGalleryPhoto[];
@@ -41,6 +43,7 @@ export default function AdminApp({
   avaliacoes: ReviewWithAuthor[];
   melhorEnvioConectado: boolean;
   melhorEnvioFeedback: "sucesso" | "erro" | null;
+  totpEnabled: boolean;
 }) {
   const [view, setView] = useState<AdminView>("dash");
   const totalLivros = autores.reduce((sum, a) => sum + a._count.books, 0);
@@ -60,6 +63,7 @@ export default function AdminApp({
         <button onClick={() => setView("blog")} style={sidebarBtn(view === "blog")}>📝 Blog do Coletivo</button>
         <button onClick={() => setView("autores")} style={sidebarBtn(view === "autores")}>✍️ Autores</button>
         <button onClick={() => setView("avaliacoes")} style={sidebarBtn(view === "avaliacoes")}>⭐ Avaliações</button>
+        <button onClick={() => setView("seguranca")} style={sidebarBtn(view === "seguranca")}>🔐 Segurança</button>
         <button
           onClick={() => adminLogout()}
           style={{ display: "flex", gap: "10px", alignItems: "center", padding: "10px 12px", color: "white", fontSize: "14px", fontWeight: 600, marginTop: "12px", background: "transparent" }}
@@ -90,6 +94,17 @@ export default function AdminApp({
               {melhorEnvioFeedback === "erro" && (
                 <div style={{ background: "#FDEDEC", color: "#C0392B", padding: "14px 18px", borderRadius: "8px", fontSize: "13px", fontWeight: 600, marginBottom: "20px" }}>
                   ✕ Não foi possível conectar ao Melhor Envio. Tente novamente.
+                </div>
+              )}
+              {!totpEnabled && (
+                <div style={{ background: "white", borderRadius: "10px", padding: "20px", marginBottom: "20px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "16px", flexWrap: "wrap" }}>
+                  <div>
+                    <div style={{ fontWeight: 700, color: "#002776", marginBottom: "4px" }}>🔐 Autenticação em duas etapas</div>
+                    <div style={{ fontSize: "13px", color: "#666" }}>Sua conta de administrador ainda usa só senha. Ative a verificação em duas etapas pra proteger o acesso.</div>
+                  </div>
+                  <button onClick={() => setView("seguranca")} style={{ background: "#002776", color: "white", padding: "10px 20px", borderRadius: "6px", fontSize: "13px", fontWeight: 600, flexShrink: 0 }}>
+                    Ativar agora
+                  </button>
                 </div>
               )}
               <div style={{ background: "white", borderRadius: "10px", padding: "20px", marginBottom: "28px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "16px", flexWrap: "wrap" }}>
@@ -183,6 +198,7 @@ export default function AdminApp({
           {view === "blog" && <AdminBlogView artigos={artigos} />}
           {view === "autores" && <AdminAutoresView autores={autores} />}
           {view === "avaliacoes" && <AdminAvaliacoesView avaliacoes={avaliacoes} />}
+          {view === "seguranca" && <AdminSegurancaView totpEnabled={totpEnabled} />}
         </div>
       </main>
     </div>

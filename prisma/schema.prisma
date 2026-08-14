@@ -225,6 +225,10 @@ model Admin {
   email     String @unique
   senhaHash String
 
+  totpSecret      String?
+  totpEnabled     Boolean  @default(false)
+  totpBackupCodes String[] @default([])
+
   createdAt DateTime @default(now())
 }
 

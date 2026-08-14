@@ -3,10 +3,42 @@
 import { useActionState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { adminLogin, type AdminLoginState } from "@/app/admin/actions";
+import { adminLogin, verificarCodigo2FA, type AdminLoginState, type Verify2FAState } from "@/app/admin/actions";
 
 export default function AdminLoginGate() {
   const [state, formAction, pending] = useActionState<AdminLoginState, FormData>(adminLogin, undefined);
+  const [state2fa, formAction2fa, pending2fa] = useActionState<Verify2FAState, FormData>(verificarCodigo2FA, undefined);
+
+  if (state?.precisa2fa) {
+    return (
+      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#002776" }}>
+        <form action={formAction2fa} style={{ background: "white", padding: "40px", borderRadius: "10px", width: "100%", maxWidth: "380px", display: "flex", flexDirection: "column", gap: "16px" }}>
+          <div style={{ textAlign: "center", marginBottom: "8px" }}>
+            <Image src="/logo.png" alt="Logo" width={140} height={50} style={{ height: "50px", width: "auto", objectFit: "contain", margin: "0 auto" }} />
+          </div>
+          <h1 style={{ fontSize: "20px", fontWeight: 700, color: "#002776", textAlign: "center" }}>🔐 Verificação em duas etapas</h1>
+          <p style={{ fontSize: "13px", color: "#666", textAlign: "center", marginBottom: "8px" }}>
+            Digite o código de 6 dígitos do seu aplicativo autenticador, ou um código de backup.
+          </p>
+          <div>
+            <input
+              name="codigo"
+              type="text"
+              inputMode="numeric"
+              autoFocus
+              required
+              placeholder="000000"
+              style={{ width: "100%", padding: "12px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "20px", textAlign: "center", letterSpacing: "4px" }}
+            />
+          </div>
+          {state2fa?.error && <div style={{ color: "#C0392B", fontSize: "13px", textAlign: "center" }}>{state2fa.error}</div>}
+          <button type="submit" disabled={pending2fa} style={{ background: "#002776", color: "white", padding: "12px", fontWeight: 700, borderRadius: "6px", fontSize: "14px", opacity: pending2fa ? 0.7 : 1 }}>
+            {pending2fa ? "Verificando..." : "Confirmar"}
+          </button>
+        </form>
+      </div>
+    );
+  }
 
   return (
     <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#002776" }}>

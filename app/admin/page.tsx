@@ -42,6 +42,7 @@ export default async function AdminPage({
       avaliacoes={avaliacoes}
       melhorEnvioConectado={!!melhorEnvioToken}
       melhorEnvioFeedback={melhorenvio === "conectado" ? "sucesso" : erro === "melhorenvio" ? "erro" : null}
+      totpEnabled={admin.totpEnabled}
     />
   );
 }

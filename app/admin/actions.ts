@@ -1,15 +1,17 @@
 "use server";
 
 import bcrypt from "bcryptjs";
+import QRCode from "qrcode";
 import { del } from "@vercel/blob";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
-import { createAdminSession, deleteAdminSession } from "@/lib/session";
+import { createAdminSession, deleteAdminSession, createAdminPending2FA, getAdminPending2FA, deleteAdminPending2FA } from "@/lib/session";
 import { requireAdmin } from "@/lib/auth";
 import { recalcularAvaliacaoAutor } from "@/lib/reviews";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
+import { gerarSegredoTotp, gerarOtpauthUri, verificarCodigoTotp, gerarCodigosBackup } from "@/lib/totp";
 
-export type AdminLoginState = { error?: string } | undefined;
+export type AdminLoginState = { error?: string; precisa2fa?: boolean } | undefined;
 
 export async function adminLogin(
   _prev: AdminLoginState,
@@ -33,12 +35,118 @@ export async function adminLogin(
     return { error: "Senha incorreta. Tente novamente." };
   }
 
+  if (admin.totpEnabled) {
+    await createAdminPending2FA(admin.id);
+    return { precisa2fa: true };
+  }
+
   await createAdminSession(admin.id);
   return undefined;
 }
 
+export type Verify2FAState = { error?: string } | undefined;
+
+export async function verificarCodigo2FA(_prev: Verify2FAState, formData: FormData): Promise<Verify2FAState> {
+  const codigo = ((formData.get("codigo") as string) || "").trim();
+  if (!codigo) {
+    return { error: "Digite o código de 6 dígitos ou um código de backup." };
+  }
+
+  const pending = await getAdminPending2FA();
+  if (!pending) {
+    return { error: "Sessão de login expirada. Volte e faça login novamente." };
+  }
+
+  const ip = await getClientIp();
+  const permitido = await checkRateLimit(`admin-2fa:${ip}`, 8, 10);
+  if (!permitido) {
+    return { error: "Muitas tentativas. Aguarde alguns minutos e tente novamente." };
+  }
+
+  const admin = await prisma.admin.findUnique({ where: { id: pending.pendingAdminId } });
+  if (!admin || !admin.totpEnabled || !admin.totpSecret) {
+    await deleteAdminPending2FA();
+    return { error: "Sessão inválida. Faça login novamente." };
+  }
+
+  if (verificarCodigoTotp(admin.totpSecret, codigo)) {
+    await deleteAdminPending2FA();
+    await createAdminSession(admin.id);
+    return undefined;
+  }
+
+  const codigoBackup = codigo.toUpperCase();
+  for (const hash of admin.totpBackupCodes) {
+    if (await bcrypt.compare(codigoBackup, hash)) {
+      await prisma.admin.update({
+        where: { id: admin.id },
+        data: { totpBackupCodes: admin.totpBackupCodes.filter((h) => h !== hash) },
+      });
+      await deleteAdminPending2FA();
+      await createAdminSession(admin.id);
+      return undefined;
+    }
+  }
+
+  return { error: "Código inválido. Tente novamente." };
+}
+
 export async function adminLogout() {
   await deleteAdminSession();
+}
+
+export async function iniciarConfiguracao2FA() {
+  const admin = await requireAdmin();
+  const secret = gerarSegredoTotp();
+  const otpauthUri = gerarOtpauthUri(secret, admin.email);
+  const qrDataUrl = await QRCode.toDataURL(otpauthUri);
+  return { secret, qrDataUrl };
+}
+
+export type Confirmar2FAState = { error?: string; backupCodes?: string[] } | undefined;
+
+export async function confirmarAtivacao2FA(_prev: Confirmar2FAState, formData: FormData): Promise<Confirmar2FAState> {
+  const admin = await requireAdmin();
+  const secret = (formData.get("secret") as string) || "";
+  const codigo = ((formData.get("codigo") as string) || "").trim();
+
+  if (!secret || !codigo) {
+    return { error: "Preencha o código do aplicativo autenticador." };
+  }
+  if (!verificarCodigoTotp(secret, codigo)) {
+    return { error: "Código incorreto. Confira o aplicativo e tente novamente." };
+  }
+
+  const backupCodes = gerarCodigosBackup();
+  const backupCodesHash = await Promise.all(backupCodes.map((c) => bcrypt.hash(c, 10)));
+
+  await prisma.admin.update({
+    where: { id: admin.id },
+    data: { totpSecret: secret, totpEnabled: true, totpBackupCodes: backupCodesHash },
+  });
+
+  revalidatePath("/admin");
+  return { backupCodes };
+}
+
+export type Desativar2FAState = { error?: string; ok?: boolean } | undefined;
+
+export async function desativar2FA(_prev: Desativar2FAState, formData: FormData): Promise<Desativar2FAState> {
+  const admin = await requireAdmin();
+  const senha = (formData.get("senha") as string) || "";
+
+  const senhaOk = await bcrypt.compare(senha, admin.senhaHash);
+  if (!senhaOk) {
+    return { error: "Senha incorreta." };
+  }
+
+  await prisma.admin.update({
+    where: { id: admin.id },
+    data: { totpSecret: null, totpEnabled: false, totpBackupCodes: [] },
+  });
+
+  revalidatePath("/admin");
+  return { ok: true };
 }
 
 export async function addCollectiveEvent(formData: FormData) {
