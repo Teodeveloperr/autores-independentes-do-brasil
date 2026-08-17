@@ -12,8 +12,7 @@ import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 import { gerarSegredoTotp, gerarOtpauthUri, verificarCodigoTotp, gerarCodigosBackup } from "@/lib/totp";
 import { criarLinkRedefinicaoSenha } from "@/lib/passwordReset";
 import { sendAccountCreatedEmail } from "@/lib/email";
-
-export const PLANOS_DISPONIVEIS = ["Gratuito", "Autor Essencial", "Autor Premium"];
+import { PLANOS_COM_VENDA } from "@/lib/plans";
 
 export type AdminLoginState = { error?: string; precisa2fa?: boolean } | undefined;
 
@@ -216,7 +215,7 @@ export async function adminCreateAuthor(_prev: CreateAuthorState, formData: Form
   if (!nome || !email) {
     return { error: "Preencha nome e e-mail." };
   }
-  if (!PLANOS_DISPONIVEIS.includes(plano)) {
+  if (!PLANOS_COM_VENDA.includes(plano)) {
     return { error: "Selecione um plano válido." };
   }
 

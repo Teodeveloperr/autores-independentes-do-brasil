@@ -3,8 +3,9 @@
 import { useActionState, useEffect, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { removeAuthor, adminCreateAuthor, PLANOS_DISPONIVEIS, type CreateAuthorState } from "@/app/admin/actions";
+import { removeAuthor, adminCreateAuthor, type CreateAuthorState } from "@/app/admin/actions";
 import { initials } from "@/lib/format";
+import { PLANOS_COM_VENDA } from "@/lib/plans";
 import type { AuthorWithCount } from "./types";
 
 export default function AdminAutoresView({ autores }: { autores: AuthorWithCount[] }) {
@@ -49,7 +50,7 @@ export default function AdminAutoresView({ autores }: { autores: AuthorWithCount
           <div>
             <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>Plano</label>
             <select name="plano" style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px" }}>
-              {PLANOS_DISPONIVEIS.map((p) => (
+              {PLANOS_COM_VENDA.map((p) => (
                 <option key={p}>{p}</option>
               ))}
             </select>
