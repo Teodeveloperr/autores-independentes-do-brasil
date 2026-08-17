@@ -10,6 +10,8 @@ import { formatEventoDia } from "@/lib/format";
 
 type Tab = "livros" | "galeria" | "eventos" | "avaliacoes";
 
+const CATEGORIAS_GALERIA = ["Bienais e Feiras", "Lançamentos", "Palestras e Workshops", "Encontros de Autores", "Eventos Culturais", "Outros"];
+
 type BookItem = {
   id: string;
   titulo: string;
@@ -33,7 +35,7 @@ export default function PerfilTabs({
 }: {
   authorId: string;
   books: BookItem[];
-  fotos: { id: string; url: string; titulo: string }[];
+  fotos: { id: string; url: string; titulo: string; categoria: string }[];
   eventos: { id: string; nome: string; diaInicio: number; diaFim: number | null; mes: string; ano: number; local: string; status: string }[];
   avaliacoes: { id: string; nome: string; texto: string; estrelas: number }[];
   autorPlano: string;
@@ -42,8 +44,11 @@ export default function PerfilTabs({
   const [tab, setTab] = useState<Tab>("livros");
   const [sinopseBook, setSinopseBook] = useState<BookItem | null>(null);
   const [galeriaIndex, setGaleriaIndex] = useState<number | null>(null);
+  const [fotoCategoria, setFotoCategoria] = useState<string | null>(null);
   const podeVender = podeVenderLivros(autorPlano);
   const podeExtras = podeUsarRecursosExtras(autorPlano);
+
+  const fotosFiltradas = fotoCategoria ? fotos.filter((f) => f.categoria === fotoCategoria) : fotos;
 
   const tabStyle = (active: boolean): React.CSSProperties => ({
     background: "white",
@@ -118,37 +123,51 @@ export default function PerfilTabs({
             <p style={{ fontSize: "14px", color: "#666" }}>Este(a) autor(a) ainda não adicionou fotos à galeria.</p>
           )
         ) : fotos.length > 0 ? (
-          <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "14px" }}>
-            {fotos.map((f, i) => (
-              <div
-                key={f.id}
-                title={f.titulo}
-                onClick={() => setGaleriaIndex(i)}
-                style={{ position: "relative", background: `center / cover no-repeat url(${f.url})`, aspectRatio: "1", borderRadius: "4px", cursor: "pointer", overflow: "hidden" }}
-              >
-                {f.titulo && (
+          <>
+            <div style={{ display: "flex", gap: "16px", marginBottom: "16px", flexWrap: "wrap", fontSize: "13px" }}>
+              <button onClick={() => setFotoCategoria(null)} style={tabStyle(fotoCategoria === null)}>Todas</button>
+              {CATEGORIAS_GALERIA.filter((c) => fotos.some((f) => f.categoria === c)).map((c) => (
+                <button key={c} onClick={() => setFotoCategoria(c)} style={tabStyle(fotoCategoria === c)}>
+                  {c}
+                </button>
+              ))}
+            </div>
+            {fotosFiltradas.length > 0 ? (
+              <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "14px" }}>
+                {fotosFiltradas.map((f, i) => (
                   <div
-                    style={{
-                      position: "absolute",
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      padding: "20px 10px 8px",
-                      background: "linear-gradient(to top, rgba(0,0,0,0.75), rgba(0,0,0,0))",
-                      color: "white",
-                      fontSize: "12px",
-                      fontWeight: 600,
-                      whiteSpace: "nowrap",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                    }}
+                    key={f.id}
+                    title={f.titulo}
+                    onClick={() => setGaleriaIndex(i)}
+                    style={{ position: "relative", background: `center / cover no-repeat url(${f.url})`, aspectRatio: "1", borderRadius: "4px", cursor: "pointer", overflow: "hidden" }}
                   >
-                    {f.titulo}
+                    {f.titulo && (
+                      <div
+                        style={{
+                          position: "absolute",
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          padding: "20px 10px 8px",
+                          background: "linear-gradient(to top, rgba(0,0,0,0.75), rgba(0,0,0,0))",
+                          color: "white",
+                          fontSize: "12px",
+                          fontWeight: 600,
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                        }}
+                      >
+                        {f.titulo}
+                      </div>
+                    )}
                   </div>
-                )}
+                ))}
               </div>
-            ))}
-          </div>
+            ) : (
+              <p style={{ fontSize: "14px", color: "#666" }}>Nenhuma foto nessa categoria.</p>
+            )}
+          </>
         ) : (
           <p style={{ fontSize: "14px", color: "#666" }}>Este(a) autor(a) ainda não adicionou fotos à galeria.</p>
         ))}
@@ -213,7 +232,7 @@ export default function PerfilTabs({
 
       {galeriaIndex !== null && (
         <Lightbox
-          fotos={fotos.map((f) => ({ url: f.url, titulo: f.titulo }))}
+          fotos={fotosFiltradas.map((f) => ({ url: f.url, titulo: f.titulo }))}
           index={galeriaIndex}
           onClose={() => setGaleriaIndex(null)}
           onNavigate={setGaleriaIndex}
