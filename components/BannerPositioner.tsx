@@ -49,7 +49,7 @@ export default function BannerPositioner({
   }
 
   function onPointerMove(e: React.PointerEvent<HTMLDivElement>) {
-    if (!dragging || !dragStart.current) return;
+    if (!dragStart.current) return;
     const { maxX, maxY } = getMaxOffsets();
     const deltaX = e.clientX - dragStart.current.x;
     const deltaY = e.clientY - dragStart.current.y;
