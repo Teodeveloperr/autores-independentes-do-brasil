@@ -101,7 +101,7 @@ export default function PerfilView({ author }: { author: AuthorWithRelations }) 
             style={{ display: "none" }}
           />
           {banner.error && <p style={{ fontSize: "12px", color: "#C0392B", marginTop: "8px" }}>{banner.error}</p>}
-          <p style={{ fontSize: "11px", color: "#999", marginTop: "10px" }}>📐 Tamanho recomendado: 1200 × 300px (proporção 4:1). JPG ou PNG, até 5MB.</p>
+          <p style={{ fontSize: "11px", color: "#999", marginTop: "10px" }}>📐 Tamanho recomendado: 1200 × 400px (proporção 3:1). JPG ou PNG, até 5MB.</p>
         </div>
 
         <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1.4fr", gap: "20px", alignItems: "start" }}>
