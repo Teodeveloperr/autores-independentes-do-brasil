@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Author" ADD COLUMN     "bannerPositionX" INTEGER NOT NULL DEFAULT 50,
+ADD COLUMN     "bannerPositionY" INTEGER NOT NULL DEFAULT 50;

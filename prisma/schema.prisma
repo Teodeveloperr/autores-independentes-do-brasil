@@ -21,6 +21,8 @@ model Author {
   bio       String?
   fotoUrl   String?
   bannerUrl String?
+  bannerPositionX Int @default(50)
+  bannerPositionY Int @default(50)
 
   instagramUrl String?
   twitterUrl   String?

@@ -54,7 +54,11 @@ export default async function PerfilPage({ params }: { params: Promise<{ id: str
             maxWidth: "1280px",
             marginLeft: "auto",
             marginRight: "auto",
-            background: author.bannerUrl ? `center / cover no-repeat url(${author.bannerUrl})` : "#E0E0E0",
+            backgroundColor: "#E0E0E0",
+            backgroundImage: author.bannerUrl ? `url(${author.bannerUrl})` : undefined,
+            backgroundSize: "cover",
+            backgroundPosition: `${author.bannerPositionX}% ${author.bannerPositionY}%`,
+            backgroundRepeat: "no-repeat",
           }}
         >
           {author.verificado && (

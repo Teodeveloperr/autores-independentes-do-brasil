@@ -6,10 +6,12 @@ import { saveProfile } from "@/app/painel/actions";
 import type { AuthorWithRelations } from "./types";
 import { GENEROS } from "@/lib/genres";
 import { buscarEnderecoPorCep } from "@/lib/cep";
+import BannerPositioner from "@/components/BannerPositioner";
 
 export default function PerfilView({ author }: { author: AuthorWithRelations }) {
   const avatar = useImageUpload("avatars", author.fotoUrl ?? "");
   const banner = useImageUpload("banners", author.bannerUrl ?? "");
+  const [bannerPos, setBannerPos] = useState({ x: author.bannerPositionX ?? 50, y: author.bannerPositionY ?? 50 });
   const [saved, setSaved] = useState(false);
   const [pending, startTransition] = useTransition();
   const [buscandoCep, setBuscandoCep] = useState(false);
@@ -46,30 +48,58 @@ export default function PerfilView({ author }: { author: AuthorWithRelations }) 
       <form action={onSubmit} style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
         <input type="hidden" name="fotoUrl" value={avatar.url} />
         <input type="hidden" name="bannerUrl" value={banner.url} />
+        <input type="hidden" name="bannerPositionX" value={bannerPos.x} />
+        <input type="hidden" name="bannerPositionY" value={bannerPos.y} />
 
         <div style={{ background: "white", borderRadius: "10px", padding: "24px" }}>
           <div style={{ fontWeight: 700, color: "#002776", marginBottom: "4px" }}>🖼️ Banner do perfil</div>
           <p style={{ fontSize: "12px", color: "#666", marginBottom: "14px" }}>Aparece no topo do seu perfil público.</p>
-          <label
-            htmlFor="bannerInput"
-            onDrop={banner.onDrop}
-            onDragOver={banner.onDragOver}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              height: "140px",
-              borderRadius: "8px",
-              cursor: "pointer",
-              fontSize: "13px",
-              color: "#666",
-              border: "2px dashed #BBB",
-              background: banner.url ? `center / cover no-repeat url(${banner.url})` : "#F6F6F6",
+          {banner.url ? (
+            <>
+              <BannerPositioner
+                url={banner.url}
+                positionX={bannerPos.x}
+                positionY={bannerPos.y}
+                onChange={(x, y) => setBannerPos({ x, y })}
+              />
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "8px" }}>
+                <p style={{ fontSize: "11px", color: "#999" }}>✋ Arraste a imagem pra ajustar o enquadramento.</p>
+                <label htmlFor="bannerInput" style={{ fontSize: "12px", fontWeight: 600, color: "#002776", cursor: "pointer" }}>
+                  Trocar imagem
+                </label>
+              </div>
+            </>
+          ) : (
+            <label
+              htmlFor="bannerInput"
+              onDrop={banner.onDrop}
+              onDragOver={banner.onDragOver}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                height: "140px",
+                borderRadius: "8px",
+                cursor: "pointer",
+                fontSize: "13px",
+                color: "#666",
+                border: "2px dashed #BBB",
+                background: "#F6F6F6",
+              }}
+            >
+              <span>{banner.uploading ? "Enviando..." : "🖼️ Clique para adicionar um banner"}</span>
+            </label>
+          )}
+          <input
+            id="bannerInput"
+            type="file"
+            accept="image/*"
+            onChange={(e) => {
+              setBannerPos({ x: 50, y: 50 });
+              banner.onInputChange(e);
             }}
-          >
-            {!banner.url && <span>{banner.uploading ? "Enviando..." : "🖼️ Clique para adicionar um banner"}</span>}
-          </label>
-          <input id="bannerInput" type="file" accept="image/*" onChange={banner.onInputChange} style={{ display: "none" }} />
+            style={{ display: "none" }}
+          />
           {banner.error && <p style={{ fontSize: "12px", color: "#C0392B", marginTop: "8px" }}>{banner.error}</p>}
           <p style={{ fontSize: "11px", color: "#999", marginTop: "10px" }}>📐 Tamanho recomendado: 1200 × 300px (proporção 4:1). JPG ou PNG, até 5MB.</p>
         </div>

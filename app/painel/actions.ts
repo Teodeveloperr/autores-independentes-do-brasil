@@ -26,6 +26,8 @@ export async function saveProfile(formData: FormData) {
       bio: ((formData.get("bio") as string) || "").trim(),
       fotoUrl: (formData.get("fotoUrl") as string) || author.fotoUrl,
       bannerUrl: (formData.get("bannerUrl") as string) || author.bannerUrl,
+      bannerPositionX: parseInt((formData.get("bannerPositionX") as string) || "", 10) || 50,
+      bannerPositionY: parseInt((formData.get("bannerPositionY") as string) || "", 10) || 50,
       instagramUrl: sanitizeExternalUrl((formData.get("instagramUrl") as string) || ""),
       twitterUrl: sanitizeExternalUrl((formData.get("twitterUrl") as string) || ""),
       siteUrl: sanitizeExternalUrl((formData.get("siteUrl") as string) || ""),
