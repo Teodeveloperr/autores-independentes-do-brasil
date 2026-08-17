@@ -11,13 +11,13 @@ export default function BannerPositioner({
   positionX,
   positionY,
   onChange,
-  height = 180,
+  aspectRatio = "1200 / 260",
 }: {
   url: string;
   positionX: number;
   positionY: number;
   onChange: (x: number, y: number) => void;
-  height?: number;
+  aspectRatio?: string;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
@@ -84,8 +84,9 @@ export default function BannerPositioner({
       onPointerLeave={onPointerUp}
       style={{
         position: "relative",
-        height,
-        borderRadius: "8px",
+        width: "100%",
+        aspectRatio,
+        borderRadius: "16px",
         overflow: "hidden",
         cursor: dragging ? "grabbing" : "grab",
         background: "#F6F6F6",

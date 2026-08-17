@@ -48,7 +48,7 @@ export default async function PerfilPage({ params }: { params: Promise<{ id: str
         <div
           style={{
             height: "260px",
-            borderRadius: "8px",
+            borderRadius: "16px",
             marginBottom: "32px",
             position: "relative",
             maxWidth: "1280px",
