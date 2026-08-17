@@ -1,15 +1,11 @@
 "use server";
 
-import crypto from "node:crypto";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
 import { validarSenha } from "@/lib/password";
+import { hashToken } from "@/lib/passwordReset";
 
 export type ResetState = { error?: string; ok?: boolean } | undefined;
-
-function hashToken(token: string) {
-  return crypto.createHash("sha256").update(token).digest("hex");
-}
 
 export async function resetPassword(_prev: ResetState, formData: FormData): Promise<ResetState> {
   const token = (formData.get("token") as string) || "";

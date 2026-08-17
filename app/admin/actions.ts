@@ -10,6 +10,10 @@ import { requireAdmin } from "@/lib/auth";
 import { recalcularAvaliacaoAutor } from "@/lib/reviews";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 import { gerarSegredoTotp, gerarOtpauthUri, verificarCodigoTotp, gerarCodigosBackup } from "@/lib/totp";
+import { criarLinkRedefinicaoSenha } from "@/lib/passwordReset";
+import { sendAccountCreatedEmail } from "@/lib/email";
+
+export const PLANOS_DISPONIVEIS = ["Gratuito", "Autor Essencial", "Autor Premium"];
 
 export type AdminLoginState = { error?: string; precisa2fa?: boolean } | undefined;
 
@@ -198,6 +202,49 @@ export async function removeCollectiveGalleryPhoto(id: string) {
   await prisma.collectiveGalleryPhoto.delete({ where: { id } });
   revalidatePath("/admin");
   revalidatePath("/galeria");
+}
+
+export type CreateAuthorState = { error?: string; success?: boolean } | undefined;
+
+export async function adminCreateAuthor(_prev: CreateAuthorState, formData: FormData): Promise<CreateAuthorState> {
+  await requireAdmin();
+
+  const nome = ((formData.get("nome") as string) || "").trim();
+  const email = ((formData.get("email") as string) || "").trim().toLowerCase();
+  const plano = (formData.get("plano") as string) || "Gratuito";
+
+  if (!nome || !email) {
+    return { error: "Preencha nome e e-mail." };
+  }
+  if (!PLANOS_DISPONIVEIS.includes(plano)) {
+    return { error: "Selecione um plano válido." };
+  }
+
+  const existente = await prisma.author.findUnique({ where: { email } });
+  if (existente) {
+    return { error: "Já existe uma conta cadastrada com esse e-mail." };
+  }
+
+  const author = await prisma.author.create({
+    data: {
+      nome,
+      email,
+      plano,
+      anoEntrada: new Date().getFullYear(),
+      bio: "Autor(a) independente do coletivo Autores Independentes do Brasil.",
+    },
+  });
+
+  const setupUrl = await criarLinkRedefinicaoSenha(author.id);
+  try {
+    await sendAccountCreatedEmail(author.email, author.nome, plano, setupUrl);
+  } catch (err) {
+    console.error("[admin] Falha ao enviar e-mail de criação de conta:", err);
+  }
+
+  revalidatePath("/admin");
+  revalidatePath("/autores");
+  return { success: true };
 }
 
 export async function removeAuthor(id: string) {

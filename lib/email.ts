@@ -36,6 +36,36 @@ export async function sendPasswordResetEmail(to: string, resetUrl: string) {
   });
 }
 
+export async function sendAccountCreatedEmail(to: string, nome: string, plano: string, setupUrl: string) {
+  await resend.emails.send({
+    from: EMAIL_FROM,
+    to,
+    subject: "Sua conta foi criada — Autores Independentes do Brasil",
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 560px; margin: 0 auto; color: #262626;">
+        <h1 style="color: #002776; font-size: 22px;">Bem-vindo(a), ${nome}!</h1>
+        <p style="font-size: 15px; line-height: 1.6;">
+          A equipe do Autores Independentes do Brasil criou uma conta de autor(a) pra você, no plano
+          <b>${plano}</b>. Falta só um passo: defina sua senha pra acessar o painel.
+        </p>
+        <p style="margin-top: 32px;">
+          <a href="${setupUrl}"
+             style="background:#009B3A;color:white;padding:12px 24px;border-radius:4px;text-decoration:none;font-weight:bold;">
+            Definir minha senha
+          </a>
+        </p>
+        <p style="font-size: 13px; color: #666; margin-top: 32px;">
+          Este link expira em 1 hora. Se preferir, você também pode entrar com sua conta do Google usando o
+          mesmo e-mail (${to}).
+        </p>
+        <p style="font-size: 13px; color: #666; margin-top: 16px;">
+          Coletivo de escritores valorizando histórias, conectando pessoas.
+        </p>
+      </div>
+    `,
+  });
+}
+
 export async function sendWelcomeEmail(to: string, nome: string) {
   await resend.emails.send({
     from: EMAIL_FROM,
