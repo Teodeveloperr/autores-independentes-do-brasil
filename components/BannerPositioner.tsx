@@ -11,7 +11,7 @@ export default function BannerPositioner({
   positionX,
   positionY,
   onChange,
-  height = 240,
+  height = 180,
 }: {
   url: string;
   positionX: number;

@@ -47,7 +47,7 @@ export default async function PerfilPage({ params }: { params: Promise<{ id: str
       <section className="section-pad-lg" style={{ background: "white", padding: "40px", flex: 1 }}>
         <div
           style={{
-            height: "350px",
+            height: "260px",
             borderRadius: "8px",
             marginBottom: "32px",
             position: "relative",
