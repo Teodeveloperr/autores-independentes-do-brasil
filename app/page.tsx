@@ -12,10 +12,12 @@ export const dynamic = "force-dynamic";
 export default async function HomePage() {
   const [authors, livros, artigos, eventos] = await Promise.all([
     prisma.author.findMany({
+      where: { status: "ativo" },
       orderBy: { createdAt: "desc" },
       take: 6,
     }),
     prisma.book.findMany({
+      where: { author: { status: "ativo" } },
       orderBy: { createdAt: "desc" },
       take: 5,
       include: { author: true },

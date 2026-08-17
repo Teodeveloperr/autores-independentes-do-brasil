@@ -10,6 +10,7 @@ export const metadata: Metadata = { title: "Livros" };
 
 export default async function LivrosPage() {
   const books = await prisma.book.findMany({
+    where: { author: { status: "ativo" } },
     orderBy: { createdAt: "desc" },
     include: { author: true },
   });

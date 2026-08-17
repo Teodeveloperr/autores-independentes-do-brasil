@@ -37,7 +37,7 @@ export default async function PerfilPage({ params }: { params: Promise<{ id: str
     getCurrentAuthor(),
   ]);
 
-  if (!author) notFound();
+  if (!author || author.status === "suspenso") notFound();
 
   const isOwner = currentAuthor?.id === author.id;
 

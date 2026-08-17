@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Autores" };
 
 export default async function AutoresPage() {
-  const authors = await prisma.author.findMany({ orderBy: { createdAt: "desc" } });
+  const authors = await prisma.author.findMany({ where: { status: "ativo" }, orderBy: { createdAt: "desc" } });
 
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>

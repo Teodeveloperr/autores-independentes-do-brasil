@@ -35,6 +35,10 @@ export async function login(_prevState: LoginState, formData: FormData): Promise
     return { error: "Senha incorreta. Tente novamente." };
   }
 
+  if (author.status === "suspenso") {
+    return { error: "Esta conta está suspensa. Entre em contato com o coletivo para mais informações." };
+  }
+
   await createAuthorSession(author.id);
   redirect("/painel");
 }

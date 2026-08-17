@@ -95,6 +95,10 @@ export async function GET(request: Request) {
       }
     }
 
+    if (author.status === "suspenso") {
+      return NextResponse.redirect(`${siteUrl}/login?erro=suspenso`);
+    }
+
     await createAuthorSession(author.id);
     return NextResponse.redirect(`${siteUrl}/painel`);
   } catch (err) {

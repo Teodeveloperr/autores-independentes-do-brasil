@@ -3,7 +3,7 @@
 import { useActionState, useEffect, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { removeAuthor, adminCreateAuthor, type CreateAuthorState } from "@/app/admin/actions";
+import { removeAuthor, suspendAuthor, reactivateAuthor, adminCreateAuthor, type CreateAuthorState } from "@/app/admin/actions";
 import { initials } from "@/lib/format";
 import { PLANOS_COM_VENDA } from "@/lib/plans";
 import type { AuthorWithCount } from "./types";
@@ -20,6 +20,24 @@ export default function AdminAutoresView({ autores }: { autores: AuthorWithCount
     if (!ok) return;
     startTransition(async () => {
       await removeAuthor(id);
+      router.refresh();
+    });
+  }
+
+  function onSuspend(id: string, nome: string) {
+    const ok = window.confirm(
+      `Suspender ${nome}? O perfil, os livros e o painel dele(a) ficam indisponíveis até você reativar. Nada é apagado.`
+    );
+    if (!ok) return;
+    startTransition(async () => {
+      await suspendAuthor(id);
+      router.refresh();
+    });
+  }
+
+  function onReactivate(id: string) {
+    startTransition(async () => {
+      await reactivateAuthor(id);
       router.refresh();
     });
   }
@@ -89,7 +107,14 @@ export default function AdminAutoresView({ autores }: { autores: AuthorWithCount
                 {!a.fotoUrl && initials(a.nome)}
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: 700, fontSize: "14px" }}>{a.nome}</div>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <div style={{ fontWeight: 700, fontSize: "14px" }}>{a.nome}</div>
+                  {a.status === "suspenso" && (
+                    <span style={{ background: "#FDEDEC", color: "#C0392B", fontSize: "11px", fontWeight: 700, padding: "2px 8px", borderRadius: "10px" }}>
+                      Suspenso
+                    </span>
+                  )}
+                </div>
                 <div style={{ fontSize: "12px", color: "#666" }}>{a.generos.join(", ")} • {a.cidade}</div>
               </div>
               <div style={{ fontSize: "12px", color: "#666", textAlign: "center", flexShrink: 0, width: "90px" }}>📚 {a._count.books} livros</div>
@@ -97,10 +122,29 @@ export default function AdminAutoresView({ autores }: { autores: AuthorWithCount
               <Link href={`/perfil/${a.id}`} style={{ background: "white", border: "1px solid #DDD", borderRadius: "6px", padding: "8px 14px", fontSize: "12px", fontWeight: 600, color: "#002776", flexShrink: 0 }}>
                 Ver perfil
               </Link>
+              {a.status === "suspenso" ? (
+                <button
+                  onClick={() => onReactivate(a.id)}
+                  disabled={pending}
+                  title="Reativar autor(a)"
+                  style={{ background: "#E9F5EE", border: "1px solid #BFE3CE", borderRadius: "6px", padding: "8px 14px", fontSize: "12px", fontWeight: 600, color: "#009B3A", flexShrink: 0, opacity: pending ? 0.6 : 1 }}
+                >
+                  Reativar
+                </button>
+              ) : (
+                <button
+                  onClick={() => onSuspend(a.id, a.nome)}
+                  disabled={pending}
+                  title="Suspender autor(a)"
+                  style={{ background: "white", border: "1px solid #DDD", borderRadius: "6px", padding: "8px 14px", fontSize: "12px", fontWeight: 600, color: "#A87900", flexShrink: 0, opacity: pending ? 0.6 : 1 }}
+                >
+                  Suspender
+                </button>
+              )}
               <button
                 onClick={() => onRemove(a.id, a.nome)}
                 disabled={pending}
-                title="Remover autor(a)"
+                title="Remover autor(a) definitivamente"
                 style={{ background: "white", border: "1px solid #DDD", borderRadius: "6px", width: "32px", height: "32px", fontSize: "13px", color: "#C0392B", flexShrink: 0, opacity: pending ? 0.6 : 1 }}
               >
                 ✕

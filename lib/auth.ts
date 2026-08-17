@@ -7,7 +7,9 @@ import { getAuthorSession, getAdminSession } from "@/lib/session";
 export const getCurrentAuthor = cache(async () => {
   const session = await getAuthorSession();
   if (!session?.authorId) return null;
-  return prisma.author.findUnique({ where: { id: session.authorId } });
+  const author = await prisma.author.findUnique({ where: { id: session.authorId } });
+  if (author?.status === "suspenso") return null;
+  return author;
 });
 
 export async function requireAuthor() {

@@ -278,6 +278,24 @@ export async function removeAuthor(id: string) {
   revalidatePath("/");
 }
 
+async function setAuthorStatus(id: string, status: "ativo" | "suspenso") {
+  await requireAdmin();
+  await prisma.author.update({ where: { id }, data: { status } });
+  revalidatePath("/admin");
+  revalidatePath("/autores");
+  revalidatePath("/livros");
+  revalidatePath(`/perfil/${id}`);
+  revalidatePath("/");
+}
+
+export async function suspendAuthor(id: string) {
+  await setAuthorStatus(id, "suspenso");
+}
+
+export async function reactivateAuthor(id: string) {
+  await setAuthorStatus(id, "ativo");
+}
+
 export async function removeReview(id: string) {
   await requireAdmin();
 

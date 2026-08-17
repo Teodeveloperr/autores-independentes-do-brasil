@@ -8,13 +8,18 @@ import GoogleIcon from "./GoogleIcon";
 export default function LoginForm() {
   const [state, formAction, pending] = useActionState<LoginState, FormData>(login, undefined);
   const searchParams = useSearchParams();
-  const googleError = searchParams.get("erro") === "google";
+  const erro = searchParams.get("erro");
 
   return (
     <>
-      {googleError && (
+      {erro === "google" && (
         <div style={{ color: "#C0392B", fontSize: "13px", background: "#FDEDEC", padding: "10px 14px", borderRadius: "6px", marginBottom: "16px" }}>
           Não foi possível continuar com o Google. Tente novamente.
+        </div>
+      )}
+      {erro === "suspenso" && (
+        <div style={{ color: "#C0392B", fontSize: "13px", background: "#FDEDEC", padding: "10px 14px", borderRadius: "6px", marginBottom: "16px" }}>
+          Esta conta está suspensa. Entre em contato com o coletivo para mais informações.
         </div>
       )}
       <form action={formAction} style={{ display: "flex", flexDirection: "column", gap: "16px", marginBottom: "24px" }}>

@@ -5,7 +5,7 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://autoresdobrasil.co
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [authors, artigos] = await Promise.all([
-    prisma.author.findMany({ select: { id: true, updatedAt: true } }),
+    prisma.author.findMany({ where: { status: "ativo" }, select: { id: true, updatedAt: true } }),
     prisma.article.findMany({ select: { id: true, createdAt: true } }),
   ]);
 
