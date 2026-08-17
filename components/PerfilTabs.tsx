@@ -124,8 +124,29 @@ export default function PerfilTabs({
                 key={f.id}
                 title={f.titulo}
                 onClick={() => setGaleriaIndex(i)}
-                style={{ background: `center / cover no-repeat url(${f.url})`, aspectRatio: "1", borderRadius: "4px", cursor: "pointer" }}
-              />
+                style={{ position: "relative", background: `center / cover no-repeat url(${f.url})`, aspectRatio: "1", borderRadius: "4px", cursor: "pointer", overflow: "hidden" }}
+              >
+                {f.titulo && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      padding: "20px 10px 8px",
+                      background: "linear-gradient(to top, rgba(0,0,0,0.75), rgba(0,0,0,0))",
+                      color: "white",
+                      fontSize: "12px",
+                      fontWeight: 600,
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                    }}
+                  >
+                    {f.titulo}
+                  </div>
+                )}
+              </div>
             ))}
           </div>
         ) : (

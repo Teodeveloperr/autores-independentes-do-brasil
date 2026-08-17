@@ -20,6 +20,26 @@ export default function GaleriaGrid({ fotos }: { fotos: Foto[] }) {
             style={{ position: "relative", aspectRatio: "1", borderRadius: "4px", overflow: "hidden", cursor: "pointer" }}
           >
             <Image src={f.url} alt={f.titulo} fill sizes="(max-width: 768px) 33vw, 20vw" style={{ objectFit: "cover" }} />
+            {f.titulo && (
+              <div
+                style={{
+                  position: "absolute",
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  padding: "20px 10px 8px",
+                  background: "linear-gradient(to top, rgba(0,0,0,0.75), rgba(0,0,0,0))",
+                  color: "white",
+                  fontSize: "12px",
+                  fontWeight: 600,
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                }}
+              >
+                {f.titulo}
+              </div>
+            )}
           </div>
         ))}
       </div>
