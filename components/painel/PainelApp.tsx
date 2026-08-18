@@ -14,6 +14,7 @@ import EventosView from "./EventosView";
 import GaleriaView from "./GaleriaView";
 import MensagensView from "./MensagensView";
 import AvaliacoesView from "./AvaliacoesView";
+import VendasView from "./VendasView";
 
 const sidebarBtn = (active: boolean): React.CSSProperties => ({
   display: "flex",
@@ -45,7 +46,7 @@ export default function PainelApp({ author }: { author: AuthorWithRelations }) {
         <button onClick={() => setView("perfil")} style={sidebarBtn(view === "perfil")}>👤 Meu Perfil</button>
         <button onClick={() => setView("livros")} style={sidebarBtn(view === "livros")}>📚 Meus Livros</button>
         <button onClick={() => setView("pedidos")} style={sidebarBtn(view === "pedidos")}>📋 Pedidos</button>
-        <button onClick={() => setView("dash")} style={sidebarBtn(false)}>💰 Vendas e Relatórios</button>
+        <button onClick={() => setView("vendas")} style={sidebarBtn(view === "vendas")}>💰 Vendas e Relatórios</button>
         <button onClick={() => setView("galeria")} style={sidebarBtn(view === "galeria")}>🖼️ Galeria de Fotos</button>
         <button onClick={() => setView("eventos")} style={sidebarBtn(view === "eventos")}>📅 Eventos</button>
         <button onClick={() => setView("mensagens")} style={sidebarBtn(view === "mensagens")}>
@@ -119,6 +120,7 @@ export default function PainelApp({ author }: { author: AuthorWithRelations }) {
           {view === "galeria" && <GaleriaView author={author} />}
           {view === "mensagens" && <MensagensView author={author} />}
           {view === "avaliacoes" && <AvaliacoesView author={author} />}
+          {view === "vendas" && <VendasView author={author} />}
         </div>
 
         <div style={{ padding: "16px 32px", borderTop: "1px solid #E0E0E0", display: "flex", justifyContent: "space-between", fontSize: "12px", color: "#999" }}>

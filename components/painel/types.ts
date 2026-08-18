@@ -1,6 +1,6 @@
 import type { Prisma } from "@/app/generated/prisma/client";
 
-export type PainelView = "dash" | "perfil" | "livros" | "pedidos" | "eventos" | "galeria" | "mensagens" | "avaliacoes";
+export type PainelView = "dash" | "perfil" | "livros" | "pedidos" | "eventos" | "galeria" | "mensagens" | "avaliacoes" | "vendas";
 
 export type AuthorWithRelations = Prisma.AuthorGetPayload<{
   include: {
