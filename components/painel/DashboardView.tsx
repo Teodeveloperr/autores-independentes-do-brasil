@@ -64,16 +64,16 @@ export default function DashboardView({
             <div style={{ fontSize: "22px", fontWeight: 700, color: "#002776" }}>—</div>
           </div>
         </div>
-        <div style={{ background: "white", borderRadius: "10px", padding: "20px", display: "flex", gap: "14px", alignItems: "flex-start" }}>
+        <button onClick={() => onNavigate("avaliacoes")} style={{ background: "white", border: "none", borderRadius: "10px", padding: "20px", display: "flex", gap: "14px", alignItems: "flex-start", textAlign: "left" }}>
           <div style={{ width: "46px", height: "46px", borderRadius: "50%", background: "#6B4EAF", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "20px", flexShrink: 0 }}>⭐</div>
           <div>
             <div style={{ fontSize: "12px", color: "#666", marginBottom: "4px" }}>Avaliações</div>
             <div style={{ fontSize: "22px", fontWeight: 700, color: "#002776" }}>
               {author.avaliacaoMedia?.toFixed(1) ?? "—"} <span style={{ color: "#FFB800", fontSize: "15px" }}>★★★★★</span>
             </div>
-            <div style={{ fontSize: "12px", color: "#666", marginTop: "4px" }}>Baseado em {author.avaliacoesQtd} avaliações</div>
+            <div style={{ fontSize: "12px", color: "#009B3A", marginTop: "4px" }}>Baseado em {author.avaliacoesQtd} avaliações</div>
           </div>
-        </div>
+        </button>
       </div>
 
       <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "1.8fr 1.2fr 0.9fr", gap: "20px", marginBottom: "24px" }}>

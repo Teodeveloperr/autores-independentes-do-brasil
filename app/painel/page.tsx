@@ -21,6 +21,7 @@ export default async function PainelPage() {
         orderBy: { createdAt: "desc" },
         include: { mensagens: { orderBy: { createdAt: "asc" } } },
       },
+      avaliacoes: { orderBy: { createdAt: "desc" } },
     },
   });
 

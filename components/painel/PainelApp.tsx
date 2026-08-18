@@ -13,6 +13,7 @@ import PedidosView from "./PedidosView";
 import EventosView from "./EventosView";
 import GaleriaView from "./GaleriaView";
 import MensagensView from "./MensagensView";
+import AvaliacoesView from "./AvaliacoesView";
 
 const sidebarBtn = (active: boolean): React.CSSProperties => ({
   display: "flex",
@@ -55,7 +56,7 @@ export default function PainelApp({ author }: { author: AuthorWithRelations }) {
             </span>
           )}
         </button>
-        <button onClick={() => setView("dash")} style={sidebarBtn(false)}>⭐ Avaliações</button>
+        <button onClick={() => setView("avaliacoes")} style={sidebarBtn(view === "avaliacoes")}>⭐ Avaliações</button>
         <button onClick={() => setView("dash")} style={sidebarBtn(false)}>⚙️ Configurações</button>
         <button
           onClick={() => logout()}
@@ -117,6 +118,7 @@ export default function PainelApp({ author }: { author: AuthorWithRelations }) {
           {view === "eventos" && <EventosView author={author} />}
           {view === "galeria" && <GaleriaView author={author} />}
           {view === "mensagens" && <MensagensView author={author} />}
+          {view === "avaliacoes" && <AvaliacoesView author={author} />}
         </div>
 
         <div style={{ padding: "16px 32px", borderTop: "1px solid #E0E0E0", display: "flex", justifyContent: "space-between", fontSize: "12px", color: "#999" }}>
