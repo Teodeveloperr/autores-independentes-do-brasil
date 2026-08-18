@@ -7,9 +7,9 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = { title: "Meu Painel" };
 
-export default async function PainelPage({ searchParams }: { searchParams: Promise<{ assinatura?: string }> }) {
+export default async function PainelPage({ searchParams }: { searchParams: Promise<{ assinatura?: string; mercadopago?: string }> }) {
   const authorSession = await requireAuthor();
-  const { assinatura } = await searchParams;
+  const { assinatura, mercadopago } = await searchParams;
 
   const author = await prisma.author.findUniqueOrThrow({
     where: { id: authorSession.id },
@@ -28,6 +28,15 @@ export default async function PainelPage({ searchParams }: { searchParams: Promi
   });
 
   const temSenha = authorSession.senhaHash != null;
+  const mercadoPagoToken = await prisma.authorMercadoPagoToken.findUnique({ where: { authorId: author.id } });
 
-  return <PainelApp author={author} temSenha={temSenha} assinaturaPendente={assinatura === "pendente"} />;
+  return (
+    <PainelApp
+      author={author}
+      temSenha={temSenha}
+      assinaturaPendente={assinatura === "pendente"}
+      mercadoPagoConectado={!!mercadoPagoToken}
+      mercadoPagoStatus={mercadopago}
+    />
+  );
 }

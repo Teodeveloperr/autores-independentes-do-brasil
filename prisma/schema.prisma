@@ -53,13 +53,28 @@ model Author {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  books       Book[]
-  eventos     AuthorEvent[]
-  fotos       AuthorPhoto[]
-  orders      Order[]
-  conversas   Conversation[]
-  avaliacoes  Review[]
-  resetTokens PasswordResetToken[]
+  books            Book[]
+  eventos          AuthorEvent[]
+  fotos            AuthorPhoto[]
+  orders           Order[]
+  conversas        Conversation[]
+  avaliacoes       Review[]
+  resetTokens      PasswordResetToken[]
+  mercadoPagoToken AuthorMercadoPagoToken?
+}
+
+model AuthorMercadoPagoToken {
+  id           String   @id @default(cuid())
+  authorId     String   @unique
+  author       Author   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  accessToken  String
+  refreshToken String
+  publicKey    String?
+  mpUserId     String
+  expiresAt    DateTime
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Book {

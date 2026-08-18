@@ -9,6 +9,7 @@ import { deleteAuthorSession } from "@/lib/session";
 import { centavosFromInput, sanitizeExternalUrl } from "@/lib/format";
 import { validarSenha } from "@/lib/password";
 import { checkRateLimit } from "@/lib/rateLimit";
+import { desconectarMercadoPago as desconectarMercadoPagoLib } from "@/lib/mercadoPagoMarketplace";
 
 export async function logout() {
   await deleteAuthorSession();
@@ -239,4 +240,10 @@ export async function changePassword(_prev: ChangePasswordState, formData: FormD
   await prisma.author.update({ where: { id: author.id }, data: { senhaHash } });
 
   return { ok: true };
+}
+
+export async function desconectarMercadoPago() {
+  const author = await requireAuthor();
+  await desconectarMercadoPagoLib(author.id);
+  revalidatePath("/painel");
 }

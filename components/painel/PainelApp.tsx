@@ -35,10 +35,14 @@ export default function PainelApp({
   author,
   temSenha,
   assinaturaPendente,
+  mercadoPagoConectado,
+  mercadoPagoStatus,
 }: {
   author: AuthorWithRelations;
   temSenha: boolean;
   assinaturaPendente?: boolean;
+  mercadoPagoConectado: boolean;
+  mercadoPagoStatus?: string;
 }) {
   const [view, setView] = useState<PainelView>("dash");
 
@@ -126,6 +130,16 @@ export default function PainelApp({
               ⏳ Estamos confirmando o pagamento da sua assinatura com o Mercado Pago. Isso pode levar alguns instantes — atualize a página em breve.
             </div>
           )}
+          {mercadoPagoStatus === "conectado" && (
+            <div style={{ background: "#E3F4E9", color: "#009B3A", padding: "14px 18px", borderRadius: "8px", marginBottom: "20px", fontSize: "13px" }}>
+              ✅ Conta do Mercado Pago conectada com sucesso! Suas vendas de livros agora caem direto na sua conta.
+            </div>
+          )}
+          {mercadoPagoStatus === "erro" && (
+            <div style={{ background: "#FDEDEC", color: "#C0392B", padding: "14px 18px", borderRadius: "8px", marginBottom: "20px", fontSize: "13px" }}>
+              ❌ Não foi possível conectar sua conta do Mercado Pago. Tente novamente em Configurações.
+            </div>
+          )}
           {view === "dash" && <DashboardView author={author} onNavigate={setView} />}
           {view === "perfil" && <PerfilView author={author} />}
           {view === "livros" && <LivrosView author={author} />}
@@ -135,7 +149,7 @@ export default function PainelApp({
           {view === "mensagens" && <MensagensView author={author} />}
           {view === "avaliacoes" && <AvaliacoesView author={author} />}
           {view === "vendas" && <VendasView author={author} />}
-          {view === "configuracoes" && <ConfiguracoesView author={author} temSenha={temSenha} />}
+          {view === "configuracoes" && <ConfiguracoesView author={author} temSenha={temSenha} mercadoPagoConectado={mercadoPagoConectado} />}
         </div>
 
         <div style={{ padding: "16px 32px", borderTop: "1px solid #E0E0E0", display: "flex", justifyContent: "space-between", fontSize: "12px", color: "#999" }}>

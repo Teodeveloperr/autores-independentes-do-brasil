@@ -3,7 +3,7 @@
 import { useActionState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { changePassword, type ChangePasswordState } from "@/app/painel/actions";
+import { changePassword, desconectarMercadoPago, type ChangePasswordState } from "@/app/painel/actions";
 import { cancelarAssinatura } from "@/app/assinatura/actions";
 import type { AuthorWithRelations } from "./types";
 
@@ -14,15 +14,32 @@ const STATUS_LABEL: Record<string, string> = {
   cancelled: "Cancelada",
 };
 
-export default function ConfiguracoesView({ author, temSenha }: { author: AuthorWithRelations; temSenha: boolean }) {
+export default function ConfiguracoesView({
+  author,
+  temSenha,
+  mercadoPagoConectado,
+}: {
+  author: AuthorWithRelations;
+  temSenha: boolean;
+  mercadoPagoConectado: boolean;
+}) {
   const [state, formAction, pending] = useActionState<ChangePasswordState, FormData>(changePassword, undefined);
   const [cancelando, startCancelamento] = useTransition();
+  const [desconectando, startDesconexao] = useTransition();
   const router = useRouter();
 
   function onCancelarAssinatura() {
     if (!confirm("Tem certeza que deseja cancelar sua assinatura? Seu plano voltará para Gratuito.")) return;
     startCancelamento(async () => {
       await cancelarAssinatura();
+      router.refresh();
+    });
+  }
+
+  function onDesconectarMercadoPago() {
+    if (!confirm("Desconectar sua conta do Mercado Pago? Você vai parar de receber pelas vendas dos seus livros até conectar novamente.")) return;
+    startDesconexao(async () => {
+      await desconectarMercadoPago();
       router.refresh();
     });
   }
@@ -134,6 +151,35 @@ export default function ConfiguracoesView({ author, temSenha }: { author: Author
             </form>
           )}
         </div>
+      </div>
+
+      <div style={{ background: "white", borderRadius: "10px", padding: "24px", marginTop: "20px" }}>
+        <div style={{ fontWeight: 700, color: "#002776", marginBottom: "4px" }}>Recebimento de vendas</div>
+        <p style={{ fontSize: "12px", color: "#666", marginBottom: "16px", maxWidth: "560px" }}>
+          Conecte sua conta do Mercado Pago para receber diretamente o valor das vendas dos seus livros. O coletivo não fica com o dinheiro em nenhum momento — cada venda cai direto na sua conta, com a taxa da plataforma já descontada automaticamente.
+        </p>
+
+        {mercadoPagoConectado ? (
+          <div style={{ display: "flex", alignItems: "center", gap: "14px", flexWrap: "wrap" }}>
+            <div style={{ color: "#009B3A", fontSize: "13px", background: "#E3F4E9", padding: "10px 14px", borderRadius: "6px", fontWeight: 600 }}>
+              ✅ Conta do Mercado Pago conectada
+            </div>
+            <button
+              onClick={onDesconectarMercadoPago}
+              disabled={desconectando}
+              style={{ background: "white", border: "1px solid #C0392B", color: "#C0392B", padding: "10px 18px", fontWeight: 600, borderRadius: "6px", fontSize: "13px", opacity: desconectando ? 0.7 : 1 }}
+            >
+              {desconectando ? "Desconectando..." : "Desconectar"}
+            </button>
+          </div>
+        ) : (
+          <a
+            href="/api/auth/mercadopago"
+            style={{ display: "inline-block", background: "#009B3A", color: "white", padding: "12px 20px", fontWeight: 700, borderRadius: "6px", fontSize: "14px", textDecoration: "none" }}
+          >
+            Conectar Mercado Pago
+          </a>
+        )}
       </div>
     </div>
   );
