@@ -12,7 +12,7 @@ function brl(centavos: number) {
 const CICLOS: { id: CicloAssinatura; label: string }[] = [
   { id: "mensal", label: "Mensal" },
   { id: "semestral", label: "Semestral (-10%)" },
-  { id: "anual", label: "Anual (-20%)" },
+  { id: "anual", label: "Anual (menor preço)" },
 ];
 
 function PlanoPagoCard({
@@ -33,7 +33,7 @@ function PlanoPagoCard({
   const [state, formAction, pending] = useActionState<AssinarState, FormData>(iniciarAssinatura, undefined);
   const plano = PLANOS_PAGOS[slug];
   const meses = CICLO_MESES[ciclo];
-  const totalCiclo = valorCicloCentavos(plano.valorMensalCentavos, ciclo);
+  const totalCiclo = valorCicloCentavos(plano, ciclo);
   const porMes = Math.round(totalCiclo / meses);
   const jaAssinante = planoAtual === plano.nome;
 

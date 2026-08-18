@@ -30,7 +30,7 @@ export async function iniciarAssinatura(_prev: AssinarState, formData: FormData)
   }
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://autoresdobrasil.com.br";
-  const valorCentavos = valorCicloCentavos(plano.valorMensalCentavos, ciclo);
+  const valorCentavos = valorCicloCentavos(plano, ciclo);
 
   const assinatura = await criarAssinatura({
     authorId: author.id,
