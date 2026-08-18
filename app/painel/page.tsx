@@ -12,6 +12,7 @@ export default async function PainelPage() {
 
   const author = await prisma.author.findUniqueOrThrow({
     where: { id: authorSession.id },
+    omit: { senhaHash: true },
     include: {
       books: { orderBy: { createdAt: "desc" } },
       eventos: { orderBy: { createdAt: "desc" } },
@@ -25,5 +26,7 @@ export default async function PainelPage() {
     },
   });
 
-  return <PainelApp author={author} />;
+  const temSenha = authorSession.senhaHash != null;
+
+  return <PainelApp author={author} temSenha={temSenha} />;
 }

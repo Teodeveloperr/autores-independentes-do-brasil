@@ -1,8 +1,9 @@
 import type { Prisma } from "@/app/generated/prisma/client";
 
-export type PainelView = "dash" | "perfil" | "livros" | "pedidos" | "eventos" | "galeria" | "mensagens" | "avaliacoes" | "vendas";
+export type PainelView = "dash" | "perfil" | "livros" | "pedidos" | "eventos" | "galeria" | "mensagens" | "avaliacoes" | "vendas" | "configuracoes";
 
 export type AuthorWithRelations = Prisma.AuthorGetPayload<{
+  omit: { senhaHash: true };
   include: {
     books: true;
     eventos: true;

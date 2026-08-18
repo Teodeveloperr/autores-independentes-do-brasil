@@ -1,11 +1,14 @@
 "use server";
 
+import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { requireAuthor } from "@/lib/auth";
 import { deleteAuthorSession } from "@/lib/session";
 import { centavosFromInput, sanitizeExternalUrl } from "@/lib/format";
+import { validarSenha } from "@/lib/password";
+import { checkRateLimit } from "@/lib/rateLimit";
 
 export async function logout() {
   await deleteAuthorSession();
@@ -198,4 +201,42 @@ export async function sendMessage(conversationId: string, texto: string) {
   });
 
   revalidatePath("/painel");
+}
+
+export type ChangePasswordState = { error?: string; ok?: boolean } | undefined;
+
+export async function changePassword(_prev: ChangePasswordState, formData: FormData): Promise<ChangePasswordState> {
+  const author = await requireAuthor();
+
+  const permitido = await checkRateLimit(`change-password:${author.id}`, 5, 15);
+  if (!permitido) {
+    return { error: "Muitas tentativas. Aguarde alguns minutos e tente novamente." };
+  }
+
+  const senhaAtual = (formData.get("senhaAtual") as string) || "";
+  const novaSenha = (formData.get("novaSenha") as string) || "";
+  const confirmar = (formData.get("confirmar") as string) || "";
+
+  if (author.senhaHash) {
+    if (!senhaAtual) {
+      return { error: "Informe sua senha atual." };
+    }
+    const senhaOk = await bcrypt.compare(senhaAtual, author.senhaHash);
+    if (!senhaOk) {
+      return { error: "Senha atual incorreta." };
+    }
+  }
+
+  const erroSenha = validarSenha(novaSenha);
+  if (erroSenha) {
+    return { error: erroSenha };
+  }
+  if (novaSenha !== confirmar) {
+    return { error: "As senhas não coincidem." };
+  }
+
+  const senhaHash = await bcrypt.hash(novaSenha, 10);
+  await prisma.author.update({ where: { id: author.id }, data: { senhaHash } });
+
+  return { ok: true };
 }

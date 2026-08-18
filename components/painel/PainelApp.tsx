@@ -15,6 +15,7 @@ import GaleriaView from "./GaleriaView";
 import MensagensView from "./MensagensView";
 import AvaliacoesView from "./AvaliacoesView";
 import VendasView from "./VendasView";
+import ConfiguracoesView from "./ConfiguracoesView";
 
 const sidebarBtn = (active: boolean): React.CSSProperties => ({
   display: "flex",
@@ -30,7 +31,7 @@ const sidebarBtn = (active: boolean): React.CSSProperties => ({
   color: "white",
 });
 
-export default function PainelApp({ author }: { author: AuthorWithRelations }) {
+export default function PainelApp({ author, temSenha }: { author: AuthorWithRelations; temSenha: boolean }) {
   const [view, setView] = useState<PainelView>("dash");
 
   const unreadCount = author.conversas.filter((c) => c.unread).length;
@@ -58,7 +59,7 @@ export default function PainelApp({ author }: { author: AuthorWithRelations }) {
           )}
         </button>
         <button onClick={() => setView("avaliacoes")} style={sidebarBtn(view === "avaliacoes")}>⭐ Avaliações</button>
-        <button onClick={() => setView("dash")} style={sidebarBtn(false)}>⚙️ Configurações</button>
+        <button onClick={() => setView("configuracoes")} style={sidebarBtn(view === "configuracoes")}>⚙️ Configurações</button>
         <button
           onClick={() => logout()}
           style={{ display: "flex", gap: "10px", alignItems: "center", padding: "10px 12px", color: "white", fontSize: "14px", fontWeight: 600, marginTop: "12px", background: "transparent", width: "100%", textAlign: "left" }}
@@ -121,6 +122,7 @@ export default function PainelApp({ author }: { author: AuthorWithRelations }) {
           {view === "mensagens" && <MensagensView author={author} />}
           {view === "avaliacoes" && <AvaliacoesView author={author} />}
           {view === "vendas" && <VendasView author={author} />}
+          {view === "configuracoes" && <ConfiguracoesView author={author} temSenha={temSenha} />}
         </div>
 
         <div style={{ padding: "16px 32px", borderTop: "1px solid #E0E0E0", display: "flex", justifyContent: "space-between", fontSize: "12px", color: "#999" }}>
