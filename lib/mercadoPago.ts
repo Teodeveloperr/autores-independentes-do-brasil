@@ -20,6 +20,7 @@ export type CriarAssinaturaInput = {
   valorCentavos: number;
   cicloMeses: number;
   backUrl: string;
+  notificationUrl: string;
 };
 
 export type AssinaturaCriada = { id: string; initPoint: string };
@@ -40,6 +41,7 @@ export async function criarAssinatura(input: CriarAssinaturaInput): Promise<Assi
         external_reference: `${input.authorId}|${input.planoSlug}`,
         payer_email: input.authorEmail,
         back_url: input.backUrl,
+        notification_url: input.notificationUrl,
         auto_recurring: {
           frequency: input.cicloMeses,
           frequency_type: "months",

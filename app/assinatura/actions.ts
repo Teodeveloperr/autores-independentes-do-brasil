@@ -40,6 +40,7 @@ export async function iniciarAssinatura(_prev: AssinarState, formData: FormData)
     valorCentavos,
     cicloMeses: CICLO_MESES[ciclo],
     backUrl: `${siteUrl}/painel?assinatura=pendente`,
+    notificationUrl: `${siteUrl}/api/webhooks/mercadopago`,
   });
 
   if (!assinatura) {
