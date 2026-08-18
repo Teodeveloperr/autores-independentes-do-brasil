@@ -42,6 +42,9 @@ model Author {
   planoValorCentavos Int?
   status             String  @default("ativo")
 
+  mpPreapprovalId      String?
+  mpSubscriptionStatus String?
+
   avaliacaoMedia Float?
   avaliacoesQtd  Int     @default(0)
   seguidores     Int     @default(0)

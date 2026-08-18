@@ -1,12 +1,31 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { changePassword, type ChangePasswordState } from "@/app/painel/actions";
+import { cancelarAssinatura } from "@/app/assinatura/actions";
 import type { AuthorWithRelations } from "./types";
+
+const STATUS_LABEL: Record<string, string> = {
+  pending: "Aguardando confirmação do pagamento",
+  authorized: "Ativa",
+  paused: "Pausada (falha na cobrança)",
+  cancelled: "Cancelada",
+};
 
 export default function ConfiguracoesView({ author, temSenha }: { author: AuthorWithRelations; temSenha: boolean }) {
   const [state, formAction, pending] = useActionState<ChangePasswordState, FormData>(changePassword, undefined);
+  const [cancelando, startCancelamento] = useTransition();
+  const router = useRouter();
+
+  function onCancelarAssinatura() {
+    if (!confirm("Tem certeza que deseja cancelar sua assinatura? Seu plano voltará para Gratuito.")) return;
+    startCancelamento(async () => {
+      await cancelarAssinatura();
+      router.refresh();
+    });
+  }
 
   return (
     <div>
@@ -24,17 +43,34 @@ export default function ConfiguracoesView({ author, temSenha }: { author: Author
               <div style={{ color: "#666", marginBottom: "4px" }}>Plano atual</div>
               <div style={{ fontWeight: 600 }}>{author.plano}</div>
             </div>
+            {author.mpSubscriptionStatus && (
+              <div>
+                <div style={{ color: "#666", marginBottom: "4px" }}>Assinatura</div>
+                <div style={{ fontWeight: 600 }}>{STATUS_LABEL[author.mpSubscriptionStatus] ?? author.mpSubscriptionStatus}</div>
+              </div>
+            )}
             <div>
               <div style={{ color: "#666", marginBottom: "4px" }}>No coletivo desde</div>
               <div style={{ fontWeight: 600 }}>{author.anoEntrada}</div>
             </div>
           </div>
-          <Link
-            href="/assinatura"
-            style={{ display: "inline-block", marginTop: "20px", background: "white", border: "1px solid #009B3A", color: "#009B3A", padding: "10px 18px", fontWeight: 600, borderRadius: "6px", fontSize: "13px", textDecoration: "none" }}
-          >
-            Ver planos e fazer upgrade →
-          </Link>
+          <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", marginTop: "20px" }}>
+            <Link
+              href="/assinatura"
+              style={{ display: "inline-block", background: "white", border: "1px solid #009B3A", color: "#009B3A", padding: "10px 18px", fontWeight: 600, borderRadius: "6px", fontSize: "13px", textDecoration: "none" }}
+            >
+              Ver planos e fazer upgrade →
+            </Link>
+            {(author.mpSubscriptionStatus === "authorized" || author.mpSubscriptionStatus === "pending") && (
+              <button
+                onClick={onCancelarAssinatura}
+                disabled={cancelando}
+                style={{ background: "white", border: "1px solid #C0392B", color: "#C0392B", padding: "10px 18px", fontWeight: 600, borderRadius: "6px", fontSize: "13px", opacity: cancelando ? 0.7 : 1 }}
+              >
+                {cancelando ? "Cancelando..." : "Cancelar assinatura"}
+              </button>
+            )}
+          </div>
         </div>
 
         <div style={{ background: "white", borderRadius: "10px", padding: "24px" }}>

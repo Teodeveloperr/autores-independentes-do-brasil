@@ -7,8 +7,9 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = { title: "Meu Painel" };
 
-export default async function PainelPage() {
+export default async function PainelPage({ searchParams }: { searchParams: Promise<{ assinatura?: string }> }) {
   const authorSession = await requireAuthor();
+  const { assinatura } = await searchParams;
 
   const author = await prisma.author.findUniqueOrThrow({
     where: { id: authorSession.id },
@@ -28,5 +29,5 @@ export default async function PainelPage() {
 
   const temSenha = authorSession.senhaHash != null;
 
-  return <PainelApp author={author} temSenha={temSenha} />;
+  return <PainelApp author={author} temSenha={temSenha} assinaturaPendente={assinatura === "pendente"} />;
 }

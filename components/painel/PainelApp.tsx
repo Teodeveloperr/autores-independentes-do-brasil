@@ -31,7 +31,15 @@ const sidebarBtn = (active: boolean): React.CSSProperties => ({
   color: "white",
 });
 
-export default function PainelApp({ author, temSenha }: { author: AuthorWithRelations; temSenha: boolean }) {
+export default function PainelApp({
+  author,
+  temSenha,
+  assinaturaPendente,
+}: {
+  author: AuthorWithRelations;
+  temSenha: boolean;
+  assinaturaPendente?: boolean;
+}) {
   const [view, setView] = useState<PainelView>("dash");
 
   const unreadCount = author.conversas.filter((c) => c.unread).length;
@@ -113,6 +121,11 @@ export default function PainelApp({ author, temSenha }: { author: AuthorWithRela
         </div>
 
         <div className="section-pad-md" style={{ padding: "28px 32px", flex: 1, minWidth: 0 }}>
+          {assinaturaPendente && (
+            <div style={{ background: "#FFF7D1", color: "#8A6D00", padding: "14px 18px", borderRadius: "8px", marginBottom: "20px", fontSize: "13px" }}>
+              ⏳ Estamos confirmando o pagamento da sua assinatura com o Mercado Pago. Isso pode levar alguns instantes — atualize a página em breve.
+            </div>
+          )}
           {view === "dash" && <DashboardView author={author} onNavigate={setView} />}
           {view === "perfil" && <PerfilView author={author} />}
           {view === "livros" && <LivrosView author={author} />}
