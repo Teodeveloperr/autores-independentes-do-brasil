@@ -10,6 +10,7 @@ import {
   type Cycle,
 } from "@/app/cadastro/actions";
 import GoogleIcon from "./GoogleIcon";
+import PasswordInput from "./PasswordInput";
 import { GENEROS } from "@/lib/genres";
 
 const PLANS: { id: PlanId; nome: string; desc: string; monthly: number; badge: string; disponivel: boolean }[] = [
@@ -166,11 +167,11 @@ export default function CadastroWizard() {
             <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
               <div>
                 <label style={labelStyle}>Senha</label>
-                <input name="senha" type="password" required minLength={8} placeholder="Crie uma senha" style={inputStyle} />
+                <PasswordInput name="senha" required minLength={8} autoComplete="new-password" placeholder="Crie uma senha" style={inputStyle} />
               </div>
               <div>
                 <label style={labelStyle}>Confirmar senha</label>
-                <input name="confirmar" type="password" required minLength={8} placeholder="Repita a senha" style={inputStyle} />
+                <PasswordInput name="confirmar" required minLength={8} autoComplete="new-password" placeholder="Repita a senha" style={inputStyle} />
               </div>
             </div>
             <p style={{ fontSize: "11px", color: "#999", marginTop: "-8px" }}>Mínimo de 8 caracteres, com pelo menos uma letra e um número.</p>

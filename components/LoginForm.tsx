@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import { useSearchParams } from "next/navigation";
 import { login, type LoginState } from "@/app/login/actions";
 import GoogleIcon from "./GoogleIcon";
+import PasswordInput from "./PasswordInput";
 
 export default function LoginForm() {
   const [state, formAction, pending] = useActionState<LoginState, FormData>(login, undefined);
@@ -39,10 +40,10 @@ export default function LoginForm() {
           <label style={{ display: "block", fontSize: "14px", fontWeight: 600, marginBottom: "8px" }}>
             Senha
           </label>
-          <input
+          <PasswordInput
             name="senha"
-            type="password"
             required
+            autoComplete="current-password"
             placeholder="Digite sua senha"
             style={{ width: "100%", padding: "12px", border: "1px solid #DDD", borderRadius: "4px", fontSize: "14px" }}
           />
