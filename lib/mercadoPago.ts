@@ -37,7 +37,7 @@ export async function criarAssinatura(input: CriarAssinaturaInput): Promise<Assi
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        reason: `Autores Independentes do Brasil — ${input.planoNome}`,
+        reason: `Autores Independentes do Brasil - ${input.planoNome}`,
         external_reference: `${input.authorId}|${input.planoSlug}`,
         payer_email: input.authorEmail,
         back_url: input.backUrl,
