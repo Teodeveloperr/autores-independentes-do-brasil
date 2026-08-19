@@ -7,6 +7,11 @@ const IMAGENS = [
   "/coletivo-carrossel-2.webp",
   "/coletivo-carrossel-3.webp",
   "/coletivo-carrossel-4.webp",
+  "/coletivo-carrossel-5.webp",
+  "/coletivo-carrossel-6.webp",
+  "/coletivo-carrossel-7.webp",
+  "/coletivo-carrossel-8.webp",
+  "/coletivo-carrossel-9.webp",
 ];
 
 const VISIVEIS = 3;
