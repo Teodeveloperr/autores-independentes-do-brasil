@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Lightbox from "./Lightbox";
 
 const IMAGENS = [
   "/coletivo-carrossel-1.webp",
@@ -14,10 +15,25 @@ const IMAGENS = [
   "/coletivo-carrossel-9.webp",
 ];
 
-const VISIVEIS = 3;
+function visiveisParaLargura(largura: number) {
+  if (largura < 560) return 1;
+  if (largura < 900) return 2;
+  return 3;
+}
 
 export default function ColetivoCarousel() {
   const [index, setIndex] = useState(0);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const [visiveisCount, setVisiveisCount] = useState(3);
+
+  useEffect(() => {
+    function atualizar() {
+      setVisiveisCount(visiveisParaLargura(window.innerWidth));
+    }
+    atualizar();
+    window.addEventListener("resize", atualizar);
+    return () => window.removeEventListener("resize", atualizar);
+  }, []);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -34,7 +50,7 @@ export default function ColetivoCarousel() {
     setIndex((i) => (i + 1) % IMAGENS.length);
   }
 
-  const visiveis = Array.from({ length: VISIVEIS }, (_, offset) => IMAGENS[(index + offset) % IMAGENS.length]);
+  const visiveis = Array.from({ length: visiveisCount }, (_, offset) => IMAGENS[(index + offset) % IMAGENS.length]);
 
   return (
     <div>
@@ -57,16 +73,21 @@ export default function ColetivoCarousel() {
           ‹
         </button>
 
-        <div className="responsive-grid" style={{ flex: 1, display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "24px" }}>
+        <div style={{ flex: 1, display: "grid", gridTemplateColumns: `repeat(${visiveisCount}, 1fr)`, gap: "24px" }}>
           {visiveis.map((src, i) => (
-            <div
+            <button
               key={`${src}-${i}`}
+              onClick={() => setLightboxIndex((index + i) % IMAGENS.length)}
+              aria-label="Ampliar foto"
               style={{
                 backgroundImage: `url(${src})`,
                 backgroundSize: "cover",
                 backgroundPosition: "center",
                 aspectRatio: "1",
                 borderRadius: "8px",
+                border: "none",
+                padding: 0,
+                cursor: "pointer",
               }}
             />
           ))}
@@ -108,6 +129,15 @@ export default function ColetivoCarousel() {
           />
         ))}
       </div>
+
+      {lightboxIndex !== null && (
+        <Lightbox
+          fotos={IMAGENS.map((url) => ({ url }))}
+          index={lightboxIndex}
+          onClose={() => setLightboxIndex(null)}
+          onNavigate={setLightboxIndex}
+        />
+      )}
     </div>
   );
 }
