@@ -64,8 +64,8 @@ export default function ColetivoPage() {
         <div className="section-pad-md" style={{ background: "#002776", color: "white", padding: "60px", borderRadius: "8px", textAlign: "center", marginBottom: "60px" }}>
           <CounterStats
             stats={[
-              { value: 50, suffix: "+", label: "AUTORES" },
-              { value: 200, suffix: "+", label: "LIVROS PUBLICADOS" },
+              { value: 100, suffix: "+", label: "AUTORES" },
+              { value: 300, suffix: "+", label: "LIVROS NO STAND" },
               { value: 30, label: "PARTICIPAÇÕES EM BIENAIS" },
             ]}
           />
