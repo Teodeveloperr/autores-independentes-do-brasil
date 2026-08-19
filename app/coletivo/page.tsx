@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import PublicHeader from "@/components/PublicHeader";
 import PublicFooter from "@/components/PublicFooter";
 import CounterStats from "@/components/CounterStats";
+import ColetivoCarousel from "@/components/ColetivoCarousel";
 
 export const dynamic = "force-dynamic";
 
@@ -104,15 +105,8 @@ export default function ColetivoPage() {
           Com uma atuação pautada pela colaboração e pelo compartilhamento de conhecimento, o Autores do Brasil busca reduzir as barreiras enfrentadas pelos escritores independentes, oferecendo visibilidade, acesso à informação, formação continuada e oportunidades concretas de crescimento profissional.
         </p>
 
-        <div className="responsive-grid" style={{ marginTop: "60px", display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "24px" }}>
-          <div style={{ background: "#E0E0E0", aspectRatio: "1", borderRadius: "8px" }} />
-          <div style={{ background: "#E0E0E0", aspectRatio: "1", borderRadius: "8px" }} />
-          <div style={{ background: "#E0E0E0", aspectRatio: "1", borderRadius: "8px" }} />
-        </div>
-        <div style={{ display: "flex", justifyContent: "center", gap: "8px", marginTop: "24px" }}>
-          <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#002776", display: "inline-block" }} />
-          <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#DDD", display: "inline-block" }} />
-          <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#DDD", display: "inline-block" }} />
+        <div style={{ marginTop: "60px" }}>
+          <ColetivoCarousel />
         </div>
       </div>
       </section>
