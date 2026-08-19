@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, useCallback } from "react";
+import { createContext, useContext, useEffect, useState, useCallback, useRef } from "react";
 
 export type CartItem = {
   bookId: string;
@@ -23,6 +23,9 @@ type CartContextValue = {
   drawerOpen: boolean;
   closeDrawer: () => void;
   lastAdded: CartItem | null;
+  conflitoAutor: { item: Omit<CartItem, "quantidade">; autorAtual: string } | null;
+  confirmarTrocaAutor: () => void;
+  cancelarTrocaAutor: () => void;
 };
 
 const CartContext = createContext<CartContextValue | null>(null);
@@ -34,6 +37,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const [hydrated, setHydrated] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [lastAdded, setLastAdded] = useState<CartItem | null>(null);
+  const [conflitoAutor, setConflitoAutor] = useState<{ item: Omit<CartItem, "quantidade">; autorAtual: string } | null>(null);
+  const itemsRef = useRef<CartItem[]>([]);
+  useEffect(() => {
+    itemsRef.current = items;
+  }, [items]);
 
   useEffect(() => {
     try {
@@ -51,6 +59,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }, [items, hydrated]);
 
   const addItem = useCallback((item: Omit<CartItem, "quantidade">) => {
+    const atual = itemsRef.current;
+    if (atual.length > 0 && atual[0].authorId !== item.authorId) {
+      setConflitoAutor({ item, autorAtual: atual[0].autorNome });
+      return;
+    }
+
     setItems((prev) => {
       const existing = prev.find((i) => i.bookId === item.bookId);
       if (existing) {
@@ -61,6 +75,18 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     setLastAdded({ ...item, quantidade: 1 });
     setDrawerOpen(true);
   }, []);
+
+  const confirmarTrocaAutor = useCallback(() => {
+    setConflitoAutor((atual) => {
+      if (!atual) return null;
+      setItems([{ ...atual.item, quantidade: 1 }]);
+      setLastAdded({ ...atual.item, quantidade: 1 });
+      setDrawerOpen(true);
+      return null;
+    });
+  }, []);
+
+  const cancelarTrocaAutor = useCallback(() => setConflitoAutor(null), []);
 
   const closeDrawer = useCallback(() => setDrawerOpen(false), []);
 
@@ -83,7 +109,21 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <CartContext.Provider
-      value={{ items, addItem, removeItem, updateQuantidade, clearCart, totalItens, totalCentavos, drawerOpen, closeDrawer, lastAdded }}
+      value={{
+        items,
+        addItem,
+        removeItem,
+        updateQuantidade,
+        clearCart,
+        totalItens,
+        totalCentavos,
+        drawerOpen,
+        closeDrawer,
+        lastAdded,
+        conflitoAutor,
+        confirmarTrocaAutor,
+        cancelarTrocaAutor,
+      }}
     >
       {children}
     </CartContext.Provider>

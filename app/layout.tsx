@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Cinzel, Roboto } from "next/font/google";
 import { CartProvider } from "@/components/CartContext";
 import CartDrawer from "@/components/CartDrawer";
+import CartConflictModal from "@/components/CartConflictModal";
 import "./globals.css";
 
 const cinzel = Cinzel({
@@ -41,6 +42,7 @@ export default function RootLayout({
         <CartProvider>
           {children}
           <CartDrawer />
+          <CartConflictModal />
         </CartProvider>
       </body>
     </html>
