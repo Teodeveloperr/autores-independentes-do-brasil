@@ -9,6 +9,8 @@ const IMAGENS = [
   "/coletivo-carrossel-4.webp",
 ];
 
+const VISIVEIS = 3;
+
 export default function ColetivoCarousel() {
   const [index, setIndex] = useState(0);
 
@@ -27,36 +29,20 @@ export default function ColetivoCarousel() {
     setIndex((i) => (i + 1) % IMAGENS.length);
   }
 
+  const visiveis = Array.from({ length: VISIVEIS }, (_, offset) => IMAGENS[(index + offset) % IMAGENS.length]);
+
   return (
     <div>
-      <div style={{ position: "relative", borderRadius: "8px", overflow: "hidden", aspectRatio: "16/9" }}>
-        {IMAGENS.map((src, i) => (
-          <div
-            key={src}
-            style={{
-              position: "absolute",
-              inset: 0,
-              backgroundImage: `url(${src})`,
-              backgroundSize: "cover",
-              backgroundPosition: "center",
-              opacity: i === index ? 1 : 0,
-              transition: "opacity 0.5s ease",
-            }}
-          />
-        ))}
-
+      <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
         <button
           onClick={anterior}
           aria-label="Foto anterior"
           style={{
-            position: "absolute",
-            left: "12px",
-            top: "50%",
-            transform: "translateY(-50%)",
+            flexShrink: 0,
             width: "36px",
             height: "36px",
             borderRadius: "50%",
-            background: "rgba(255,255,255,0.85)",
+            background: "#F6F6F6",
             border: "none",
             fontSize: "16px",
             color: "#002776",
@@ -65,18 +51,31 @@ export default function ColetivoCarousel() {
         >
           ‹
         </button>
+
+        <div className="responsive-grid" style={{ flex: 1, display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "24px" }}>
+          {visiveis.map((src, i) => (
+            <div
+              key={`${src}-${i}`}
+              style={{
+                backgroundImage: `url(${src})`,
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+                aspectRatio: "1",
+                borderRadius: "8px",
+              }}
+            />
+          ))}
+        </div>
+
         <button
           onClick={proxima}
           aria-label="Próxima foto"
           style={{
-            position: "absolute",
-            right: "12px",
-            top: "50%",
-            transform: "translateY(-50%)",
+            flexShrink: 0,
             width: "36px",
             height: "36px",
             borderRadius: "50%",
-            background: "rgba(255,255,255,0.85)",
+            background: "#F6F6F6",
             border: "none",
             fontSize: "16px",
             color: "#002776",
@@ -87,7 +86,7 @@ export default function ColetivoCarousel() {
         </button>
       </div>
 
-      <div style={{ display: "flex", justifyContent: "center", gap: "8px", marginTop: "16px" }}>
+      <div style={{ display: "flex", justifyContent: "center", gap: "8px", marginTop: "24px" }}>
         {IMAGENS.map((src, i) => (
           <button
             key={src}
