@@ -12,6 +12,7 @@ export type LivroCatalogo = {
   genero: string;
   precoCentavos: number;
   capaUrl: string | null;
+  descricao: string | null;
   authorId: string;
   author: { nome: string; plano: string };
 };
@@ -27,6 +28,9 @@ export default function LivrosCatalogo({ books }: { books: LivroCatalogo[] }) {
   const [precoMin, setPrecoMin] = useState("");
   const [precoMax, setPrecoMax] = useState("");
   const [filtros, setFiltros] = useState(FILTROS_VAZIOS);
+  const [sinopseId, setSinopseId] = useState<string | null>(null);
+
+  const sinopseBook = books.find((b) => b.id === sinopseId) ?? null;
 
   function aplicarFiltros() {
     setFiltros({ busca, genero, autor, precoMin, precoMax });
@@ -173,22 +177,31 @@ export default function LivrosCatalogo({ books }: { books: LivroCatalogo[] }) {
                 <div style={{ fontWeight: 600, marginBottom: "4px" }}>{b.titulo}</div>
                 <div style={{ fontSize: "13px", color: "#666", marginBottom: "8px" }}>{b.author.nome}</div>
                 <div style={{ color: "#009B3A", fontWeight: 700, marginBottom: "12px" }}>{brl(b.precoCentavos)}</div>
-                {podeVenderLivros(b.author.plano) ? (
-                  <AddToCartButton
-                    book={{
-                      bookId: b.id,
-                      authorId: b.authorId,
-                      titulo: b.titulo,
-                      autorNome: b.author.nome,
-                      precoCentavos: b.precoCentavos,
-                      capaUrl: b.capaUrl,
-                    }}
-                  />
-                ) : (
-                  <div style={{ background: "#F0F0F0", color: "#999", padding: "8px", fontSize: "13px", fontWeight: 600, width: "100%", borderRadius: "4px" }}>
-                    Venda indisponível
-                  </div>
-                )}
+                <div style={{ display: "flex", gap: "8px" }}>
+                  <button
+                    onClick={() => setSinopseId(b.id)}
+                    style={{ flex: 1, background: "white", border: "1px solid #002776", color: "#002776", padding: "8px", fontSize: "13px", fontWeight: 600, borderRadius: "4px" }}
+                  >
+                    Sinopse
+                  </button>
+                  {podeVenderLivros(b.author.plano) ? (
+                    <AddToCartButton
+                      book={{
+                        bookId: b.id,
+                        authorId: b.authorId,
+                        titulo: b.titulo,
+                        autorNome: b.author.nome,
+                        precoCentavos: b.precoCentavos,
+                        capaUrl: b.capaUrl,
+                      }}
+                      style={{ flex: 1, width: "auto" }}
+                    />
+                  ) : (
+                    <div style={{ flex: 1, background: "#F0F0F0", color: "#999", padding: "8px", fontSize: "13px", fontWeight: 600, borderRadius: "4px" }}>
+                      Venda indisponível
+                    </div>
+                  )}
+                </div>
               </div>
             ))}
           </div>
@@ -198,6 +211,35 @@ export default function LivrosCatalogo({ books }: { books: LivroCatalogo[] }) {
           </div>
         )}
       </div>
+
+      {sinopseBook && (
+        <div
+          onClick={() => setSinopseId(null)}
+          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, padding: "20px" }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{ background: "white", borderRadius: "8px", padding: "28px", maxWidth: "480px", width: "100%", maxHeight: "80vh", overflowY: "auto" }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "16px", marginBottom: "16px" }}>
+              <div>
+                <h3 style={{ fontSize: "18px", fontWeight: 700, color: "#002776" }}>{sinopseBook.titulo}</h3>
+                <div style={{ fontSize: "13px", color: "#666", marginTop: "4px" }}>{sinopseBook.author.nome} · {sinopseBook.genero}</div>
+              </div>
+              <button
+                onClick={() => setSinopseId(null)}
+                aria-label="Fechar"
+                style={{ background: "#F6F6F6", border: "none", borderRadius: "50%", width: "28px", height: "28px", fontSize: "14px", color: "#666", flexShrink: 0 }}
+              >
+                ✕
+              </button>
+            </div>
+            <p style={{ fontSize: "14px", color: "#444", lineHeight: 1.7 }}>
+              {sinopseBook.descricao || "Este livro ainda não tem uma sinopse cadastrada."}
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
