@@ -1,44 +1,22 @@
 import "server-only";
-import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
-
-const secretKey = process.env.AUTH_SECRET;
-if (!secretKey) {
-  throw new Error("AUTH_SECRET não configurado.");
-}
-const encodedKey = new TextEncoder().encode(secretKey);
+import {
+  encryptSession,
+  decryptSession,
+  INACTIVITY_TIMEOUT_SECONDS,
+  type SessionPayload,
+  type AdminSessionPayload,
+  type AdminPending2FAPayload,
+} from "@/lib/sessionCore";
 
 const AUTHOR_COOKIE = "aib_session";
 const ADMIN_COOKIE = "aib_admin_session";
 const ADMIN_PENDING_2FA_COOKIE = "aib_admin_pending_2fa";
-const SESSION_DURATION_MS = 7 * 24 * 60 * 60 * 1000;
 const PENDING_2FA_DURATION_MS = 5 * 60 * 1000;
 
-type SessionPayload = { authorId: string };
-type AdminSessionPayload = { adminId: string };
-type AdminPending2FAPayload = { pendingAdminId: string };
-
-async function encrypt(payload: SessionPayload | AdminSessionPayload | AdminPending2FAPayload, expiresIn: string) {
-  return new SignJWT(payload)
-    .setProtectedHeader({ alg: "HS256" })
-    .setIssuedAt()
-    .setExpirationTime(expiresIn)
-    .sign(encodedKey);
-}
-
-async function decrypt<T>(token: string | undefined): Promise<T | null> {
-  if (!token) return null;
-  try {
-    const { payload } = await jwtVerify(token, encodedKey, { algorithms: ["HS256"] });
-    return payload as T;
-  } catch {
-    return null;
-  }
-}
-
 export async function createAuthorSession(authorId: string) {
-  const expiresAt = new Date(Date.now() + SESSION_DURATION_MS);
-  const session = await encrypt({ authorId }, "7d");
+  const expiresAt = new Date(Date.now() + INACTIVITY_TIMEOUT_SECONDS * 1000);
+  const session = await encryptSession({ authorId }, `${INACTIVITY_TIMEOUT_SECONDS}s`);
   const cookieStore = await cookies();
   cookieStore.set(AUTHOR_COOKIE, session, {
     httpOnly: true,
@@ -52,7 +30,7 @@ export async function createAuthorSession(authorId: string) {
 export async function getAuthorSession() {
   const cookieStore = await cookies();
   const token = cookieStore.get(AUTHOR_COOKIE)?.value;
-  return decrypt<SessionPayload>(token);
+  return decryptSession<SessionPayload>(token);
 }
 
 export async function deleteAuthorSession() {
@@ -61,8 +39,8 @@ export async function deleteAuthorSession() {
 }
 
 export async function createAdminSession(adminId: string) {
-  const expiresAt = new Date(Date.now() + SESSION_DURATION_MS);
-  const session = await encrypt({ adminId }, "7d");
+  const expiresAt = new Date(Date.now() + INACTIVITY_TIMEOUT_SECONDS * 1000);
+  const session = await encryptSession({ adminId }, `${INACTIVITY_TIMEOUT_SECONDS}s`);
   const cookieStore = await cookies();
   cookieStore.set(ADMIN_COOKIE, session, {
     httpOnly: true,
@@ -76,7 +54,7 @@ export async function createAdminSession(adminId: string) {
 export async function getAdminSession() {
   const cookieStore = await cookies();
   const token = cookieStore.get(ADMIN_COOKIE)?.value;
-  return decrypt<AdminSessionPayload>(token);
+  return decryptSession<AdminSessionPayload>(token);
 }
 
 export async function deleteAdminSession() {
@@ -87,7 +65,7 @@ export async function deleteAdminSession() {
 /** Sessão intermediária e curta usada entre "senha correta" e "código 2FA confirmado". */
 export async function createAdminPending2FA(adminId: string) {
   const expiresAt = new Date(Date.now() + PENDING_2FA_DURATION_MS);
-  const session = await encrypt({ pendingAdminId: adminId }, "5m");
+  const session = await encryptSession({ pendingAdminId: adminId }, "5m");
   const cookieStore = await cookies();
   cookieStore.set(ADMIN_PENDING_2FA_COOKIE, session, {
     httpOnly: true,
@@ -101,7 +79,7 @@ export async function createAdminPending2FA(adminId: string) {
 export async function getAdminPending2FA() {
   const cookieStore = await cookies();
   const token = cookieStore.get(ADMIN_PENDING_2FA_COOKIE)?.value;
-  return decrypt<AdminPending2FAPayload>(token);
+  return decryptSession<AdminPending2FAPayload>(token);
 }
 
 export async function deleteAdminPending2FA() {
