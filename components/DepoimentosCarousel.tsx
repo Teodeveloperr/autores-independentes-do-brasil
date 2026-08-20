@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 type Depoimento = {
   nome: string;
@@ -28,6 +28,14 @@ export default function DepoimentosCarousel() {
   const prev = () => setIndex((i) => (i - 1 + DEPOIMENTOS.length) % DEPOIMENTOS.length);
   const next = () => setIndex((i) => (i + 1) % DEPOIMENTOS.length);
   const depoimento = DEPOIMENTOS[index];
+
+  useEffect(() => {
+    if (DEPOIMENTOS.length <= 1) return;
+    const timer = setInterval(() => {
+      setIndex((i) => (i + 1) % DEPOIMENTOS.length);
+    }, 6000);
+    return () => clearInterval(timer);
+  }, []);
 
   return (
     <div>
