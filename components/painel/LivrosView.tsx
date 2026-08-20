@@ -13,7 +13,10 @@ export default function LivrosView({ author }: { author: AuthorWithRelations }) 
   const [pending, startTransition] = useTransition();
   const [erro, setErro] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [sinopseId, setSinopseId] = useState<string | null>(null);
   const router = useRouter();
+
+  const sinopseBook = author.books.find((b) => b.id === sinopseId) ?? null;
 
   const editing = author.books.find((b) => b.id === editingId) ?? null;
 
@@ -171,6 +174,12 @@ export default function LivrosView({ author }: { author: AuthorWithRelations }) 
                 )}
               </div>
               <div style={{ fontWeight: 700, color: "#009B3A", fontSize: "15px" }}>{brl(b.precoCentavos)}</div>
+              <button
+                onClick={() => setSinopseId(b.id)}
+                style={{ background: "white", border: "1px solid #002776", color: "#002776", padding: "0 12px", height: "32px", fontSize: "12px", fontWeight: 600, borderRadius: "6px", flexShrink: 0 }}
+              >
+                Sinopse
+              </button>
               <button onClick={() => setEditingId(b.id)} title="Editar livro" style={{ background: "white", border: "1px solid #DDD", borderRadius: "6px", width: "32px", height: "32px", fontSize: "13px", color: "#002776", flexShrink: 0 }}>
                 ✏️
               </button>
@@ -186,6 +195,35 @@ export default function LivrosView({ author }: { author: AuthorWithRelations }) 
           )}
         </div>
       </div>
+
+      {sinopseBook && (
+        <div
+          onClick={() => setSinopseId(null)}
+          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, padding: "20px" }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{ background: "white", borderRadius: "8px", padding: "28px", maxWidth: "480px", width: "100%", maxHeight: "80vh", overflowY: "auto" }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "16px", marginBottom: "16px" }}>
+              <div>
+                <h3 style={{ fontSize: "18px", fontWeight: 700, color: "#002776" }}>{sinopseBook.titulo}</h3>
+                <div style={{ fontSize: "13px", color: "#666", marginTop: "4px" }}>{sinopseBook.genero}</div>
+              </div>
+              <button
+                onClick={() => setSinopseId(null)}
+                aria-label="Fechar"
+                style={{ background: "#F6F6F6", border: "none", borderRadius: "50%", width: "28px", height: "28px", fontSize: "14px", color: "#666", flexShrink: 0 }}
+              >
+                ✕
+              </button>
+            </div>
+            <p style={{ fontSize: "14px", color: "#444", lineHeight: 1.7 }}>
+              {sinopseBook.descricao || "Este livro ainda não tem uma sinopse cadastrada."}
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
