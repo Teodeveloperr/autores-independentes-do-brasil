@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { login, type LoginState } from "@/app/login/actions";
 import GoogleIcon from "./GoogleIcon";
 import PasswordInput from "./PasswordInput";
+import PasskeyLoginButton from "./PasskeyLoginButton";
 
 export default function LoginForm() {
   const [state, formAction, pending] = useActionState<LoginState, FormData>(login, undefined);
@@ -23,6 +24,7 @@ export default function LoginForm() {
           Esta conta está suspensa. Entre em contato com o coletivo para mais informações.
         </div>
       )}
+      <PasskeyLoginButton />
       <form action={formAction} style={{ display: "flex", flexDirection: "column", gap: "16px", marginBottom: "24px" }}>
         <div>
           <label style={{ display: "block", fontSize: "14px", fontWeight: 600, marginBottom: "8px" }}>

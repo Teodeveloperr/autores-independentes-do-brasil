@@ -1,8 +1,15 @@
 "use server";
 
 import bcrypt from "bcryptjs";
+import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import {
+  generateRegistrationOptions,
+  verifyRegistrationResponse,
+  type RegistrationResponseJSON,
+  type AuthenticatorTransportFuture,
+} from "@simplewebauthn/server";
 import { prisma } from "@/lib/db";
 import { requireAuthor } from "@/lib/auth";
 import { deleteAuthorSession } from "@/lib/session";
@@ -10,6 +17,13 @@ import { centavosFromInput, sanitizeExternalUrl } from "@/lib/format";
 import { validarSenha } from "@/lib/password";
 import { checkRateLimit } from "@/lib/rateLimit";
 import { desconectarMercadoPago as desconectarMercadoPagoLib } from "@/lib/mercadoPagoMarketplace";
+import {
+  RP_NAME,
+  getRpID,
+  getExpectedOrigin,
+  WEBAUTHN_CHALLENGE_COOKIE,
+  WEBAUTHN_CHALLENGE_MAX_AGE_SECONDS,
+} from "@/lib/webauthn";
 
 export async function logout() {
   await deleteAuthorSession();
@@ -245,5 +259,96 @@ export async function changePassword(_prev: ChangePasswordState, formData: FormD
 export async function desconectarMercadoPago() {
   const author = await requireAuthor();
   await desconectarMercadoPagoLib(author.id);
+  revalidatePath("/painel");
+}
+
+export async function iniciarRegistroPasskey() {
+  const author = await requireAuthor();
+
+  const passkeysExistentes = await prisma.authorPasskey.findMany({ where: { authorId: author.id } });
+
+  const options = await generateRegistrationOptions({
+    rpName: RP_NAME,
+    rpID: getRpID(),
+    userName: author.email,
+    userDisplayName: author.nome,
+    userID: new TextEncoder().encode(author.id),
+    attestationType: "none",
+    excludeCredentials: passkeysExistentes.map((p) => ({
+      id: p.credentialId,
+      transports: p.transports as AuthenticatorTransportFuture[],
+    })),
+    authenticatorSelection: { residentKey: "required", userVerification: "preferred" },
+  });
+
+  const cookieStore = await cookies();
+  cookieStore.set(WEBAUTHN_CHALLENGE_COOKIE, options.challenge, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: WEBAUTHN_CHALLENGE_MAX_AGE_SECONDS,
+  });
+
+  return options;
+}
+
+export type PasskeyRegistroState = { error?: string; ok?: boolean } | undefined;
+
+export async function confirmarRegistroPasskey(
+  response: RegistrationResponseJSON,
+  deviceLabel: string
+): Promise<PasskeyRegistroState> {
+  const author = await requireAuthor();
+
+  const cookieStore = await cookies();
+  const expectedChallenge = cookieStore.get(WEBAUTHN_CHALLENGE_COOKIE)?.value;
+  cookieStore.delete(WEBAUTHN_CHALLENGE_COOKIE);
+  if (!expectedChallenge) {
+    return { error: "Sessão de cadastro expirada. Tente novamente." };
+  }
+
+  let verification;
+  try {
+    verification = await verifyRegistrationResponse({
+      response,
+      expectedChallenge,
+      expectedOrigin: getExpectedOrigin(),
+      expectedRPID: getRpID(),
+    });
+  } catch (err) {
+    console.error("[webauthn] Falha ao verificar registro de biometria:", err);
+    return { error: "Não foi possível confirmar a biometria. Tente novamente." };
+  }
+
+  if (!verification.verified || !verification.registrationInfo) {
+    return { error: "Não foi possível confirmar a biometria." };
+  }
+
+  const { credential } = verification.registrationInfo;
+
+  const jaExiste = await prisma.authorPasskey.findUnique({ where: { credentialId: credential.id } });
+  if (jaExiste) {
+    return { error: "Essa biometria já está cadastrada." };
+  }
+
+  await prisma.authorPasskey.create({
+    data: {
+      authorId: author.id,
+      credentialId: credential.id,
+      publicKey: Buffer.from(credential.publicKey),
+      counter: BigInt(credential.counter),
+      transports: credential.transports ?? [],
+      deviceLabel: deviceLabel.trim() || "Dispositivo",
+    },
+  });
+
+  revalidatePath("/painel");
+  return { ok: true };
+}
+
+export async function removerPasskey(id: string) {
+  const author = await requireAuthor();
+  await prisma.authorPasskey.deleteMany({ where: { id, authorId: author.id } });
   revalidatePath("/painel");
 }

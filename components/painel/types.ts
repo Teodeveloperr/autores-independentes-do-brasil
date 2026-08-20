@@ -11,5 +11,6 @@ export type AuthorWithRelations = Prisma.AuthorGetPayload<{
     orders: true;
     conversas: { include: { mensagens: true } };
     avaliacoes: true;
+    passkeys: { omit: { publicKey: true } };
   };
 }>;

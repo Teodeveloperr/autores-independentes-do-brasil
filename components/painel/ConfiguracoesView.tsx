@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { changePassword, desconectarMercadoPago, type ChangePasswordState } from "@/app/painel/actions";
 import { cancelarAssinatura } from "@/app/assinatura/actions";
+import PasskeyManager from "./PasskeyManager";
 import type { AuthorWithRelations } from "./types";
 
 const STATUS_LABEL: Record<string, string> = {
@@ -150,6 +151,14 @@ export default function ConfiguracoesView({
               </button>
             </form>
           )}
+
+          <div style={{ borderTop: "1px solid #F0F0F0", marginTop: "20px", paddingTop: "20px" }}>
+            <div style={{ fontWeight: 700, color: "#002776", marginBottom: "4px" }}>Login com biometria</div>
+            <p style={{ fontSize: "12px", color: "#666", marginBottom: "16px" }}>
+              Entre mais rápido usando Face ID, digital ou Windows Hello, sem digitar a senha.
+            </p>
+            <PasskeyManager passkeys={author.passkeys} />
+          </div>
         </div>
       </div>
 

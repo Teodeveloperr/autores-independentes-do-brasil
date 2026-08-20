@@ -24,6 +24,7 @@ export default async function PainelPage({ searchParams }: { searchParams: Promi
         include: { mensagens: { orderBy: { createdAt: "asc" } } },
       },
       avaliacoes: { orderBy: { createdAt: "desc" } },
+      passkeys: { orderBy: { createdAt: "desc" }, omit: { publicKey: true } },
     },
   });
 

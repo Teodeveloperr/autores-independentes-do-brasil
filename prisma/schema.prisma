@@ -61,6 +61,22 @@ model Author {
   avaliacoes       Review[]
   resetTokens      PasswordResetToken[]
   mercadoPagoToken AuthorMercadoPagoToken?
+  passkeys         AuthorPasskey[]
+}
+
+model AuthorPasskey {
+  id           String    @id @default(cuid())
+  authorId     String
+  author       Author    @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  credentialId String    @unique
+  publicKey    Bytes
+  counter      BigInt    @default(0)
+  transports   String[]  @default([])
+  deviceLabel  String?
+  createdAt    DateTime  @default(now())
+  lastUsedAt   DateTime?
+
+  @@index([authorId])
 }
 
 model AuthorMercadoPagoToken {
