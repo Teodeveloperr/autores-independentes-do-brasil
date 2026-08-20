@@ -236,19 +236,30 @@ export default async function HomePage() {
         </div>
         <div>
           <h3 style={{ fontSize: "24px", fontWeight: 700, color: "#002776", marginBottom: "24px" }}>Depoimentos</h3>
-          <div style={{ background: "#F6F6F6", padding: "24px", borderRadius: "8px" }}>
-            <div style={{ display: "flex", gap: "12px", marginBottom: "16px" }}>
-              <div style={{ width: "40px", height: "40px", background: "#E0E0E0", borderRadius: "50%" }} />
-              <div>
-                <div style={{ fontWeight: 600, fontSize: "14px" }}>Monique Evelyn</div>
-                <div style={{ fontSize: "12px", color: "#666" }}>Leitora</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+            <div style={{ background: "#F6F6F6", padding: "24px", borderRadius: "8px" }}>
+              <div style={{ display: "flex", gap: "12px", marginBottom: "16px" }}>
+                <div style={{ width: "40px", height: "40px", background: "#E0E0E0", borderRadius: "50%" }} />
+                <div>
+                  <div style={{ fontWeight: 600, fontSize: "14px" }}>Monique Evelyn</div>
+                  <div style={{ fontSize: "12px", color: "#666" }}>Leitora</div>
+                </div>
               </div>
+              <p style={{ fontSize: "14px", color: "#262626", lineHeight: 1.6 }}>
+                O coletivo é um espaço de troca, aprendizado e crescimento para todos os escritores que fazem parte disso.
+              </p>
             </div>
-            <p style={{ fontSize: "14px", color: "#262626", lineHeight: 1.6 }}>
-              O coletivo é um espaço de troca, aprendizado e crescimento para todos os escritores que fazem parte disso.
-            </p>
-            <div style={{ display: "flex", gap: "4px", marginTop: "12px" }}>
-              <span style={{ fontSize: "12px" }}>● ○ ○</span>
+            <div style={{ background: "#F6F6F6", padding: "24px", borderRadius: "8px" }}>
+              <div style={{ display: "flex", gap: "12px", marginBottom: "16px" }}>
+                <div style={{ width: "40px", height: "40px", background: "#E0E0E0", borderRadius: "50%" }} />
+                <div>
+                  <div style={{ fontWeight: 600, fontSize: "14px" }}>Gerailson José</div>
+                  <div style={{ fontSize: "12px", color: "#666" }}>Autor</div>
+                </div>
+              </div>
+              <p style={{ fontSize: "14px", color: "#262626", lineHeight: 1.6 }}>
+                Quem escreve sabe o peso da caminhada solo. O Coletivo Autores Independentes do Brasil me deu mais do que vitrine: me deu pertencimento. É bom demais olhar para o lado e ver tanta gente apaixonada pelo livro seguindo na mesma direção.
+              </p>
             </div>
           </div>
         </div>
