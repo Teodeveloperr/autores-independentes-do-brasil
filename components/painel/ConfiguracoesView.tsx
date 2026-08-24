@@ -1,11 +1,12 @@
 "use client";
 
-import { useActionState, useTransition } from "react";
+import { useActionState, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { changePassword, desconectarMercadoPago, type ChangePasswordState } from "@/app/painel/actions";
 import { cancelarAssinatura } from "@/app/assinatura/actions";
 import PasskeyManager from "./PasskeyManager";
+import PasswordStrengthChecklist from "../PasswordStrengthChecklist";
 import type { AuthorWithRelations } from "./types";
 
 const STATUS_LABEL: Record<string, string> = {
@@ -25,6 +26,7 @@ export default function ConfiguracoesView({
   mercadoPagoConectado: boolean;
 }) {
   const [state, formAction, pending] = useActionState<ChangePasswordState, FormData>(changePassword, undefined);
+  const [novaSenha, setNovaSenha] = useState("");
   const [cancelando, startCancelamento] = useTransition();
   const [desconectando, startDesconexao] = useTransition();
   const router = useRouter();
@@ -123,8 +125,11 @@ export default function ConfiguracoesView({
                   required
                   minLength={8}
                   placeholder="Mínimo 8 caracteres, com letra, número e caractere especial"
+                  value={novaSenha}
+                  onChange={(e) => setNovaSenha(e.target.value)}
                   style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px" }}
                 />
+                <PasswordStrengthChecklist senha={novaSenha} />
               </div>
               <div>
                 <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>Confirmar {temSenha ? "nova senha" : "senha"}</label>

@@ -1,10 +1,12 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { resetPassword, type ResetState } from "@/app/redefinir-senha/actions";
+import PasswordStrengthChecklist from "./PasswordStrengthChecklist";
 
 export default function RedefinirSenhaForm({ token }: { token: string }) {
   const [state, formAction, pending] = useActionState<ResetState, FormData>(resetPassword, undefined);
+  const [senha, setSenha] = useState("");
 
   if (state?.ok) {
     return (
@@ -46,9 +48,11 @@ export default function RedefinirSenhaForm({ token }: { token: string }) {
             required
             minLength={8}
             placeholder="Crie uma nova senha"
+            value={senha}
+            onChange={(e) => setSenha(e.target.value)}
             style={{ width: "100%", padding: "12px", border: "1px solid #DDD", borderRadius: "4px", fontSize: "14px" }}
           />
-          <p style={{ fontSize: "11px", color: "#999", marginTop: "6px" }}>Mínimo de 8 caracteres, com pelo menos uma letra, um número e um caractere especial (ex: !@#$%).</p>
+          <PasswordStrengthChecklist senha={senha} />
         </div>
         <div>
           <label style={{ display: "block", fontSize: "14px", fontWeight: 600, marginBottom: "8px" }}>

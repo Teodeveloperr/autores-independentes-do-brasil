@@ -29,6 +29,7 @@ export default function PasswordInput({
   autoComplete,
   style,
   defaultValue,
+  onChange,
 }: {
   name: string;
   placeholder?: string;
@@ -37,6 +38,7 @@ export default function PasswordInput({
   autoComplete?: string;
   style?: React.CSSProperties;
   defaultValue?: string;
+  onChange?: (value: string) => void;
 }) {
   const [visible, setVisible] = useState(false);
 
@@ -50,6 +52,7 @@ export default function PasswordInput({
         autoComplete={autoComplete}
         placeholder={placeholder}
         defaultValue={defaultValue}
+        onChange={onChange ? (e) => onChange(e.target.value) : undefined}
         style={{ ...style, paddingRight: "42px" }}
       />
       <button

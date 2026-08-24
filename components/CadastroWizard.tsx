@@ -11,6 +11,7 @@ import {
 } from "@/app/cadastro/actions";
 import GoogleIcon from "./GoogleIcon";
 import PasswordInput from "./PasswordInput";
+import PasswordStrengthChecklist from "./PasswordStrengthChecklist";
 import { GENEROS } from "@/lib/genres";
 
 const PLANS: { id: PlanId; nome: string; desc: string; monthly: number; badge: string; disponivel: boolean }[] = [
@@ -50,6 +51,7 @@ export default function CadastroWizard() {
   const [step1Data, setStep1Data] = useState<Step1Data | null>(null);
   const [step1Error, setStep1Error] = useState("");
   const [finishError, setFinishError] = useState("");
+  const [senha, setSenha] = useState("");
   const [pending, startTransition] = useTransition();
 
   function submitStep1(formData: FormData) {
@@ -167,14 +169,14 @@ export default function CadastroWizard() {
             <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
               <div>
                 <label style={labelStyle}>Senha</label>
-                <PasswordInput name="senha" required minLength={8} autoComplete="new-password" placeholder="Crie uma senha" style={inputStyle} />
+                <PasswordInput name="senha" required minLength={8} autoComplete="new-password" placeholder="Crie uma senha" style={inputStyle} onChange={setSenha} />
               </div>
               <div>
                 <label style={labelStyle}>Confirmar senha</label>
                 <PasswordInput name="confirmar" required minLength={8} autoComplete="new-password" placeholder="Repita a senha" style={inputStyle} />
               </div>
             </div>
-            <p style={{ fontSize: "11px", color: "#999", marginTop: "-8px" }}>Mínimo de 8 caracteres, com pelo menos uma letra, um número e um caractere especial (ex: !@#$%).</p>
+            <PasswordStrengthChecklist senha={senha} />
             <label style={{ display: "flex", gap: "8px", fontSize: "13px", alignItems: "flex-start", marginTop: "4px" }}>
               <input type="checkbox" required style={{ marginTop: "3px" }} />
               <span>
