@@ -3,8 +3,10 @@
 import crypto from "node:crypto";
 import { prisma } from "@/lib/db";
 import { revalidatePath } from "next/cache";
-import { calcularFrete } from "@/lib/melhorEnvio";
 import { sendOrderConfirmationEmail, sendNewSaleEmail } from "@/lib/email";
+
+// Valor fixo provisório por autor (frete via Correios, Registro Módico) — ainda a definir o valor final.
+const FRETE_FIXO_CENTAVOS = 1500;
 
 export type CheckoutItem = {
   bookId: string;
@@ -43,63 +45,20 @@ export async function calcularFreteCarrinho(items: CheckoutItem[], cepDestino: s
   const cepLimpo = cepDestino.replace(/\D/g, "");
   if (cepLimpo.length !== 8 || items.length === 0) return [];
 
-  const porAutor = new Map<string, CheckoutItem[]>();
-  for (const item of items) {
-    const arr = porAutor.get(item.authorId) ?? [];
-    arr.push(item);
-    porAutor.set(item.authorId, arr);
-  }
+  const authorIds = [...new Set(items.map((i) => i.authorId))];
+  const authors = await prisma.author.findMany({ where: { id: { in: authorIds } } });
 
-  const resultados: FreteAutor[] = [];
-
-  for (const [authorId, itensAutor] of porAutor) {
-    const author = await prisma.author.findUnique({ where: { id: authorId } });
-    if (!author) continue;
-
-    const books = await prisma.book.findMany({ where: { id: { in: itensAutor.map((i) => i.bookId) } } });
-
-    const produtos = itensAutor
-      .map((item) => {
-        const book = books.find((b) => b.id === item.bookId);
-        if (!book || !book.pesoGramas || !book.alturaCm || !book.larguraCm || !book.comprimentoCm) return null;
-        return {
-          id: item.bookId,
-          pesoGramas: book.pesoGramas,
-          alturaCm: book.alturaCm,
-          larguraCm: book.larguraCm,
-          comprimentoCm: book.comprimentoCm,
-          precoCentavos: item.precoCentavos,
-          quantidade: item.quantidade,
-        };
-      })
-      .filter((p): p is NonNullable<typeof p> => p !== null);
-
-    if (!author.enderecoCep || produtos.length !== itensAutor.length) {
-      console.error(
-        `[frete] ${author.nome} indisponível: enderecoCep=${author.enderecoCep ?? "ausente"}, livros com dimensões completas=${produtos.length}/${itensAutor.length}`
-      );
-      resultados.push({ authorId, autorNome: author.nome, disponivel: false, precoCentavos: 0, servico: null, prazoDias: null });
-      continue;
-    }
-
-    const cotacao = await calcularFrete(author.enderecoCep, cepLimpo, produtos);
-    if (!cotacao) {
-      console.error(`[frete] ${author.nome} indisponível: calcularFrete retornou null (ver logs de [melhorenvio] acima).`);
-      resultados.push({ authorId, autorNome: author.nome, disponivel: false, precoCentavos: 0, servico: null, prazoDias: null });
-      continue;
-    }
-
-    resultados.push({
+  return authorIds.map((authorId) => {
+    const author = authors.find((a) => a.id === authorId);
+    return {
       authorId,
-      autorNome: author.nome,
+      autorNome: author?.nome ?? "",
       disponivel: true,
-      precoCentavos: cotacao.precoCentavos,
-      servico: [cotacao.nomeTransportadora, cotacao.nomeServico].filter(Boolean).join(" "),
-      prazoDias: cotacao.prazoDias,
-    });
-  }
-
-  return resultados;
+      precoCentavos: FRETE_FIXO_CENTAVOS,
+      servico: "Correios — Registro Módico",
+      prazoDias: null,
+    };
+  });
 }
 
 export async function criarPedido(
