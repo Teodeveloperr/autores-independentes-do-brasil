@@ -49,6 +49,7 @@ model Author {
   portfolioPremios        String?
   portfolioCitacao        String?
   portfolioObraDestaqueId String?
+  portfolioCapaUrl        String?
 
   avaliacaoMedia Float?
   avaliacoesQtd  Int     @default(0)

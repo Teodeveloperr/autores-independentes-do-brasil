@@ -4,6 +4,7 @@ import { useMemo, useState, useTransition } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { updatePortfolio } from "@/app/painel/actions";
+import { useImageUpload } from "@/hooks/useImageUpload";
 import PortfolioDocument, { type PortfolioData } from "./PortfolioDocument";
 import type { AuthorWithRelations } from "./types";
 
@@ -21,6 +22,7 @@ export default function PortfolioView({ author }: { author: AuthorWithRelations 
   const [premios, setPremios] = useState(author.portfolioPremios ?? "");
   const [citacao, setCitacao] = useState(author.portfolioCitacao ?? "");
   const [obraDestaqueId, setObraDestaqueId] = useState(author.portfolioObraDestaqueId ?? "");
+  const capa = useImageUpload("portfolio", author.portfolioCapaUrl ?? "");
   const [showPreview, setShowPreview] = useState(false);
   const [salvando, startSalvar] = useTransition();
   const [salvo, setSalvo] = useState(false);
@@ -33,6 +35,7 @@ export default function PortfolioView({ author }: { author: AuthorWithRelations 
     fd.set("portfolioPremios", premios);
     fd.set("portfolioCitacao", citacao);
     fd.set("portfolioObraDestaqueId", obraDestaqueId);
+    fd.set("portfolioCapaUrl", capa.url);
     startSalvar(async () => {
       await updatePortfolio(fd);
       setSalvo(true);
@@ -47,6 +50,7 @@ export default function PortfolioView({ author }: { author: AuthorWithRelations 
       cidade: author.cidade,
       bio: author.bio,
       fotoUrl: author.fotoUrl,
+      capaUrl: capa.url || null,
       email: author.email,
       instagramUrl: author.instagramUrl,
       twitterUrl: author.twitterUrl,
@@ -60,7 +64,7 @@ export default function PortfolioView({ author }: { author: AuthorWithRelations 
       livros: author.books.map((b) => ({ titulo: b.titulo, capaUrl: b.capaUrl, genero: b.genero, precoCentavos: b.precoCentavos })),
       avaliacoes: author.avaliacoes.slice(0, 10).map((a) => ({ nome: a.nome, texto: a.texto, estrelas: a.estrelas })),
     };
-  }, [author, formacao, premios, citacao, obraDestaqueId]);
+  }, [author, formacao, premios, citacao, obraDestaqueId, capa.url]);
 
   const nomeArquivo = `portfolio-${author.nome.toLowerCase().replace(/[^a-z0-9]+/g, "-")}.pdf`;
 
@@ -73,6 +77,46 @@ export default function PortfolioView({ author }: { author: AuthorWithRelations 
 
       <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: showPreview ? "1fr 1fr" : "1fr", gap: "20px", alignItems: "start" }}>
         <div style={{ background: "white", borderRadius: "10px", padding: "24px", display: "flex", flexDirection: "column", gap: "14px" }}>
+          <div>
+            <label style={labelStyle}>Imagem da capa</label>
+            <label
+              htmlFor="portfolioCapaInput"
+              onDrop={capa.onDrop}
+              onDragOver={capa.onDragOver}
+              style={{
+                border: "2px dashed #BBB",
+                borderRadius: "8px",
+                padding: "16px",
+                textAlign: "center",
+                fontSize: "13px",
+                color: "#666",
+                cursor: "pointer",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: "4px",
+                minHeight: "110px",
+                justifyContent: "center",
+                background: capa.url ? `center / cover no-repeat url(${capa.url})` : "transparent",
+              }}
+            >
+              {!capa.url && <div>{capa.uploading ? "Enviando..." : "🖼️ Arraste uma imagem aqui ou clique para selecionar"}</div>}
+            </label>
+            <input id="portfolioCapaInput" type="file" accept="image/*" onChange={capa.onInputChange} style={{ display: "none" }} />
+            {capa.error && <p style={{ fontSize: "12px", color: "#C0392B", marginTop: "6px" }}>{capa.error}</p>}
+            <p style={{ fontSize: "11px", color: "#999", marginTop: "6px" }}>
+              {capa.url ? "Se não enviar nenhuma, usamos sua foto de perfil." : "Opcional — se não enviar, usamos sua foto de perfil na capa."}
+            </p>
+            {capa.url && (
+              <button
+                type="button"
+                onClick={() => capa.setUrl("")}
+                style={{ marginTop: "6px", background: "none", border: "none", color: "#C0392B", fontSize: "12px", cursor: "pointer", padding: 0 }}
+              >
+                Remover imagem
+              </button>
+            )}
+          </div>
           <div>
             <label style={labelStyle}>Formação acadêmica / profissional</label>
             <textarea

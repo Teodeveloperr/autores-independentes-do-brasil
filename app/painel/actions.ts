@@ -78,6 +78,7 @@ export async function updatePortfolio(formData: FormData) {
       portfolioPremios: ((formData.get("portfolioPremios") as string) || "").trim() || null,
       portfolioCitacao: ((formData.get("portfolioCitacao") as string) || "").trim() || null,
       portfolioObraDestaqueId: obraDestaqueId || null,
+      portfolioCapaUrl: (formData.get("portfolioCapaUrl") as string) || null,
     },
   });
 
