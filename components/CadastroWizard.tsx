@@ -174,7 +174,7 @@ export default function CadastroWizard() {
                 <PasswordInput name="confirmar" required minLength={8} autoComplete="new-password" placeholder="Repita a senha" style={inputStyle} />
               </div>
             </div>
-            <p style={{ fontSize: "11px", color: "#999", marginTop: "-8px" }}>Mínimo de 8 caracteres, com pelo menos uma letra e um número.</p>
+            <p style={{ fontSize: "11px", color: "#999", marginTop: "-8px" }}>Mínimo de 8 caracteres, com pelo menos uma letra, um número e um caractere especial (ex: !@#$%).</p>
             <label style={{ display: "flex", gap: "8px", fontSize: "13px", alignItems: "flex-start", marginTop: "4px" }}>
               <input type="checkbox" required style={{ marginTop: "3px" }} />
               <span>

@@ -122,7 +122,7 @@ export default function ConfiguracoesView({
                   type="password"
                   required
                   minLength={8}
-                  placeholder="Mínimo de 8 caracteres, com letra e número"
+                  placeholder="Mínimo 8 caracteres, com letra, número e caractere especial"
                   style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px" }}
                 />
               </div>

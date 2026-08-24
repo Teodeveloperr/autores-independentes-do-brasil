@@ -48,7 +48,7 @@ export default function RedefinirSenhaForm({ token }: { token: string }) {
             placeholder="Crie uma nova senha"
             style={{ width: "100%", padding: "12px", border: "1px solid #DDD", borderRadius: "4px", fontSize: "14px" }}
           />
-          <p style={{ fontSize: "11px", color: "#999", marginTop: "6px" }}>Mínimo de 8 caracteres, com pelo menos uma letra e um número.</p>
+          <p style={{ fontSize: "11px", color: "#999", marginTop: "6px" }}>Mínimo de 8 caracteres, com pelo menos uma letra, um número e um caractere especial (ex: !@#$%).</p>
         </div>
         <div>
           <label style={{ display: "block", fontSize: "14px", fontWeight: 600, marginBottom: "8px" }}>
