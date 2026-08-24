@@ -32,8 +32,6 @@ export default function AdminApp({
   autores,
   artigos,
   avaliacoes,
-  melhorEnvioConectado,
-  melhorEnvioFeedback,
   totpEnabled,
 }: {
   eventos: CollectiveEvent[];
@@ -41,8 +39,6 @@ export default function AdminApp({
   autores: AuthorWithCount[];
   artigos: Article[];
   avaliacoes: ReviewWithAuthor[];
-  melhorEnvioConectado: boolean;
-  melhorEnvioFeedback: "sucesso" | "erro" | null;
   totpEnabled: boolean;
 }) {
   const [view, setView] = useState<AdminView>("dash");
@@ -86,16 +82,6 @@ export default function AdminApp({
         <div className="section-pad-md" style={{ padding: "28px 32px", flex: 1, minWidth: 0 }}>
           {view === "dash" && (
             <div>
-              {melhorEnvioFeedback === "sucesso" && (
-                <div style={{ background: "#E3F4E9", color: "#009B3A", padding: "14px 18px", borderRadius: "8px", fontSize: "13px", fontWeight: 600, marginBottom: "20px" }}>
-                  ✓ Melhor Envio conectado com sucesso!
-                </div>
-              )}
-              {melhorEnvioFeedback === "erro" && (
-                <div style={{ background: "#FDEDEC", color: "#C0392B", padding: "14px 18px", borderRadius: "8px", fontSize: "13px", fontWeight: 600, marginBottom: "20px" }}>
-                  ✕ Não foi possível conectar ao Melhor Envio. Tente novamente.
-                </div>
-              )}
               {!totpEnabled && (
                 <div style={{ background: "white", borderRadius: "10px", padding: "20px", marginBottom: "20px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "16px", flexWrap: "wrap" }}>
                   <div>
@@ -107,28 +93,6 @@ export default function AdminApp({
                   </button>
                 </div>
               )}
-              <div style={{ background: "white", borderRadius: "10px", padding: "20px", marginBottom: "28px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "16px", flexWrap: "wrap" }}>
-                <div>
-                  <div style={{ fontWeight: 700, color: "#002776", marginBottom: "4px" }}>🚚 Melhor Envio</div>
-                  <div style={{ fontSize: "13px", color: "#666" }}>
-                    {melhorEnvioConectado
-                      ? "Conta conectada — pronta para calcular fretes e gerar etiquetas."
-                      : "Conecte a conta do Melhor Envio para habilitar o cálculo de frete."}
-                  </div>
-                </div>
-                {melhorEnvioConectado ? (
-                  <span style={{ background: "#E3F4E9", color: "#009B3A", padding: "8px 16px", borderRadius: "20px", fontSize: "13px", fontWeight: 700 }}>
-                    ✓ Conectado
-                  </span>
-                ) : (
-                  <a
-                    href="/api/auth/melhorenvio"
-                    style={{ background: "#002776", color: "white", padding: "10px 20px", borderRadius: "6px", fontSize: "13px", fontWeight: 600, textDecoration: "none", flexShrink: 0 }}
-                  >
-                    Conectar Melhor Envio
-                  </a>
-                )}
-              </div>
               <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "20px", marginBottom: "28px" }}>
                 <div style={{ background: "white", borderRadius: "10px", padding: "20px" }}>
                   <div style={{ fontSize: "12px", color: "#666", marginBottom: "8px" }}>✍️ Autores cadastrados</div>

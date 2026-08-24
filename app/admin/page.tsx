@@ -8,20 +8,14 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = { title: "Administração" };
 
-export default async function AdminPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ melhorenvio?: string; erro?: string }>;
-}) {
+export default async function AdminPage() {
   const admin = await getCurrentAdmin();
 
   if (!admin) {
     return <AdminLoginGate />;
   }
 
-  const { melhorenvio, erro } = await searchParams;
-
-  const [eventos, fotos, autores, artigos, avaliacoes, melhorEnvioToken] = await Promise.all([
+  const [eventos, fotos, autores, artigos, avaliacoes] = await Promise.all([
     prisma.collectiveEvent.findMany({ orderBy: { createdAt: "desc" } }),
     prisma.collectiveGalleryPhoto.findMany({ orderBy: { createdAt: "desc" } }),
     prisma.author.findMany({
@@ -30,7 +24,6 @@ export default async function AdminPage({
     }),
     prisma.article.findMany({ orderBy: { createdAt: "desc" } }),
     prisma.review.findMany({ orderBy: { createdAt: "desc" }, include: { author: { select: { nome: true } } } }),
-    prisma.melhorEnvioToken.findUnique({ where: { id: "singleton" } }),
   ]);
 
   return (
@@ -40,8 +33,6 @@ export default async function AdminPage({
       autores={autores}
       artigos={artigos}
       avaliacoes={avaliacoes}
-      melhorEnvioConectado={!!melhorEnvioToken}
-      melhorEnvioFeedback={melhorenvio === "conectado" ? "sucesso" : erro === "melhorenvio" ? "erro" : null}
       totpEnabled={admin.totpEnabled}
     />
   );

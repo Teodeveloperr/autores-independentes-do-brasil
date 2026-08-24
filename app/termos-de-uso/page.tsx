@@ -53,9 +53,8 @@ export default function TermosDeUsoPage() {
               A plataforma atua como intermediária entre autor e comprador — o livro é vendido diretamente pelo
               autor, que é responsável pela qualidade, pelo estoque e pelo envio do produto. Atualmente, o
               pagamento online ainda não está disponível: o pedido fica registrado como &quot;Aguardando
-              pagamento&quot; e a forma de pagamento é combinada diretamente entre comprador e autor. Quando o
-              frete é calculado automaticamente (via Melhor Envio), o valor exibido no checkout reflete uma
-              cotação real de transporte; a postagem em si é feita pelo autor.
+              pagamento&quot; e a forma de pagamento é combinada diretamente entre comprador e autor. O frete
+              exibido no checkout é um valor fixo definido pela plataforma; a postagem em si é feita pelo autor.
             </p>
 
             <h2 style={h2Style}>4. Planos de assinatura</h2>

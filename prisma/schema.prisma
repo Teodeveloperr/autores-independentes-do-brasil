@@ -233,15 +233,6 @@ model CollectiveEvent {
   createdAt DateTime @default(now())
 }
 
-model MelhorEnvioToken {
-  id           String   @id @default("singleton")
-  accessToken  String
-  refreshToken String
-  expiresAt    DateTime
-
-  updatedAt DateTime @updatedAt
-}
-
 model CollectiveGalleryPhoto {
   id        String @id @default(cuid())
   titulo    String

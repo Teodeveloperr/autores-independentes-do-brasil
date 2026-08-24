@@ -30,13 +30,13 @@ export default function PoliticaDePrivacidadePage() {
 
             <h2 style={h2Style}>1. Quais dados coletamos</h2>
             <p style={pStyle}><strong>Se você compra um livro (checkout):</strong> nome completo, e-mail, telefone (opcional) e endereço de entrega (CEP, rua, número, complemento, bairro, cidade e UF).</p>
-            <p style={pStyle}><strong>Se você se cadastra como autor(a):</strong> nome, e-mail, senha (armazenada de forma criptografada), biografia, foto de perfil, redes sociais, cidade e — quando você opta por vender livros físicos — o endereço de origem (CEP) usado para calcular o frete.</p>
+            <p style={pStyle}><strong>Se você se cadastra como autor(a):</strong> nome, e-mail, senha (armazenada de forma criptografada), biografia, foto de perfil, redes sociais, cidade e — quando você opta por vender livros físicos — o endereço informado no seu perfil.</p>
             <p style={pStyle}><strong>De forma automática:</strong> itens adicionados ao carrinho de compras (armazenados no seu navegador) e dados técnicos básicos de acesso (como data e hora da requisição), necessários para o funcionamento do site.</p>
 
             <h2 style={h2Style}>2. Para que usamos esses dados</h2>
             <ul style={{ paddingLeft: "20px", marginBottom: "12px" }}>
               <li style={liStyle}>Processar e entregar os pedidos realizados na plataforma;</li>
-              <li style={liStyle}>Calcular o valor do frete de cada compra através da Melhor Envio;</li>
+              <li style={liStyle}>Calcular o valor do frete de cada compra (valor fixo definido pela plataforma);</li>
               <li style={liStyle}>Permitir que o autor entre em contato com o comprador para combinar pagamento e envio, enquanto o pagamento online não está disponível;</li>
               <li style={liStyle}>Exibir o perfil público do autor (nome, bio, foto, livros e redes sociais informadas);</li>
               <li style={liStyle}>Enviar comunicações relacionadas ao seu pedido ou cadastro.</li>
@@ -49,7 +49,6 @@ export default function PoliticaDePrivacidadePage() {
             </p>
             <ul style={{ paddingLeft: "20px", marginBottom: "12px" }}>
               <li style={liStyle}><strong>Com o autor vendedor:</strong> nome, contato e endereço de entrega, para que ele possa preparar e enviar o pedido.</li>
-              <li style={liStyle}><strong>Com a Melhor Envio:</strong> os CEPs de origem e destino, usados exclusivamente para calcular o valor do frete e, quando aplicável, gerar a postagem.</li>
             </ul>
 
             <h2 style={h2Style}>4. Cookies e carrinho de compras</h2>
