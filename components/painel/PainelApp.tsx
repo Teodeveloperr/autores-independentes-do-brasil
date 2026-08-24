@@ -15,6 +15,7 @@ import GaleriaView from "./GaleriaView";
 import MensagensView from "./MensagensView";
 import AvaliacoesView from "./AvaliacoesView";
 import VendasView from "./VendasView";
+import PortfolioView from "./PortfolioView";
 import ConfiguracoesView from "./ConfiguracoesView";
 
 const sidebarBtn = (active: boolean): React.CSSProperties => ({
@@ -71,6 +72,7 @@ export default function PainelApp({
           )}
         </button>
         <button onClick={() => setView("avaliacoes")} style={sidebarBtn(view === "avaliacoes")}>⭐ Avaliações</button>
+        <button onClick={() => setView("portfolio")} style={sidebarBtn(view === "portfolio")}>📄 Portfólio</button>
         <button onClick={() => setView("configuracoes")} style={sidebarBtn(view === "configuracoes")}>⚙️ Configurações</button>
         <button
           onClick={() => logout()}
@@ -149,6 +151,7 @@ export default function PainelApp({
           {view === "mensagens" && <MensagensView author={author} />}
           {view === "avaliacoes" && <AvaliacoesView author={author} />}
           {view === "vendas" && <VendasView author={author} />}
+          {view === "portfolio" && <PortfolioView author={author} />}
           {view === "configuracoes" && <ConfiguracoesView author={author} temSenha={temSenha} mercadoPagoConectado={mercadoPagoConectado} />}
         </div>
 

@@ -62,6 +62,28 @@ export async function saveProfile(formData: FormData) {
   revalidatePath("/painel");
 }
 
+export async function updatePortfolio(formData: FormData) {
+  const author = await requireAuthor();
+
+  const obraDestaqueId = ((formData.get("portfolioObraDestaqueId") as string) || "").trim();
+  if (obraDestaqueId) {
+    const obra = await prisma.book.findFirst({ where: { id: obraDestaqueId, authorId: author.id } });
+    if (!obra) throw new Error("Obra em destaque inválida.");
+  }
+
+  await prisma.author.update({
+    where: { id: author.id },
+    data: {
+      portfolioFormacao: ((formData.get("portfolioFormacao") as string) || "").trim() || null,
+      portfolioPremios: ((formData.get("portfolioPremios") as string) || "").trim() || null,
+      portfolioCitacao: ((formData.get("portfolioCitacao") as string) || "").trim() || null,
+      portfolioObraDestaqueId: obraDestaqueId || null,
+    },
+  });
+
+  revalidatePath("/painel");
+}
+
 function bookDataFromForm(formData: FormData) {
   const titulo = ((formData.get("titulo") as string) || "").trim() || "Sem título";
   const genero = (formData.get("genero") as string) || "Romance";

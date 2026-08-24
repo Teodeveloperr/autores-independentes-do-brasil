@@ -45,6 +45,11 @@ model Author {
   mpPreapprovalId      String?
   mpSubscriptionStatus String?
 
+  portfolioFormacao       String?
+  portfolioPremios        String?
+  portfolioCitacao        String?
+  portfolioObraDestaqueId String?
+
   avaliacaoMedia Float?
   avaliacoesQtd  Int     @default(0)
   seguidores     Int     @default(0)
