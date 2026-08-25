@@ -1,7 +1,23 @@
-export const PLANOS_COM_VENDA = ["Gratuito", "Autor Essencial", "Autor Premium"];
+export const PLANOS_COM_VENDA = ["Autor Essencial", "Autor Premium"];
 
 export function podeVenderLivros(plano: string) {
   return PLANOS_COM_VENDA.includes(plano);
+}
+
+// Comissão da plataforma sobre cada venda de livro, por plano.
+export const COMISSAO_PERCENTUAL: Record<string, number> = {
+  "Autor Essencial": 25,
+  "Autor Premium": 10,
+};
+
+/**
+ * Valor líquido repassado ao autor numa venda: valor do(s) livro(s) já descontada
+ * a comissão do plano, mais o frete (o frete não sofre desconto de comissão).
+ */
+export function valorRepasseCentavos(plano: string, valorVendaCentavos: number, freteCentavos: number): number {
+  const comissao = COMISSAO_PERCENTUAL[plano] ?? 100;
+  const liquidoVenda = Math.round(valorVendaCentavos * (1 - comissao / 100));
+  return liquidoVenda + freteCentavos;
 }
 
 export const PLANOS_COM_RECURSOS_EXTRAS = ["Gratuito", "Autor Essencial", "Autor Premium"];

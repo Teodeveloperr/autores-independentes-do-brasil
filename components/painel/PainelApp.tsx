@@ -36,13 +36,11 @@ export default function PainelApp({
   author,
   temSenha,
   assinaturaPendente,
-  mercadoPagoConectado,
   mercadoPagoStatus,
 }: {
   author: AuthorWithRelations;
   temSenha: boolean;
   assinaturaPendente?: boolean;
-  mercadoPagoConectado: boolean;
   mercadoPagoStatus?: string;
 }) {
   const [view, setView] = useState<PainelView>("dash");
@@ -152,7 +150,7 @@ export default function PainelApp({
           {view === "avaliacoes" && <AvaliacoesView author={author} />}
           {view === "vendas" && <VendasView author={author} />}
           {view === "portfolio" && <PortfolioView author={author} />}
-          {view === "configuracoes" && <ConfiguracoesView author={author} temSenha={temSenha} mercadoPagoConectado={mercadoPagoConectado} />}
+          {view === "configuracoes" && <ConfiguracoesView author={author} temSenha={temSenha} />}
         </div>
 
         <div style={{ padding: "16px 32px", borderTop: "1px solid #E0E0E0", display: "flex", justifyContent: "space-between", fontSize: "12px", color: "#999" }}>

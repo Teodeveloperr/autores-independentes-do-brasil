@@ -15,6 +15,9 @@ import { requireAuthor } from "@/lib/auth";
 import { deleteAuthorSession } from "@/lib/session";
 import { centavosFromInput, sanitizeExternalUrl } from "@/lib/format";
 import { validarSenha } from "@/lib/password";
+import { validarCpf } from "@/lib/cpf";
+import { criarTransferenciaPix } from "@/lib/asaas";
+import { valorRepasseCentavos } from "@/lib/plans";
 import { checkRateLimit } from "@/lib/rateLimit";
 import { desconectarMercadoPago as desconectarMercadoPagoLib } from "@/lib/mercadoPagoMarketplace";
 import {
@@ -80,6 +83,29 @@ export async function updatePortfolio(formData: FormData) {
       portfolioObraDestaqueId: obraDestaqueId || null,
       portfolioCapaUrl: (formData.get("portfolioCapaUrl") as string) || null,
     },
+  });
+
+  revalidatePath("/painel");
+}
+
+const TIPOS_CHAVE_PIX = new Set(["CPF", "CNPJ", "EMAIL", "PHONE", "EVP"]);
+
+export async function updatePixKey(formData: FormData) {
+  const author = await requireAuthor();
+
+  const pixKey = ((formData.get("pixKey") as string) || "").trim();
+  const pixKeyType = (formData.get("pixKeyType") as string) || "";
+
+  if (!pixKey || !TIPOS_CHAVE_PIX.has(pixKeyType)) {
+    throw new Error("Informe uma chave Pix e o tipo dela.");
+  }
+  if (pixKeyType === "CPF" && !validarCpf(pixKey)) {
+    throw new Error("CPF inválido.");
+  }
+
+  await prisma.author.update({
+    where: { id: author.id },
+    data: { pixKey, pixKeyType },
   });
 
   revalidatePath("/painel");
@@ -217,6 +243,41 @@ export async function removePhoto(id: string) {
 
 export async function setOrderStatus(id: string, status: string) {
   const author = await requireAuthor();
+  const order = await prisma.order.findFirst({ where: { id, authorId: author.id } });
+  if (!order) throw new Error("Pedido não encontrado.");
+
+  const precisaRepasse = status === "Enviado" && order.asaasPaymentId && order.repasseStatus !== "transferido";
+
+  if (precisaRepasse) {
+    if (!author.pixKey || !author.pixKeyType) {
+      throw new Error("Cadastre sua chave Pix em Configurações antes de marcar como enviado.");
+    }
+
+    const valorRepasse = valorRepasseCentavos(author.plano, order.valorCentavos, order.freteCentavos ?? 0);
+    const transferencia = await criarTransferenciaPix({
+      valueCentavos: valorRepasse,
+      pixKey: author.pixKey,
+      pixKeyType: author.pixKeyType,
+      description: `Repasse - Pedido ${order.id.slice(-6)}`,
+      externalReference: order.id,
+    });
+
+    if (!transferencia) {
+      await prisma.order.update({
+        where: { id },
+        data: { repasseStatus: "erro", repasseErro: "Falha ao criar transferência na Asaas." },
+      });
+      throw new Error("Não foi possível processar o repasse automático. Tente novamente em instantes ou contate o suporte.");
+    }
+
+    await prisma.order.update({
+      where: { id },
+      data: { status, repasseStatus: "transferido", repasseAsaasTransferId: transferencia.id, repasseErro: null },
+    });
+    revalidatePath("/painel");
+    return;
+  }
+
   await prisma.order.updateMany({ where: { id, authorId: author.id }, data: { status } });
   revalidatePath("/painel");
 }

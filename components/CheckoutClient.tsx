@@ -6,6 +6,7 @@ import { useCart } from "./CartContext";
 import { criarPedido, calcularFreteCarrinho, type FreteAutor } from "@/app/checkout/actions";
 import { brl } from "@/lib/format";
 import { buscarEnderecoPorCep } from "@/lib/cep";
+import { validarCpf } from "@/lib/cpf";
 
 export default function CheckoutClient() {
   const { items, totalCentavos, clearCart } = useCart();
@@ -14,10 +15,11 @@ export default function CheckoutClient() {
   const [calculandoFrete, setCalculandoFrete] = useState(false);
   const [fretes, setFretes] = useState<FreteAutor[]>([]);
   const [erro, setErro] = useState("");
-  const [concluido, setConcluido] = useState(false);
+  const [redirecionando, setRedirecionando] = useState(false);
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
   const [telefone, setTelefone] = useState("");
+  const [cpf, setCpf] = useState("");
   const [cep, setCep] = useState("");
   const [rua, setRua] = useState("");
   const [numero, setNumero] = useState("");
@@ -62,9 +64,13 @@ export default function CheckoutClient() {
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setErro("");
+    if (!validarCpf(cpf)) {
+      setErro("CPF inválido.");
+      return;
+    }
     startTransition(async () => {
       try {
-        await criarPedido(
+        const resultado = await criarPedido(
           items.map((i) => ({
             bookId: i.bookId,
             authorId: i.authorId,
@@ -72,31 +78,27 @@ export default function CheckoutClient() {
             precoCentavos: i.precoCentavos,
             quantidade: i.quantidade,
           })),
-          { nome, email, telefone },
+          { nome, email, telefone, cpf },
           { cep, rua, numero, complemento, bairro, cidade, uf },
           fretes
         );
         clearCart();
-        setConcluido(true);
+        setRedirecionando(true);
+        window.location.href = resultado.invoiceUrl;
       } catch (err) {
         setErro(err instanceof Error ? err.message : "Não foi possível finalizar o pedido.");
       }
     });
   }
 
-  if (concluido) {
+  if (redirecionando) {
     return (
       <div className="section-pad-md" style={{ background: "white", color: "#262626", borderRadius: "8px", padding: "60px 40px", textAlign: "center" }}>
-        <div style={{ fontSize: "40px", marginBottom: "16px" }}>✅</div>
-        <h2 style={{ fontSize: "22px", fontWeight: 700, color: "#002776", marginBottom: "12px" }}>Pedido recebido!</h2>
-        <p style={{ fontSize: "14px", color: "#666", maxWidth: "460px", margin: "0 auto 24px" }}>
-          Seu pedido foi registrado como <b>Aguardando pagamento</b>. Assim que o pagamento online estiver disponível na
-          plataforma, você poderá concluí-lo por lá — por enquanto, o(s) autor(es) foram notificados e podem entrar em
-          contato para combinar o pagamento e o envio.
+        <div style={{ fontSize: "40px", marginBottom: "16px" }}>💳</div>
+        <h2 style={{ fontSize: "22px", fontWeight: 700, color: "#002776", marginBottom: "12px" }}>Redirecionando para o pagamento...</h2>
+        <p style={{ fontSize: "14px", color: "#666", maxWidth: "460px", margin: "0 auto" }}>
+          Você vai concluir o pagamento (Pix ou cartão) em uma página segura da Asaas.
         </p>
-        <Link href="/livros" style={{ display: "inline-block", background: "#002776", color: "white", padding: "12px 24px", fontWeight: 600, borderRadius: "4px" }}>
-          Voltar para os livros
-        </Link>
       </div>
     );
   }
@@ -147,6 +149,18 @@ export default function CheckoutClient() {
                 placeholder="(00) 00000-0000"
                 style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "14px" }}
               />
+            </div>
+            <div>
+              <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>CPF</label>
+              <input
+                type="text"
+                required
+                value={cpf}
+                onChange={(e) => setCpf(e.target.value)}
+                placeholder="000.000.000-00"
+                style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "14px" }}
+              />
+              <p style={{ fontSize: "11px", color: "#999", marginTop: "4px" }}>Necessário pra gerar a cobrança do pagamento.</p>
             </div>
           </div>
         </div>
@@ -239,17 +253,8 @@ export default function CheckoutClient() {
 
         <div>
           <div style={{ fontWeight: 700, marginBottom: "12px" }}>Forma de pagamento</div>
-          <div style={{ display: "flex", flexDirection: "column", gap: "10px", opacity: 0.55 }}>
-            {["Pix", "Cartão de crédito", "Boleto"].map((metodo) => (
-              <label key={metodo} style={{ display: "flex", alignItems: "center", gap: "10px", border: "1px solid #DDD", borderRadius: "6px", padding: "12px", fontSize: "14px" }}>
-                <input type="radio" name="pagamento" disabled />
-                {metodo}
-              </label>
-            ))}
-          </div>
-          <p style={{ fontSize: "12px", color: "#999", marginTop: "8px" }}>
-            🔧 Pagamento online em breve. Por enquanto o pedido fica registrado como &quot;Aguardando pagamento&quot; e o
-            autor combina a forma de pagamento com você.
+          <p style={{ fontSize: "13px", color: "#666" }}>
+            💳 Na próxima tela, você escolhe entre Pix ou cartão de crédito — o pagamento é processado pela Asaas.
           </p>
         </div>
 
@@ -260,7 +265,7 @@ export default function CheckoutClient() {
           disabled={pending}
           style={{ background: "#009B3A", color: "white", padding: "14px", fontWeight: 700, borderRadius: "4px", fontSize: "15px", opacity: pending ? 0.7 : 1 }}
         >
-          {pending ? "Enviando..." : "Finalizar pedido"}
+          {pending ? "Gerando pagamento..." : "Ir para o pagamento"}
         </button>
       </form>
 

@@ -51,6 +51,9 @@ model Author {
   portfolioObraDestaqueId String?
   portfolioCapaUrl        String?
 
+  pixKey     String?
+  pixKeyType String?
+
   avaliacaoMedia Float?
   avaliacoesQtd  Int     @default(0)
   seguidores     Int     @default(0)
@@ -169,6 +172,7 @@ model Order {
   compradorBairro      String?
   compradorCidade      String?
   compradorUf          String?
+  compradorCpf         String?
 
   quantidade        Int     @default(1)
   valorCentavos     Int
@@ -176,6 +180,12 @@ model Order {
   freteServico      String?
   status            String  @default("Aguardando pagamento")
   grupoPedidoId     String?
+
+  asaasCustomerId        String?
+  asaasPaymentId         String?
+  repasseStatus          String  @default("pendente")
+  repasseAsaasTransferId String?
+  repasseErro            String?
 
   createdAt DateTime @default(now())
 

@@ -18,14 +18,21 @@ const STATUS_COLOR: Record<string, string> = {
 export default function PedidosView({ author }: { author: AuthorWithRelations }) {
   const [filter, setFilter] = useState("Todos");
   const [, startTransition] = useTransition();
+  const [erro, setErro] = useState<{ id: string; mensagem: string } | null>(null);
   const router = useRouter();
 
   const pedidos = author.orders.filter((p) => filter === "Todos" || p.status === filter);
 
   function onStatusChange(id: string, status: string) {
+    setErro(null);
     startTransition(async () => {
-      await setOrderStatus(id, status);
-      router.refresh();
+      try {
+        await setOrderStatus(id, status);
+        router.refresh();
+      } catch (err) {
+        setErro({ id, mensagem: err instanceof Error ? err.message : "Não foi possível atualizar o status." });
+        router.refresh();
+      }
     });
   }
 
@@ -75,13 +82,16 @@ export default function PedidosView({ author }: { author: AuthorWithRelations })
                   🚚 Frete: {brl(p.freteCentavos)}{p.freteServico ? ` (${p.freteServico})` : ""}
                 </div>
               )}
+              {erro?.id === p.id && (
+                <div style={{ fontSize: "12px", color: "#C0392B", marginTop: "4px" }}>⚠️ {erro.mensagem}</div>
+              )}
             </div>
             <div style={{ textAlign: "right", flexShrink: 0 }}>
               <div style={{ fontWeight: 700, color: "#002776", fontSize: "14px" }}>{brl(p.valorCentavos + (p.freteCentavos ?? 0))}</div>
               {p.freteCentavos != null && <div style={{ fontSize: "11px", color: "#999" }}>+ {brl(p.freteCentavos)} frete</div>}
             </div>
             <select
-              defaultValue={p.status}
+              value={p.status}
               onChange={(e) => onStatusChange(p.id, e.target.value)}
               style={{ padding: "6px 10px", borderRadius: "6px", fontSize: "12px", fontWeight: 700, border: "1px solid #DDD", color: STATUS_COLOR[p.status] ?? "#666" }}
             >

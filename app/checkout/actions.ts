@@ -3,7 +3,8 @@
 import crypto from "node:crypto";
 import { prisma } from "@/lib/db";
 import { revalidatePath } from "next/cache";
-import { sendOrderConfirmationEmail, sendNewSaleEmail } from "@/lib/email";
+import { criarOuBuscarCliente, criarCobranca } from "@/lib/asaas";
+import { validarCpf } from "@/lib/cpf";
 
 // Valor fixo provisório por autor (frete via Correios, Registro Módico) — ainda a definir o valor final.
 const FRETE_FIXO_CENTAVOS = 1500;
@@ -20,6 +21,7 @@ export type CheckoutComprador = {
   nome: string;
   email: string;
   telefone: string;
+  cpf: string;
 };
 
 export type CheckoutEndereco = {
@@ -66,12 +68,15 @@ export async function criarPedido(
   comprador: CheckoutComprador,
   endereco: CheckoutEndereco,
   fretes: FreteAutor[]
-) {
+): Promise<{ invoiceUrl: string }> {
   if (items.length === 0) {
     throw new Error("Carrinho vazio.");
   }
   if (!comprador.nome.trim() || !comprador.email.trim()) {
     throw new Error("Nome e e-mail são obrigatórios.");
+  }
+  if (!validarCpf(comprador.cpf)) {
+    throw new Error("CPF inválido.");
   }
   if (
     !endereco.cep.trim() ||
@@ -99,6 +104,7 @@ export async function criarPedido(
       comprador: comprador.nome.trim(),
       compradorEmail: comprador.email.trim(),
       compradorTelefone: comprador.telefone.trim() || null,
+      compradorCpf: comprador.cpf.replace(/\D/g, ""),
       compradorCep: endereco.cep.trim(),
       compradorRua: endereco.rua.trim(),
       compradorNumero: endereco.numero.trim(),
@@ -115,45 +121,38 @@ export async function criarPedido(
     };
   });
 
-  await prisma.order.createMany({ data: rows });
-
-  revalidatePath("/painel");
-
-  const authorIds = [...new Set(items.map((i) => i.authorId))];
-  const authors = await prisma.author.findMany({ where: { id: { in: authorIds } } });
-  const enderecoTexto = `${endereco.rua.trim()}, ${endereco.numero.trim()}${
-    endereco.complemento.trim() ? ` - ${endereco.complemento.trim()}` : ""
-  } - ${endereco.bairro.trim()}, ${endereco.cidade.trim()}/${endereco.uf.trim().toUpperCase()} - CEP ${endereco.cep.trim()}`;
-
   const freteTotalCentavos = rows.reduce((sum, r) => sum + (r.freteCentavos ?? 0), 0);
   const totalCentavos = rows.reduce((sum, r) => sum + r.valorCentavos, 0) + freteTotalCentavos;
 
-  await Promise.all([
-    sendOrderConfirmationEmail(comprador.email.trim(), {
-      itens: items.map((item) => ({
-        titulo: item.titulo,
-        autorNome: authors.find((a) => a.id === item.authorId)?.nome ?? "",
-        quantidade: item.quantidade,
-        precoCentavos: item.precoCentavos,
-      })),
-      freteCentavos: freteTotalCentavos,
-      totalCentavos,
-    }).catch((err) => console.error("[checkout] Falha ao enviar e-mail de confirmação ao comprador:", err)),
-    ...authorIds.map((authorId) => {
-      const author = authors.find((a) => a.id === authorId);
-      if (!author) return Promise.resolve();
-      const rowFrete = rows.find((r) => r.authorId === authorId && r.freteCentavos != null);
-      return sendNewSaleEmail(author.email, {
-        comprador: comprador.nome.trim(),
-        compradorEmail: comprador.email.trim(),
-        compradorTelefone: comprador.telefone.trim() || null,
-        endereco: enderecoTexto,
-        itens: items
-          .filter((item) => item.authorId === authorId)
-          .map((item) => ({ titulo: item.titulo, quantidade: item.quantidade, precoCentavos: item.precoCentavos })),
-        freteCentavos: rowFrete?.freteCentavos ?? null,
-        freteServico: rowFrete?.freteServico ?? null,
-      }).catch((err) => console.error(`[checkout] Falha ao enviar e-mail de nova venda para ${author.email}:`, err));
-    }),
-  ]);
+  await prisma.order.createMany({ data: rows });
+
+  const customerId = await criarOuBuscarCliente({
+    nome: comprador.nome.trim(),
+    cpf: comprador.cpf,
+    email: comprador.email.trim(),
+  });
+
+  const cobranca = customerId
+    ? await criarCobranca({
+        customerId,
+        valueCentavos: totalCentavos,
+        description: `Compra de livro(s) — Autores Independentes do Brasil (${items.map((i) => i.titulo).join(", ")})`.slice(0, 500),
+        externalReference: grupoPedidoId,
+      })
+    : null;
+
+  if (!cobranca) {
+    // Rollback: sem cobrança real, não faz sentido manter o pedido registrado.
+    await prisma.order.deleteMany({ where: { grupoPedidoId } });
+    throw new Error("Não foi possível iniciar o pagamento. Tente novamente em instantes.");
+  }
+
+  await prisma.order.updateMany({
+    where: { grupoPedidoId },
+    data: { asaasCustomerId: customerId, asaasPaymentId: cobranca.id },
+  });
+
+  revalidatePath("/painel");
+
+  return { invoiceUrl: cobranca.invoiceUrl };
 }

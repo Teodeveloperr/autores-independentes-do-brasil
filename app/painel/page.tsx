@@ -29,14 +29,12 @@ export default async function PainelPage({ searchParams }: { searchParams: Promi
   });
 
   const temSenha = authorSession.senhaHash != null;
-  const mercadoPagoToken = await prisma.authorMercadoPagoToken.findUnique({ where: { authorId: author.id } });
 
   return (
     <PainelApp
       author={author}
       temSenha={temSenha}
       assinaturaPendente={assinatura === "pendente"}
-      mercadoPagoConectado={!!mercadoPagoToken}
       mercadoPagoStatus={mercadopago}
     />
   );

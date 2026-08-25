@@ -3,11 +3,19 @@
 import { useActionState, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { changePassword, desconectarMercadoPago, type ChangePasswordState } from "@/app/painel/actions";
+import { changePassword, updatePixKey, type ChangePasswordState } from "@/app/painel/actions";
 import { cancelarAssinatura } from "@/app/assinatura/actions";
 import PasskeyManager from "./PasskeyManager";
 import PasswordStrengthChecklist from "../PasswordStrengthChecklist";
 import type { AuthorWithRelations } from "./types";
+
+const TIPOS_CHAVE_PIX = [
+  { value: "CPF", label: "CPF" },
+  { value: "CNPJ", label: "CNPJ" },
+  { value: "EMAIL", label: "E-mail" },
+  { value: "PHONE", label: "Telefone" },
+  { value: "EVP", label: "Chave aleatória" },
+];
 
 const STATUS_LABEL: Record<string, string> = {
   pending: "Aguardando confirmação do pagamento",
@@ -19,16 +27,18 @@ const STATUS_LABEL: Record<string, string> = {
 export default function ConfiguracoesView({
   author,
   temSenha,
-  mercadoPagoConectado,
 }: {
   author: AuthorWithRelations;
   temSenha: boolean;
-  mercadoPagoConectado: boolean;
 }) {
   const [state, formAction, pending] = useActionState<ChangePasswordState, FormData>(changePassword, undefined);
   const [novaSenha, setNovaSenha] = useState("");
   const [cancelando, startCancelamento] = useTransition();
-  const [desconectando, startDesconexao] = useTransition();
+  const [pixKey, setPixKey] = useState(author.pixKey ?? "");
+  const [pixKeyType, setPixKeyType] = useState(author.pixKeyType ?? "CPF");
+  const [salvandoPix, startSalvarPix] = useTransition();
+  const [pixErro, setPixErro] = useState("");
+  const [pixSalvo, setPixSalvo] = useState(false);
   const router = useRouter();
 
   function onCancelarAssinatura() {
@@ -39,11 +49,21 @@ export default function ConfiguracoesView({
     });
   }
 
-  function onDesconectarMercadoPago() {
-    if (!confirm("Desconectar sua conta do Mercado Pago? Você vai parar de receber pelas vendas dos seus livros até conectar novamente.")) return;
-    startDesconexao(async () => {
-      await desconectarMercadoPago();
-      router.refresh();
+  function onSalvarPix(e: React.FormEvent) {
+    e.preventDefault();
+    setPixErro("");
+    setPixSalvo(false);
+    const fd = new FormData();
+    fd.set("pixKey", pixKey);
+    fd.set("pixKeyType", pixKeyType);
+    startSalvarPix(async () => {
+      try {
+        await updatePixKey(fd);
+        setPixSalvo(true);
+        router.refresh();
+      } catch (err) {
+        setPixErro(err instanceof Error ? err.message : "Não foi possível salvar a chave Pix.");
+      }
     });
   }
 
@@ -170,29 +190,49 @@ export default function ConfiguracoesView({
       <div style={{ background: "white", borderRadius: "10px", padding: "24px", marginTop: "20px" }}>
         <div style={{ fontWeight: 700, color: "#002776", marginBottom: "4px" }}>Recebimento de vendas</div>
         <p style={{ fontSize: "12px", color: "#666", marginBottom: "16px", maxWidth: "560px" }}>
-          Conecte sua conta do Mercado Pago para receber diretamente o valor das vendas dos seus livros. O coletivo não fica com o dinheiro em nenhum momento — cada venda cai direto na sua conta, com a taxa da plataforma já descontada automaticamente.
+          Cadastre sua chave Pix pra receber o valor das vendas dos seus livros automaticamente, assim que você marcar o pedido como &quot;Enviado&quot;.
         </p>
 
-        {mercadoPagoConectado ? (
-          <div style={{ display: "flex", alignItems: "center", gap: "14px", flexWrap: "wrap" }}>
-            <div style={{ color: "#009B3A", fontSize: "13px", background: "#E3F4E9", padding: "10px 14px", borderRadius: "6px", fontWeight: 600 }}>
-              ✅ Conta do Mercado Pago conectada
-            </div>
-            <button
-              onClick={onDesconectarMercadoPago}
-              disabled={desconectando}
-              style={{ background: "white", border: "1px solid #C0392B", color: "#C0392B", padding: "10px 18px", fontWeight: 600, borderRadius: "6px", fontSize: "13px", opacity: desconectando ? 0.7 : 1 }}
-            >
-              {desconectando ? "Desconectando..." : "Desconectar"}
-            </button>
+        <form onSubmit={onSalvarPix} style={{ display: "flex", gap: "10px", flexWrap: "wrap", alignItems: "flex-end" }}>
+          <div style={{ flex: "1 1 200px" }}>
+            <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>Chave Pix</label>
+            <input
+              value={pixKey}
+              onChange={(e) => setPixKey(e.target.value)}
+              required
+              placeholder="CPF, e-mail, telefone ou chave aleatória"
+              style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px" }}
+            />
           </div>
-        ) : (
-          <a
-            href="/api/auth/mercadopago"
-            style={{ display: "inline-block", background: "#009B3A", color: "white", padding: "12px 20px", fontWeight: 700, borderRadius: "6px", fontSize: "14px", textDecoration: "none" }}
+          <div>
+            <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>Tipo</label>
+            <select
+              value={pixKeyType}
+              onChange={(e) => setPixKeyType(e.target.value)}
+              style={{ padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px" }}
+            >
+              {TIPOS_CHAVE_PIX.map((t) => (
+                <option key={t.value} value={t.value}>{t.label}</option>
+              ))}
+            </select>
+          </div>
+          <button
+            type="submit"
+            disabled={salvandoPix}
+            style={{ background: "#009B3A", color: "white", padding: "10px 20px", fontWeight: 700, borderRadius: "6px", fontSize: "14px", opacity: salvandoPix ? 0.7 : 1 }}
           >
-            Conectar Mercado Pago
-          </a>
+            {salvandoPix ? "Salvando..." : "Salvar chave Pix"}
+          </button>
+        </form>
+        {pixErro && (
+          <div style={{ color: "#C0392B", fontSize: "13px", background: "#FDEDEC", padding: "10px 14px", borderRadius: "6px", marginTop: "12px" }}>
+            {pixErro}
+          </div>
+        )}
+        {pixSalvo && (
+          <div style={{ color: "#009B3A", fontSize: "13px", background: "#E3F4E9", padding: "10px 14px", borderRadius: "6px", marginTop: "12px" }}>
+            ✅ Chave Pix salva.
+          </div>
         )}
       </div>
     </div>
