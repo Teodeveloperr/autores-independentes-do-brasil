@@ -129,7 +129,17 @@ export default async function PerfilPage({ params }: { params: Promise<{ id: str
             {!isOwner && <EnviarMensagemButton authorId={author.id} />}
           </div>
           <div style={{ flex: 1 }}>
-            <p style={{ fontSize: "14px", color: "#444", lineHeight: 1.7, marginBottom: "24px", maxWidth: "640px" }}>{author.bio}</p>
+            <div className="responsive-flex-row" style={{ display: "flex", gap: "24px", alignItems: "flex-start", marginBottom: "24px" }}>
+              <p style={{ fontSize: "14px", color: "#444", lineHeight: 1.7, flex: 1, maxWidth: "640px" }}>{author.bio}</p>
+              {author.videoUrl ? (
+                <video controls playsInline src={author.videoUrl} style={{ width: "180px", borderRadius: "8px", flexShrink: 0 }} />
+              ) : isOwner ? (
+                <div style={{ width: "180px", flexShrink: 0, textAlign: "center", background: "#F6F6F6", borderRadius: "8px", padding: "16px 12px" }}>
+                  <div style={{ fontSize: "22px", marginBottom: "6px" }}>🎥</div>
+                  <p style={{ fontSize: "11px", color: "#666", lineHeight: 1.4 }}>Adicione um vídeo de até 30s se apresentando, em Meu Perfil.</p>
+                </div>
+              ) : null}
+            </div>
             <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "24px", marginBottom: "40px" }}>
               <div>
                 <div style={{ fontSize: "24px", fontWeight: 700, color: "#009B3A" }}>{author.avaliacaoMedia?.toFixed(1) ?? "—"}</div>
@@ -150,7 +160,6 @@ export default async function PerfilPage({ params }: { params: Promise<{ id: str
             </div>
             <PerfilTabs
               authorId={author.id}
-              videoUrl={author.videoUrl}
               books={author.books.map((b) => ({
                 id: b.id,
                 titulo: b.titulo,
