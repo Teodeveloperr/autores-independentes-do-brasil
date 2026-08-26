@@ -13,6 +13,7 @@ import { gerarSegredoTotp, gerarOtpauthUri, verificarCodigoTotp, gerarCodigosBac
 import { criarLinkRedefinicaoSenha } from "@/lib/passwordReset";
 import { sendAccountCreatedEmail } from "@/lib/email";
 import { TODOS_PLANOS } from "@/lib/plans";
+import { sanitizeExternalUrl } from "@/lib/format";
 
 export type AdminLoginState = { error?: string; precisa2fa?: boolean } | undefined;
 
@@ -177,6 +178,47 @@ export async function removeCollectiveEvent(id: string) {
   revalidatePath("/admin");
   revalidatePath("/eventos");
   revalidatePath("/");
+}
+
+function opportunityDataFromForm(formData: FormData) {
+  const link = sanitizeExternalUrl((formData.get("link") as string) || "");
+  if (!link) {
+    throw new Error("Informe um link válido para a oportunidade.");
+  }
+  const prazoFinal = new Date(`${(formData.get("prazoFinal") as string) || ""}T00:00:00`);
+  if (Number.isNaN(prazoFinal.getTime())) {
+    throw new Error("Informe um prazo final válido.");
+  }
+
+  return {
+    nome: ((formData.get("nome") as string) || "").trim(),
+    categoria: (formData.get("categoria") as string) || "Editais",
+    prazoFinal,
+    estado: ((formData.get("estado") as string) || "").trim(),
+    valor: ((formData.get("valor") as string) || "").trim() || null,
+    link,
+  };
+}
+
+export async function addOpportunity(formData: FormData) {
+  await requireAdmin();
+  await prisma.opportunity.create({ data: opportunityDataFromForm(formData) });
+  revalidatePath("/admin");
+  revalidatePath("/oportunidades");
+}
+
+export async function updateOpportunity(id: string, formData: FormData) {
+  await requireAdmin();
+  await prisma.opportunity.update({ where: { id }, data: opportunityDataFromForm(formData) });
+  revalidatePath("/admin");
+  revalidatePath("/oportunidades");
+}
+
+export async function removeOpportunity(id: string) {
+  await requireAdmin();
+  await prisma.opportunity.delete({ where: { id } });
+  revalidatePath("/admin");
+  revalidatePath("/oportunidades");
 }
 
 export async function addCollectiveGalleryPhoto(formData: FormData) {

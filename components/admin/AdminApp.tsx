@@ -4,8 +4,9 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { adminLogout } from "@/app/admin/actions";
-import type { AdminView, Article, AuthorWithCount, CollectiveEvent, CollectiveGalleryPhoto, ReviewWithAuthor } from "./types";
+import type { AdminView, Article, AuthorWithCount, CollectiveEvent, CollectiveGalleryPhoto, Opportunity, ReviewWithAuthor } from "./types";
 import AdminAgendaView from "./AdminAgendaView";
+import AdminOportunidadesView from "./AdminOportunidadesView";
 import AdminGaleriaView from "./AdminGaleriaView";
 import AdminAutoresView from "./AdminAutoresView";
 import AdminBlogView from "./AdminBlogView";
@@ -28,6 +29,7 @@ const sidebarBtn = (active: boolean): React.CSSProperties => ({
 
 export default function AdminApp({
   eventos,
+  oportunidades,
   fotos,
   autores,
   artigos,
@@ -35,6 +37,7 @@ export default function AdminApp({
   totpEnabled,
 }: {
   eventos: CollectiveEvent[];
+  oportunidades: Opportunity[];
   fotos: CollectiveGalleryPhoto[];
   autores: AuthorWithCount[];
   artigos: Article[];
@@ -55,6 +58,7 @@ export default function AdminApp({
         </div>
         <button onClick={() => setView("dash")} style={sidebarBtn(view === "dash")}>📊 Visão geral</button>
         <button onClick={() => setView("agenda")} style={sidebarBtn(view === "agenda")}>📅 Agenda do Coletivo</button>
+        <button onClick={() => setView("oportunidades")} style={sidebarBtn(view === "oportunidades")}>🚀 Oportunidades</button>
         <button onClick={() => setView("galeria")} style={sidebarBtn(view === "galeria")}>🖼️ Galeria do Coletivo</button>
         <button onClick={() => setView("blog")} style={sidebarBtn(view === "blog")}>📝 Blog do Coletivo</button>
         <button onClick={() => setView("autores")} style={sidebarBtn(view === "autores")}>✍️ Autores</button>
@@ -158,6 +162,7 @@ export default function AdminApp({
             </div>
           )}
           {view === "agenda" && <AdminAgendaView eventos={eventos} />}
+          {view === "oportunidades" && <AdminOportunidadesView oportunidades={oportunidades} />}
           {view === "galeria" && <AdminGaleriaView fotos={fotos} />}
           {view === "blog" && <AdminBlogView artigos={artigos} />}
           {view === "autores" && <AdminAutoresView autores={autores} />}

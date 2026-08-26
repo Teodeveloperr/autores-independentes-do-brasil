@@ -243,6 +243,18 @@ model CollectiveEvent {
   createdAt DateTime @default(now())
 }
 
+model Opportunity {
+  id         String   @id @default(cuid())
+  nome       String
+  categoria  String
+  prazoFinal DateTime
+  estado     String
+  valor      String?
+  link       String
+
+  createdAt DateTime @default(now())
+}
+
 model CollectiveGalleryPhoto {
   id        String @id @default(cuid())
   titulo    String
