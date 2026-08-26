@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import AddToCartButton from "./AddToCartButton";
+import PrecoComDesconto from "./PrecoComDesconto";
+import { precoComDescontoCentavos } from "@/lib/desconto";
 
 export type LivroItem = {
   id: string;
@@ -10,6 +12,7 @@ export type LivroItem = {
   capaUrl: string | null;
   preco: string;
   precoCentavos: number;
+  descontoPercentual: number | null;
   descricao: string | null;
   authorId: string;
   autorNome: string;
@@ -41,7 +44,9 @@ export default function LivrosGrid({ books, podeVender }: { books: LivroItem[]; 
             />
             <div style={{ fontWeight: 600, fontSize: "13px", marginBottom: "4px" }}>{b.titulo}</div>
             <div style={{ fontSize: "12px", color: "#666", marginBottom: "8px" }}>{b.genero}</div>
-            <div style={{ color: "#009B3A", fontWeight: 700, marginBottom: "10px" }}>{b.preco}</div>
+            <div style={{ marginBottom: "10px" }}>
+              <PrecoComDesconto precoCentavos={b.precoCentavos} descontoPercentual={b.descontoPercentual} fontSize="14px" />
+            </div>
             <div style={{ display: "flex", gap: "8px" }}>
               <button
                 onClick={() => setSinopseBook(b)}
@@ -56,7 +61,7 @@ export default function LivrosGrid({ books, podeVender }: { books: LivroItem[]; 
                     authorId: b.authorId,
                     titulo: b.titulo,
                     autorNome: b.autorNome,
-                    precoCentavos: b.precoCentavos,
+                    precoCentavos: precoComDescontoCentavos(b.precoCentavos, b.descontoPercentual),
                     capaUrl: b.capaUrl,
                   }}
                   style={{ flex: 1, width: "auto", padding: "8px", fontSize: "12px" }}

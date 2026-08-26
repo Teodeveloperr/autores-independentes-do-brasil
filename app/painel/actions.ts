@@ -119,6 +119,7 @@ function bookDataFromForm(formData: FormData) {
   const estoque = parseInt((formData.get("estoque") as string) || "0", 10) || 0;
   const capaUrl = (formData.get("capaUrl") as string) || null;
   const descricao = ((formData.get("descricao") as string) || "").trim() || null;
+  const descontoPercentual = parseInt((formData.get("descontoPercentual") as string) || "", 10) || null;
 
   return {
     titulo,
@@ -127,6 +128,7 @@ function bookDataFromForm(formData: FormData) {
     estoque,
     capaUrl,
     descricao,
+    descontoPercentual,
   };
 }
 

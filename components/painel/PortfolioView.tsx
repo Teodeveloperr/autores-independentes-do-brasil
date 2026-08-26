@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { updatePortfolio } from "@/app/painel/actions";
 import { useImageUpload } from "@/hooks/useImageUpload";
+import { precoComDescontoCentavos } from "@/lib/desconto";
 import PortfolioDocument, { type PortfolioData } from "./PortfolioDocument";
 import type { AuthorWithRelations } from "./types";
 
@@ -61,7 +62,7 @@ export default function PortfolioView({ author }: { author: AuthorWithRelations 
       obraDestaque: obra
         ? { titulo: obra.titulo, capaUrl: obra.capaUrl, descricao: obra.descricao, genero: obra.genero }
         : null,
-      livros: author.books.map((b) => ({ titulo: b.titulo, capaUrl: b.capaUrl, genero: b.genero, precoCentavos: b.precoCentavos })),
+      livros: author.books.map((b) => ({ titulo: b.titulo, capaUrl: b.capaUrl, genero: b.genero, precoCentavos: precoComDescontoCentavos(b.precoCentavos, b.descontoPercentual) })),
       avaliacoes: author.avaliacoes.slice(0, 10).map((a) => ({ nome: a.nome, texto: a.texto, estrelas: a.estrelas })),
       fotos: author.fotos.map((f) => ({ url: f.url, titulo: f.titulo })),
     };

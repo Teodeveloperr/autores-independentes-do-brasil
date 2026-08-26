@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import AddToCartButton from "@/components/AddToCartButton";
-import { brl } from "@/lib/format";
+import PrecoComDesconto from "@/components/PrecoComDesconto";
 import { podeVenderLivros } from "@/lib/plans";
+import { precoComDescontoCentavos } from "@/lib/desconto";
 import { GENEROS } from "@/lib/genres";
 
 export type LivroCatalogo = {
@@ -11,6 +12,7 @@ export type LivroCatalogo = {
   titulo: string;
   genero: string;
   precoCentavos: number;
+  descontoPercentual: number | null;
   capaUrl: string | null;
   descricao: string | null;
   authorId: string;
@@ -176,7 +178,9 @@ export default function LivrosCatalogo({ books }: { books: LivroCatalogo[] }) {
                 />
                 <div style={{ fontWeight: 600, marginBottom: "4px" }}>{b.titulo}</div>
                 <div style={{ fontSize: "13px", color: "#666", marginBottom: "8px" }}>{b.author.nome}</div>
-                <div style={{ color: "#009B3A", fontWeight: 700, marginBottom: "12px" }}>{brl(b.precoCentavos)}</div>
+                <div style={{ marginBottom: "12px" }}>
+                  <PrecoComDesconto precoCentavos={b.precoCentavos} descontoPercentual={b.descontoPercentual} />
+                </div>
                 <div style={{ display: "flex", gap: "8px" }}>
                   <button
                     onClick={() => setSinopseId(b.id)}
@@ -191,7 +195,7 @@ export default function LivrosCatalogo({ books }: { books: LivroCatalogo[] }) {
                         authorId: b.authorId,
                         titulo: b.titulo,
                         autorNome: b.author.nome,
-                        precoCentavos: b.precoCentavos,
+                        precoCentavos: precoComDescontoCentavos(b.precoCentavos, b.descontoPercentual),
                         capaUrl: b.capaUrl,
                       }}
                       style={{ flex: 1, width: "auto" }}

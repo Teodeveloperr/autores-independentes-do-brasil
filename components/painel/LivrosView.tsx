@@ -4,8 +4,9 @@ import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useImageUpload } from "@/hooks/useImageUpload";
 import { addBook, updateBook, removeBook } from "@/app/painel/actions";
-import { brl } from "@/lib/format";
 import { GENEROS } from "@/lib/genres";
+import { DESCONTOS_DISPONIVEIS } from "@/lib/desconto";
+import PrecoComDesconto from "@/components/PrecoComDesconto";
 import type { AuthorWithRelations } from "./types";
 
 export default function LivrosView({ author }: { author: AuthorWithRelations }) {
@@ -114,6 +115,15 @@ export default function LivrosView({ author }: { author: AuthorWithRelations }) 
             </div>
           </div>
           <div>
+            <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>Desconto</label>
+            <select name="descontoPercentual" defaultValue={editing?.descontoPercentual ?? 0} style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px" }}>
+              <option value={0}>Sem desconto</option>
+              {DESCONTOS_DISPONIVEIS.map((d) => (
+                <option key={d} value={d}>{d}% OFF</option>
+              ))}
+            </select>
+          </div>
+          <div>
             <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>Estoque (unidades)</label>
             <input name="estoque" type="number" required defaultValue={editing?.estoque} placeholder="20" style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px" }} />
           </div>
@@ -160,7 +170,7 @@ export default function LivrosView({ author }: { author: AuthorWithRelations }) 
                 <div style={{ fontSize: "12px", color: "#666" }}>{b.genero}</div>
                 <div style={{ fontSize: "12px", color: "#666" }}>Estoque: {b.estoque} unidades</div>
               </div>
-              <div style={{ fontWeight: 700, color: "#009B3A", fontSize: "15px" }}>{brl(b.precoCentavos)}</div>
+              <PrecoComDesconto precoCentavos={b.precoCentavos} descontoPercentual={b.descontoPercentual} fontSize="15px" />
               <button
                 onClick={() => setSinopseId(b.id)}
                 style={{ background: "white", border: "1px solid #002776", color: "#002776", padding: "0 12px", height: "32px", fontSize: "12px", fontWeight: 600, borderRadius: "6px", flexShrink: 0 }}

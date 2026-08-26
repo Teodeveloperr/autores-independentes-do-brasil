@@ -5,8 +5,9 @@ import PublicFooter from "@/components/PublicFooter";
 import BlogCarousel from "@/components/BlogCarousel";
 import DepoimentosCarousel from "@/components/DepoimentosCarousel";
 import ContactForm from "@/components/ContactForm";
+import PrecoComDesconto from "@/components/PrecoComDesconto";
 import { prisma } from "@/lib/db";
-import { initials, brl } from "@/lib/format";
+import { initials } from "@/lib/format";
 import { PLANO_RANK } from "@/lib/plans";
 
 export const dynamic = "force-dynamic";
@@ -192,7 +193,7 @@ export default async function HomePage() {
                 />
                 <div style={{ fontWeight: 600, fontSize: "13px", marginBottom: "2px" }}>{b.titulo}</div>
                 <div style={{ fontSize: "12px", color: "#666", marginBottom: "4px" }}>{b.author.nome}</div>
-                <div style={{ color: "#009B3A", fontWeight: 700, fontSize: "13px" }}>{brl(b.precoCentavos)}</div>
+                <PrecoComDesconto precoCentavos={b.precoCentavos} descontoPercentual={b.descontoPercentual} fontSize="13px" />
               </Link>
             ))}
           </div>
