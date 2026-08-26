@@ -152,9 +152,9 @@ export default async function PerfilPage({ params }: { params: Promise<{ id: str
                 </div>
               </div>
               {author.videoUrl ? (
-                <video controls playsInline src={author.videoUrl} style={{ width: "320px", height: "100%", minHeight: "200px", objectFit: "cover", borderRadius: "8px", flexShrink: 0 }} />
+                <video controls playsInline src={author.videoUrl} style={{ width: "720px", height: "100%", minHeight: "200px", objectFit: "cover", borderRadius: "8px", flexShrink: 0 }} />
               ) : isOwner ? (
-                <div style={{ width: "320px", flexShrink: 0, minHeight: "200px", display: "flex", flexDirection: "column", justifyContent: "center", textAlign: "center", background: "#F6F6F6", borderRadius: "8px", padding: "16px 12px" }}>
+                <div style={{ width: "720px", flexShrink: 0, minHeight: "200px", display: "flex", flexDirection: "column", justifyContent: "center", textAlign: "center", background: "#F6F6F6", borderRadius: "8px", padding: "16px 12px" }}>
                   <div style={{ fontSize: "22px", marginBottom: "6px" }}>🎥</div>
                   <p style={{ fontSize: "11px", color: "#666", lineHeight: 1.4 }}>Adicione um vídeo de até 30s se apresentando, em Meu Perfil.</p>
                 </div>
