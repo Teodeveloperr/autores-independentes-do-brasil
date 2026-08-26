@@ -129,34 +129,36 @@ export default async function PerfilPage({ params }: { params: Promise<{ id: str
             {!isOwner && <EnviarMensagemButton authorId={author.id} />}
           </div>
           <div style={{ flex: 1 }}>
-            <div className="responsive-flex-row" style={{ display: "flex", gap: "24px", alignItems: "flex-start", marginBottom: "24px" }}>
-              <p style={{ fontSize: "14px", color: "#444", lineHeight: 1.7, flex: 1, maxWidth: "640px" }}>{author.bio}</p>
+            <div className="responsive-flex-row" style={{ display: "flex", gap: "24px", alignItems: "stretch", marginBottom: "40px" }}>
+              <div style={{ flex: 1 }}>
+                <p style={{ fontSize: "14px", color: "#444", lineHeight: 1.7, maxWidth: "640px", marginBottom: "20px" }}>{author.bio}</p>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "18px" }}>
+                  <div>
+                    <div style={{ fontSize: "24px", fontWeight: 700, color: "#009B3A" }}>{author.avaliacaoMedia?.toFixed(1) ?? "—"}</div>
+                    <div style={{ fontSize: "12px", color: "#666" }}>({author.avaliacoesQtd} avaliações)</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: "24px", fontWeight: 700, color: "#002776" }}>{author.books.length}</div>
+                    <div style={{ fontSize: "12px", color: "#666" }}>Livros</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: "24px", fontWeight: 700, color: "#002776" }}>Desde {author.anoEntrada}</div>
+                    <div style={{ fontSize: "12px", color: "#666" }}>no coletivo</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: "24px", fontWeight: 700, color: "#002776" }}>{author.seguidores}</div>
+                    <div style={{ fontSize: "12px", color: "#666" }}>seguidores</div>
+                  </div>
+                </div>
+              </div>
               {author.videoUrl ? (
-                <video controls playsInline src={author.videoUrl} style={{ width: "180px", borderRadius: "8px", flexShrink: 0 }} />
+                <video controls playsInline src={author.videoUrl} style={{ width: "240px", height: "100%", minHeight: "200px", objectFit: "cover", borderRadius: "8px", flexShrink: 0 }} />
               ) : isOwner ? (
-                <div style={{ width: "180px", flexShrink: 0, textAlign: "center", background: "#F6F6F6", borderRadius: "8px", padding: "16px 12px" }}>
+                <div style={{ width: "240px", flexShrink: 0, minHeight: "200px", display: "flex", flexDirection: "column", justifyContent: "center", textAlign: "center", background: "#F6F6F6", borderRadius: "8px", padding: "16px 12px" }}>
                   <div style={{ fontSize: "22px", marginBottom: "6px" }}>🎥</div>
                   <p style={{ fontSize: "11px", color: "#666", lineHeight: 1.4 }}>Adicione um vídeo de até 30s se apresentando, em Meu Perfil.</p>
                 </div>
               ) : null}
-            </div>
-            <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "24px", marginBottom: "40px" }}>
-              <div>
-                <div style={{ fontSize: "24px", fontWeight: 700, color: "#009B3A" }}>{author.avaliacaoMedia?.toFixed(1) ?? "—"}</div>
-                <div style={{ fontSize: "12px", color: "#666" }}>({author.avaliacoesQtd} avaliações)</div>
-              </div>
-              <div>
-                <div style={{ fontSize: "24px", fontWeight: 700, color: "#002776" }}>{author.books.length}</div>
-                <div style={{ fontSize: "12px", color: "#666" }}>Livros</div>
-              </div>
-              <div>
-                <div style={{ fontSize: "24px", fontWeight: 700, color: "#002776" }}>Desde {author.anoEntrada}</div>
-                <div style={{ fontSize: "12px", color: "#666" }}>no coletivo</div>
-              </div>
-              <div>
-                <div style={{ fontSize: "24px", fontWeight: 700, color: "#002776" }}>{author.seguidores}</div>
-                <div style={{ fontSize: "12px", color: "#666" }}>seguidores</div>
-              </div>
             </div>
             <PerfilTabs
               authorId={author.id}
