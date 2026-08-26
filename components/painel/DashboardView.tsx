@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { brl, formatEventoDia } from "@/lib/format";
 import { calcularPerfilCompleto } from "@/lib/perfilCompleto";
 import { calcularConquistas } from "@/lib/conquistas";
@@ -42,6 +43,17 @@ export default function DashboardView({
   const vendasMes = author.orders
     .filter((o) => o.status === "Pago" && o.createdAt.getMonth() === now.getMonth() && o.createdAt.getFullYear() === now.getFullYear())
     .reduce((sum, o) => sum + o.valorCentavos, 0);
+
+  const ehIniciante = author.plano === "Iniciante";
+  const [showVendaAviso, setShowVendaAviso] = useState(false);
+
+  function onLivrosClick() {
+    if (ehIniciante) {
+      setShowVendaAviso(true);
+    } else {
+      onNavigate("livros");
+    }
+  }
 
   const { itens: checklistItens, percentual: percentualPerfil } = calcularPerfilCompleto(author, author.books.length);
   const conquistas = calcularConquistas(author, {
@@ -128,8 +140,8 @@ export default function DashboardView({
         <div style={{ background: "white", borderRadius: "10px", padding: "24px" }}>
           <div style={{ fontWeight: 700, color: "#002776", marginBottom: "16px" }}>Ações rápidas</div>
           <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-            <button onClick={() => onNavigate("livros")} style={quickBtn}>📕 Adicionar novo livro</button>
-            <button onClick={() => onNavigate("livros")} style={quickBtn}>📖 Gerenciar livros</button>
+            <button onClick={onLivrosClick} style={quickBtn}>📕 Adicionar novo livro</button>
+            <button onClick={onLivrosClick} style={quickBtn}>📖 Gerenciar livros</button>
             <button onClick={() => onNavigate("pedidos")} style={quickBtn}>📋 Ver pedidos</button>
             <button onClick={() => onNavigate("perfil")} style={quickBtn}>👤 Editar meu perfil</button>
             <button onClick={() => onNavigate("galeria")} style={quickBtn}>🖼️ Adicionar fotos</button>
@@ -173,7 +185,7 @@ export default function DashboardView({
                 <div style={{ fontSize: "11px", color: "#666" }}>Estoque: {b.estoque}</div>
               </div>
             ))}
-            <button onClick={() => onNavigate("livros")} style={{ background: "white", border: "2px dashed #BBB", borderRadius: "6px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "6px", fontSize: "12px", fontWeight: 600, color: "#002776", minHeight: "120px" }}>
+            <button onClick={onLivrosClick} style={{ background: "white", border: "2px dashed #BBB", borderRadius: "6px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "6px", fontSize: "12px", fontWeight: 600, color: "#002776", minHeight: "120px" }}>
               <span style={{ fontSize: "24px" }}>＋</span>
               Adicionar novo livro
             </button>
@@ -262,6 +274,35 @@ export default function DashboardView({
           </div>
         </div>
       </div>
+
+      {showVendaAviso && (
+        <div
+          onClick={() => setShowVendaAviso(false)}
+          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, padding: "20px" }}
+        >
+          <div onClick={(e) => e.stopPropagation()} style={{ background: "white", borderRadius: "10px", padding: "28px", maxWidth: "380px", textAlign: "center" }}>
+            <div style={{ fontSize: "32px", marginBottom: "12px" }}>📕</div>
+            <div style={{ fontWeight: 700, color: "#002776", fontSize: "16px", marginBottom: "10px" }}>Seus livros ainda não ficam à venda</div>
+            <p style={{ fontSize: "13px", color: "#444", lineHeight: 1.6, marginBottom: "20px" }}>
+              No plano Iniciante você pode cadastrar seus livros, mas eles não aparecem disponíveis para compra na loja. Faça upgrade para o plano Essencial ou Premium pra começar a vender.
+            </p>
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              <a href="/assinatura" style={{ background: "#009B3A", color: "white", padding: "10px 24px", borderRadius: "6px", fontWeight: 600, fontSize: "13px", textDecoration: "none" }}>
+                Fazer upgrade do plano
+              </a>
+              <button
+                onClick={() => {
+                  setShowVendaAviso(false);
+                  onNavigate("livros");
+                }}
+                style={{ background: "white", border: "1px solid #DDD", color: "#666", padding: "10px 24px", borderRadius: "6px", fontWeight: 600, fontSize: "13px" }}
+              >
+                Continuar mesmo assim
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
