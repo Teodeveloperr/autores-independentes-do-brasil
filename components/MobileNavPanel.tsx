@@ -4,12 +4,13 @@ import { useState } from "react";
 import Link from "next/link";
 
 type NavLink = { key: string; label: string; href: string; active?: boolean };
+type NavGroup = { label: string; items: NavLink[] };
 
 export default function MobileNavPanel({
-  links,
+  groups,
   cta,
 }: {
-  links: NavLink[];
+  groups: NavGroup[];
   cta: { href: string; label: string };
 }) {
   const [open, setOpen] = useState(false);
@@ -40,10 +41,22 @@ export default function MobileNavPanel({
           boxShadow: "0 8px 16px rgba(0,0,0,0.08)",
         }}
       >
-        {links.map((l) => (
-          <Link key={l.key} href={l.href} onClick={() => setOpen(false)} style={{ color: l.active ? "#009B3A" : "#262626", fontWeight: l.active ? 600 : 500, fontSize: "15px" }}>
-            {l.label}
-          </Link>
+        {groups.map((group, i) => (
+          <div key={group.label || i} style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+            {group.label && (
+              <div style={{ fontSize: "11px", fontWeight: 700, color: "#999", letterSpacing: "0.5px" }}>{group.label}</div>
+            )}
+            {group.items.map((l) => (
+              <Link
+                key={l.key}
+                href={l.href}
+                onClick={() => setOpen(false)}
+                style={{ color: l.active ? "#009B3A" : "#262626", fontWeight: l.active ? 600 : 500, fontSize: "15px", paddingLeft: group.label ? "8px" : 0 }}
+              >
+                {l.label}
+              </Link>
+            ))}
+          </div>
         ))}
         <Link
           href={cta.href}

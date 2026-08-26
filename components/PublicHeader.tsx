@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { getCurrentAuthor, getCurrentAdmin } from "@/lib/auth";
 import MobileNavPanel from "./MobileNavPanel";
+import NavDropdown from "./NavDropdown";
 import CartBadge from "./CartBadge";
 
 type NavKey =
@@ -12,18 +13,49 @@ type NavKey =
   | "eventos"
   | "blog"
   | "galeria"
-  | "planos";
+  | "planos"
+  | "cadastro"
+  | "oportunidades"
+  | "talkshow"
+  | "contato";
 
-const NAV_ITEMS: { key: NavKey; label: string; href: string }[] = [
-  { key: "home", label: "HOME", href: "/" },
-  { key: "coletivo", label: "O COLETIVO", href: "/coletivo" },
-  { key: "autores", label: "AUTORES", href: "/autores" },
-  { key: "livros", label: "LIVROS", href: "/livros" },
-  { key: "eventos", label: "EVENTOS", href: "/eventos" },
-  { key: "blog", label: "BLOG", href: "/blog" },
-  { key: "galeria", label: "GALERIA", href: "/galeria" },
-  { key: "planos", label: "PLANOS", href: "/assinatura" },
-];
+type NavItem = { key: NavKey; label: string; href: string };
+
+function categorias(showContato: boolean): { label: string; items: NavItem[] }[] {
+  return [
+    {
+      label: "DESCOBRIR",
+      items: [
+        { key: "autores", label: "Autores", href: "/autores" },
+        { key: "livros", label: "Livros", href: "/livros" },
+        { key: "eventos", label: "Eventos", href: "/eventos" },
+      ],
+    },
+    {
+      label: "PARTICIPAR",
+      items: [
+        { key: "planos", label: "Planos", href: "/assinatura" },
+        { key: "cadastro", label: "Cadastre-se", href: "/cadastro" },
+        { key: "oportunidades", label: "Oportunidades", href: "/oportunidades" },
+      ],
+    },
+    {
+      label: "COMUNIDADE",
+      items: [
+        { key: "blog", label: "Blog", href: "/blog" },
+        { key: "galeria", label: "Galeria", href: "/galeria" },
+        { key: "talkshow", label: "Talk Show / Conteúdos", href: "/talk-show" },
+      ],
+    },
+    {
+      label: "SOBRE",
+      items: [
+        { key: "coletivo", label: "O Coletivo", href: "/coletivo" },
+        ...(showContato ? [{ key: "contato" as const, label: "Contato", href: "/#contato" }] : []),
+      ],
+    },
+  ];
+}
 
 export default async function PublicHeader({
   active,
@@ -36,13 +68,21 @@ export default async function PublicHeader({
 }) {
   const [author, admin] = await Promise.all([getCurrentAuthor(), getCurrentAdmin()]);
   const resolvedCta = cta ?? { href: "/login", label: "LOGIN/CADASTRO" };
+  const cats = categorias(showContato);
 
-  const mobileLinks = [
-    ...NAV_ITEMS.map((item) => ({ key: item.key, label: item.label, href: item.href, active: active === item.key })),
+  const utilLinks = [
     ...(author ? [{ key: "painel", label: "MEU PAINEL", href: "/painel", active: false }] : []),
     ...(admin ? [{ key: "admin", label: "PAINEL ADMIN", href: "/admin", active: false }] : []),
-    ...(showContato ? [{ key: "contato", label: "CONTATO", href: "/#contato", active: false }] : []),
     { key: "carrinho", label: "🛒 CARRINHO", href: "/carrinho", active: false },
+  ];
+
+  const mobileGroups = [
+    { label: "", items: [{ key: "home", label: "INÍCIO", href: "/", active: active === "home" }] },
+    ...cats.map((c) => ({
+      label: c.label,
+      items: c.items.map((item) => ({ key: item.key, label: item.label, href: item.href, active: active === item.key })),
+    })),
+    { label: "", items: utilLinks },
   ];
 
   return (
@@ -72,25 +112,20 @@ export default async function PublicHeader({
       <nav
         className="nav-desktop"
         style={{
-          gap: "16px",
+          gap: "24px",
           fontSize: "13px",
           fontWeight: 500,
           flexWrap: "wrap",
           flex: 1,
           justifyContent: "center",
+          alignItems: "center",
         }}
       >
-        {NAV_ITEMS.map((item) => (
-          <Link
-            key={item.key}
-            href={item.href}
-            style={{
-              color: active === item.key ? "#009B3A" : "#262626",
-              fontWeight: active === item.key ? 600 : 500,
-            }}
-          >
-            {item.label}
-          </Link>
+        <Link href="/" style={{ color: active === "home" ? "#009B3A" : "#262626", fontWeight: active === "home" ? 600 : 500 }}>
+          INÍCIO
+        </Link>
+        {cats.map((c) => (
+          <NavDropdown key={c.label} label={c.label} items={c.items} activeKey={active} />
         ))}
         {author && (
           <Link href="/painel" style={{ color: "#009B3A", fontWeight: 600 }}>
@@ -100,11 +135,6 @@ export default async function PublicHeader({
         {admin && (
           <Link href="/admin" style={{ color: "#009B3A", fontWeight: 600 }}>
             PAINEL ADMIN
-          </Link>
-        )}
-        {showContato && (
-          <Link href="/#contato" style={{ color: "#262626" }}>
-            CONTATO
           </Link>
         )}
         <CartBadge style={{ fontWeight: 600 }} />
@@ -124,7 +154,7 @@ export default async function PublicHeader({
       >
         {resolvedCta.label}
       </Link>
-      <MobileNavPanel links={mobileLinks} cta={resolvedCta} />
+      <MobileNavPanel groups={mobileGroups} cta={resolvedCta} />
     </header>
   );
 }
