@@ -1,13 +1,13 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useImageUpload } from "@/hooks/useImageUpload";
 import { uploadImage } from "@/lib/upload-client";
-import { addArticle, removeArticle } from "@/app/admin/actions";
+import { addArticle, updateArticle, removeArticle } from "@/app/admin/actions";
 import type { Article } from "./types";
 
-const CATEGORIAS = ["Artigos", "Entrevistas", "Dicas", "Mercado", "Autores", "Notícias", "Eventos"];
+const CATEGORIAS = ["Para Autores", "Mercado Literário", "Para Leitores", "Histórias"];
 
 function wrapSelection(textarea: HTMLTextAreaElement, before: string, after: string = before) {
   const { selectionStart, selectionEnd, value } = textarea;
@@ -44,8 +44,16 @@ export default function AdminBlogView({ artigos }: { artigos: Article[] }) {
   const capa = useImageUpload("blog-capas");
   const [pending, startTransition] = useTransition();
   const [enviandoImagemConteudo, setEnviandoImagemConteudo] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const conteudoRef = useRef<HTMLTextAreaElement>(null);
   const router = useRouter();
+
+  const editing = artigos.find((a) => a.id === editingId) ?? null;
+
+  useEffect(() => {
+    capa.setUrl(editing?.capaUrl ?? "");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editingId]);
 
   async function onInsertImagemConteudo(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -69,6 +77,7 @@ export default function AdminBlogView({ artigos }: { artigos: Article[] }) {
   function onRemove(id: string) {
     const ok = window.confirm("Remover este artigo do blog?");
     if (!ok) return;
+    if (editingId === id) setEditingId(null);
     startTransition(async () => {
       await removeArticle(id);
       router.refresh();
@@ -83,24 +92,32 @@ export default function AdminBlogView({ artigos }: { artigos: Article[] }) {
       </p>
       <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1.4fr", gap: "20px", alignItems: "start" }}>
         <form
+          key={editingId ?? "new"}
           action={(fd) => {
             fd.set("capaUrl", capa.url);
             startTransition(async () => {
-              await addArticle(fd);
+              if (editingId) {
+                await updateArticle(editingId, fd);
+                setEditingId(null);
+              } else {
+                await addArticle(fd);
+              }
               capa.setUrl("");
               router.refresh();
             });
           }}
           style={{ background: "white", borderRadius: "10px", padding: "24px", display: "flex", flexDirection: "column", gap: "14px" }}
         >
-          <div style={{ fontWeight: 700, color: "#002776", marginBottom: "4px" }}>📝 Novo artigo</div>
+          <div style={{ fontWeight: 700, color: "#002776", marginBottom: "4px" }}>
+            {editing ? "✏️ Editar artigo" : "📝 Novo artigo"}
+          </div>
           <div>
             <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>Título</label>
-            <input name="titulo" type="text" required placeholder="Ex: O poder da literatura independente" style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px" }} />
+            <input name="titulo" type="text" required defaultValue={editing?.titulo} placeholder="Ex: O poder da literatura independente" style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px" }} />
           </div>
           <div>
             <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>Resumo</label>
-            <textarea name="resumo" required placeholder="Breve descrição que aparece no card do artigo..." style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px", minHeight: "70px", resize: "vertical" }} />
+            <textarea name="resumo" required defaultValue={editing?.resumo} placeholder="Breve descrição que aparece no card do artigo..." style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px", minHeight: "70px", resize: "vertical" }} />
           </div>
           <div>
             <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>Conteúdo do artigo</label>
@@ -123,6 +140,7 @@ export default function AdminBlogView({ artigos }: { artigos: Article[] }) {
               ref={conteudoRef}
               name="conteudo"
               required
+              defaultValue={editing?.conteudo}
               placeholder="Texto completo do artigo, exibido na página do post..."
               style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px", minHeight: "160px", resize: "vertical" }}
             />
@@ -133,7 +151,7 @@ export default function AdminBlogView({ artigos }: { artigos: Article[] }) {
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
             <div>
               <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>Categoria</label>
-              <select name="categoria" style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px" }}>
+              <select name="categoria" defaultValue={editing?.categoria ?? CATEGORIAS[0]} style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px" }}>
                 {CATEGORIAS.map((c) => (
                   <option key={c}>{c}</option>
                 ))}
@@ -141,7 +159,7 @@ export default function AdminBlogView({ artigos }: { artigos: Article[] }) {
             </div>
             <div>
               <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>Autor(a)</label>
-              <input name="autorNome" type="text" placeholder="Ex: Mariana Costa" style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px" }} />
+              <input name="autorNome" type="text" defaultValue={editing?.autorNome} placeholder="Ex: Mariana Costa" style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px" }} />
             </div>
           </div>
           <div>
@@ -172,9 +190,16 @@ export default function AdminBlogView({ artigos }: { artigos: Article[] }) {
             <input id="capaInput" type="file" accept="image/*" onChange={capa.onInputChange} style={{ display: "none" }} />
             {capa.error && <p style={{ fontSize: "12px", color: "#C0392B", marginTop: "6px" }}>{capa.error}</p>}
           </div>
-          <button type="submit" disabled={pending} style={{ background: "#009B3A", color: "white", padding: "12px", fontWeight: 700, borderRadius: "6px", fontSize: "14px", opacity: pending ? 0.7 : 1 }}>
-            {pending ? "Publicando..." : "Publicar artigo"}
-          </button>
+          <div style={{ display: "flex", gap: "10px" }}>
+            {editing && (
+              <button type="button" onClick={() => setEditingId(null)} style={{ flex: "0 0 auto", background: "white", border: "1px solid #DDD", color: "#262626", padding: "12px 20px", fontWeight: 600, borderRadius: "6px", fontSize: "14px" }}>
+                Cancelar
+              </button>
+            )}
+            <button type="submit" disabled={pending} style={{ flex: 1, background: "#009B3A", color: "white", padding: "12px", fontWeight: 700, borderRadius: "6px", fontSize: "14px", opacity: pending ? 0.7 : 1 }}>
+              {pending ? "Salvando..." : editing ? "Salvar alterações" : "Publicar artigo"}
+            </button>
+          </div>
         </form>
         <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
           {artigos.map((a) => (
@@ -192,6 +217,9 @@ export default function AdminBlogView({ artigos }: { artigos: Article[] }) {
                 <div style={{ fontWeight: 700, fontSize: "14px" }}>{a.titulo}</div>
                 <div style={{ fontSize: "12px", color: "#666" }}>{a.categoria} • {a.autorNome}</div>
               </div>
+              <button onClick={() => setEditingId(a.id)} title="Editar artigo" style={{ background: "white", border: "1px solid #DDD", borderRadius: "6px", width: "32px", height: "32px", fontSize: "13px", color: "#002776", flexShrink: 0 }}>
+                ✏️
+              </button>
               <button onClick={() => onRemove(a.id)} title="Remover artigo" style={{ background: "white", border: "1px solid #DDD", borderRadius: "6px", width: "32px", height: "32px", fontSize: "13px", color: "#C0392B", flexShrink: 0 }}>
                 ✕
               </button>

@@ -353,21 +353,27 @@ export async function removeReview(id: string) {
   revalidatePath(`/perfil/${review.authorId}`);
 }
 
+function articleDataFromForm(formData: FormData) {
+  return {
+    titulo: ((formData.get("titulo") as string) || "Artigo").trim(),
+    resumo: ((formData.get("resumo") as string) || "").trim(),
+    conteudo: ((formData.get("conteudo") as string) || "").trim(),
+    categoria: (formData.get("categoria") as string) || "Para Leitores",
+    autorNome: ((formData.get("autorNome") as string) || "Coletivo").trim(),
+    capaUrl: (formData.get("capaUrl") as string) || null,
+  };
+}
+
 export async function addArticle(formData: FormData) {
   await requireAdmin();
-  const capaUrl = (formData.get("capaUrl") as string) || null;
+  await prisma.article.create({ data: articleDataFromForm(formData) });
+  revalidatePath("/admin");
+  revalidatePath("/blog");
+}
 
-  await prisma.article.create({
-    data: {
-      titulo: ((formData.get("titulo") as string) || "Artigo").trim(),
-      resumo: ((formData.get("resumo") as string) || "").trim(),
-      conteudo: ((formData.get("conteudo") as string) || "").trim(),
-      categoria: (formData.get("categoria") as string) || "Artigos",
-      autorNome: ((formData.get("autorNome") as string) || "Coletivo").trim(),
-      capaUrl,
-    },
-  });
-
+export async function updateArticle(id: string, formData: FormData) {
+  await requireAdmin();
+  await prisma.article.update({ where: { id }, data: articleDataFromForm(formData) });
   revalidatePath("/admin");
   revalidatePath("/blog");
 }

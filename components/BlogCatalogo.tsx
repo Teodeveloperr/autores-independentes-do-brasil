@@ -14,13 +14,10 @@ export type ArtigoResumo = {
 };
 
 const CATEGORIAS: { label: string; emoji: string }[] = [
-  { label: "Artigos", emoji: "✏️" },
-  { label: "Entrevistas", emoji: "📖" },
-  { label: "Dicas", emoji: "💡" },
-  { label: "Mercado", emoji: "🎓" },
-  { label: "Autores", emoji: "👑" },
-  { label: "Notícias", emoji: "📰" },
-  { label: "Eventos", emoji: "🎯" },
+  { label: "Para Autores", emoji: "✍️" },
+  { label: "Mercado Literário", emoji: "📈" },
+  { label: "Para Leitores", emoji: "📚" },
+  { label: "Histórias", emoji: "📖" },
 ];
 
 function formatArticleDate(date: Date) {
