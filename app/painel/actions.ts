@@ -59,13 +59,6 @@ export async function saveProfile(formData: FormData) {
       instagramUrl: sanitizeExternalUrl((formData.get("instagramUrl") as string) || ""),
       twitterUrl: sanitizeExternalUrl((formData.get("twitterUrl") as string) || ""),
       siteUrl: sanitizeExternalUrl((formData.get("siteUrl") as string) || ""),
-      enderecoCep: ((formData.get("enderecoCep") as string) || "").trim() || null,
-      enderecoRua: ((formData.get("enderecoRua") as string) || "").trim() || null,
-      enderecoNumero: ((formData.get("enderecoNumero") as string) || "").trim() || null,
-      enderecoComplemento: ((formData.get("enderecoComplemento") as string) || "").trim() || null,
-      enderecoBairro: ((formData.get("enderecoBairro") as string) || "").trim() || null,
-      enderecoCidade: ((formData.get("enderecoCidade") as string) || "").trim() || null,
-      enderecoUf: ((formData.get("enderecoUf") as string) || "").trim().toUpperCase() || null,
     },
   });
 
@@ -126,15 +119,6 @@ function bookDataFromForm(formData: FormData) {
   const capaUrl = (formData.get("capaUrl") as string) || null;
   const descricao = ((formData.get("descricao") as string) || "").trim() || null;
 
-  const pesoGramas = parseInt((formData.get("pesoGramas") as string) || "", 10) || 0;
-  const alturaCm = parseInt((formData.get("alturaCm") as string) || "", 10) || 0;
-  const larguraCm = parseInt((formData.get("larguraCm") as string) || "", 10) || 0;
-  const comprimentoCm = parseInt((formData.get("comprimentoCm") as string) || "", 10) || 0;
-
-  if (pesoGramas <= 0 || alturaCm <= 0 || larguraCm <= 0 || comprimentoCm <= 0) {
-    throw new Error("Preencha peso, altura, largura e comprimento do livro para calcular o frete.");
-  }
-
   return {
     titulo,
     genero,
@@ -142,10 +126,6 @@ function bookDataFromForm(formData: FormData) {
     estoque,
     capaUrl,
     descricao,
-    pesoGramas,
-    alturaCm,
-    larguraCm,
-    comprimentoCm,
   };
 }
 

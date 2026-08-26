@@ -5,7 +5,6 @@ import { useImageUpload } from "@/hooks/useImageUpload";
 import { saveProfile } from "@/app/painel/actions";
 import type { AuthorWithRelations } from "./types";
 import { GENEROS } from "@/lib/genres";
-import { buscarEnderecoPorCep } from "@/lib/cep";
 import { BIO_MAX_CARACTERES_INICIANTE } from "@/lib/plans";
 import BannerPositioner from "@/components/BannerPositioner";
 
@@ -19,25 +18,6 @@ export default function PerfilView({ author }: { author: AuthorWithRelations }) 
   const [erro, setErro] = useState("");
   const [pending, startTransition] = useTransition();
   const ehIniciante = author.plano === "Iniciante";
-  const [buscandoCep, setBuscandoCep] = useState(false);
-  const [enderecoCep, setEnderecoCep] = useState(author.enderecoCep ?? "");
-  const [enderecoRua, setEnderecoRua] = useState(author.enderecoRua ?? "");
-  const [enderecoBairro, setEnderecoBairro] = useState(author.enderecoBairro ?? "");
-  const [enderecoCidade, setEnderecoCidade] = useState(author.enderecoCidade ?? "");
-  const [enderecoUf, setEnderecoUf] = useState(author.enderecoUf ?? "");
-
-  async function onEnderecoCepBlur() {
-    const digits = enderecoCep.replace(/\D/g, "");
-    if (digits.length !== 8) return;
-    setBuscandoCep(true);
-    const endereco = await buscarEnderecoPorCep(enderecoCep);
-    setBuscandoCep(false);
-    if (!endereco) return;
-    setEnderecoRua(endereco.logradouro);
-    setEnderecoBairro(endereco.bairro);
-    setEnderecoCidade(endereco.localidade);
-    setEnderecoUf(endereco.uf);
-  }
 
   function onSubmit(formData: FormData) {
     setErro("");
@@ -204,80 +184,6 @@ export default function PerfilView({ author }: { author: AuthorWithRelations }) 
             <div>
               <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>🔗 Site</label>
               <input name="siteUrl" type="text" placeholder="https://seusite.com.br" defaultValue={author.siteUrl ?? ""} style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px" }} />
-            </div>
-
-            <div style={{ borderTop: "1px solid #F0F0F0", paddingTop: "14px" }}>
-              <div style={{ fontWeight: 700, color: "#002776", marginBottom: "10px" }}>📦 Endereço de origem (para cálculo de frete)</div>
-              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: "12px" }}>
-                  <div>
-                    <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>CEP</label>
-                    <input
-                      name="enderecoCep"
-                      type="text"
-                      value={enderecoCep}
-                      onChange={(e) => setEnderecoCep(e.target.value)}
-                      onBlur={onEnderecoCepBlur}
-                      placeholder="00000-000"
-                      style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px" }}
-                    />
-                    {buscandoCep && <p style={{ fontSize: "11px", color: "#999", marginTop: "4px" }}>Buscando...</p>}
-                  </div>
-                  <div>
-                    <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>Rua</label>
-                    <input
-                      name="enderecoRua"
-                      type="text"
-                      value={enderecoRua}
-                      onChange={(e) => setEnderecoRua(e.target.value)}
-                      style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px" }}
-                    />
-                  </div>
-                </div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-                  <div>
-                    <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>Número</label>
-                    <input name="enderecoNumero" type="text" defaultValue={author.enderecoNumero ?? ""} style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px" }} />
-                  </div>
-                  <div>
-                    <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>Complemento</label>
-                    <input name="enderecoComplemento" type="text" defaultValue={author.enderecoComplemento ?? ""} style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px" }} />
-                  </div>
-                </div>
-                <div>
-                  <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>Bairro</label>
-                  <input
-                    name="enderecoBairro"
-                    type="text"
-                    value={enderecoBairro}
-                    onChange={(e) => setEnderecoBairro(e.target.value)}
-                    style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px" }}
-                  />
-                </div>
-                <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "12px" }}>
-                  <div>
-                    <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>Cidade</label>
-                    <input
-                      name="enderecoCidade"
-                      type="text"
-                      value={enderecoCidade}
-                      onChange={(e) => setEnderecoCidade(e.target.value)}
-                      style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px" }}
-                    />
-                  </div>
-                  <div>
-                    <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>UF</label>
-                    <input
-                      name="enderecoUf"
-                      type="text"
-                      maxLength={2}
-                      value={enderecoUf}
-                      onChange={(e) => setEnderecoUf(e.target.value.toUpperCase())}
-                      style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px", textTransform: "uppercase" }}
-                    />
-                  </div>
-                </div>
-              </div>
             </div>
 
             {erro && <p style={{ fontSize: "13px", color: "#C0392B" }}>{erro}</p>}

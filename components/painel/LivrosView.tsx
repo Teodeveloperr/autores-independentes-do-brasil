@@ -121,16 +121,6 @@ export default function LivrosView({ author }: { author: AuthorWithRelations }) 
             <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>Sinopse</label>
             <textarea name="descricao" defaultValue={editing?.descricao ?? undefined} placeholder="Escreva uma breve sinopse da obra..." style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px", minHeight: "80px", resize: "vertical" }} />
           </div>
-          <div>
-            <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>Dimensões para frete</label>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: "8px" }}>
-              <input name="pesoGramas" type="number" required min={1} defaultValue={editing?.pesoGramas ?? undefined} placeholder="Peso (g)" style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "12px" }} />
-              <input name="alturaCm" type="number" required min={1} defaultValue={editing?.alturaCm ?? undefined} placeholder="Altura (cm)" style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "12px" }} />
-              <input name="larguraCm" type="number" required min={1} defaultValue={editing?.larguraCm ?? undefined} placeholder="Largura (cm)" style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "12px" }} />
-              <input name="comprimentoCm" type="number" required min={1} defaultValue={editing?.comprimentoCm ?? undefined} placeholder="Compr. (cm)" style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "12px" }} />
-            </div>
-            <p style={{ fontSize: "11px", color: "#999", marginTop: "6px" }}>Necessário para calcular o frete na hora da compra.</p>
-          </div>
           {erro && <p style={{ fontSize: "12px", color: "#C0392B" }}>{erro}</p>}
           <div style={{ display: "flex", gap: "10px" }}>
             {editing && (
@@ -169,9 +159,6 @@ export default function LivrosView({ author }: { author: AuthorWithRelations }) 
                 <div style={{ fontWeight: 700, fontSize: "14px" }}>{b.titulo}</div>
                 <div style={{ fontSize: "12px", color: "#666" }}>{b.genero}</div>
                 <div style={{ fontSize: "12px", color: "#666" }}>Estoque: {b.estoque} unidades</div>
-                {(!b.pesoGramas || !b.alturaCm || !b.larguraCm || !b.comprimentoCm) && (
-                  <div style={{ fontSize: "11px", color: "#A87900" }}>⚠️ Dimensões de frete pendentes</div>
-                )}
               </div>
               <div style={{ fontWeight: 700, color: "#009B3A", fontSize: "15px" }}>{brl(b.precoCentavos)}</div>
               <button
