@@ -9,10 +9,17 @@ export async function POST(request: Request) {
     const jsonResponse = await handleUpload({
       body,
       request,
-      onBeforeGenerateToken: async () => {
+      onBeforeGenerateToken: async (pathname) => {
         const [author, admin] = await Promise.all([getCurrentAuthor(), getCurrentAdmin()]);
         if (!author && !admin) {
           throw new Error("Não autorizado.");
+        }
+        if (pathname.startsWith("videos/")) {
+          return {
+            allowedContentTypes: ["video/mp4", "video/webm", "video/quicktime"],
+            maximumSizeInBytes: 25 * 1024 * 1024,
+            addRandomSuffix: true,
+          };
         }
         return {
           allowedContentTypes: ["image/png", "image/jpeg", "image/webp", "image/gif"],

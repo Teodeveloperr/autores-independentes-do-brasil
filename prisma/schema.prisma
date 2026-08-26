@@ -57,6 +57,7 @@ model Author {
   fraseApresentacao String?
   profissoes        String?
   visualizacoes     Int     @default(0)
+  videoUrl          String?
 
   avaliacaoMedia Float?
   avaliacoesQtd  Int     @default(0)

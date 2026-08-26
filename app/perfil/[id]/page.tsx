@@ -150,6 +150,7 @@ export default async function PerfilPage({ params }: { params: Promise<{ id: str
             </div>
             <PerfilTabs
               authorId={author.id}
+              videoUrl={author.videoUrl}
               books={author.books.map((b) => ({
                 id: b.id,
                 titulo: b.titulo,

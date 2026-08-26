@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useImageUpload } from "@/hooks/useImageUpload";
+import { useVideoUpload } from "@/hooks/useVideoUpload";
 import { saveProfile } from "@/app/painel/actions";
 import type { AuthorWithRelations } from "./types";
 import { GENEROS } from "@/lib/genres";
@@ -11,6 +12,7 @@ import BannerPositioner from "@/components/BannerPositioner";
 export default function PerfilView({ author }: { author: AuthorWithRelations }) {
   const avatar = useImageUpload("avatars", author.fotoUrl ?? "");
   const banner = useImageUpload("banners", author.bannerUrl ?? "");
+  const video = useVideoUpload("videos", author.videoUrl ?? "");
   const [bannerPos, setBannerPos] = useState({ x: author.bannerPositionX ?? 50, y: author.bannerPositionY ?? 50 });
   const [bio, setBio] = useState(author.bio ?? "");
   const [frase, setFrase] = useState(author.fraseApresentacao ?? "");
@@ -40,6 +42,7 @@ export default function PerfilView({ author }: { author: AuthorWithRelations }) 
         <input type="hidden" name="bannerUrl" value={banner.url} />
         <input type="hidden" name="bannerPositionX" value={bannerPos.x} />
         <input type="hidden" name="bannerPositionY" value={bannerPos.y} />
+        <input type="hidden" name="videoUrl" value={video.url} />
 
         <div style={{ background: "white", borderRadius: "10px", padding: "24px" }}>
           <div style={{ fontWeight: 700, color: "#002776", marginBottom: "4px" }}>🖼️ Banner do perfil</div>
@@ -92,6 +95,47 @@ export default function PerfilView({ author }: { author: AuthorWithRelations }) 
           />
           {banner.error && <p style={{ fontSize: "12px", color: "#C0392B", marginTop: "8px" }}>{banner.error}</p>}
           <p style={{ fontSize: "11px", color: "#999", marginTop: "10px" }}>📐 Tamanho recomendado: 1200 × 300px (proporção 4:1). JPG ou PNG, até 5MB.</p>
+        </div>
+
+        <div style={{ background: "white", borderRadius: "10px", padding: "24px" }}>
+          <div style={{ fontWeight: 700, color: "#002776", marginBottom: "4px" }}>🎥 Vídeo de apresentação (opcional)</div>
+          <p style={{ fontSize: "12px", color: "#666", marginBottom: "14px" }}>Um vídeo curto se apresentando, visível no seu perfil público.</p>
+          {video.url ? (
+            <>
+              <video controls playsInline src={video.url} style={{ width: "100%", maxWidth: "360px", borderRadius: "8px", display: "block" }} />
+              <div style={{ display: "flex", gap: "16px", marginTop: "8px" }}>
+                <label htmlFor="videoInput" style={{ fontSize: "12px", fontWeight: 600, color: "#002776", cursor: "pointer" }}>
+                  Trocar vídeo
+                </label>
+                <button type="button" onClick={video.remove} style={{ background: "white", fontSize: "12px", fontWeight: 600, color: "#C0392B", padding: 0 }}>
+                  Remover vídeo
+                </button>
+              </div>
+            </>
+          ) : (
+            <label
+              htmlFor="videoInput"
+              onDrop={video.onDrop}
+              onDragOver={video.onDragOver}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                height: "100px",
+                borderRadius: "8px",
+                cursor: "pointer",
+                fontSize: "13px",
+                color: "#666",
+                border: "2px dashed #BBB",
+                background: "#F6F6F6",
+              }}
+            >
+              <span>{video.uploading ? "Enviando..." : "🎥 Clique para adicionar um vídeo"}</span>
+            </label>
+          )}
+          <input id="videoInput" type="file" accept="video/mp4,video/webm,video/quicktime" onChange={video.onInputChange} style={{ display: "none" }} />
+          {video.error && <p style={{ fontSize: "12px", color: "#C0392B", marginTop: "8px" }}>{video.error}</p>}
+          <p style={{ fontSize: "11px", color: "#999", marginTop: "10px" }}>📐 Até 30 segundos e 25MB. MP4, WebM ou MOV.</p>
         </div>
 
         <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1.4fr", gap: "20px", alignItems: "start" }}>

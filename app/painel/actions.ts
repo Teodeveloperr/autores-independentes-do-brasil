@@ -56,6 +56,7 @@ export async function saveProfile(formData: FormData) {
       bannerUrl: (formData.get("bannerUrl") as string) || author.bannerUrl,
       bannerPositionX: parseInt((formData.get("bannerPositionX") as string) || "", 10) || 50,
       bannerPositionY: parseInt((formData.get("bannerPositionY") as string) || "", 10) || 50,
+      videoUrl: (formData.get("videoUrl") as string) || null,
       instagramUrl: sanitizeExternalUrl((formData.get("instagramUrl") as string) || ""),
       twitterUrl: sanitizeExternalUrl((formData.get("twitterUrl") as string) || ""),
       siteUrl: sanitizeExternalUrl((formData.get("siteUrl") as string) || ""),

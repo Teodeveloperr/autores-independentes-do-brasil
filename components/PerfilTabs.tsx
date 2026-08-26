@@ -7,7 +7,7 @@ import AvaliacaoForm from "./AvaliacaoForm";
 import { podeUsarRecursosExtras, FOTOS_MAX_INICIANTE } from "@/lib/plans";
 import { formatEventoDia } from "@/lib/format";
 
-type Tab = "livros" | "galeria" | "eventos" | "avaliacoes";
+type Tab = "video" | "livros" | "galeria" | "eventos" | "avaliacoes";
 
 const CATEGORIAS_GALERIA = ["Bienais e Feiras", "Lançamentos", "Palestras e Workshops", "Encontros de Autores", "Eventos Culturais", "Outros"];
 
@@ -25,6 +25,7 @@ type BookItem = {
 
 export default function PerfilTabs({
   authorId,
+  videoUrl,
   books,
   fotos,
   eventos,
@@ -33,6 +34,7 @@ export default function PerfilTabs({
   isOwner,
 }: {
   authorId: string;
+  videoUrl: string | null;
   books: BookItem[];
   fotos: { id: string; url: string; titulo: string; categoria: string }[];
   eventos: { id: string; nome: string; diaInicio: number; diaFim: number | null; mes: string; ano: number; local: string; status: string }[];
@@ -58,11 +60,26 @@ export default function PerfilTabs({
   return (
     <>
       <div style={{ display: "flex", gap: "24px", borderBottom: "2px solid #DDD", paddingBottom: "16px", marginBottom: "24px" }}>
+        <button onClick={() => setTab("video")} style={tabStyle(tab === "video")}>🎥 Vídeo</button>
         <button onClick={() => setTab("livros")} style={tabStyle(tab === "livros")}>📚 Livros</button>
         <button onClick={() => setTab("galeria")} style={tabStyle(tab === "galeria")}>🖼️ Galeria</button>
         <button onClick={() => setTab("eventos")} style={tabStyle(tab === "eventos")}>🎤 Agenda</button>
         <button onClick={() => setTab("avaliacoes")} style={tabStyle(tab === "avaliacoes")}>⭐ Avaliações</button>
       </div>
+
+      {tab === "video" &&
+        (videoUrl ? (
+          <video controls playsInline src={videoUrl} style={{ maxWidth: "360px", width: "100%", borderRadius: "8px" }} />
+        ) : isOwner ? (
+          <div style={{ textAlign: "center", background: "#F6F6F6", borderRadius: "8px", padding: "40px 24px" }}>
+            <div style={{ fontSize: "28px", marginBottom: "12px" }}>🎥</div>
+            <p style={{ fontSize: "14px", color: "#444", lineHeight: 1.6, maxWidth: "380px", margin: "0 auto" }}>
+              Você ainda não adicionou um vídeo de apresentação. No seu painel, em &quot;Meu Perfil&quot;, você pode subir um vídeo de até 30 segundos.
+            </p>
+          </div>
+        ) : (
+          <p style={{ fontSize: "14px", color: "#666" }}>Este(a) autor(a) ainda não adicionou um vídeo de apresentação.</p>
+        ))}
 
       {tab === "livros" &&
         (books.length > 0 ? (
