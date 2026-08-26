@@ -23,7 +23,7 @@ export default async function AssinaturaPage() {
             Escolha o plano ideal para levar suas histórias mais longe. Cancele quando quiser, sem multas.
           </p>
         </div>
-        <AssinaturaPlanos isLoggedIn={!!author} planoAtual={author?.plano ?? "Gratuito"} cta={cta} />
+        <AssinaturaPlanos isLoggedIn={!!author} planoAtual={author?.plano ?? "Iniciante"} cta={cta} />
         <p style={{ textAlign: "center", fontSize: "13px", color: "rgba(255,255,255,0.7)", marginTop: "32px" }}>
           Pagamento seguro via Mercado Pago • Cancele quando quiser • Sem taxa de adesão
         </p>

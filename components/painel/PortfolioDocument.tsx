@@ -18,6 +18,7 @@ export type PortfolioData = {
   obraDestaque: { titulo: string; capaUrl: string | null; descricao: string | null; genero: string } | null;
   livros: { titulo: string; capaUrl: string | null; genero: string; precoCentavos: number }[];
   avaliacoes: { nome: string; texto: string; estrelas: number }[];
+  fotos: { url: string; titulo: string }[];
 };
 
 const AZUL = "#002776";
@@ -42,6 +43,8 @@ const styles = StyleSheet.create({
   obraInfo: { flex: 1 },
   obraTitulo: { fontSize: 16, fontWeight: 700, color: AZUL, marginBottom: 4 },
   obraGenero: { fontSize: 10, color: "#666", marginBottom: 10 },
+  fotosGrid: { flexDirection: "row", flexWrap: "wrap", gap: 18 },
+  fotoItem: { width: 160, height: 160, objectFit: "cover", borderRadius: 4 },
   livrosGrid: { flexDirection: "row", flexWrap: "wrap", gap: 18 },
   livroCard: { width: 120 },
   livroCapa: { width: 120, height: 160, objectFit: "cover", borderRadius: 4, marginBottom: 6, backgroundColor: "#EEE" },
@@ -65,6 +68,7 @@ function Rodape() {
 
 export default function PortfolioDocument({ data }: { data: PortfolioData }) {
   const temSobre = Boolean(data.bio || data.formacao || data.premios);
+  const temFotos = data.fotos.length > 0;
   const temLivros = data.livros.length > 0;
   const temDepoimentos = data.avaliacoes.length > 0;
   const fotoCapa = data.capaUrl || data.fotoUrl;
@@ -97,6 +101,18 @@ export default function PortfolioDocument({ data }: { data: PortfolioData }) {
               <Text style={styles.paragraph}>{data.premios}</Text>
             </>
           )}
+          <Rodape />
+        </Page>
+      )}
+
+      {temFotos && (
+        <Page size="A4" orientation="landscape" style={styles.page}>
+          <Text style={styles.sectionTitle}>Fotos</Text>
+          <View style={styles.fotosGrid}>
+            {data.fotos.map((f, i) => (
+              <Image key={i} src={f.url} style={styles.fotoItem} />
+            ))}
+          </View>
           <Rodape />
         </Page>
       )}

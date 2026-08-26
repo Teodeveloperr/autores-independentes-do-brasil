@@ -84,7 +84,7 @@ export async function GET(request: Request) {
           cidade: "Brasil",
           bio: "Autor(a) independente do coletivo Autores Independentes do Brasil.",
           anoEntrada: new Date().getFullYear(),
-          plano: "Gratuito",
+          plano: "Iniciante",
         },
       });
 

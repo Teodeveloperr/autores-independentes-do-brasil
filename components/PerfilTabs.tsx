@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import Lightbox from "./Lightbox";
 import AvaliacaoForm from "./AvaliacaoForm";
-import { podeUsarRecursosExtras } from "@/lib/plans";
+import { podeUsarRecursosExtras, FOTOS_MAX_INICIANTE } from "@/lib/plans";
 import { formatEventoDia } from "@/lib/format";
 
 type Tab = "livros" | "galeria" | "eventos" | "avaliacoes";
@@ -96,10 +96,25 @@ export default function PerfilTabs({
 
       {tab === "galeria" &&
         (!podeExtras ? (
-          isOwner ? (
-            <UpgradeNotice recurso="galeria de fotos" />
+          fotos.length > 0 ? (
+            <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "14px" }}>
+              {fotos.map((f, i) => (
+                <div
+                  key={f.id}
+                  onClick={() => setGaleriaIndex(i)}
+                  style={{ background: `center / cover no-repeat url(${f.url})`, aspectRatio: "1", borderRadius: "4px", cursor: "pointer" }}
+                />
+              ))}
+            </div>
+          ) : isOwner ? (
+            <div style={{ textAlign: "center", background: "#F6F6F6", borderRadius: "8px", padding: "40px 24px" }}>
+              <div style={{ fontSize: "28px", marginBottom: "12px" }}>📷</div>
+              <p style={{ fontSize: "14px", color: "#444", lineHeight: 1.6, maxWidth: "380px", margin: "0 auto" }}>
+                Você ainda não adicionou fotos. No seu painel, em &quot;Minhas Fotos&quot;, você pode adicionar até {FOTOS_MAX_INICIANTE}.
+              </p>
+            </div>
           ) : (
-            <p style={{ fontSize: "14px", color: "#666" }}>Este(a) autor(a) ainda não adicionou fotos à galeria.</p>
+            <p style={{ fontSize: "14px", color: "#666" }}>Este(a) autor(a) ainda não adicionou fotos.</p>
           )
         ) : fotos.length > 0 ? (
           <>

@@ -2,7 +2,19 @@
 
 import { useMemo, useState } from "react";
 import { brl } from "@/lib/format";
+import { relatorioVendasNivel, COMISSAO_PERCENTUAL, valorRepasseCentavos } from "@/lib/plans";
 import type { AuthorWithRelations } from "./types";
+
+const REPASSE_LABEL: Record<string, string> = {
+  pendente: "Aguardando envio",
+  transferido: "Repassado",
+  erro: "Erro no repasse",
+};
+const REPASSE_COR: Record<string, string> = {
+  pendente: "#A87900",
+  transferido: "#009B3A",
+  erro: "#C0392B",
+};
 
 const PAGO_STATUSES = ["Pago", "Aguardando envio", "Enviado", "Entregue"];
 const PERIODOS = ["Este mês", "Últimos 3 meses", "Este ano", "Tudo"] as const;
@@ -18,6 +30,7 @@ function inicioPeriodo(periodo: (typeof PERIODOS)[number]): Date | null {
 
 export default function VendasView({ author }: { author: AuthorWithRelations }) {
   const [periodo, setPeriodo] = useState<(typeof PERIODOS)[number]>("Últimos 3 meses");
+  const nivel = relatorioVendasNivel(author.plano);
 
   const vendas = useMemo(() => {
     const desde = inicioPeriodo(periodo);
@@ -55,6 +68,41 @@ export default function VendasView({ author }: { author: AuthorWithRelations }) 
   }, [vendas]);
 
   const maxLivro = Math.max(1, ...topLivros.map((l) => l.receita));
+
+  const comissaoPercentual = COMISSAO_PERCENTUAL[author.plano] ?? 0;
+  const comissaoRetidaCentavos = Math.round(receitaTotal * (comissaoPercentual / 100));
+  const liquidoRepassadoCentavos = receitaTotal - comissaoRetidaCentavos;
+
+  const repasses = useMemo(
+    () => vendas.filter((o) => o.asaasPaymentId).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()),
+    [vendas]
+  );
+  const aReceberCentavos = repasses
+    .filter((o) => o.repasseStatus !== "transferido")
+    .reduce((sum, o) => sum + valorRepasseCentavos(author.plano, o.valorCentavos, o.freteCentavos ?? 0), 0);
+  const jaRecebidoCentavos = repasses
+    .filter((o) => o.repasseStatus === "transferido")
+    .reduce((sum, o) => sum + valorRepasseCentavos(author.plano, o.valorCentavos, o.freteCentavos ?? 0), 0);
+
+  if (nivel === "nenhum") {
+    return (
+      <div>
+        <h2 style={{ fontSize: "22px", fontWeight: 700, color: "#002776", marginBottom: "20px" }}>Vendas e Relatórios</h2>
+        <div style={{ textAlign: "center", background: "white", borderRadius: "10px", padding: "40px 24px" }}>
+          <div style={{ fontSize: "28px", marginBottom: "12px" }}>✨</div>
+          <p style={{ fontSize: "14px", color: "#444", lineHeight: 1.6, maxWidth: "380px", margin: "0 auto 20px" }}>
+            Relatórios de vendas ficam disponíveis a partir do plano Essencial, quando você habilita a venda de livros.
+          </p>
+          <a
+            href="/assinatura"
+            style={{ display: "inline-block", background: "#009B3A", color: "white", padding: "10px 24px", borderRadius: "6px", fontWeight: 600, fontSize: "13px", textDecoration: "none" }}
+          >
+            Fazer upgrade do plano
+          </a>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -132,6 +180,58 @@ export default function VendasView({ author }: { author: AuthorWithRelations }) 
           )}
         </div>
       </div>
+
+      {nivel === "detalhado" && (
+        <div style={{ marginTop: "24px", display: "flex", flexDirection: "column", gap: "20px" }}>
+          <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "20px" }}>
+            <div style={{ background: "white", borderRadius: "10px", padding: "20px" }}>
+              <div style={{ fontSize: "12px", color: "#666", marginBottom: "4px" }}>Bruto vendido</div>
+              <div style={{ fontSize: "20px", fontWeight: 700, color: "#002776" }}>{brl(receitaTotal)}</div>
+            </div>
+            <div style={{ background: "white", borderRadius: "10px", padding: "20px" }}>
+              <div style={{ fontSize: "12px", color: "#666", marginBottom: "4px" }}>Comissão retida ({comissaoPercentual}%)</div>
+              <div style={{ fontSize: "20px", fontWeight: 700, color: "#C0392B" }}>-{brl(comissaoRetidaCentavos)}</div>
+            </div>
+            <div style={{ background: "white", borderRadius: "10px", padding: "20px" }}>
+              <div style={{ fontSize: "12px", color: "#666", marginBottom: "4px" }}>Líquido (sem frete)</div>
+              <div style={{ fontSize: "20px", fontWeight: 700, color: "#009B3A" }}>{brl(liquidoRepassadoCentavos)}</div>
+            </div>
+          </div>
+
+          <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
+            <div style={{ background: "white", borderRadius: "10px", padding: "20px" }}>
+              <div style={{ fontSize: "12px", color: "#666", marginBottom: "4px" }}>A receber (aguardando envio)</div>
+              <div style={{ fontSize: "20px", fontWeight: 700, color: "#A87900" }}>{brl(aReceberCentavos)}</div>
+            </div>
+            <div style={{ background: "white", borderRadius: "10px", padding: "20px" }}>
+              <div style={{ fontSize: "12px", color: "#666", marginBottom: "4px" }}>Já recebido via Pix</div>
+              <div style={{ fontSize: "20px", fontWeight: 700, color: "#009B3A" }}>{brl(jaRecebidoCentavos)}</div>
+            </div>
+          </div>
+
+          <div style={{ background: "white", borderRadius: "10px", padding: "24px" }}>
+            <div style={{ fontWeight: 700, color: "#002776", marginBottom: "16px" }}>Extrato de repasses</div>
+            {repasses.length > 0 ? (
+              <div style={{ display: "flex", flexDirection: "column" }}>
+                {repasses.map((o) => (
+                  <div key={o.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px", padding: "10px 0", borderBottom: "1px solid #F0F0F0", fontSize: "13px" }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{o.livro}</div>
+                      <div style={{ fontSize: "11px", color: "#999" }}>Pedido #{o.id.slice(-6)} • {o.createdAt.toLocaleDateString("pt-BR")}</div>
+                    </div>
+                    <div style={{ fontWeight: 700, color: "#002776" }}>{brl(valorRepasseCentavos(author.plano, o.valorCentavos, o.freteCentavos ?? 0))}</div>
+                    <span style={{ fontSize: "11px", fontWeight: 700, color: REPASSE_COR[o.repasseStatus] ?? "#666", flexShrink: 0 }}>
+                      {REPASSE_LABEL[o.repasseStatus] ?? o.repasseStatus}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p style={{ fontSize: "13px", color: "#666" }}>Nenhum repasse neste período.</p>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

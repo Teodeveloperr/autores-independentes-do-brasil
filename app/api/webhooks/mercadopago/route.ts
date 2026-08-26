@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
   } else if (preapproval.status === "paused" || preapproval.status === "cancelled") {
     await prisma.author.update({
       where: { id: authorId },
-      data: { plano: "Gratuito", mpSubscriptionStatus: preapproval.status },
+      data: { plano: "Iniciante", mpSubscriptionStatus: preapproval.status },
     });
   } else {
     await prisma.author.update({

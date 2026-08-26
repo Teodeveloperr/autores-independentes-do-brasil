@@ -3,13 +3,18 @@ import PublicHeader from "@/components/PublicHeader";
 import PublicFooter from "@/components/PublicFooter";
 import AutoresGrid from "@/components/AutoresGrid";
 import { prisma } from "@/lib/db";
+import { PLANO_RANK } from "@/lib/plans";
 
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = { title: "Autores" };
 
 export default async function AutoresPage() {
-  const authors = await prisma.author.findMany({ where: { status: "ativo" }, orderBy: { createdAt: "desc" } });
+  const authorsPool = await prisma.author.findMany({ where: { status: "ativo" }, orderBy: { createdAt: "desc" } });
+  // Autores Premium aparecem primeiro (destaque do plano); dentro do mesmo plano, mais recentes primeiro.
+  const authors = [...authorsPool].sort(
+    (a, b) => (PLANO_RANK[b.plano] ?? 0) - (PLANO_RANK[a.plano] ?? 0) || b.createdAt.getTime() - a.createdAt.getTime()
+  );
 
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>

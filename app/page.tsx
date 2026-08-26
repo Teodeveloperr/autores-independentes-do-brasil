@@ -7,20 +7,20 @@ import DepoimentosCarousel from "@/components/DepoimentosCarousel";
 import ContactForm from "@/components/ContactForm";
 import { prisma } from "@/lib/db";
 import { initials, brl } from "@/lib/format";
+import { PLANO_RANK } from "@/lib/plans";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const [authors, livros, artigos, eventos] = await Promise.all([
+  const [authorsPool, livrosPool, artigos, eventos] = await Promise.all([
     prisma.author.findMany({
       where: { status: "ativo" },
       orderBy: { createdAt: "desc" },
-      take: 6,
     }),
     prisma.book.findMany({
       where: { author: { status: "ativo" } },
       orderBy: { createdAt: "desc" },
-      take: 5,
+      take: 30,
       include: { author: true },
     }),
     prisma.article.findMany({
@@ -32,6 +32,14 @@ export default async function HomePage() {
       take: 3,
     }),
   ]);
+
+  // Autores/livros Premium aparecem primeiro (destaque do plano); dentro do mesmo plano, mais recentes primeiro.
+  const authors = [...authorsPool]
+    .sort((a, b) => (PLANO_RANK[b.plano] ?? 0) - (PLANO_RANK[a.plano] ?? 0) || b.createdAt.getTime() - a.createdAt.getTime())
+    .slice(0, 6);
+  const livros = [...livrosPool]
+    .sort((a, b) => (PLANO_RANK[b.author.plano] ?? 0) - (PLANO_RANK[a.author.plano] ?? 0) || b.createdAt.getTime() - a.createdAt.getTime())
+    .slice(0, 5);
 
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>

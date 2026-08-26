@@ -58,7 +58,9 @@ export default function PainelApp({
         <button onClick={() => setView("perfil")} style={sidebarBtn(view === "perfil")}>👤 Meu Perfil</button>
         <button onClick={() => setView("livros")} style={sidebarBtn(view === "livros")}>📚 Meus Livros</button>
         <button onClick={() => setView("pedidos")} style={sidebarBtn(view === "pedidos")}>📋 Pedidos</button>
-        <button onClick={() => setView("vendas")} style={sidebarBtn(view === "vendas")}>💰 Vendas e Relatórios</button>
+        {author.plano !== "Iniciante" && (
+          <button onClick={() => setView("vendas")} style={sidebarBtn(view === "vendas")}>💰 Vendas e Relatórios</button>
+        )}
         <button onClick={() => setView("galeria")} style={sidebarBtn(view === "galeria")}>🖼️ Galeria de Fotos</button>
         <button onClick={() => setView("eventos")} style={sidebarBtn(view === "eventos")}>📅 Eventos</button>
         <button onClick={() => setView("mensagens")} style={sidebarBtn(view === "mensagens")}>

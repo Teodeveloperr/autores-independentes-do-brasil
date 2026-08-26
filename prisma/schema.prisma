@@ -37,7 +37,7 @@ model Author {
   enderecoUf          String?
 
   anoEntrada         Int
-  plano              String  @default("Gratuito")
+  plano              String  @default("Iniciante")
   planoCiclo         String?
   planoValorCentavos Int?
   status             String  @default("ativo")

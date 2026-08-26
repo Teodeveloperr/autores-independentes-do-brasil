@@ -133,17 +133,20 @@ export default function AssinaturaPlanos({ isLoggedIn, planoAtual, cta }: { isLo
       <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "24px", maxWidth: "1100px", margin: "0 auto", alignItems: "start" }}>
         <div style={{ background: "white", color: "#262626", borderRadius: "8px", padding: "32px", display: "flex", flexDirection: "column", gap: "20px" }}>
           <div>
-            <div style={{ fontWeight: 700, fontSize: "18px", marginBottom: "8px" }}>Gratuito</div>
+            <div style={{ fontWeight: 700, fontSize: "18px", marginBottom: "8px" }}>Iniciante</div>
             <div style={{ fontSize: "36px", fontWeight: 700, color: "#002776" }}>
               R$ 0<span style={{ fontSize: "14px", fontWeight: 500, color: "#666" }}>/mês</span>
             </div>
-            <p style={{ fontSize: "13px", color: "#666", marginTop: "8px" }}>Para começar sua jornada no coletivo</p>
+            <p style={{ fontSize: "13px", color: "#666", marginTop: "8px" }}>Comece sua jornada, construa sua presença e apresente sua trajetória ao mundo.</p>
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: "12px", fontSize: "14px", flex: 1 }}>
-            <div style={{ display: "flex", gap: "8px" }}>✅ Perfil de autor na plataforma</div>
-            <div style={{ display: "flex", gap: "8px" }}>✅ Participação na comunidade</div>
+            <div style={{ display: "flex", gap: "8px" }}>✅ Perfil público limitado</div>
+            <div style={{ display: "flex", gap: "8px" }}>✅ Foto e minibio (até 300 caracteres)</div>
+            <div style={{ display: "flex", gap: "8px" }}>✅ Redes sociais</div>
+            <div style={{ display: "flex", gap: "8px" }}>✅ Portfólio cultural em PDF (até 3 fotos)</div>
+            <div style={{ display: "flex", gap: "8px" }}>✅ Avaliações de leitores</div>
           </div>
-          {isLoggedIn && planoAtual === "Gratuito" ? (
+          {isLoggedIn && planoAtual === "Iniciante" ? (
             <div style={{ textAlign: "center", background: "#E3F4E9", color: "#009B3A", padding: "12px", fontWeight: 600, borderRadius: "4px", fontSize: "14px" }}>
               ✓ Seu plano atual
             </div>
@@ -160,7 +163,15 @@ export default function AssinaturaPlanos({ isLoggedIn, planoAtual, cta }: { isLo
           destaque
           isLoggedIn={isLoggedIn}
           planoAtual={planoAtual}
-          recursos={["Livros ilimitados à venda", "Agenda de eventos", "Galeria de fotos", "Dashboard de vendas e pedidos", "Mensagens com leitores"]}
+          recursos={[
+            "Perfil público completo",
+            "Portfólio cultural em PDF completo",
+            "Venda de livros (comissão de 25%)",
+            "Galeria de fotos",
+            "Agenda de eventos",
+            "Loja própria",
+            "Relatório de vendas básico",
+          ]}
         />
 
         <PlanoPagoCard
@@ -168,7 +179,16 @@ export default function AssinaturaPlanos({ isLoggedIn, planoAtual, cta }: { isLo
           ciclo={ciclo}
           isLoggedIn={isLoggedIn}
           planoAtual={planoAtual}
-          recursos={["Tudo do Autor Essencial", "Destaque na página inicial", "Relatórios avançados de vendas", "Prioridade em bienais e feiras", "Suporte dedicado"]}
+          recursos={[
+            "Tudo do Autor Essencial",
+            "Comissão reduzida (10%)",
+            "Destaque nas páginas de Autores e Livros",
+            "Destaque na página inicial",
+            "Selo de perfil verificado",
+            "Desconto de 10% em bienais",
+            "Relatório de vendas detalhado",
+            "Prioridade no suporte",
+          ]}
         />
       </div>
     </>

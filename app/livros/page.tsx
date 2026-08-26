@@ -3,17 +3,22 @@ import PublicHeader from "@/components/PublicHeader";
 import PublicFooter from "@/components/PublicFooter";
 import LivrosCatalogo from "@/components/LivrosCatalogo";
 import { prisma } from "@/lib/db";
+import { PLANO_RANK } from "@/lib/plans";
 
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = { title: "Livros" };
 
 export default async function LivrosPage() {
-  const books = await prisma.book.findMany({
+  const booksPool = await prisma.book.findMany({
     where: { author: { status: "ativo" } },
     orderBy: { createdAt: "desc" },
     include: { author: true },
   });
+  // Livros de autores Premium aparecem primeiro (destaque do plano); dentro do mesmo plano, mais recentes primeiro.
+  const books = [...booksPool].sort(
+    (a, b) => (PLANO_RANK[b.author.plano] ?? 0) - (PLANO_RANK[a.author.plano] ?? 0) || b.createdAt.getTime() - a.createdAt.getTime()
+  );
 
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>

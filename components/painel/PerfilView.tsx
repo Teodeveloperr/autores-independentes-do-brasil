@@ -6,14 +6,18 @@ import { saveProfile } from "@/app/painel/actions";
 import type { AuthorWithRelations } from "./types";
 import { GENEROS } from "@/lib/genres";
 import { buscarEnderecoPorCep } from "@/lib/cep";
+import { BIO_MAX_CARACTERES_INICIANTE } from "@/lib/plans";
 import BannerPositioner from "@/components/BannerPositioner";
 
 export default function PerfilView({ author }: { author: AuthorWithRelations }) {
   const avatar = useImageUpload("avatars", author.fotoUrl ?? "");
   const banner = useImageUpload("banners", author.bannerUrl ?? "");
   const [bannerPos, setBannerPos] = useState({ x: author.bannerPositionX ?? 50, y: author.bannerPositionY ?? 50 });
+  const [bio, setBio] = useState(author.bio ?? "");
   const [saved, setSaved] = useState(false);
+  const [erro, setErro] = useState("");
   const [pending, startTransition] = useTransition();
+  const ehIniciante = author.plano === "Iniciante";
   const [buscandoCep, setBuscandoCep] = useState(false);
   const [enderecoCep, setEnderecoCep] = useState(author.enderecoCep ?? "");
   const [enderecoRua, setEnderecoRua] = useState(author.enderecoRua ?? "");
@@ -35,10 +39,15 @@ export default function PerfilView({ author }: { author: AuthorWithRelations }) 
   }
 
   function onSubmit(formData: FormData) {
+    setErro("");
     startTransition(async () => {
-      await saveProfile(formData);
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2500);
+      try {
+        await saveProfile(formData);
+        setSaved(true);
+        setTimeout(() => setSaved(false), 2500);
+      } catch (err) {
+        setErro(err instanceof Error ? err.message : "Não foi possível salvar o perfil.");
+      }
     });
   }
 
@@ -151,7 +160,19 @@ export default function PerfilView({ author }: { author: AuthorWithRelations }) 
             </div>
             <div>
               <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>Bio</label>
-              <textarea name="bio" defaultValue={author.bio ?? ""} style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px", minHeight: "90px", resize: "vertical" }} />
+              <textarea
+                name="bio"
+                value={bio}
+                onChange={(e) => setBio(e.target.value)}
+                maxLength={ehIniciante ? BIO_MAX_CARACTERES_INICIANTE : undefined}
+                style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px", minHeight: "90px", resize: "vertical" }}
+              />
+              {ehIniciante && (
+                <p style={{ fontSize: "11px", color: "#999", marginTop: "4px" }}>
+                  {bio.length}/{BIO_MAX_CARACTERES_INICIANTE} caracteres — o plano Iniciante tem bio limitada.{" "}
+                  <a href="/assinatura" style={{ color: "#002776", fontWeight: 600 }}>Fazer upgrade →</a>
+                </p>
+              )}
             </div>
             <div>
               <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>📷 Instagram</label>
@@ -240,6 +261,7 @@ export default function PerfilView({ author }: { author: AuthorWithRelations }) 
               </div>
             </div>
 
+            {erro && <p style={{ fontSize: "13px", color: "#C0392B" }}>{erro}</p>}
             <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
               <button type="submit" disabled={pending} style={{ background: "#009B3A", color: "white", padding: "12px 24px", fontWeight: 700, borderRadius: "6px", fontSize: "14px", opacity: pending ? 0.7 : 1 }}>
                 {pending ? "Salvando..." : "Salvar alterações"}

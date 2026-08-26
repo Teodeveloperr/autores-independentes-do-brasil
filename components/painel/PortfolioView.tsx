@@ -63,6 +63,7 @@ export default function PortfolioView({ author }: { author: AuthorWithRelations 
         : null,
       livros: author.books.map((b) => ({ titulo: b.titulo, capaUrl: b.capaUrl, genero: b.genero, precoCentavos: b.precoCentavos })),
       avaliacoes: author.avaliacoes.slice(0, 10).map((a) => ({ nome: a.nome, texto: a.texto, estrelas: a.estrelas })),
+      fotos: author.fotos.map((f) => ({ url: f.url, titulo: f.titulo })),
     };
   }, [author, formacao, premios, citacao, obraDestaqueId, capa.url]);
 

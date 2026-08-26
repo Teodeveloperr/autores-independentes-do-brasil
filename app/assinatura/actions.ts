@@ -68,6 +68,6 @@ export async function cancelarAssinatura() {
 
   await prisma.author.update({
     where: { id: author.id },
-    data: { plano: "Gratuito", mpSubscriptionStatus: "cancelled" },
+    data: { plano: "Iniciante", mpSubscriptionStatus: "cancelled" },
   });
 }

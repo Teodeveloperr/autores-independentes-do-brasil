@@ -15,7 +15,7 @@ import PasswordStrengthChecklist from "./PasswordStrengthChecklist";
 import { GENEROS } from "@/lib/genres";
 
 const PLANS: { id: PlanId; nome: string; desc: string; monthly: number; badge: string; disponivel: boolean }[] = [
-  { id: "free", nome: "Gratuito", desc: "Para começar sua jornada no coletivo", monthly: 0, badge: "", disponivel: true },
+  { id: "free", nome: "Iniciante", desc: "Para começar sua jornada no coletivo", monthly: 0, badge: "", disponivel: true },
   { id: "essencial", nome: "Autor Essencial", desc: "Tudo que você precisa para vender e divulgar", monthly: 2990, badge: "EM BREVE", disponivel: false },
   { id: "premium", nome: "Autor Premium", desc: "Máxima visibilidade para suas obras", monthly: 4990, badge: "EM BREVE", disponivel: false },
 ];
@@ -220,7 +220,7 @@ export default function CadastroWizard() {
         <div>
           <h2 style={{ fontSize: "26px", fontWeight: 700, marginBottom: "6px" }}>Escolha seu plano</h2>
           <p style={{ fontSize: "14px", color: "#666", marginBottom: "20px" }}>
-            Por enquanto, apenas o plano Gratuito está disponível para cadastro. Os planos pagos chegam em breve.
+            Por enquanto, apenas o plano Iniciante está disponível para cadastro. Os planos pagos chegam em breve.
           </p>
           <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
             {PLANS.map((p) => {
@@ -295,7 +295,7 @@ export default function CadastroWizard() {
           </div>
 
           <div style={{ background: "#E9F5EE", border: "1px solid #BFE3CE", borderRadius: "8px", padding: "20px", textAlign: "center", fontSize: "14px", marginBottom: "24px" }}>
-            🎉 O plano <strong>Gratuito</strong> não tem cobrança. Você pode fazer upgrade assim que os planos pagos estiverem disponíveis.
+            🎉 O plano <strong>Iniciante</strong> não tem cobrança. Você pode fazer upgrade assim que os planos pagos estiverem disponíveis.
           </div>
 
           {finishError && (

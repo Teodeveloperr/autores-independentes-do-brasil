@@ -17,7 +17,7 @@ import { centavosFromInput, sanitizeExternalUrl } from "@/lib/format";
 import { validarSenha } from "@/lib/password";
 import { validarCpf } from "@/lib/cpf";
 import { criarTransferenciaPix } from "@/lib/asaas";
-import { valorRepasseCentavos } from "@/lib/plans";
+import { valorRepasseCentavos, podeUsarRecursosExtras, BIO_MAX_CARACTERES_INICIANTE, FOTOS_MAX_INICIANTE } from "@/lib/plans";
 import { checkRateLimit } from "@/lib/rateLimit";
 import { desconectarMercadoPago as desconectarMercadoPagoLib } from "@/lib/mercadoPagoMarketplace";
 import {
@@ -37,6 +37,11 @@ export async function saveProfile(formData: FormData) {
   const author = await requireAuthor();
 
   const generos = formData.getAll("generos") as string[];
+  const bio = ((formData.get("bio") as string) || "").trim();
+
+  if (author.plano === "Iniciante" && bio.length > BIO_MAX_CARACTERES_INICIANTE) {
+    throw new Error(`O plano Iniciante permite bio de até ${BIO_MAX_CARACTERES_INICIANTE} caracteres. Faça upgrade para escrever mais.`);
+  }
 
   await prisma.author.update({
     where: { id: author.id },
@@ -44,7 +49,7 @@ export async function saveProfile(formData: FormData) {
       nome: ((formData.get("nome") as string) || author.nome).trim(),
       generos: generos.length > 0 ? generos : author.generos,
       cidade: ((formData.get("cidade") as string) || "").trim(),
-      bio: ((formData.get("bio") as string) || "").trim(),
+      bio,
       fotoUrl: (formData.get("fotoUrl") as string) || author.fotoUrl,
       bannerUrl: (formData.get("bannerUrl") as string) || author.bannerUrl,
       bannerPositionX: parseInt((formData.get("bannerPositionX") as string) || "", 10) || 50,
@@ -190,6 +195,9 @@ function eventDataFromForm(formData: FormData) {
 
 export async function addEvent(formData: FormData) {
   const author = await requireAuthor();
+  if (!podeUsarRecursosExtras(author.plano)) {
+    throw new Error("A agenda de eventos não está disponível no seu plano. Faça upgrade para usar esse recurso.");
+  }
 
   await prisma.authorEvent.create({
     data: {
@@ -203,6 +211,9 @@ export async function addEvent(formData: FormData) {
 
 export async function updateEvent(id: string, formData: FormData) {
   const author = await requireAuthor();
+  if (!podeUsarRecursosExtras(author.plano)) {
+    throw new Error("A agenda de eventos não está disponível no seu plano. Faça upgrade para usar esse recurso.");
+  }
 
   await prisma.authorEvent.updateMany({
     where: { id, authorId: author.id },
@@ -222,6 +233,13 @@ export async function addPhoto(formData: FormData) {
   const author = await requireAuthor();
   const url = (formData.get("url") as string) || "";
   if (!url) return;
+
+  if (author.plano === "Iniciante") {
+    const totalFotos = await prisma.authorPhoto.count({ where: { authorId: author.id } });
+    if (totalFotos >= FOTOS_MAX_INICIANTE) {
+      throw new Error(`O plano Iniciante permite até ${FOTOS_MAX_INICIANTE} fotos. Faça upgrade para adicionar mais.`);
+    }
+  }
 
   await prisma.authorPhoto.create({
     data: {

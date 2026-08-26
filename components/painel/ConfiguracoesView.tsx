@@ -42,7 +42,7 @@ export default function ConfiguracoesView({
   const router = useRouter();
 
   function onCancelarAssinatura() {
-    if (!confirm("Tem certeza que deseja cancelar sua assinatura? Seu plano voltará para Gratuito.")) return;
+    if (!confirm("Tem certeza que deseja cancelar sua assinatura? Seu plano voltará para Iniciante.")) return;
     startCancelamento(async () => {
       await cancelarAssinatura();
       router.refresh();

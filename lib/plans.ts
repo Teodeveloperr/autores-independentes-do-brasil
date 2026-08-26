@@ -1,3 +1,5 @@
+export const TODOS_PLANOS = ["Iniciante", "Autor Essencial", "Autor Premium"];
+
 export const PLANOS_COM_VENDA = ["Autor Essencial", "Autor Premium"];
 
 export function podeVenderLivros(plano: string) {
@@ -20,10 +22,38 @@ export function valorRepasseCentavos(plano: string, valorVendaCentavos: number, 
   return liquidoVenda + freteCentavos;
 }
 
-export const PLANOS_COM_RECURSOS_EXTRAS = ["Gratuito", "Autor Essencial", "Autor Premium"];
+// Galeria de fotos completa (categorizada) e agenda de eventos.
+export const PLANOS_COM_RECURSOS_EXTRAS = ["Autor Essencial", "Autor Premium"];
 
 export function podeUsarRecursosExtras(plano: string) {
   return PLANOS_COM_RECURSOS_EXTRAS.includes(plano);
+}
+
+// Restrições do plano Iniciante (perfil "limitado").
+export const BIO_MAX_CARACTERES_INICIANTE = 300;
+export const FOTOS_MAX_INICIANTE = 3;
+
+// Ordem de destaque (Autores/Livros/Home) — maior primeiro.
+export const PLANO_RANK: Record<string, number> = {
+  "Autor Premium": 2,
+  "Autor Essencial": 1,
+  Iniciante: 0,
+};
+
+export function temDestaque(plano: string) {
+  return plano === "Autor Premium";
+}
+
+export function temSeloVerificado(plano: string) {
+  return plano === "Autor Premium";
+}
+
+export type NivelRelatorioVendas = "nenhum" | "basico" | "detalhado";
+
+export function relatorioVendasNivel(plano: string): NivelRelatorioVendas {
+  if (plano === "Autor Premium") return "detalhado";
+  if (plano === "Autor Essencial") return "basico";
+  return "nenhum";
 }
 
 export type PlanoPagoSlug = "essencial" | "premium";

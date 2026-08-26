@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { addEvent, updateEvent, removeEvent } from "@/app/painel/actions";
 import { formatEventoDia } from "@/lib/format";
+import { podeUsarRecursosExtras } from "@/lib/plans";
 import type { AuthorWithRelations } from "./types";
 
 const MESES = ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"];
@@ -26,6 +27,7 @@ export default function EventosView({ author }: { author: AuthorWithRelations })
 
   const editing = author.eventos.find((ev) => ev.id === editingId) ?? null;
   const anoAtual = new Date().getFullYear();
+  const podeUsar = podeUsarRecursosExtras(author.plano);
 
   function onSubmit(formData: FormData) {
     startTransition(async () => {
@@ -45,6 +47,26 @@ export default function EventosView({ author }: { author: AuthorWithRelations })
       await removeEvent(id);
       router.refresh();
     });
+  }
+
+  if (!podeUsar) {
+    return (
+      <div>
+        <h2 style={{ fontSize: "22px", fontWeight: 700, color: "#002776", marginBottom: "20px" }}>Minha Agenda de Eventos</h2>
+        <div style={{ textAlign: "center", background: "white", borderRadius: "10px", padding: "40px 24px" }}>
+          <div style={{ fontSize: "28px", marginBottom: "12px" }}>✨</div>
+          <p style={{ fontSize: "14px", color: "#444", lineHeight: 1.6, maxWidth: "380px", margin: "0 auto 20px" }}>
+            A agenda de eventos é um recurso do plano Essencial em diante. Faça upgrade pra divulgar suas participações em bienais, lançamentos e feiras.
+          </p>
+          <a
+            href="/assinatura"
+            style={{ display: "inline-block", background: "#009B3A", color: "white", padding: "10px 24px", borderRadius: "6px", fontWeight: 600, fontSize: "13px", textDecoration: "none" }}
+          >
+            Fazer upgrade do plano
+          </a>
+        </div>
+      </div>
+    );
   }
 
   return (

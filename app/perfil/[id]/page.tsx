@@ -9,6 +9,7 @@ import CompartilharPerfilButton from "@/components/CompartilharPerfilButton";
 import { prisma } from "@/lib/db";
 import { brl } from "@/lib/format";
 import { getCurrentAuthor } from "@/lib/auth";
+import { temSeloVerificado } from "@/lib/plans";
 
 export const dynamic = "force-dynamic";
 
@@ -61,7 +62,7 @@ export default async function PerfilPage({ params }: { params: Promise<{ id: str
             backgroundRepeat: "no-repeat",
           }}
         >
-          {author.verificado && (
+          {(author.verificado || temSeloVerificado(author.plano)) && (
             <div style={{ position: "absolute", top: "16px", left: "16px", background: "white", padding: "8px 16px", borderRadius: "4px", fontSize: "14px", fontWeight: 600 }}>
               ✓ Autor verificado
             </div>

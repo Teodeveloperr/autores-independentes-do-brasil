@@ -63,7 +63,7 @@ const AUTHORS: SeedAuthor[] = [
     cidade: "Fortaleza, CE",
     bio: "Pesquisador e escritor dedicado a registrar histórias e valores da cultura afro-brasileira.",
     anoEntrada: 2024,
-    plano: "Gratuito",
+    plano: "Iniciante",
     livro: {
       titulo: "Umbanda Não Tem Preço! Tem Valores",
       genero: "Biografia",
@@ -95,7 +95,7 @@ const AUTHORS: SeedAuthor[] = [
     cidade: "Fortaleza, CE",
     bio: "Escritor reflexivo, aborda temas sobre existência, tempo e espiritualidade.",
     anoEntrada: 2024,
-    plano: "Gratuito",
+    plano: "Iniciante",
     livro: {
       titulo: "Eu Vou Morrer Sim! Mas Ninguém Vai Morrer Por Mim",
       genero: "Biografia",
@@ -142,7 +142,7 @@ async function seedAuthors() {
         bio: a.bio,
         anoEntrada: a.anoEntrada,
         plano: a.plano,
-        planoCiclo: a.plano === "Gratuito" ? null : "Mensal",
+        planoCiclo: a.plano === "Iniciante" ? null : "Mensal",
         planoValorCentavos: a.plano === "Autor Essencial" ? 2990 : a.plano === "Autor Premium" ? 4990 : null,
         verificado: true,
         books: {

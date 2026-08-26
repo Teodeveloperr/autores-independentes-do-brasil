@@ -54,7 +54,7 @@ export type PlanId = "free" | "essencial" | "premium";
 export type Cycle = "mensal" | "semestral" | "anual";
 
 const PLANS: Record<PlanId, { nome: string; monthly: number }> = {
-  free: { nome: "Gratuito", monthly: 0 },
+  free: { nome: "Iniciante", monthly: 0 },
   essencial: { nome: "Autor Essencial", monthly: 2990 },
   premium: { nome: "Autor Premium", monthly: 4990 },
 };
@@ -88,8 +88,8 @@ export async function createAccount(step1: Step1Data, planId: PlanId, cycle: Cyc
     throw new Error(erroSenha);
   }
 
-  // Gateway de pagamento ainda não integrado: força o plano Gratuito
-  // independentemente do que o cliente enviar.
+  // Cadastro sempre força o plano Iniciante — upgrade é feito depois em /assinatura,
+  // independentemente do que o cliente enviar aqui.
   void planId;
   const plan = PLANS.free;
   const precoCentavos = priceForCycle(plan.monthly, cycle);
