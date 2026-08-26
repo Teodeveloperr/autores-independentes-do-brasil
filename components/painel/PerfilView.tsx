@@ -14,6 +14,7 @@ export default function PerfilView({ author }: { author: AuthorWithRelations }) 
   const banner = useImageUpload("banners", author.bannerUrl ?? "");
   const [bannerPos, setBannerPos] = useState({ x: author.bannerPositionX ?? 50, y: author.bannerPositionY ?? 50 });
   const [bio, setBio] = useState(author.bio ?? "");
+  const [frase, setFrase] = useState(author.fraseApresentacao ?? "");
   const [saved, setSaved] = useState(false);
   const [erro, setErro] = useState("");
   const [pending, startTransition] = useTransition();
@@ -156,7 +157,25 @@ export default function PerfilView({ author }: { author: AuthorWithRelations }) 
             </div>
             <div>
               <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>Cidade / UF</label>
-              <input name="cidade" type="text" defaultValue={author.cidade ?? ""} style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px" }} />
+              <input name="cidade" type="text" defaultValue={author.cidade ?? ""} placeholder="Ex: Fortaleza, CE" style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px" }} />
+            </div>
+            <div>
+              <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>Profissões / atuações (opcional)</label>
+              <input name="profissoes" type="text" defaultValue={author.profissoes ?? ""} placeholder="Ex: Psicólogo, Produtor Cultural" style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px" }} />
+              <p style={{ fontSize: "11px", color: "#999", marginTop: "4px" }}>Aparece no seu card como &quot;Escritor | (o que você escrever aqui)&quot;.</p>
+            </div>
+            <div>
+              <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>Frase de apresentação (opcional)</label>
+              <input
+                name="fraseApresentacao"
+                type="text"
+                value={frase}
+                onChange={(e) => setFrase(e.target.value)}
+                maxLength={140}
+                placeholder='Ex: "Histórias também podem ser caminhos de transformação."'
+                style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px" }}
+              />
+              <p style={{ fontSize: "11px", color: "#999", marginTop: "4px" }}>{frase.length}/140 caracteres — aparece em destaque no seu card na página de Autores.</p>
             </div>
             <div>
               <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>Bio</label>

@@ -50,6 +50,8 @@ export async function saveProfile(formData: FormData) {
       generos: generos.length > 0 ? generos : author.generos,
       cidade: ((formData.get("cidade") as string) || "").trim(),
       bio,
+      fraseApresentacao: ((formData.get("fraseApresentacao") as string) || "").trim().slice(0, 140) || null,
+      profissoes: ((formData.get("profissoes") as string) || "").trim().slice(0, 120) || null,
       fotoUrl: (formData.get("fotoUrl") as string) || author.fotoUrl,
       bannerUrl: (formData.get("bannerUrl") as string) || author.bannerUrl,
       bannerPositionX: parseInt((formData.get("bannerPositionX") as string) || "", 10) || 50,

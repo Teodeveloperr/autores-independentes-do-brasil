@@ -42,6 +42,10 @@ export default async function PerfilPage({ params }: { params: Promise<{ id: str
 
   const isOwner = currentAuthor?.id === author.id;
 
+  if (!isOwner) {
+    await prisma.author.update({ where: { id: author.id }, data: { visualizacoes: { increment: 1 } } });
+  }
+
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
       <PublicHeader active="autores" />
@@ -81,8 +85,11 @@ export default async function PerfilPage({ params }: { params: Promise<{ id: str
             />
             <h1 style={{ fontSize: "22px", fontWeight: 700, color: "#262626", marginBottom: "8px" }}>{author.nome}</h1>
             <p style={{ fontSize: "14px", color: "#666", marginBottom: "4px" }}>
-              Escritor(a) • {author.generos.join(", ")} • {author.cidade}
+              Escritor{author.profissoes ? ` | ${author.profissoes}` : ""} • {author.generos.join(", ")} • {author.cidade}
             </p>
+            {author.fraseApresentacao && (
+              <p style={{ fontSize: "14px", color: "#002776", fontStyle: "italic", marginTop: "8px" }}>&quot;{author.fraseApresentacao}&quot;</p>
+            )}
             {(author.instagramUrl || author.twitterUrl || author.siteUrl) && (
               <div style={{ display: "flex", gap: "12px", marginBottom: "16px", marginTop: "12px" }}>
                 {author.instagramUrl && (

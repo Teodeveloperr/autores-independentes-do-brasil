@@ -3,18 +3,17 @@ import PublicHeader from "@/components/PublicHeader";
 import PublicFooter from "@/components/PublicFooter";
 import AutoresGrid from "@/components/AutoresGrid";
 import { prisma } from "@/lib/db";
-import { PLANO_RANK } from "@/lib/plans";
 
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = { title: "Autores" };
 
 export default async function AutoresPage() {
-  const authorsPool = await prisma.author.findMany({ where: { status: "ativo" }, orderBy: { createdAt: "desc" } });
-  // Autores Premium aparecem primeiro (destaque do plano); dentro do mesmo plano, mais recentes primeiro.
-  const authors = [...authorsPool].sort(
-    (a, b) => (PLANO_RANK[b.plano] ?? 0) - (PLANO_RANK[a.plano] ?? 0) || b.createdAt.getTime() - a.createdAt.getTime()
-  );
+  const authors = await prisma.author.findMany({
+    where: { status: "ativo" },
+    orderBy: { createdAt: "desc" },
+    include: { _count: { select: { books: true } } },
+  });
 
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
@@ -22,7 +21,22 @@ export default async function AutoresPage() {
       <section className="section-pad-lg" style={{ background: "white", padding: "40px", flex: 1 }}>
       <div style={{ maxWidth: "1280px", width: "100%", margin: "0 auto" }}>
         <h1 style={{ fontSize: "36px", fontWeight: 700, color: "#002776", marginBottom: "40px" }}>Nossos Autores</h1>
-        <AutoresGrid authors={authors.map((a) => ({ id: a.id, nome: a.nome, generos: a.generos, fotoUrl: a.fotoUrl }))} />
+        <AutoresGrid
+          authors={authors.map((a) => ({
+            id: a.id,
+            nome: a.nome,
+            generos: a.generos,
+            fotoUrl: a.fotoUrl,
+            cidade: a.cidade,
+            plano: a.plano,
+            profissoes: a.profissoes,
+            fraseApresentacao: a.fraseApresentacao,
+            numLivros: a._count.books,
+            visualizacoes: a.visualizacoes,
+            anoEntrada: a.anoEntrada,
+            createdAt: a.createdAt.toISOString(),
+          }))}
+        />
       </div>
       </section>
       <PublicFooter />

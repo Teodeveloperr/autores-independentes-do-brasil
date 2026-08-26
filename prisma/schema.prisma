@@ -54,6 +54,10 @@ model Author {
   pixKey     String?
   pixKeyType String?
 
+  fraseApresentacao String?
+  profissoes        String?
+  visualizacoes     Int     @default(0)
+
   avaliacaoMedia Float?
   avaliacoesQtd  Int     @default(0)
   seguidores     Int     @default(0)
