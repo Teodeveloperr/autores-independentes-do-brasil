@@ -10,6 +10,8 @@ import { prisma } from "@/lib/db";
 import { brl } from "@/lib/format";
 import { getCurrentAuthor } from "@/lib/auth";
 import { temSeloVerificado } from "@/lib/plans";
+import { calcularPerfilCompleto } from "@/lib/perfilCompleto";
+import { calcularConquistas } from "@/lib/conquistas";
 
 export const dynamic = "force-dynamic";
 
@@ -25,7 +27,7 @@ export async function generateMetadata({
 
 export default async function PerfilPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const [author, currentAuthor] = await Promise.all([
+  const [author, currentAuthor, visualizacoesAgg] = await Promise.all([
     prisma.author.findUnique({
       where: { id },
       include: {
@@ -36,6 +38,7 @@ export default async function PerfilPage({ params }: { params: Promise<{ id: str
       },
     }),
     getCurrentAuthor(),
+    prisma.author.aggregate({ where: { status: "ativo" }, _max: { visualizacoes: true } }),
   ]);
 
   if (!author || author.status === "suspenso") notFound();
@@ -45,6 +48,14 @@ export default async function PerfilPage({ params }: { params: Promise<{ id: str
   if (!isOwner) {
     await prisma.author.update({ where: { id: author.id }, data: { visualizacoes: { increment: 1 } } });
   }
+
+  const { percentual: percentualPerfil } = calcularPerfilCompleto(author, author.books.length);
+  const conquistasConquistadas = calcularConquistas(author, {
+    percentualPerfil,
+    numLivros: author.books.length,
+    numEventos: author.eventos.length,
+    maxVisualizacoesGlobal: visualizacoesAgg._max.visualizacoes ?? 0,
+  }).filter((c) => c.conquistada);
 
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
@@ -89,6 +100,15 @@ export default async function PerfilPage({ params }: { params: Promise<{ id: str
             </p>
             {author.fraseApresentacao && (
               <p style={{ fontSize: "14px", color: "#002776", fontStyle: "italic", marginTop: "8px" }}>&quot;{author.fraseApresentacao}&quot;</p>
+            )}
+            {conquistasConquistadas.length > 0 && (
+              <div style={{ display: "flex", gap: "10px", marginTop: "12px" }}>
+                {conquistasConquistadas.map((c) => (
+                  <span key={c.label} title={c.label} style={{ fontSize: "20px" }}>
+                    {c.emoji}
+                  </span>
+                ))}
+              </div>
             )}
             {(author.instagramUrl || author.twitterUrl || author.siteUrl) && (
               <div style={{ display: "flex", gap: "12px", marginBottom: "16px", marginTop: "12px" }}>

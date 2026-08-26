@@ -1,6 +1,8 @@
 "use client";
 
 import { brl, formatEventoDia } from "@/lib/format";
+import { calcularPerfilCompleto } from "@/lib/perfilCompleto";
+import { calcularConquistas } from "@/lib/conquistas";
 import type { AuthorWithRelations, PainelView } from "./types";
 
 const chipStyle = (status: string): React.CSSProperties => ({
@@ -30,14 +32,24 @@ const quickBtn: React.CSSProperties = {
 export default function DashboardView({
   author,
   onNavigate,
+  maxVisualizacoesGlobal,
 }: {
   author: AuthorWithRelations;
   onNavigate: (view: PainelView) => void;
+  maxVisualizacoesGlobal: number;
 }) {
   const now = new Date();
   const vendasMes = author.orders
     .filter((o) => o.status === "Pago" && o.createdAt.getMonth() === now.getMonth() && o.createdAt.getFullYear() === now.getFullYear())
     .reduce((sum, o) => sum + o.valorCentavos, 0);
+
+  const { itens: checklistItens, percentual: percentualPerfil } = calcularPerfilCompleto(author, author.books.length);
+  const conquistas = calcularConquistas(author, {
+    percentualPerfil,
+    numLivros: author.books.length,
+    numEventos: author.eventos.length,
+    maxVisualizacoesGlobal,
+  });
 
   return (
     <div>
@@ -61,7 +73,7 @@ export default function DashboardView({
           <div style={{ width: "46px", height: "46px", borderRadius: "50%", background: "#002776", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "20px", flexShrink: 0 }}>👁️</div>
           <div>
             <div style={{ fontSize: "12px", color: "#666", marginBottom: "4px" }}>Visualizações</div>
-            <div style={{ fontSize: "22px", fontWeight: 700, color: "#002776" }}>—</div>
+            <div style={{ fontSize: "22px", fontWeight: 700, color: "#002776" }}>{author.visualizacoes}</div>
           </div>
         </div>
         <button onClick={() => onNavigate("avaliacoes")} style={{ background: "white", border: "none", borderRadius: "10px", padding: "20px", display: "flex", gap: "14px", alignItems: "flex-start", textAlign: "left" }}>
@@ -217,14 +229,38 @@ export default function DashboardView({
         </div>
       </div>
 
-      <div style={{ background: "#E9F5EE", border: "1px solid #BFE3CE", borderRadius: "10px", padding: "16px 20px", display: "flex", gap: "12px", alignItems: "center" }}>
-        <span style={{ fontSize: "20px" }}>💡</span>
-        <div style={{ flex: 1, fontSize: "13px" }}>
-          <strong>Dica importante:</strong> Mantenha seu perfil atualizado e publique novos livros para aumentar suas vendas e visibilidade no coletivo!
+      <div className="responsive-flex-row" style={{ background: "white", borderRadius: "10px", padding: "24px", display: "flex", gap: "32px" }}>
+        <div style={{ flex: "1.5 1 0", minWidth: 0 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "10px" }}>
+            <div style={{ fontWeight: 700, color: "#002776" }}>Perfil {percentualPerfil}% completo</div>
+            <button onClick={() => onNavigate("perfil")} style={{ background: "#009B3A", color: "white", padding: "8px 16px", fontWeight: 600, borderRadius: "6px", fontSize: "13px" }}>
+              Atualizar perfil
+            </button>
+          </div>
+          <div style={{ background: "#E0E0E0", borderRadius: "6px", height: "8px", overflow: "hidden", marginBottom: "14px" }}>
+            <div style={{ background: "#009B3A", height: "100%", width: `${percentualPerfil}%`, borderRadius: "6px" }} />
+          </div>
+          <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px 16px", marginBottom: "12px" }}>
+            {checklistItens.map((item) => (
+              <div key={item.label} style={{ display: "flex", gap: "8px", alignItems: "center", fontSize: "13px", color: item.done ? "#262626" : "#999" }}>
+                <span>{item.done ? "☑️" : "⬜"}</span>
+                {item.label}
+              </div>
+            ))}
+          </div>
+          <p style={{ fontSize: "12px", color: "#666" }}>Complete seu perfil e aumente suas chances de ser encontrado.</p>
         </div>
-        <button onClick={() => onNavigate("perfil")} style={{ background: "#009B3A", color: "white", padding: "8px 16px", fontWeight: 600, borderRadius: "6px", fontSize: "13px" }}>
-          Atualizar perfil
-        </button>
+        <div style={{ flex: "1 1 0", minWidth: 0, borderLeft: "1px solid #E0E0E0", paddingLeft: "32px" }}>
+          <div style={{ fontWeight: 700, color: "#002776", marginBottom: "14px" }}>Suas conquistas</div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "16px" }}>
+            {conquistas.map((c) => (
+              <div key={c.label} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "4px", width: "72px", opacity: c.conquistada ? 1 : 0.35 }} title={c.label}>
+                <span style={{ fontSize: "28px" }}>{c.emoji}</span>
+                <span style={{ fontSize: "11px", textAlign: "center", color: "#666", lineHeight: 1.3 }}>{c.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );

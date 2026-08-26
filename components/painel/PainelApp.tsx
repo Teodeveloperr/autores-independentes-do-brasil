@@ -37,11 +37,13 @@ export default function PainelApp({
   temSenha,
   assinaturaPendente,
   mercadoPagoStatus,
+  maxVisualizacoesGlobal,
 }: {
   author: AuthorWithRelations;
   temSenha: boolean;
   assinaturaPendente?: boolean;
   mercadoPagoStatus?: string;
+  maxVisualizacoesGlobal: number;
 }) {
   const [view, setView] = useState<PainelView>("dash");
 
@@ -142,7 +144,7 @@ export default function PainelApp({
               ❌ Não foi possível conectar sua conta do Mercado Pago. Tente novamente em Configurações.
             </div>
           )}
-          {view === "dash" && <DashboardView author={author} onNavigate={setView} />}
+          {view === "dash" && <DashboardView author={author} onNavigate={setView} maxVisualizacoesGlobal={maxVisualizacoesGlobal} />}
           {view === "perfil" && <PerfilView author={author} />}
           {view === "livros" && <LivrosView author={author} />}
           {view === "pedidos" && <PedidosView author={author} />}
