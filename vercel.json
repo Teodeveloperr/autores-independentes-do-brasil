@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/limpar-mensagens",
       "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/cron/liberar-repasses",
+      "schedule": "0 4 * * *"
     }
   ]
 }

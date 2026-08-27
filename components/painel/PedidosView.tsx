@@ -90,17 +90,35 @@ export default function PedidosView({ author }: { author: AuthorWithRelations })
               <div style={{ fontWeight: 700, color: "#002776", fontSize: "14px" }}>{brl(p.valorCentavos + (p.freteCentavos ?? 0))}</div>
               {p.freteCentavos != null && <div style={{ fontSize: "11px", color: "#999" }}>+ {brl(p.freteCentavos)} frete</div>}
             </div>
-            <select
-              value={p.status}
-              onChange={(e) => onStatusChange(p.id, e.target.value)}
-              style={{ padding: "6px 10px", borderRadius: "6px", fontSize: "12px", fontWeight: 700, border: "1px solid #DDD", color: STATUS_COLOR[p.status] ?? "#666" }}
-            >
-              <option>Aguardando pagamento</option>
-              <option>Pago</option>
-              <option>Aguardando envio</option>
-              <option>Enviado</option>
-              <option>Entregue</option>
-            </select>
+            <div style={{ textAlign: "right", flexShrink: 0 }}>
+              <select
+                value={p.status}
+                onChange={(e) => onStatusChange(p.id, e.target.value)}
+                disabled={p.status === "Entregue"}
+                style={{ padding: "6px 10px", borderRadius: "6px", fontSize: "12px", fontWeight: 700, border: "1px solid #DDD", color: STATUS_COLOR[p.status] ?? "#666" }}
+              >
+                <option>Aguardando pagamento</option>
+                <option>Pago</option>
+                <option>Aguardando envio</option>
+                <option>Enviado</option>
+                {p.status === "Entregue" && <option>Entregue</option>}
+              </select>
+              {p.status === "Enviado" && p.repasseStatus !== "transferido" && p.repasseStatus !== "erro" && (
+                <div style={{ fontSize: "11px", color: "#A87900", marginTop: "4px", maxWidth: "180px" }}>
+                  ⏳ Aguardando confirmação do comprador (ou liberação em até 7 dias)
+                </div>
+              )}
+              {p.repasseStatus === "transferido" && (
+                <div style={{ fontSize: "11px", color: "#009B3A", marginTop: "4px", maxWidth: "180px" }}>
+                  ✅ Repasse enviado — {p.confirmadoEm ? "confirmado pelo comprador" : "liberado automaticamente"}
+                </div>
+              )}
+              {p.repasseStatus === "erro" && (
+                <div style={{ fontSize: "11px", color: "#C0392B", marginTop: "4px", maxWidth: "180px" }}>
+                  ⚠️ Erro no repasse: {p.repasseErro}
+                </div>
+              )}
+            </div>
           </div>
         ))}
         {pedidos.length === 0 && (

@@ -194,6 +194,10 @@ model Order {
   repasseAsaasTransferId String?
   repasseErro            String?
 
+  enviadoEm            DateTime?
+  confirmacaoTokenHash String?   @unique
+  confirmadoEm         DateTime?
+
   createdAt DateTime @default(now())
 
   @@index([authorId])

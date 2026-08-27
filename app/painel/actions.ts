@@ -16,8 +16,9 @@ import { deleteAuthorSession } from "@/lib/session";
 import { centavosFromInput, sanitizeExternalUrl } from "@/lib/format";
 import { validarSenha } from "@/lib/password";
 import { validarCpf } from "@/lib/cpf";
-import { criarTransferenciaPix } from "@/lib/asaas";
-import { valorRepasseCentavos, podeUsarRecursosExtras, BIO_MAX_CARACTERES_INICIANTE, FOTOS_MAX_INICIANTE } from "@/lib/plans";
+import { podeUsarRecursosExtras, BIO_MAX_CARACTERES_INICIANTE, FOTOS_MAX_INICIANTE } from "@/lib/plans";
+import { sendConfirmacaoRecebimentoEmail } from "@/lib/email";
+import crypto from "node:crypto";
 import { checkRateLimit } from "@/lib/rateLimit";
 import { desconectarMercadoPago as desconectarMercadoPagoLib } from "@/lib/mercadoPagoMarketplace";
 import {
@@ -249,34 +250,28 @@ export async function setOrderStatus(id: string, status: string) {
   const order = await prisma.order.findFirst({ where: { id, authorId: author.id } });
   if (!order) throw new Error("Pedido não encontrado.");
 
-  const precisaRepasse = status === "Enviado" && order.asaasPaymentId && order.repasseStatus !== "transferido";
+  if (status === "Entregue") {
+    throw new Error("Esse status é definido automaticamente quando o comprador confirma o recebimento.");
+  }
 
-  if (precisaRepasse) {
-    if (!author.pixKey || !author.pixKeyType) {
-      throw new Error("Cadastre sua chave Pix em Configurações antes de marcar como enviado.");
-    }
-
-    const valorRepasse = valorRepasseCentavos(author.plano, order.valorCentavos, order.freteCentavos ?? 0);
-    const transferencia = await criarTransferenciaPix({
-      valueCentavos: valorRepasse,
-      pixKey: author.pixKey,
-      pixKeyType: author.pixKeyType,
-      description: `Repasse - Pedido ${order.id.slice(-6)}`,
-      externalReference: order.id,
-    });
-
-    if (!transferencia) {
-      await prisma.order.update({
-        where: { id },
-        data: { repasseStatus: "erro", repasseErro: "Falha ao criar transferência na Asaas." },
-      });
-      throw new Error("Não foi possível processar o repasse automático. Tente novamente em instantes ou contate o suporte.");
-    }
+  if (status === "Enviado" && order.status !== "Enviado") {
+    const rawToken = crypto.randomBytes(32).toString("hex");
+    const tokenHash = crypto.createHash("sha256").update(rawToken).digest("hex");
 
     await prisma.order.update({
       where: { id },
-      data: { status, repasseStatus: "transferido", repasseAsaasTransferId: transferencia.id, repasseErro: null },
+      data: { status, enviadoEm: new Date(), confirmacaoTokenHash: tokenHash },
     });
+
+    if (order.compradorEmail) {
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://autoresdobrasil.com.br";
+      sendConfirmacaoRecebimentoEmail(order.compradorEmail, {
+        livro: order.livro,
+        autorNome: author.nome,
+        confirmarUrl: `${siteUrl}/pedido/confirmar?token=${rawToken}`,
+      }).catch((err) => console.error("[setOrderStatus] Falha ao enviar e-mail de confirmação ao comprador:", err));
+    }
+
     revalidatePath("/painel");
     return;
   }

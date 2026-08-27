@@ -200,6 +200,39 @@ export async function sendNewSaleEmail(
   });
 }
 
+export async function sendConfirmacaoRecebimentoEmail(
+  to: string,
+  data: { livro: string; autorNome: string; confirmarUrl: string }
+) {
+  await resend.emails.send({
+    from: EMAIL_FROM,
+    to,
+    subject: "Seu pedido foi enviado! Confirme o recebimento",
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 560px; margin: 0 auto; color: #262626;">
+        <h1 style="color: #002776; font-size: 22px;">Seu pedido foi enviado! 📦</h1>
+        <p style="font-size: 15px; line-height: 1.6;">
+          <b>${data.autorNome}</b> marcou seu pedido de <b>${data.livro}</b> como enviado.
+          Quando o livro chegar, clique no botão abaixo pra confirmar o recebimento —
+          isso libera o repasse do valor para o autor.
+        </p>
+        <p style="margin-top: 32px;">
+          <a href="${data.confirmarUrl}"
+             style="background:#009B3A;color:white;padding:12px 24px;border-radius:4px;text-decoration:none;font-weight:bold;">
+            Recebi meu pedido
+          </a>
+        </p>
+        <p style="font-size: 13px; color: #666; margin-top: 32px;">
+          Se você não confirmar, liberamos automaticamente em até 7 dias.
+        </p>
+        <p style="font-size: 13px; color: #666; margin-top: 16px;">
+          Coletivo de escritores valorizando histórias, conectando pessoas.
+        </p>
+      </div>
+    `,
+  });
+}
+
 export async function sendContactFormEmail(data: { nome: string; email: string; assunto: string; mensagem: string }) {
   await resend.emails.send({
     from: EMAIL_FROM,
