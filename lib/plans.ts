@@ -77,3 +77,21 @@ export function valorCicloCentavos(plano: { valorMensalCentavos: number; valorMe
   if (ciclo === "semestral") return Math.round(plano.valorMensalCentavos * meses * 0.9);
   return plano.valorMensalCentavos;
 }
+
+// Desconto de fidelidade no upgrade de plano: quanto mais cedo o autor trocar
+// de plano (menos tempo no plano atual), maior o desconto permanente no novo.
+const DESCONTO_FIDELIDADE_TIERS = [
+  { meses: 3, percentual: 50 },
+  { meses: 6, percentual: 35 },
+  { meses: 9, percentual: 20 },
+];
+const DESCONTO_FIDELIDADE_PADRAO = 10;
+
+export function descontoFidelidade(planoIniciadoEm: Date | null): number {
+  if (!planoIniciadoEm) return 0;
+  const meses = (Date.now() - planoIniciadoEm.getTime()) / (1000 * 60 * 60 * 24 * 30.44);
+  for (const tier of DESCONTO_FIDELIDADE_TIERS) {
+    if (meses < tier.meses) return tier.percentual;
+  }
+  return DESCONTO_FIDELIDADE_PADRAO;
+}

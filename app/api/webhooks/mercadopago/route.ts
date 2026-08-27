@@ -47,9 +47,14 @@ export async function POST(request: NextRequest) {
 
   if (preapproval.status === "authorized") {
     const plano = PLANOS_PAGOS[planoSlug];
+    const novaTransicao = author.mpSubscriptionStatus !== "authorized";
     await prisma.author.update({
       where: { id: authorId },
-      data: { plano: plano?.nome ?? author.plano, mpSubscriptionStatus: "authorized" },
+      data: {
+        plano: plano?.nome ?? author.plano,
+        mpSubscriptionStatus: "authorized",
+        ...(novaTransicao ? { planoIniciadoEm: new Date() } : {}),
+      },
     });
   } else if (preapproval.status === "paused" || preapproval.status === "cancelled") {
     await prisma.author.update({

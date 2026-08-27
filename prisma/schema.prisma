@@ -37,10 +37,11 @@ model Author {
   enderecoUf          String?
 
   anoEntrada         Int
-  plano              String  @default("Iniciante")
+  plano              String    @default("Iniciante")
   planoCiclo         String?
   planoValorCentavos Int?
-  status             String  @default("ativo")
+  planoIniciadoEm    DateTime?
+  status             String    @default("ativo")
 
   mpPreapprovalId      String?
   mpSubscriptionStatus String?

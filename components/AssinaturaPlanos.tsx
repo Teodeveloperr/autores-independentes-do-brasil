@@ -3,7 +3,7 @@
 import { useActionState, useState } from "react";
 import Link from "next/link";
 import { iniciarAssinatura, type AssinarState } from "@/app/assinatura/actions";
-import { PLANOS_PAGOS, CICLO_MESES, valorCicloCentavos, type CicloAssinatura } from "@/lib/plans";
+import { PLANOS_PAGOS, CICLO_MESES, valorCicloCentavos, PLANO_RANK, type CicloAssinatura } from "@/lib/plans";
 
 function brl(centavos: number) {
   return "R$ " + (centavos / 100).toFixed(2).replace(".", ",");
@@ -22,6 +22,7 @@ function PlanoPagoCard({
   recursos,
   isLoggedIn,
   planoAtual,
+  descontoFidelidadePct,
 }: {
   slug: "essencial" | "premium";
   ciclo: CicloAssinatura;
@@ -29,13 +30,17 @@ function PlanoPagoCard({
   recursos: string[];
   isLoggedIn: boolean;
   planoAtual: string;
+  descontoFidelidadePct: number;
 }) {
   const [state, formAction, pending] = useActionState<AssinarState, FormData>(iniciarAssinatura, undefined);
   const plano = PLANOS_PAGOS[slug];
   const meses = CICLO_MESES[ciclo];
   const totalCiclo = valorCicloCentavos(plano, ciclo);
-  const porMes = Math.round(totalCiclo / meses);
   const jaAssinante = planoAtual === plano.nome;
+  const ehUpgrade = planoAtual !== "Iniciante" && !jaAssinante && (PLANO_RANK[plano.nome] ?? 0) > (PLANO_RANK[planoAtual] ?? 0);
+  const temDesconto = ehUpgrade && descontoFidelidadePct > 0;
+  const totalCicloComDesconto = temDesconto ? Math.round(totalCiclo * (1 - descontoFidelidadePct / 100)) : totalCiclo;
+  const porMes = Math.round(totalCicloComDesconto / meses);
 
   return (
     <div
@@ -58,12 +63,20 @@ function PlanoPagoCard({
       )}
       <div>
         <div style={{ fontWeight: 700, fontSize: "18px", marginBottom: "8px" }}>{plano.nome}</div>
+        {temDesconto && (
+          <div style={{ display: "flex", gap: "8px", alignItems: "center", marginBottom: "4px" }}>
+            <span style={{ fontSize: "14px", color: "#999", textDecoration: "line-through" }}>{brl(Math.round(totalCiclo / meses))}</span>
+            <span style={{ fontSize: "11px", fontWeight: 700, color: "white", background: "#C0392B", padding: "1px 6px", borderRadius: "10px" }}>
+              🎉 Fidelidade: -{descontoFidelidadePct}%
+            </span>
+          </div>
+        )}
         <div style={{ fontSize: "36px", fontWeight: 700, color: "#002776" }}>
           {brl(porMes)}
           <span style={{ fontSize: "14px", fontWeight: 500, color: "#666" }}>/mês</span>
         </div>
         <p style={{ fontSize: "13px", color: "#666", marginTop: "8px" }}>
-          {ciclo === "mensal" ? "Cobrado mensalmente" : `Cobrado a cada ${meses} meses: ${brl(totalCiclo)}`}
+          {ciclo === "mensal" ? "Cobrado mensalmente" : `Cobrado a cada ${meses} meses: ${brl(totalCicloComDesconto)}`}
         </p>
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: "12px", fontSize: "14px", flex: 1 }}>
@@ -106,7 +119,17 @@ function PlanoPagoCard({
   );
 }
 
-export default function AssinaturaPlanos({ isLoggedIn, planoAtual, cta }: { isLoggedIn: boolean; planoAtual: string; cta: string }) {
+export default function AssinaturaPlanos({
+  isLoggedIn,
+  planoAtual,
+  descontoFidelidadePct,
+  cta,
+}: {
+  isLoggedIn: boolean;
+  planoAtual: string;
+  descontoFidelidadePct: number;
+  cta: string;
+}) {
   const [ciclo, setCiclo] = useState<CicloAssinatura>("mensal");
 
   return (
@@ -163,6 +186,7 @@ export default function AssinaturaPlanos({ isLoggedIn, planoAtual, cta }: { isLo
           destaque
           isLoggedIn={isLoggedIn}
           planoAtual={planoAtual}
+          descontoFidelidadePct={descontoFidelidadePct}
           recursos={[
             "Perfil público completo",
             "Portfólio cultural em PDF completo",
@@ -179,6 +203,7 @@ export default function AssinaturaPlanos({ isLoggedIn, planoAtual, cta }: { isLo
           ciclo={ciclo}
           isLoggedIn={isLoggedIn}
           planoAtual={planoAtual}
+          descontoFidelidadePct={descontoFidelidadePct}
           recursos={[
             "Tudo do Autor Essencial",
             "Comissão reduzida (10%)",
