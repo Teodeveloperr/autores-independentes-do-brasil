@@ -193,36 +193,29 @@ export default function PerfilTabs({
           <p style={{ fontSize: "14px", color: "#666" }}>Este(a) autor(a) ainda não tem eventos agendados.</p>
         ))}
 
-      {tab === "avaliacoes" &&
-        (!podeExtras ? (
-          isOwner ? (
-            <UpgradeNotice recurso="avaliações" />
+      {tab === "avaliacoes" && (
+        <>
+          {!isOwner && <AvaliacaoForm authorId={authorId} />}
+          {avaliacoes.length > 0 ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+              {avaliacoes.map((rv) => (
+                <div key={rv.id} style={{ borderBottom: "1px solid #E0E0E0", paddingBottom: "16px" }}>
+                  <div style={{ display: "flex", gap: "12px", alignItems: "center", marginBottom: "6px" }}>
+                    <div style={{ width: "36px", height: "36px", background: "#E0E0E0", borderRadius: "50%" }} />
+                    <div>
+                      <div style={{ fontWeight: 600, fontSize: "13px" }}>{rv.nome}</div>
+                      <div style={{ fontSize: "12px", color: "#FFB800" }}>{"★".repeat(rv.estrelas)}{"☆".repeat(5 - rv.estrelas)}</div>
+                    </div>
+                  </div>
+                  <p style={{ fontSize: "13px", color: "#444", lineHeight: 1.6 }}>{rv.texto}</p>
+                </div>
+              ))}
+            </div>
           ) : (
             <p style={{ fontSize: "14px", color: "#666" }}>Este(a) autor(a) ainda não recebeu avaliações.</p>
-          )
-        ) : (
-          <>
-            {!isOwner && <AvaliacaoForm authorId={authorId} />}
-            {avaliacoes.length > 0 ? (
-              <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-                {avaliacoes.map((rv) => (
-                  <div key={rv.id} style={{ borderBottom: "1px solid #E0E0E0", paddingBottom: "16px" }}>
-                    <div style={{ display: "flex", gap: "12px", alignItems: "center", marginBottom: "6px" }}>
-                      <div style={{ width: "36px", height: "36px", background: "#E0E0E0", borderRadius: "50%" }} />
-                      <div>
-                        <div style={{ fontWeight: 600, fontSize: "13px" }}>{rv.nome}</div>
-                        <div style={{ fontSize: "12px", color: "#FFB800" }}>{"★".repeat(rv.estrelas)}{"☆".repeat(5 - rv.estrelas)}</div>
-                      </div>
-                    </div>
-                    <p style={{ fontSize: "13px", color: "#444", lineHeight: 1.6 }}>{rv.texto}</p>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p style={{ fontSize: "14px", color: "#666" }}>Este(a) autor(a) ainda não recebeu avaliações.</p>
-            )}
-          </>
-        ))}
+          )}
+        </>
+      )}
 
       {galeriaIndex !== null && (
         <Lightbox
