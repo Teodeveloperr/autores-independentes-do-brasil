@@ -15,7 +15,7 @@ export default async function AdminPage() {
     return <AdminLoginGate />;
   }
 
-  const [eventos, oportunidades, fotos, autores, artigos, avaliacoes] = await Promise.all([
+  const [eventos, oportunidades, fotos, autores, artigos, avaliacoes, pedidos] = await Promise.all([
     prisma.collectiveEvent.findMany({ orderBy: { createdAt: "desc" } }),
     prisma.opportunity.findMany({ orderBy: { prazoFinal: "asc" } }),
     prisma.collectiveGalleryPhoto.findMany({ orderBy: { createdAt: "desc" } }),
@@ -25,6 +25,7 @@ export default async function AdminPage() {
     }),
     prisma.article.findMany({ orderBy: { createdAt: "desc" } }),
     prisma.review.findMany({ orderBy: { createdAt: "desc" }, include: { author: { select: { nome: true } } } }),
+    prisma.order.findMany({ orderBy: { createdAt: "desc" }, include: { author: { select: { nome: true } } } }),
   ]);
 
   return (
@@ -35,6 +36,7 @@ export default async function AdminPage() {
       autores={autores}
       artigos={artigos}
       avaliacoes={avaliacoes}
+      pedidos={pedidos}
       totpEnabled={admin.totpEnabled}
     />
   );
