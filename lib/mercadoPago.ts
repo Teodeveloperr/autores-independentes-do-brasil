@@ -21,6 +21,7 @@ export type CriarAssinaturaInput = {
   cicloMeses: number;
   backUrl: string;
   notificationUrl: string;
+  freeTrialDias?: number;
 };
 
 export type AssinaturaCriada = { id: string; initPoint: string };
@@ -47,6 +48,9 @@ export async function criarAssinatura(input: CriarAssinaturaInput): Promise<Assi
           frequency_type: "months",
           transaction_amount: input.valorCentavos / 100,
           currency_id: "BRL",
+          ...(input.freeTrialDias
+            ? { free_trial: { frequency: input.freeTrialDias, frequency_type: "days" } }
+            : {}),
         },
         status: "pending",
       }),
@@ -69,6 +73,7 @@ export type AssinaturaMp = {
   id: string;
   status: string;
   externalReference: string | null;
+  nextPaymentDate: string | null;
 };
 
 export async function buscarAssinatura(preapprovalId: string): Promise<AssinaturaMp | null> {
@@ -83,8 +88,8 @@ export async function buscarAssinatura(preapprovalId: string): Promise<Assinatur
       console.error("[mercadopago] Falha ao buscar assinatura:", res.status, await res.text());
       return null;
     }
-    const data = (await res.json()) as { id: string; status: string; external_reference: string | null };
-    return { id: data.id, status: data.status, externalReference: data.external_reference };
+    const data = (await res.json()) as { id: string; status: string; external_reference: string | null; next_payment_date: string | null };
+    return { id: data.id, status: data.status, externalReference: data.external_reference, nextPaymentDate: data.next_payment_date };
   } catch (err) {
     console.error("[mercadopago] Falha ao buscar assinatura:", err);
     return null;

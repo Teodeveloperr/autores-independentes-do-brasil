@@ -100,6 +100,11 @@ function PlanoPagoCard({
           >
             {pending ? "Redirecionando..." : `Assinar ${plano.nome.replace("Autor ", "")}`}
           </button>
+          {planoAtual !== "Iniciante" && (
+            <p style={{ fontSize: "11px", color: "#999", marginTop: "8px", textAlign: "center" }}>
+              Você não será cobrado agora — seus dias restantes do plano atual serão aproveitados antes da próxima cobrança.
+            </p>
+          )}
         </form>
       )}
     </div>
