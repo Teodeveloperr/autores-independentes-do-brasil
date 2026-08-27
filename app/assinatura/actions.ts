@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { requireAuthor } from "@/lib/auth";
-import { criarAssinatura, cancelarAssinaturaMp, buscarAssinatura } from "@/lib/mercadoPago";
+import { criarAssinatura, cancelarAssinaturaMp } from "@/lib/mercadoPago";
 import { PLANOS_PAGOS, CICLO_MESES, valorCicloCentavos, type PlanoPagoSlug, type CicloAssinatura } from "@/lib/plans";
 import { checkRateLimit } from "@/lib/rateLimit";
 
@@ -25,14 +25,7 @@ export async function iniciarAssinatura(_prev: AssinarState, formData: FormData)
     return { error: "Plano ou ciclo inválido." };
   }
 
-  let diasRestantes = 0;
-
   if (author.mpPreapprovalId && author.mpSubscriptionStatus === "authorized") {
-    const assinaturaAtual = await buscarAssinatura(author.mpPreapprovalId);
-    if (assinaturaAtual?.nextPaymentDate) {
-      const diffMs = new Date(assinaturaAtual.nextPaymentDate).getTime() - Date.now();
-      diasRestantes = Math.min(366, Math.max(0, Math.ceil(diffMs / 86_400_000)));
-    }
     await cancelarAssinaturaMp(author.mpPreapprovalId);
   }
 
@@ -48,7 +41,6 @@ export async function iniciarAssinatura(_prev: AssinarState, formData: FormData)
     cicloMeses: CICLO_MESES[ciclo],
     backUrl: `${siteUrl}/painel?assinatura=pendente`,
     notificationUrl: `${siteUrl}/api/webhooks/mercadopago`,
-    freeTrialDias: diasRestantes,
   });
 
   if (!assinatura) {
