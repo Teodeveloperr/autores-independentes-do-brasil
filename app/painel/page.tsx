@@ -38,6 +38,7 @@ export default async function PainelPage({ searchParams }: { searchParams: Promi
       author={author}
       temSenha={temSenha}
       assinaturaPendente={assinatura === "pendente"}
+      assinaturaErro={assinatura === "erro"}
       mercadoPagoStatus={mercadopago}
       maxVisualizacoesGlobal={visualizacoesAgg._max.visualizacoes ?? 0}
     />

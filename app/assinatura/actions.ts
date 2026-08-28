@@ -3,7 +3,8 @@
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { requireAuthor } from "@/lib/auth";
-import { criarAssinatura, cancelarAssinaturaMp } from "@/lib/mercadoPago";
+import { cancelarAssinaturaMp } from "@/lib/mercadoPago";
+import { criarAssinaturaMp } from "@/lib/assinatura";
 import { PLANOS_PAGOS, CICLO_MESES, valorCicloCentavos, descontoFidelidade, PLANO_RANK, type PlanoPagoSlug, type CicloAssinatura } from "@/lib/plans";
 import { checkRateLimit } from "@/lib/rateLimit";
 
@@ -35,32 +36,22 @@ export async function iniciarAssinatura(_prev: AssinarState, formData: FormData)
   const desconto = ehUpgrade ? descontoFidelidade(author.planoIniciadoEm) : 0;
   const valorCentavos = Math.round(valorCicloCentavos(plano, ciclo) * (1 - desconto / 100));
 
-  const assinatura = await criarAssinatura({
-    authorId: author.id,
-    authorEmail: author.email,
-    planoSlug,
-    planoNome: plano.nome,
-    valorCentavos,
-    cicloMeses: CICLO_MESES[ciclo],
-    backUrl: `${siteUrl}/painel?assinatura=pendente`,
-    notificationUrl: `${siteUrl}/api/webhooks/mercadopago`,
-  });
-
-  if (!assinatura) {
+  let initPoint: string;
+  try {
+    initPoint = await criarAssinaturaMp({
+      authorId: author.id,
+      authorEmail: author.email,
+      planoSlug,
+      planoNome: plano.nome,
+      ciclo,
+      valorCentavos,
+      backUrl: `${siteUrl}/painel?assinatura=pendente`,
+    });
+  } catch {
     return { error: "Não foi possível iniciar a assinatura no Mercado Pago. Tente novamente em instantes." };
   }
 
-  await prisma.author.update({
-    where: { id: author.id },
-    data: {
-      mpPreapprovalId: assinatura.id,
-      mpSubscriptionStatus: "pending",
-      planoCiclo: ciclo,
-      planoValorCentavos: valorCentavos,
-    },
-  });
-
-  redirect(assinatura.initPoint);
+  redirect(initPoint);
 }
 
 export async function cancelarAssinatura() {

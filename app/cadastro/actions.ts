@@ -7,6 +7,8 @@ import { createAuthorSession } from "@/lib/session";
 import { sendWelcomeEmail } from "@/lib/email";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 import { validarSenha } from "@/lib/password";
+import { criarAssinaturaMp } from "@/lib/assinatura";
+import { PLANOS_PAGOS, valorCicloCentavos, type PlanoPagoSlug, type CicloAssinatura } from "@/lib/plans";
 
 export type Step1Data = {
   nome: string;
@@ -50,25 +52,8 @@ export async function validateStep1(formData: FormData): Promise<Step1Result> {
   return { ok: true, data: { nome, email, senha, generos, cidade, bio } };
 }
 
-export type PlanId = "free" | "essencial" | "premium";
-export type Cycle = "mensal" | "semestral" | "anual";
-
-const PLANS: Record<PlanId, { nome: string; monthly: number }> = {
-  free: { nome: "Iniciante", monthly: 0 },
-  essencial: { nome: "Autor Essencial", monthly: 2990 },
-  premium: { nome: "Autor Premium", monthly: 4990 },
-};
-
-function priceForCycle(monthlyCentavos: number, cycle: Cycle) {
-  if (monthlyCentavos === 0) return 0;
-  if (cycle === "semestral") return Math.round(monthlyCentavos * 6 * 0.9);
-  if (cycle === "anual") return Math.round(monthlyCentavos * 12 * 0.8);
-  return monthlyCentavos;
-}
-
-function cycleLabel(cycle: Cycle) {
-  return cycle === "semestral" ? "Semestral" : cycle === "anual" ? "Anual" : "Mensal";
-}
+export type PlanId = "free" | PlanoPagoSlug;
+export type Cycle = CicloAssinatura;
 
 export async function createAccount(step1: Step1Data, planId: PlanId, cycle: Cycle) {
   const ip = await getClientIp();
@@ -88,11 +73,9 @@ export async function createAccount(step1: Step1Data, planId: PlanId, cycle: Cyc
     throw new Error(erroSenha);
   }
 
-  // Cadastro sempre força o plano Iniciante — upgrade é feito depois em /assinatura,
-  // independentemente do que o cliente enviar aqui.
-  void planId;
-  const plan = PLANS.free;
-  const precoCentavos = priceForCycle(plan.monthly, cycle);
+  // A conta é sempre criada como Iniciante — se um plano pago foi escolhido, a assinatura
+  // no Mercado Pago é iniciada logo em seguida, e o plano só vira Essencial/Premium de
+  // verdade quando o webhook confirmar o pagamento (mesmo funcionamento do upgrade em /assinatura).
   const senhaHash = await bcrypt.hash(step1.senha, 10);
 
   const author = await prisma.author.create({
@@ -106,9 +89,7 @@ export async function createAccount(step1: Step1Data, planId: PlanId, cycle: Cyc
         step1.bio ||
         `Autor(a) independente do coletivo Autores Independentes do Brasil, de ${step1.cidade}.`,
       anoEntrada: new Date().getFullYear(),
-      plano: plan.nome,
-      planoCiclo: cycleLabel(cycle),
-      planoValorCentavos: plan.monthly === 0 ? null : precoCentavos,
+      plano: "Iniciante",
     },
   });
 
@@ -120,5 +101,28 @@ export async function createAccount(step1: Step1Data, planId: PlanId, cycle: Cyc
   }
 
   await createAuthorSession(author.id);
-  redirect("/painel");
+
+  if (planId === "free") {
+    redirect("/painel");
+  }
+
+  const plano = PLANOS_PAGOS[planId];
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://autoresdobrasil.com.br";
+
+  let initPoint: string;
+  try {
+    initPoint = await criarAssinaturaMp({
+      authorId: author.id,
+      authorEmail: author.email,
+      planoSlug: planId,
+      planoNome: plano.nome,
+      ciclo: cycle,
+      valorCentavos: valorCicloCentavos(plano, cycle),
+      backUrl: `${siteUrl}/painel?assinatura=pendente`,
+    });
+  } catch {
+    redirect("/painel?assinatura=erro");
+  }
+
+  redirect(initPoint);
 }

@@ -36,12 +36,14 @@ export default function PainelApp({
   author,
   temSenha,
   assinaturaPendente,
+  assinaturaErro,
   mercadoPagoStatus,
   maxVisualizacoesGlobal,
 }: {
   author: AuthorWithRelations;
   temSenha: boolean;
   assinaturaPendente?: boolean;
+  assinaturaErro?: boolean;
   mercadoPagoStatus?: string;
   maxVisualizacoesGlobal: number;
 }) {
@@ -132,6 +134,11 @@ export default function PainelApp({
           {assinaturaPendente && (
             <div style={{ background: "#FFF7D1", color: "#8A6D00", padding: "14px 18px", borderRadius: "8px", marginBottom: "20px", fontSize: "13px" }}>
               ⏳ Estamos confirmando o pagamento da sua assinatura com o Mercado Pago. Isso pode levar alguns instantes — atualize a página em breve.
+            </div>
+          )}
+          {assinaturaErro && (
+            <div style={{ background: "#FDEDEC", color: "#C0392B", padding: "14px 18px", borderRadius: "8px", marginBottom: "20px", fontSize: "13px" }}>
+              ❌ Não foi possível iniciar sua assinatura. Sua conta foi criada normalmente — você pode tentar assinar um plano pago em Planos e Assinaturas.
             </div>
           )}
           {mercadoPagoStatus === "conectado" && (

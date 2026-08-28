@@ -16,8 +16,14 @@ import { GENEROS } from "@/lib/genres";
 
 const PLANS: { id: PlanId; nome: string; desc: string; monthly: number; badge: string; disponivel: boolean }[] = [
   { id: "free", nome: "Iniciante", desc: "Para começar sua jornada no coletivo", monthly: 0, badge: "", disponivel: true },
-  { id: "essencial", nome: "Autor Essencial", desc: "Tudo que você precisa para vender e divulgar", monthly: 2990, badge: "EM BREVE", disponivel: false },
-  { id: "premium", nome: "Autor Premium", desc: "Máxima visibilidade para suas obras", monthly: 4990, badge: "EM BREVE", disponivel: false },
+  { id: "essencial", nome: "Autor Essencial", desc: "Tudo que você precisa para vender e divulgar", monthly: 2990, badge: "", disponivel: true },
+  { id: "premium", nome: "Autor Premium", desc: "Máxima visibilidade para suas obras", monthly: 4990, badge: "", disponivel: true },
+];
+
+const CICLOS: { id: Cycle; label: string }[] = [
+  { id: "mensal", label: "Mensal" },
+  { id: "semestral", label: "Semestral (-10%)" },
+  { id: "anual", label: "Anual (menor preço)" },
 ];
 
 function brl(centavos: number) {
@@ -46,8 +52,8 @@ const labelStyle: React.CSSProperties = { display: "block", fontSize: "14px", fo
 
 export default function CadastroWizard() {
   const [step, setStep] = useState<1 | 2 | 3>(1);
-  const cycle: Cycle = "mensal";
-  const [plan] = useState<PlanId>("free");
+  const [cycle, setCycle] = useState<Cycle>("mensal");
+  const [plan, setPlan] = useState<PlanId>("free");
   const [step1Data, setStep1Data] = useState<Step1Data | null>(null);
   const [step1Error, setStep1Error] = useState("");
   const [finishError, setFinishError] = useState("");
@@ -220,8 +226,30 @@ export default function CadastroWizard() {
         <div>
           <h2 style={{ fontSize: "26px", fontWeight: 700, marginBottom: "6px" }}>Escolha seu plano</h2>
           <p style={{ fontSize: "14px", color: "#666", marginBottom: "20px" }}>
-            Por enquanto, apenas o plano Iniciante está disponível para cadastro. Os planos pagos chegam em breve.
+            Comece grátis no Iniciante ou já escolha um plano pago — você pode trocar quando quiser depois.
           </p>
+          {plan !== "free" && (
+            <div style={{ display: "flex", gap: "8px", marginBottom: "20px" }}>
+              {CICLOS.map((c) => (
+                <button
+                  key={c.id}
+                  type="button"
+                  onClick={() => setCycle(c.id)}
+                  style={{
+                    background: cycle === c.id ? "#009B3A" : "white",
+                    color: cycle === c.id ? "white" : "#262626",
+                    border: cycle === c.id ? "none" : "1px solid #DDD",
+                    padding: "8px 16px",
+                    borderRadius: "20px",
+                    fontSize: "13px",
+                    fontWeight: 700,
+                  }}
+                >
+                  {c.label}
+                </button>
+              ))}
+            </div>
+          )}
           <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
             {PLANS.map((p) => {
               const pr = priceFor(p.monthly, cycle);
@@ -229,7 +257,9 @@ export default function CadastroWizard() {
               return (
                 <button
                   key={p.id}
+                  type="button"
                   disabled={!p.disponivel}
+                  onClick={() => p.disponivel && setPlan(p.id)}
                   style={{
                     display: "flex",
                     justifyContent: "space-between",
@@ -295,7 +325,11 @@ export default function CadastroWizard() {
           </div>
 
           <div style={{ background: "#E9F5EE", border: "1px solid #BFE3CE", borderRadius: "8px", padding: "20px", textAlign: "center", fontSize: "14px", marginBottom: "24px" }}>
-            🎉 O plano <strong>Iniciante</strong> não tem cobrança. Você pode fazer upgrade assim que os planos pagos estiverem disponíveis.
+            {plan === "free" ? (
+              <>🎉 O plano <strong>Iniciante</strong> não tem cobrança. Você pode fazer upgrade quando quiser depois.</>
+            ) : (
+              <>🔒 Sua conta será criada agora, e em seguida você será redirecionado(a) pro Mercado Pago pra concluir o pagamento com segurança.</>
+            )}
           </div>
 
           {finishError && (
@@ -308,7 +342,7 @@ export default function CadastroWizard() {
               ← Voltar
             </button>
             <button onClick={finish} disabled={pending} style={{ flex: 1, background: "#009B3A", color: "white", padding: "14px", fontWeight: 700, borderRadius: "6px", fontSize: "15px", opacity: pending ? 0.7 : 1 }}>
-              {pending ? "Finalizando..." : "Concluir cadastro"}
+              {pending ? "Finalizando..." : plan === "free" ? "Concluir cadastro" : "Ir para pagamento"}
             </button>
           </div>
 
