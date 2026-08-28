@@ -13,11 +13,12 @@ import GoogleIcon from "./GoogleIcon";
 import PasswordInput from "./PasswordInput";
 import PasswordStrengthChecklist from "./PasswordStrengthChecklist";
 import { GENEROS } from "@/lib/genres";
+import { PLANOS_PAGOS, valorCicloCentavos } from "@/lib/plans";
 
-const PLANS: { id: PlanId; nome: string; desc: string; monthly: number; badge: string; disponivel: boolean }[] = [
-  { id: "free", nome: "Iniciante", desc: "Para começar sua jornada no coletivo", monthly: 0, badge: "", disponivel: true },
-  { id: "essencial", nome: "Autor Essencial", desc: "Tudo que você precisa para vender e divulgar", monthly: 2990, badge: "", disponivel: true },
-  { id: "premium", nome: "Autor Premium", desc: "Máxima visibilidade para suas obras", monthly: 4990, badge: "", disponivel: true },
+const PLANS: { id: PlanId; nome: string; desc: string; badge: string; disponivel: boolean }[] = [
+  { id: "free", nome: "Iniciante", desc: "Para começar sua jornada no coletivo", badge: "", disponivel: true },
+  { id: "essencial", nome: "Autor Essencial", desc: "Tudo que você precisa para vender e divulgar", badge: "", disponivel: true },
+  { id: "premium", nome: "Autor Premium", desc: "Máxima visibilidade para suas obras", badge: "", disponivel: true },
 ];
 
 const CICLOS: { id: Cycle; label: string }[] = [
@@ -30,11 +31,11 @@ function brl(centavos: number) {
   return "R$ " + (centavos / 100).toFixed(2).replace(".", ",");
 }
 
-function priceFor(monthly: number, cycle: Cycle) {
-  if (monthly === 0) return { preco: brl(0), suffix: "/mês" };
-  if (cycle === "semestral") return { preco: brl(Math.round(monthly * 6 * 0.9)), suffix: "/semestre" };
-  if (cycle === "anual") return { preco: brl(Math.round(monthly * 12 * 0.8)), suffix: "/ano" };
-  return { preco: brl(monthly), suffix: "/mês" };
+function priceFor(id: PlanId, cycle: Cycle) {
+  if (id === "free") return { preco: brl(0), suffix: "/mês" };
+  const total = valorCicloCentavos(PLANOS_PAGOS[id], cycle);
+  const suffix = cycle === "anual" ? "/ano" : cycle === "semestral" ? "/semestre" : "/mês";
+  return { preco: brl(total), suffix };
 }
 
 function cycleLabel(cycle: Cycle) {
@@ -112,7 +113,7 @@ export default function CadastroWizard() {
   });
 
   const selPlan = PLANS.find((p) => p.id === plan)!;
-  const selPrice = priceFor(selPlan.monthly, cycle);
+  const selPrice = priceFor(selPlan.id, cycle);
 
   return (
     <div className="section-pad-md" style={{ flex: 1, background: "white", color: "#262626", padding: "40px 48px", borderRadius: "12px", maxWidth: "720px", width: "100%" }}>
@@ -252,7 +253,7 @@ export default function CadastroWizard() {
           )}
           <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
             {PLANS.map((p) => {
-              const pr = priceFor(p.monthly, cycle);
+              const pr = priceFor(p.id, cycle);
               const sel = plan === p.id;
               return (
                 <button
