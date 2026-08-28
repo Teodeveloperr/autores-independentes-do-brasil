@@ -82,6 +82,11 @@ export default function CadastroWizard() {
       try {
         await createAccount(step1Data, plan, cycle);
       } catch (e) {
+        // redirect() lança um erro especial (digest "NEXT_REDIRECT") pra navegar —
+        // não é um erro de verdade, só deixa o redirecionamento seguir normalmente.
+        if (typeof e === "object" && e !== null && "digest" in e && typeof e.digest === "string" && e.digest.startsWith("NEXT_REDIRECT")) {
+          return;
+        }
         setFinishError(e instanceof Error ? e.message : "Não foi possível concluir o cadastro.");
       }
     });
