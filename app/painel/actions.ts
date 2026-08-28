@@ -17,8 +17,7 @@ import { centavosFromInput, sanitizeExternalUrl } from "@/lib/format";
 import { validarSenha } from "@/lib/password";
 import { validarCpf } from "@/lib/cpf";
 import { podeUsarRecursosExtras, BIO_MAX_CARACTERES_INICIANTE, FOTOS_MAX_INICIANTE } from "@/lib/plans";
-import { sendConfirmacaoRecebimentoEmail } from "@/lib/email";
-import crypto from "node:crypto";
+import { enviarConfirmacaoRecebimento } from "@/lib/repasse";
 import { checkRateLimit } from "@/lib/rateLimit";
 import { desconectarMercadoPago as desconectarMercadoPagoLib } from "@/lib/mercadoPagoMarketplace";
 import {
@@ -255,23 +254,8 @@ export async function setOrderStatus(id: string, status: string) {
   }
 
   if (status === "Enviado" && order.status !== "Enviado") {
-    const rawToken = crypto.randomBytes(32).toString("hex");
-    const tokenHash = crypto.createHash("sha256").update(rawToken).digest("hex");
-
-    await prisma.order.update({
-      where: { id },
-      data: { status, enviadoEm: new Date(), confirmacaoTokenHash: tokenHash },
-    });
-
-    if (order.compradorEmail) {
-      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://autoresdobrasil.com.br";
-      sendConfirmacaoRecebimentoEmail(order.compradorEmail, {
-        livro: order.livro,
-        autorNome: author.nome,
-        confirmarUrl: `${siteUrl}/pedido/confirmar?token=${rawToken}`,
-      }).catch((err) => console.error("[setOrderStatus] Falha ao enviar e-mail de confirmação ao comprador:", err));
-    }
-
+    await prisma.order.update({ where: { id }, data: { status } });
+    await enviarConfirmacaoRecebimento(order, author);
     revalidatePath("/painel");
     return;
   }

@@ -103,9 +103,14 @@ export default function PedidosView({ author }: { author: AuthorWithRelations })
                 <option>Enviado</option>
                 {p.status === "Entregue" && <option>Entregue</option>}
               </select>
-              {p.status === "Enviado" && p.repasseStatus !== "transferido" && p.repasseStatus !== "erro" && (
+              {p.confirmacaoEnviadaEm && p.repasseStatus !== "transferido" && p.repasseStatus !== "erro" && (
                 <div style={{ fontSize: "11px", color: "#A87900", marginTop: "4px", maxWidth: "180px" }}>
                   ⏳ Aguardando confirmação do comprador (ou liberação em até 7 dias)
+                </div>
+              )}
+              {!p.confirmacaoEnviadaEm && p.status !== "Aguardando pagamento" && p.status !== "Entregue" && (
+                <div style={{ fontSize: "11px", color: "#999", marginTop: "4px", maxWidth: "180px" }}>
+                  Se não marcar como enviado, o comprador recebe um lembrete automático em até 3 dias após a compra.
                 </div>
               )}
               {p.repasseStatus === "transferido" && (

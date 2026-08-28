@@ -194,7 +194,7 @@ model Order {
   repasseAsaasTransferId String?
   repasseErro            String?
 
-  enviadoEm            DateTime?
+  confirmacaoEnviadaEm DateTime?
   confirmacaoTokenHash String?   @unique
   confirmadoEm         DateTime?
 
