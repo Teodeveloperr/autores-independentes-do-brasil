@@ -206,7 +206,6 @@ export async function criarAssinaturaAsaas(input: {
   cycle: CicloAssinaturaAsaas;
   valueCentavos: number;
   description: string;
-  successUrl: string;
 }): Promise<AssinaturaAsaasCriada | null> {
   const accessToken = getAccessToken();
   if (!accessToken) return null;
@@ -222,7 +221,6 @@ export async function criarAssinaturaAsaas(input: {
         nextDueDate: hoje(),
         cycle: input.cycle,
         description: input.description,
-        callback: { successUrl: input.successUrl, autoRedirect: true },
       }),
     });
     if (!res.ok) {
