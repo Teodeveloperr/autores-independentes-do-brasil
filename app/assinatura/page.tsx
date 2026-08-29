@@ -31,7 +31,7 @@ export default async function AssinaturaPage() {
           cta={cta}
         />
         <p style={{ textAlign: "center", fontSize: "13px", color: "rgba(255,255,255,0.7)", marginTop: "32px" }}>
-          Pagamento seguro via Mercado Pago • Cancele quando quiser • Sem taxa de adesão
+          Pagamento seguro • Cancele quando quiser • Sem taxa de adesão
         </p>
       </div>
       </section>

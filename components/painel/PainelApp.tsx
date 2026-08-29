@@ -133,7 +133,7 @@ export default function PainelApp({
         <div className="section-pad-md" style={{ padding: "28px 32px", flex: 1, minWidth: 0 }}>
           {assinaturaPendente && (
             <div style={{ background: "#FFF7D1", color: "#8A6D00", padding: "14px 18px", borderRadius: "8px", marginBottom: "20px", fontSize: "13px" }}>
-              ⏳ Estamos confirmando o pagamento da sua assinatura com o Mercado Pago. Isso pode levar alguns instantes — atualize a página em breve.
+              ⏳ Estamos confirmando o pagamento da sua assinatura. Isso pode levar alguns instantes — atualize a página em breve.
             </div>
           )}
           {assinaturaErro && (

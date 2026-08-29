@@ -111,11 +111,14 @@ export async function criarAssinaturaAsaasParaAutor(input: {
     throw new Error("Não foi possível validar seus dados na Asaas. Confira o CPF e tente novamente.");
   }
 
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://autoresdobrasil.com.br";
+
   const assinatura = await criarAssinaturaAsaas({
     customerId,
     cycle: CYCLE_POR_CICLO[input.ciclo],
     valueCentavos: input.valorCentavos,
     description: `Assinatura ${input.planoNome}`,
+    successUrl: `${siteUrl}/painel?assinatura=pendente`,
   });
 
   if (!assinatura || !assinatura.invoiceUrl) {
