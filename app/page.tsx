@@ -8,7 +8,7 @@ import ContactForm from "@/components/ContactForm";
 import PrecoComDesconto from "@/components/PrecoComDesconto";
 import { prisma } from "@/lib/db";
 import { initials } from "@/lib/format";
-import { PLANO_RANK } from "@/lib/plans";
+import { PLANO_RANK, temDestaque } from "@/lib/plans";
 
 export const dynamic = "force-dynamic";
 
@@ -34,9 +34,10 @@ export default async function HomePage() {
     }),
   ]);
 
-  // Autores/livros Premium aparecem primeiro (destaque do plano); dentro do mesmo plano, mais recentes primeiro.
-  const authors = [...authorsPool]
-    .sort((a, b) => (PLANO_RANK[b.plano] ?? 0) - (PLANO_RANK[a.plano] ?? 0) || b.createdAt.getTime() - a.createdAt.getTime())
+  // "Autores em destaque" é benefício exclusivo do plano Premium — Iniciante e Essencial não entram aqui.
+  const authors = authorsPool
+    .filter((a) => temDestaque(a.plano))
+    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
     .slice(0, 6);
   const livros = [...livrosPool]
     .sort((a, b) => (PLANO_RANK[b.author.plano] ?? 0) - (PLANO_RANK[a.author.plano] ?? 0) || b.createdAt.getTime() - a.createdAt.getTime())
@@ -157,6 +158,15 @@ export default async function HomePage() {
                 </Link>
               </div>
             ))}
+          </div>
+        ) : authorsPool.length > 0 ? (
+          <div style={{ background: "#F6F6F6", borderRadius: "8px", padding: "60px 40px", textAlign: "center" }}>
+            <p style={{ fontSize: "16px", color: "#666", marginBottom: "20px" }}>
+              Nenhum autor Premium em destaque no momento.
+            </p>
+            <Link href="/autores" style={{ display: "inline-block", background: "#002776", color: "white", padding: "12px 24px", fontWeight: 600, borderRadius: "4px", textDecoration: "none" }}>
+              Conheça todos os autores do coletivo →
+            </Link>
           </div>
         ) : (
           <div style={{ background: "#F6F6F6", borderRadius: "8px", padding: "60px 40px", textAlign: "center" }}>
