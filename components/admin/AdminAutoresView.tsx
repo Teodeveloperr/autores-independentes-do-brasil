@@ -3,7 +3,7 @@
 import { useActionState, useEffect, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { removeAuthor, suspendAuthor, reactivateAuthor, adminCreateAuthor, type CreateAuthorState } from "@/app/admin/actions";
+import { removeAuthor, suspendAuthor, reactivateAuthor, alterarPlanoAutor, adminCreateAuthor, type CreateAuthorState } from "@/app/admin/actions";
 import { initials } from "@/lib/format";
 import { TODOS_PLANOS } from "@/lib/plans";
 import type { AuthorWithCount } from "./types";
@@ -38,6 +38,13 @@ export default function AdminAutoresView({ autores }: { autores: AuthorWithCount
   function onReactivate(id: string) {
     startTransition(async () => {
       await reactivateAuthor(id);
+      router.refresh();
+    });
+  }
+
+  function onChangePlano(id: string, plano: string) {
+    startTransition(async () => {
+      await alterarPlanoAutor(id, plano);
       router.refresh();
     });
   }
@@ -118,7 +125,19 @@ export default function AdminAutoresView({ autores }: { autores: AuthorWithCount
                 <div style={{ fontSize: "12px", color: "#666" }}>{a.generos.join(", ")} • {a.cidade}</div>
               </div>
               <div style={{ fontSize: "12px", color: "#666", textAlign: "center", flexShrink: 0, width: "90px" }}>📚 {a._count.books} livros</div>
-              <div style={{ fontSize: "12px", fontWeight: 700, textAlign: "center", flexShrink: 0, width: "130px", color: "#009B3A" }}>{a.plano}</div>
+              <select
+                value={a.plano}
+                onChange={(e) => onChangePlano(a.id, e.target.value)}
+                disabled={pending}
+                title="Alterar plano manualmente"
+                style={{ fontSize: "12px", fontWeight: 700, textAlign: "center", flexShrink: 0, width: "150px", color: "#009B3A", border: "1px solid #DDD", borderRadius: "6px", padding: "6px 4px", background: "white" }}
+              >
+                {TODOS_PLANOS.map((p) => (
+                  <option key={p} value={p}>
+                    {p}
+                  </option>
+                ))}
+              </select>
               <Link href={`/perfil/${a.id}`} style={{ background: "white", border: "1px solid #DDD", borderRadius: "6px", padding: "8px 14px", fontSize: "12px", fontWeight: 600, color: "#002776", flexShrink: 0 }}>
                 Ver perfil
               </Link>

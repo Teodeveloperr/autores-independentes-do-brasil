@@ -338,6 +338,21 @@ export async function reactivateAuthor(id: string) {
   await setAuthorStatus(id, "ativo");
 }
 
+export async function alterarPlanoAutor(id: string, plano: string) {
+  await requireAdmin();
+
+  if (!TODOS_PLANOS.includes(plano)) {
+    throw new Error("Plano inválido.");
+  }
+
+  await prisma.author.update({ where: { id }, data: { plano } });
+  revalidatePath("/admin");
+  revalidatePath("/autores");
+  revalidatePath("/livros");
+  revalidatePath(`/perfil/${id}`);
+  revalidatePath("/");
+}
+
 export async function removeReview(id: string) {
   await requireAdmin();
 
