@@ -4,7 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { adminLogout } from "@/app/admin/actions";
-import type { AdminView, Article, AuthorWithCount, CollectiveEvent, CollectiveGalleryPhoto, Opportunity, ReviewWithAuthor, OrderWithAuthor } from "./types";
+import type { AdminView, Article, AuthorWithCount, CollectiveEvent, CollectiveGalleryPhoto, Opportunity, ReviewWithAuthor, OrderWithAuthor, OrderComReceita, SubscriptionPaymentRow } from "./types";
 import AdminAgendaView from "./AdminAgendaView";
 import AdminOportunidadesView from "./AdminOportunidadesView";
 import AdminGaleriaView from "./AdminGaleriaView";
@@ -12,6 +12,7 @@ import AdminAutoresView from "./AdminAutoresView";
 import AdminBlogView from "./AdminBlogView";
 import AdminAvaliacoesView from "./AdminAvaliacoesView";
 import AdminPedidosView from "./AdminPedidosView";
+import AdminReceitaView from "./AdminReceitaView";
 import AdminSegurancaView from "./AdminSegurancaView";
 
 const sidebarBtn = (active: boolean): React.CSSProperties => ({
@@ -36,6 +37,8 @@ export default function AdminApp({
   artigos,
   avaliacoes,
   pedidos,
+  pedidosReceita,
+  assinaturaPagamentos,
   totpEnabled,
 }: {
   eventos: CollectiveEvent[];
@@ -45,6 +48,8 @@ export default function AdminApp({
   artigos: Article[];
   avaliacoes: ReviewWithAuthor[];
   pedidos: OrderWithAuthor[];
+  pedidosReceita: OrderComReceita[];
+  assinaturaPagamentos: SubscriptionPaymentRow[];
   totpEnabled: boolean;
 }) {
   const [view, setView] = useState<AdminView>("dash");
@@ -67,6 +72,7 @@ export default function AdminApp({
         <button onClick={() => setView("autores")} style={sidebarBtn(view === "autores")}>✍️ Autores</button>
         <button onClick={() => setView("avaliacoes")} style={sidebarBtn(view === "avaliacoes")}>⭐ Avaliações</button>
         <button onClick={() => setView("pedidos")} style={sidebarBtn(view === "pedidos")}>📋 Pedidos</button>
+        <button onClick={() => setView("receita")} style={sidebarBtn(view === "receita")}>💰 Receita</button>
         <button onClick={() => setView("seguranca")} style={sidebarBtn(view === "seguranca")}>🔐 Segurança</button>
         <button
           onClick={() => adminLogout()}
@@ -172,6 +178,7 @@ export default function AdminApp({
           {view === "autores" && <AdminAutoresView autores={autores} />}
           {view === "avaliacoes" && <AdminAvaliacoesView avaliacoes={avaliacoes} />}
           {view === "pedidos" && <AdminPedidosView pedidos={pedidos} />}
+          {view === "receita" && <AdminReceitaView pedidos={pedidosReceita} assinaturaPagamentos={assinaturaPagamentos} />}
           {view === "seguranca" && <AdminSegurancaView totpEnabled={totpEnabled} />}
         </div>
       </main>

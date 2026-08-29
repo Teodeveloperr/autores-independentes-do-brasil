@@ -233,6 +233,38 @@ export async function sendConfirmacaoRecebimentoEmail(
   });
 }
 
+export async function sendNovaCobrancaAssinaturaEmail(
+  to: string,
+  data: { planoNome: string; valorCentavos: number; invoiceUrl: string; dueDate: string }
+) {
+  await resend.emails.send({
+    from: EMAIL_FROM,
+    to,
+    subject: `Nova cobrança da sua assinatura ${data.planoNome}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 560px; margin: 0 auto; color: #262626;">
+        <h1 style="color: #002776; font-size: 22px;">Nova cobrança disponível</h1>
+        <p style="font-size: 15px; line-height: 1.6;">
+          Chegou a hora de renovar sua assinatura <b>${data.planoNome}</b>: ${brl(data.valorCentavos)},
+          com vencimento em ${data.dueDate}. Pague pelo link abaixo pra manter seu plano ativo.
+        </p>
+        <p style="margin-top: 32px;">
+          <a href="${data.invoiceUrl}"
+             style="background:#009B3A;color:white;padding:12px 24px;border-radius:4px;text-decoration:none;font-weight:bold;">
+            Pagar assinatura
+          </a>
+        </p>
+        <p style="font-size: 13px; color: #666; margin-top: 32px;">
+          Se o pagamento não for feito até o vencimento, seu plano é rebaixado automaticamente para o Iniciante.
+        </p>
+        <p style="font-size: 13px; color: #666; margin-top: 16px;">
+          Coletivo de escritores valorizando histórias, conectando pessoas.
+        </p>
+      </div>
+    `,
+  });
+}
+
 export async function sendContactFormEmail(data: { nome: string; email: string; assunto: string; mensagem: string }) {
   await resend.emails.send({
     from: EMAIL_FROM,

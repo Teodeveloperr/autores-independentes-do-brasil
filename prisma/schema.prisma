@@ -51,6 +51,8 @@ model Author {
   asaasPixAutoAuthorizationId String? @unique
   asaasPixAutoStatus          String?
   planoPendente               String?
+  asaasSubscriptionId         String? @unique
+  asaasSubscriptionStatus     String?
 
   portfolioFormacao       String?
   portfolioPremios        String?
@@ -74,15 +76,16 @@ model Author {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  books            Book[]
-  eventos          AuthorEvent[]
-  fotos            AuthorPhoto[]
-  orders           Order[]
-  conversas        Conversation[]
-  avaliacoes       Review[]
-  resetTokens      PasswordResetToken[]
-  mercadoPagoToken AuthorMercadoPagoToken?
-  passkeys         AuthorPasskey[]
+  books                Book[]
+  eventos              AuthorEvent[]
+  fotos                AuthorPhoto[]
+  orders               Order[]
+  conversas            Conversation[]
+  avaliacoes           Review[]
+  resetTokens          PasswordResetToken[]
+  mercadoPagoToken     AuthorMercadoPagoToken?
+  passkeys             AuthorPasskey[]
+  assinaturaPagamentos SubscriptionPayment[]
 }
 
 model AuthorPasskey {
@@ -311,6 +314,18 @@ model RateLimitAttempt {
   createdAt DateTime @default(now())
 
   @@index([chave, createdAt])
+}
+
+model SubscriptionPayment {
+  id             String   @id @default(cuid())
+  authorId       String
+  author         Author   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  plano          String
+  valorCentavos  Int
+  asaasPaymentId String   @unique
+  createdAt      DateTime @default(now())
+
+  @@index([authorId])
 }
 
 model PasswordResetToken {

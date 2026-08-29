@@ -197,6 +197,94 @@ export async function cancelarAutorizacaoPixAutomatico(id: string): Promise<bool
   }
 }
 
+export type CicloAssinaturaAsaas = "MONTHLY" | "SEMIANNUALLY" | "YEARLY";
+
+export type AssinaturaAsaasCriada = { id: string; invoiceUrl: string };
+
+export async function criarAssinaturaAsaas(input: {
+  customerId: string;
+  cycle: CicloAssinaturaAsaas;
+  valueCentavos: number;
+  description: string;
+}): Promise<AssinaturaAsaasCriada | null> {
+  const accessToken = getAccessToken();
+  if (!accessToken) return null;
+
+  try {
+    const res = await fetch(`${getBaseUrl()}/subscriptions`, {
+      method: "POST",
+      headers: { access_token: accessToken, "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify({
+        customer: input.customerId,
+        billingType: "UNDEFINED",
+        value: input.valueCentavos / 100,
+        nextDueDate: hoje(),
+        cycle: input.cycle,
+        description: input.description,
+      }),
+    });
+    if (!res.ok) {
+      console.error("[asaas] Falha ao criar assinatura:", res.status, await res.text());
+      return null;
+    }
+    const data = (await res.json()) as { id: string };
+    const pagamentos = await fetch(`${getBaseUrl()}/payments?subscription=${data.id}`, {
+      headers: { access_token: accessToken, Accept: "application/json" },
+    });
+    let invoiceUrl = "";
+    if (pagamentos.ok) {
+      const pagData = (await pagamentos.json()) as { data: Array<{ invoiceUrl: string }> };
+      invoiceUrl = pagData.data?.[0]?.invoiceUrl ?? "";
+    }
+    return { id: data.id, invoiceUrl };
+  } catch (err) {
+    console.error("[asaas] Falha ao criar assinatura:", err);
+    return null;
+  }
+}
+
+export async function cancelarAssinaturaAsaas(id: string): Promise<boolean> {
+  const accessToken = getAccessToken();
+  if (!accessToken) return false;
+
+  try {
+    const res = await fetch(`${getBaseUrl()}/subscriptions/${id}`, {
+      method: "DELETE",
+      headers: { access_token: accessToken, Accept: "application/json" },
+    });
+    if (!res.ok) {
+      console.error("[asaas] Falha ao cancelar assinatura:", res.status, await res.text());
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error("[asaas] Falha ao cancelar assinatura:", err);
+    return false;
+  }
+}
+
+export type CobrancaAsaas = { id: string; subscription: string | null; valueCentavos: number; invoiceUrl: string; status: string };
+
+export async function buscarCobranca(id: string): Promise<CobrancaAsaas | null> {
+  const accessToken = getAccessToken();
+  if (!accessToken) return null;
+
+  try {
+    const res = await fetch(`${getBaseUrl()}/payments/${id}`, {
+      headers: { access_token: accessToken, Accept: "application/json" },
+    });
+    if (!res.ok) {
+      console.error("[asaas] Falha ao buscar cobrança:", res.status, await res.text());
+      return null;
+    }
+    const data = (await res.json()) as { id: string; subscription?: string | null; value: number; invoiceUrl: string; status: string };
+    return { id: data.id, subscription: data.subscription ?? null, valueCentavos: Math.round(data.value * 100), invoiceUrl: data.invoiceUrl, status: data.status };
+  } catch (err) {
+    console.error("[asaas] Falha ao buscar cobrança:", err);
+    return null;
+  }
+}
+
 export function verificarWebhookAsaas(token: string | null): boolean {
   const esperado = process.env.ASAAS_WEBHOOK_TOKEN;
   if (!esperado || !token) return false;

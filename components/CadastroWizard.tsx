@@ -14,6 +14,7 @@ import PasswordInput from "./PasswordInput";
 import PasswordStrengthChecklist from "./PasswordStrengthChecklist";
 import { GENEROS } from "@/lib/genres";
 import { PLANOS_PAGOS, valorCicloCentavos } from "@/lib/plans";
+import { validarCpf } from "@/lib/cpf";
 
 const PLANS: { id: PlanId; nome: string; desc: string; badge: string; disponivel: boolean }[] = [
   { id: "free", nome: "Iniciante", desc: "Para começar sua jornada no coletivo", badge: "", disponivel: true },
@@ -55,6 +56,7 @@ export default function CadastroWizard() {
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [cycle, setCycle] = useState<Cycle>("mensal");
   const [plan, setPlan] = useState<PlanId>("free");
+  const [cpf, setCpf] = useState("");
   const [step1Data, setStep1Data] = useState<Step1Data | null>(null);
   const [step1Error, setStep1Error] = useState("");
   const [finishError, setFinishError] = useState("");
@@ -77,10 +79,14 @@ export default function CadastroWizard() {
 
   function finish() {
     if (!step1Data) return;
+    if (plan !== "free" && !validarCpf(cpf)) {
+      setFinishError("CPF inválido.");
+      return;
+    }
     setFinishError("");
     startTransition(async () => {
       try {
-        await createAccount(step1Data, plan, cycle);
+        await createAccount(step1Data, plan, cycle, cpf);
       } catch (e) {
         // redirect() lança um erro especial (digest "NEXT_REDIRECT") pra navegar —
         // não é um erro de verdade, só deixa o redirecionamento seguir normalmente.
@@ -334,9 +340,23 @@ export default function CadastroWizard() {
             {plan === "free" ? (
               <>🎉 O plano <strong>Iniciante</strong> não tem cobrança. Você pode fazer upgrade quando quiser depois.</>
             ) : (
-              <>🔒 Sua conta será criada agora, e em seguida você será redirecionado(a) pro Mercado Pago pra concluir o pagamento com segurança.</>
+              <>🔒 Sua conta será criada agora, e em seguida você será redirecionado(a) pra concluir o pagamento com segurança.</>
             )}
           </div>
+
+          {plan !== "free" && (
+            <div style={{ marginBottom: "24px" }}>
+              <label style={labelStyle}>CPF</label>
+              <input
+                type="text"
+                required
+                placeholder="Seu CPF"
+                style={inputStyle}
+                value={cpf}
+                onChange={(e) => setCpf(e.target.value)}
+              />
+            </div>
+          )}
 
           {finishError && (
             <div style={{ color: "#C0392B", fontSize: "13px", background: "#FDEDEC", padding: "10px 14px", borderRadius: "6px", marginBottom: "16px" }}>

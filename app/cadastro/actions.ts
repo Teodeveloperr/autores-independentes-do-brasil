@@ -7,7 +7,8 @@ import { createAuthorSession } from "@/lib/session";
 import { sendWelcomeEmail } from "@/lib/email";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 import { validarSenha } from "@/lib/password";
-import { criarAssinaturaMp } from "@/lib/assinatura";
+import { validarCpf } from "@/lib/cpf";
+import { criarAssinaturaAsaasParaAutor } from "@/lib/assinatura";
 import { PLANOS_PAGOS, valorCicloCentavos, type PlanoPagoSlug, type CicloAssinatura } from "@/lib/plans";
 
 export type Step1Data = {
@@ -55,11 +56,15 @@ export async function validateStep1(formData: FormData): Promise<Step1Result> {
 export type PlanId = "free" | PlanoPagoSlug;
 export type Cycle = CicloAssinatura;
 
-export async function createAccount(step1: Step1Data, planId: PlanId, cycle: Cycle) {
+export async function createAccount(step1: Step1Data, planId: PlanId, cycle: Cycle, cpf: string) {
   const ip = await getClientIp();
   const permitido = await checkRateLimit(`cadastro:${ip}`, 5, 60);
   if (!permitido) {
     throw new Error("Muitas tentativas de cadastro a partir deste endereço. Aguarde um pouco e tente novamente.");
+  }
+
+  if (planId !== "free" && !validarCpf(cpf)) {
+    throw new Error("CPF inválido.");
   }
 
   // Revalida tudo no servidor — nunca confiar apenas na validação do passo 1 no cliente.
@@ -74,7 +79,7 @@ export async function createAccount(step1: Step1Data, planId: PlanId, cycle: Cyc
   }
 
   // A conta é sempre criada como Iniciante — se um plano pago foi escolhido, a assinatura
-  // no Mercado Pago é iniciada logo em seguida, e o plano só vira Essencial/Premium de
+  // na Asaas é iniciada logo em seguida, e o plano só vira Essencial/Premium de
   // verdade quando o webhook confirmar o pagamento (mesmo funcionamento do upgrade em /assinatura).
   const senhaHash = await bcrypt.hash(step1.senha, 10);
 
@@ -107,22 +112,21 @@ export async function createAccount(step1: Step1Data, planId: PlanId, cycle: Cyc
   }
 
   const plano = PLANOS_PAGOS[planId];
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://autoresdobrasil.com.br";
 
-  let initPoint: string;
+  let invoiceUrl: string;
   try {
-    initPoint = await criarAssinaturaMp({
+    invoiceUrl = await criarAssinaturaAsaasParaAutor({
       authorId: author.id,
       authorEmail: author.email,
-      planoSlug: planId,
+      authorNome: author.nome,
+      cpf,
       planoNome: plano.nome,
       ciclo: cycle,
       valorCentavos: valorCicloCentavos(plano, cycle),
-      backUrl: `${siteUrl}/painel?assinatura=pendente`,
     });
   } catch {
     redirect("/painel?assinatura=erro");
   }
 
-  redirect(initPoint);
+  redirect(invoiceUrl);
 }

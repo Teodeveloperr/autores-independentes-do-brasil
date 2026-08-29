@@ -15,7 +15,7 @@ export default async function AdminPage() {
     return <AdminLoginGate />;
   }
 
-  const [eventos, oportunidades, fotos, autores, artigos, avaliacoes, pedidos] = await Promise.all([
+  const [eventos, oportunidades, fotos, autores, artigos, avaliacoes, pedidos, pedidosReceita, assinaturaPagamentos] = await Promise.all([
     prisma.collectiveEvent.findMany({ orderBy: { createdAt: "desc" } }),
     prisma.opportunity.findMany({ orderBy: { prazoFinal: "asc" } }),
     prisma.collectiveGalleryPhoto.findMany({ orderBy: { createdAt: "desc" } }),
@@ -26,6 +26,12 @@ export default async function AdminPage() {
     prisma.article.findMany({ orderBy: { createdAt: "desc" } }),
     prisma.review.findMany({ orderBy: { createdAt: "desc" }, include: { author: { select: { nome: true } } } }),
     prisma.order.findMany({ orderBy: { createdAt: "desc" }, include: { author: { select: { nome: true } } } }),
+    prisma.order.findMany({
+      where: { status: { not: "Aguardando pagamento" } },
+      orderBy: { createdAt: "desc" },
+      include: { author: { select: { plano: true } } },
+    }),
+    prisma.subscriptionPayment.findMany({ orderBy: { createdAt: "desc" } }),
   ]);
 
   return (
@@ -37,6 +43,8 @@ export default async function AdminPage() {
       artigos={artigos}
       avaliacoes={avaliacoes}
       pedidos={pedidos}
+      pedidosReceita={pedidosReceita}
+      assinaturaPagamentos={assinaturaPagamentos}
       totpEnabled={admin.totpEnabled}
     />
   );

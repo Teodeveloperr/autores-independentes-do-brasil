@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { verificarWebhookAsaas } from "@/lib/asaas";
-import { sendOrderConfirmationEmail, sendNewSaleEmail } from "@/lib/email";
+import { verificarWebhookAsaas, buscarCobranca } from "@/lib/asaas";
+import { sendOrderConfirmationEmail, sendNewSaleEmail, sendNovaCobrancaAssinaturaEmail } from "@/lib/email";
 
 const EVENTOS_PAGO = new Set(["PAYMENT_RECEIVED", "PAYMENT_CONFIRMED"]);
 const EVENTOS_PIX_AUTO_ATIVADO = new Set(["PIX_AUTOMATIC_RECURRING_AUTHORIZATION_ACTIVATED"]);
@@ -73,7 +73,59 @@ export async function POST(request: NextRequest) {
 
   const paymentId = body.payment?.id || "";
 
+  if (evento === "PAYMENT_CREATED" && paymentId) {
+    const cobranca = await buscarCobranca(paymentId);
+    if (cobranca?.subscription) {
+      const author = await prisma.author.findUnique({ where: { asaasSubscriptionId: cobranca.subscription } });
+      if (author) {
+        await sendNovaCobrancaAssinaturaEmail(author.email, {
+          planoNome: author.planoPendente ?? author.plano,
+          valorCentavos: cobranca.valueCentavos,
+          invoiceUrl: cobranca.invoiceUrl,
+          dueDate: new Date().toLocaleDateString("pt-BR"),
+        }).catch((err) => console.error(`[asaas] Falha ao enviar e-mail de nova cobrança para ${author.email}:`, err));
+      }
+    }
+    return NextResponse.json({ received: true }, { status: 200 });
+  }
+
+  if (evento === "PAYMENT_OVERDUE" && paymentId) {
+    const cobranca = await buscarCobranca(paymentId);
+    if (cobranca?.subscription) {
+      const author = await prisma.author.findUnique({ where: { asaasSubscriptionId: cobranca.subscription } });
+      if (author && author.plano !== "Iniciante") {
+        await prisma.author.update({
+          where: { id: author.id },
+          data: { planoPendente: author.planoPendente ?? author.plano, plano: "Iniciante", asaasSubscriptionStatus: "overdue" },
+        });
+      }
+    }
+    return NextResponse.json({ received: true }, { status: 200 });
+  }
+
   if (!EVENTOS_PAGO.has(evento) || !paymentId) {
+    return NextResponse.json({ received: true }, { status: 200 });
+  }
+
+  const cobranca = await buscarCobranca(paymentId);
+  if (cobranca?.subscription) {
+    const author = await prisma.author.findUnique({ where: { asaasSubscriptionId: cobranca.subscription } });
+    if (author) {
+      const jaRegistrado = await prisma.subscriptionPayment.findUnique({ where: { asaasPaymentId: paymentId } });
+      if (!jaRegistrado) {
+        await prisma.subscriptionPayment.create({
+          data: { authorId: author.id, plano: author.planoPendente ?? author.plano, valorCentavos: cobranca.valueCentavos, asaasPaymentId: paymentId },
+        });
+      }
+      if (author.planoPendente) {
+        await prisma.author.update({
+          where: { id: author.id },
+          data: { plano: author.planoPendente, asaasSubscriptionStatus: "active", planoPendente: null },
+        });
+      } else if (author.asaasSubscriptionStatus !== "active") {
+        await prisma.author.update({ where: { id: author.id }, data: { asaasSubscriptionStatus: "active" } });
+      }
+    }
     return NextResponse.json({ received: true }, { status: 200 });
   }
 

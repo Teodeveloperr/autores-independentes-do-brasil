@@ -4,20 +4,30 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { requireAuthor } from "@/lib/auth";
 import { cancelarAssinaturaMp } from "@/lib/mercadoPago";
-import { cancelarAutorizacaoPixAutomatico } from "@/lib/asaas";
-import { criarAssinaturaMp, criarAssinaturaPixAutomatico } from "@/lib/assinatura";
+import { cancelarAutorizacaoPixAutomatico, cancelarAssinaturaAsaas } from "@/lib/asaas";
+import { criarAssinaturaAsaasParaAutor } from "@/lib/assinatura";
 import { validarCpf } from "@/lib/cpf";
 import { PLANOS_PAGOS, CICLO_MESES, valorCicloCentavos, descontoFidelidade, PLANO_RANK, type PlanoPagoSlug, type CicloAssinatura } from "@/lib/plans";
 import { checkRateLimit } from "@/lib/rateLimit";
 
-export type AssinarState = { error?: string; pixQrCode?: { payload: string; image: string } } | undefined;
+export type AssinarState = { error?: string } | undefined;
 
-async function cancelarAssinaturaAtiva(author: { mpPreapprovalId: string | null; mpSubscriptionStatus: string | null; asaasPixAutoAuthorizationId: string | null; asaasPixAutoStatus: string | null }) {
+async function cancelarAssinaturaAtiva(author: {
+  mpPreapprovalId: string | null;
+  mpSubscriptionStatus: string | null;
+  asaasPixAutoAuthorizationId: string | null;
+  asaasPixAutoStatus: string | null;
+  asaasSubscriptionId: string | null;
+  asaasSubscriptionStatus: string | null;
+}) {
   if (author.mpPreapprovalId && author.mpSubscriptionStatus === "authorized") {
     await cancelarAssinaturaMp(author.mpPreapprovalId);
   }
   if (author.asaasPixAutoAuthorizationId && author.asaasPixAutoStatus === "active") {
     await cancelarAutorizacaoPixAutomatico(author.asaasPixAutoAuthorizationId);
+  }
+  if (author.asaasSubscriptionId && author.asaasSubscriptionStatus === "active") {
+    await cancelarAssinaturaAsaas(author.asaasSubscriptionId);
   }
 }
 
@@ -31,7 +41,6 @@ export async function iniciarAssinatura(_prev: AssinarState, formData: FormData)
 
   const planoSlug = formData.get("planoSlug") as PlanoPagoSlug;
   const ciclo = (formData.get("ciclo") as CicloAssinatura) || "mensal";
-  const metodoPagamento = (formData.get("metodoPagamento") as string) || "cartao";
 
   const plano = PLANOS_PAGOS[planoSlug];
   if (!plano || !CICLO_MESES[ciclo]) {
@@ -43,47 +52,28 @@ export async function iniciarAssinatura(_prev: AssinarState, formData: FormData)
   const valorCentavos = Math.round(valorCicloCentavos(plano, ciclo) * (1 - desconto / 100));
 
   const cpf = ((formData.get("cpf") as string) || "").trim();
-  if (metodoPagamento === "pix" && !validarCpf(cpf)) {
+  if (!validarCpf(cpf)) {
     return { error: "CPF inválido." };
   }
 
   await cancelarAssinaturaAtiva(author);
 
-  if (metodoPagamento === "pix") {
-    try {
-      const { qrCodePayload, qrCodeImage } = await criarAssinaturaPixAutomatico({
-        authorId: author.id,
-        authorEmail: author.email,
-        authorNome: author.nome,
-        cpf,
-        planoNome: plano.nome,
-        ciclo,
-        valorCentavos,
-      });
-      return { pixQrCode: { payload: qrCodePayload, image: qrCodeImage } };
-    } catch (err) {
-      return { error: err instanceof Error ? err.message : "Não foi possível gerar o Pix Automático." };
-    }
-  }
-
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://autoresdobrasil.com.br";
-
-  let initPoint: string;
+  let invoiceUrl: string;
   try {
-    initPoint = await criarAssinaturaMp({
+    invoiceUrl = await criarAssinaturaAsaasParaAutor({
       authorId: author.id,
       authorEmail: author.email,
-      planoSlug,
+      authorNome: author.nome,
+      cpf,
       planoNome: plano.nome,
       ciclo,
       valorCentavos,
-      backUrl: `${siteUrl}/painel?assinatura=pendente`,
     });
-  } catch {
-    return { error: "Não foi possível iniciar a assinatura no Mercado Pago. Tente novamente em instantes." };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Não foi possível iniciar a assinatura. Tente novamente em instantes." };
   }
 
-  redirect(initPoint);
+  redirect(invoiceUrl);
 }
 
 export async function cancelarAssinatura() {
@@ -96,6 +86,7 @@ export async function cancelarAssinatura() {
       plano: "Iniciante",
       mpSubscriptionStatus: author.mpPreapprovalId ? "cancelled" : author.mpSubscriptionStatus,
       asaasPixAutoStatus: author.asaasPixAutoAuthorizationId ? "cancelled" : author.asaasPixAutoStatus,
+      asaasSubscriptionStatus: author.asaasSubscriptionId ? "cancelled" : author.asaasSubscriptionStatus,
     },
   });
 }
