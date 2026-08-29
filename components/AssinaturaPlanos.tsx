@@ -33,6 +33,7 @@ function PlanoPagoCard({
   descontoFidelidadePct: number;
 }) {
   const [state, formAction, pending] = useActionState<AssinarState, FormData>(iniciarAssinatura, undefined);
+  const [metodo, setMetodo] = useState<"cartao" | "pix">("cartao");
   const plano = PLANOS_PAGOS[slug];
   const meses = CICLO_MESES[ciclo];
   const totalCiclo = valorCicloCentavos(plano, ciclo);
@@ -102,16 +103,60 @@ function PlanoPagoCard({
         <div style={{ textAlign: "center", background: "#E3F4E9", color: "#009B3A", padding: "12px", fontWeight: 600, borderRadius: "4px", fontSize: "14px" }}>
           ✓ Seu plano atual
         </div>
+      ) : state?.pixQrCode ? (
+        <div style={{ textAlign: "center", background: "#F6F6F6", borderRadius: "6px", padding: "16px" }}>
+          <p style={{ fontSize: "13px", fontWeight: 600, marginBottom: "10px" }}>Escaneie com o app do seu banco pra pagar e autorizar:</p>
+          {state.pixQrCode.image && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={`data:image/png;base64,${state.pixQrCode.image}`} alt="QR Code Pix Automático" style={{ width: "180px", height: "180px", margin: "0 auto 10px" }} />
+          )}
+          <textarea
+            readOnly
+            value={state.pixQrCode.payload}
+            onClick={(e) => e.currentTarget.select()}
+            rows={3}
+            style={{ width: "100%", fontSize: "11px", padding: "8px", border: "1px solid #DDD", borderRadius: "4px", resize: "none" }}
+          />
+          <p style={{ fontSize: "11px", color: "#666", marginTop: "10px" }}>
+            Depois de pagar, sua assinatura é confirmada automaticamente — você pode fechar esta tela e conferir no seu painel.
+          </p>
+        </div>
       ) : (
         <form action={formAction}>
           <input type="hidden" name="planoSlug" value={slug} />
           <input type="hidden" name="ciclo" value={ciclo} />
+          <input type="hidden" name="metodoPagamento" value={metodo} />
+          <div style={{ display: "flex", gap: "8px", marginBottom: "10px" }}>
+            <button
+              type="button"
+              onClick={() => setMetodo("cartao")}
+              style={{ flex: 1, background: metodo === "cartao" ? "#002776" : "white", color: metodo === "cartao" ? "white" : "#262626", border: "1px solid #DDD", padding: "8px", borderRadius: "4px", fontSize: "12px", fontWeight: 600 }}
+            >
+              💳 Cartão
+            </button>
+            <button
+              type="button"
+              onClick={() => setMetodo("pix")}
+              style={{ flex: 1, background: metodo === "pix" ? "#002776" : "white", color: metodo === "pix" ? "white" : "#262626", border: "1px solid #DDD", padding: "8px", borderRadius: "4px", fontSize: "12px", fontWeight: 600 }}
+            >
+              🔑 Pix Automático
+            </button>
+          </div>
+          {metodo === "pix" && (
+            <input
+              name="cpf"
+              type="text"
+              placeholder="Seu CPF"
+              required
+              style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "4px", fontSize: "13px", marginBottom: "10px" }}
+            />
+          )}
           <button
             type="submit"
             disabled={pending}
             style={{ width: "100%", background: destaque ? "#009B3A" : "#002776", color: "white", padding: "12px", fontWeight: 600, borderRadius: "4px", border: "none", fontSize: "14px", opacity: pending ? 0.7 : 1 }}
           >
-            {pending ? "Redirecionando..." : `Assinar ${plano.nome.replace("Autor ", "")}`}
+            {pending ? "Processando..." : metodo === "pix" ? "Gerar QR Code Pix" : `Assinar ${plano.nome.replace("Autor ", "")}`}
           </button>
         </form>
       )}

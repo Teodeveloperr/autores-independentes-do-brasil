@@ -4,6 +4,28 @@ import { verificarWebhookAsaas } from "@/lib/asaas";
 import { sendOrderConfirmationEmail, sendNewSaleEmail } from "@/lib/email";
 
 const EVENTOS_PAGO = new Set(["PAYMENT_RECEIVED", "PAYMENT_CONFIRMED"]);
+const EVENTOS_PIX_AUTO_ATIVADO = new Set(["PIX_AUTOMATIC_RECURRING_AUTHORIZATION_ACTIVATED"]);
+const EVENTOS_PIX_AUTO_ENCERRADO: Record<string, string> = {
+  PIX_AUTOMATIC_RECURRING_AUTHORIZATION_EXPIRED: "expired",
+  PIX_AUTOMATIC_RECURRING_AUTHORIZATION_REFUSED: "refused",
+  PIX_AUTOMATIC_RECURRING_AUTHORIZATION_CANCELLED: "cancelled",
+};
+
+// Não confirmei o formato exato do payload da Asaas pra esses eventos (não achei na
+// documentação) — tenta os caminhos mais prováveis e loga o corpo cru se não achar.
+function extrairIdAutorizacaoPix(body: Record<string, unknown>): string | null {
+  const candidatos = [
+    (body as { pixAutomaticAuthorization?: { id?: string } }).pixAutomaticAuthorization?.id,
+    (body as { authorization?: { id?: string } }).authorization?.id,
+    (body as { id?: string }).id,
+  ];
+  const encontrado = candidatos.find((c) => typeof c === "string" && c.length > 0);
+  if (!encontrado) {
+    console.error("[asaas] Não achei o id da autorização Pix Automático no payload do webhook:", JSON.stringify(body));
+    return null;
+  }
+  return encontrado;
+}
 
 export async function POST(request: NextRequest) {
   const token = request.headers.get("asaas-access-token");
@@ -20,6 +42,35 @@ export async function POST(request: NextRequest) {
   }
 
   const evento = body.event || "";
+
+  if (EVENTOS_PIX_AUTO_ATIVADO.has(evento)) {
+    const authorizationId = extrairIdAutorizacaoPix(body);
+    if (authorizationId) {
+      const author = await prisma.author.findUnique({ where: { asaasPixAutoAuthorizationId: authorizationId } });
+      if (author && author.planoPendente) {
+        await prisma.author.update({
+          where: { id: author.id },
+          data: { plano: author.planoPendente, asaasPixAutoStatus: "active", planoPendente: null },
+        });
+      }
+    }
+    return NextResponse.json({ received: true }, { status: 200 });
+  }
+
+  if (evento in EVENTOS_PIX_AUTO_ENCERRADO) {
+    const authorizationId = extrairIdAutorizacaoPix(body);
+    if (authorizationId) {
+      const author = await prisma.author.findUnique({ where: { asaasPixAutoAuthorizationId: authorizationId } });
+      if (author) {
+        await prisma.author.update({
+          where: { id: author.id },
+          data: { plano: "Iniciante", asaasPixAutoStatus: EVENTOS_PIX_AUTO_ENCERRADO[evento], planoPendente: null },
+        });
+      }
+    }
+    return NextResponse.json({ received: true }, { status: 200 });
+  }
+
   const paymentId = body.payment?.id || "";
 
   if (!EVENTOS_PAGO.has(evento) || !paymentId) {

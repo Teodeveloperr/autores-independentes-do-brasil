@@ -46,6 +46,12 @@ model Author {
   mpPreapprovalId      String?
   mpSubscriptionStatus String?
 
+  cpf                         String?
+  asaasPixCustomerId          String?
+  asaasPixAutoAuthorizationId String? @unique
+  asaasPixAutoStatus          String?
+  planoPendente               String?
+
   portfolioFormacao       String?
   portfolioPremios        String?
   portfolioCitacao        String?

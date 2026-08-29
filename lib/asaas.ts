@@ -123,6 +123,80 @@ export async function criarTransferenciaPix(input: {
   }
 }
 
+export type FrequenciaPixAutomatico = "MONTHLY" | "SEMIANNUALLY" | "ANNUALLY";
+
+export type AutorizacaoPixAutomaticoCriada = { id: string; qrCodePayload: string; qrCodeImage: string };
+
+export async function criarAutorizacaoPixAutomatico(input: {
+  customerId: string;
+  frequency: FrequenciaPixAutomatico;
+  contractId: string;
+  valueCentavos: number;
+  description: string;
+}): Promise<AutorizacaoPixAutomaticoCriada | null> {
+  const accessToken = getAccessToken();
+  if (!accessToken) return null;
+
+  const value = input.valueCentavos / 100;
+
+  try {
+    const res = await fetch(`${getBaseUrl()}/pix/automatic/authorizations`, {
+      method: "POST",
+      headers: { access_token: accessToken, "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify({
+        customerId: input.customerId,
+        frequency: input.frequency,
+        contractId: input.contractId,
+        startDate: hoje(),
+        value,
+        description: input.description,
+        paymentCreationMode: "SUBSCRIPTION",
+        immediateQrCode: {
+          originalValue: value,
+          expirationSeconds: 1800,
+          description: input.description,
+        },
+      }),
+    });
+    if (!res.ok) {
+      console.error("[asaas] Falha ao criar autorização Pix Automático:", res.status, await res.text());
+      return null;
+    }
+    const data = (await res.json()) as {
+      id: string;
+      immediateQrCode?: { payload?: string; encodedImage?: string };
+    };
+    return {
+      id: data.id,
+      qrCodePayload: data.immediateQrCode?.payload ?? "",
+      qrCodeImage: data.immediateQrCode?.encodedImage ?? "",
+    };
+  } catch (err) {
+    console.error("[asaas] Falha ao criar autorização Pix Automático:", err);
+    return null;
+  }
+}
+
+export async function cancelarAutorizacaoPixAutomatico(id: string): Promise<boolean> {
+  const accessToken = getAccessToken();
+  if (!accessToken) return false;
+
+  try {
+    const res = await fetch(`${getBaseUrl()}/pix/automatic/authorizations/${id}`, {
+      method: "DELETE",
+      headers: { access_token: accessToken, Accept: "application/json" },
+    });
+    if (!res.ok) {
+      console.error("[asaas] Falha ao cancelar autorização Pix Automático:", res.status, await res.text());
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error("[asaas] Falha ao cancelar autorização Pix Automático:", err);
+    return false;
+  }
+}
+
 export function verificarWebhookAsaas(token: string | null): boolean {
   const esperado = process.env.ASAAS_WEBHOOK_TOKEN;
   if (!esperado || !token) return false;
