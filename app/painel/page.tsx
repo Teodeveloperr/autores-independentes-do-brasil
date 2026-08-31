@@ -19,6 +19,7 @@ export default async function PainelPage({ searchParams }: { searchParams: Promi
         books: { orderBy: { createdAt: "desc" } },
         eventos: { orderBy: { createdAt: "desc" } },
         fotos: { orderBy: { createdAt: "desc" } },
+        portfolioEventos: { orderBy: { createdAt: "desc" } },
         orders: { orderBy: { createdAt: "desc" } },
         conversas: {
           orderBy: { createdAt: "desc" },

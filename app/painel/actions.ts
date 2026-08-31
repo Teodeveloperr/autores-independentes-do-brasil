@@ -16,7 +16,7 @@ import { deleteAuthorSession } from "@/lib/session";
 import { centavosFromInput, sanitizeExternalUrl } from "@/lib/format";
 import { validarSenha } from "@/lib/password";
 import { validarCpf } from "@/lib/cpf";
-import { podeUsarRecursosExtras, BIO_MAX_CARACTERES_INICIANTE, FOTOS_MAX_INICIANTE } from "@/lib/plans";
+import { podeUsarRecursosExtras, BIO_MAX_CARACTERES_INICIANTE, FOTOS_MAX_INICIANTE, PORTFOLIO_EVENTOS_MAX_INICIANTE } from "@/lib/plans";
 import { enviarConfirmacaoRecebimento } from "@/lib/repasse";
 import { checkRateLimit } from "@/lib/rateLimit";
 import { desconectarMercadoPago as desconectarMercadoPagoLib } from "@/lib/mercadoPagoMarketplace";
@@ -241,6 +241,47 @@ export async function addPhoto(formData: FormData) {
 export async function removePhoto(id: string) {
   const author = await requireAuthor();
   await prisma.authorPhoto.deleteMany({ where: { id, authorId: author.id } });
+  revalidatePath("/painel");
+}
+
+export async function addPortfolioEvento(formData: FormData) {
+  const author = await requireAuthor();
+
+  if (author.plano === "Iniciante") {
+    const total = await prisma.portfolioEvento.count({ where: { authorId: author.id } });
+    if (total >= PORTFOLIO_EVENTOS_MAX_INICIANTE) {
+      throw new Error(`O plano Iniciante permite até ${PORTFOLIO_EVENTOS_MAX_INICIANTE} eventos no portfólio. Faça upgrade para adicionar mais.`);
+    }
+  }
+
+  const titulo = ((formData.get("titulo") as string) || "").trim();
+  if (!titulo) {
+    throw new Error("Informe o título do evento.");
+  }
+
+  const fotos = (formData.getAll("fotos") as string[]).filter(Boolean);
+  if (fotos.length === 0) {
+    throw new Error("Adicione ao menos uma foto do evento.");
+  }
+  if (fotos.length > 6) {
+    throw new Error("No máximo 6 fotos por evento.");
+  }
+
+  await prisma.portfolioEvento.create({
+    data: {
+      authorId: author.id,
+      titulo,
+      descricao: ((formData.get("descricao") as string) || "").trim() || null,
+      fotos,
+    },
+  });
+
+  revalidatePath("/painel");
+}
+
+export async function removePortfolioEvento(id: string) {
+  const author = await requireAuthor();
+  await prisma.portfolioEvento.deleteMany({ where: { id, authorId: author.id } });
   revalidatePath("/painel");
 }
 

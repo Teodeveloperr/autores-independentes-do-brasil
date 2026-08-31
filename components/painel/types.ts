@@ -8,6 +8,7 @@ export type AuthorWithRelations = Prisma.AuthorGetPayload<{
     books: true;
     eventos: true;
     fotos: true;
+    portfolioEventos: true;
     orders: true;
     conversas: { include: { mensagens: true } };
     avaliacoes: true;

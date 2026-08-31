@@ -3,9 +3,11 @@
 import { useMemo, useState, useTransition } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
-import { updatePortfolio } from "@/app/painel/actions";
+import { updatePortfolio, addPortfolioEvento, removePortfolioEvento } from "@/app/painel/actions";
 import { useImageUpload } from "@/hooks/useImageUpload";
+import { useMultiImageUpload } from "@/hooks/useMultiImageUpload";
 import { precoComDescontoCentavos } from "@/lib/desconto";
+import { PORTFOLIO_EVENTOS_MAX_INICIANTE } from "@/lib/plans";
 import PortfolioDocument, { type PortfolioData } from "./PortfolioDocument";
 import type { AuthorWithRelations } from "./types";
 
@@ -28,6 +30,42 @@ export default function PortfolioView({ author }: { author: AuthorWithRelations 
   const [salvando, startSalvar] = useTransition();
   const [salvo, setSalvo] = useState(false);
   const router = useRouter();
+
+  const [tituloEvento, setTituloEvento] = useState("");
+  const [descricaoEvento, setDescricaoEvento] = useState("");
+  const fotosEvento = useMultiImageUpload("portfolio-eventos", 6);
+  const [erroEvento, setErroEvento] = useState("");
+  const [salvandoEvento, startSalvarEvento] = useTransition();
+  const [pendingEventos, startPendingEventos] = useTransition();
+
+  const ehIniciante = author.plano === "Iniciante";
+  const atingiuLimiteEventos = ehIniciante && author.portfolioEventos.length >= PORTFOLIO_EVENTOS_MAX_INICIANTE;
+
+  function onAdicionarEvento() {
+    setErroEvento("");
+    const fd = new FormData();
+    fd.set("titulo", tituloEvento);
+    fd.set("descricao", descricaoEvento);
+    fotosEvento.urls.forEach((url) => fd.append("fotos", url));
+    startSalvarEvento(async () => {
+      try {
+        await addPortfolioEvento(fd);
+        setTituloEvento("");
+        setDescricaoEvento("");
+        fotosEvento.reset();
+        router.refresh();
+      } catch (err) {
+        setErroEvento(err instanceof Error ? err.message : "Não foi possível adicionar o evento.");
+      }
+    });
+  }
+
+  function onRemoverEvento(id: string) {
+    startPendingEventos(async () => {
+      await removePortfolioEvento(id);
+      router.refresh();
+    });
+  }
 
   function onSalvar() {
     setSalvo(false);
@@ -65,6 +103,7 @@ export default function PortfolioView({ author }: { author: AuthorWithRelations 
       livros: author.books.map((b) => ({ titulo: b.titulo, capaUrl: b.capaUrl, genero: b.genero, precoCentavos: precoComDescontoCentavos(b.precoCentavos, b.descontoPercentual) })),
       avaliacoes: author.avaliacoes.slice(0, 10).map((a) => ({ nome: a.nome, texto: a.texto, estrelas: a.estrelas })),
       fotos: author.fotos.map((f) => ({ url: f.url, titulo: f.titulo })),
+      eventos: author.portfolioEventos.map((e) => ({ titulo: e.titulo, descricao: e.descricao, fotos: e.fotos })),
     };
   }, [author, formacao, premios, citacao, obraDestaqueId, capa.url]);
 
@@ -199,6 +238,135 @@ export default function PortfolioView({ author }: { author: AuthorWithRelations 
             </p>
           </div>
         )}
+      </div>
+
+      <div style={{ marginTop: "24px" }}>
+        <h3 style={{ fontSize: "18px", fontWeight: 700, color: "#002776", marginBottom: "8px" }}>Eventos e feiras literárias</h3>
+        <p style={{ fontSize: "13px", color: "#666", marginBottom: "16px", maxWidth: "640px" }}>
+          Cada evento vira uma página no portfólio, com título, fotos e um texto sobre a experiência.
+        </p>
+        {ehIniciante && (
+          <p style={{ fontSize: "13px", color: "#666", marginBottom: "16px" }}>
+            O plano Iniciante permite até {PORTFOLIO_EVENTOS_MAX_INICIANTE} eventos no portfólio ({author.portfolioEventos.length}/{PORTFOLIO_EVENTOS_MAX_INICIANTE}).{" "}
+            <a href="/assinatura" style={{ color: "#002776", fontWeight: 600 }}>Fazer upgrade →</a> pra adicionar mais.
+          </p>
+        )}
+        <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1.4fr", gap: "20px", alignItems: "start" }}>
+          <div style={{ background: "white", borderRadius: "10px", padding: "24px", display: "flex", flexDirection: "column", gap: "14px", opacity: atingiuLimiteEventos ? 0.6 : 1 }}>
+            <div style={{ fontWeight: 700, color: "#002776" }}>📅 Adicionar evento</div>
+            <div>
+              <label style={labelStyle}>Título</label>
+              <input
+                type="text"
+                value={tituloEvento}
+                onChange={(e) => setTituloEvento(e.target.value)}
+                disabled={atingiuLimiteEventos}
+                placeholder="Ex: Bienal do Livro de São Paulo - 2026"
+                style={inputStyle}
+              />
+            </div>
+            <div>
+              <label style={labelStyle}>Descrição (opcional)</label>
+              <textarea
+                value={descricaoEvento}
+                onChange={(e) => setDescricaoEvento(e.target.value)}
+                disabled={atingiuLimiteEventos}
+                placeholder="Conte como foi participar desse evento..."
+                style={{ ...inputStyle, minHeight: "70px", resize: "vertical" }}
+              />
+            </div>
+            <div>
+              <label style={labelStyle}>Fotos do evento ({fotosEvento.urls.length}/6)</label>
+              <label
+                htmlFor="fotosEventoInput"
+                onDrop={atingiuLimiteEventos ? undefined : fotosEvento.onDrop}
+                onDragOver={atingiuLimiteEventos ? undefined : fotosEvento.onDragOver}
+                style={{
+                  border: "2px dashed #BBB",
+                  borderRadius: "8px",
+                  padding: "16px",
+                  textAlign: "center",
+                  fontSize: "13px",
+                  color: "#666",
+                  cursor: atingiuLimiteEventos ? "not-allowed" : "pointer",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: "4px",
+                  minHeight: "80px",
+                  justifyContent: "center",
+                }}
+              >
+                {fotosEvento.uploading ? "Enviando..." : "📷 Arraste as fotos aqui ou clique para selecionar (até 6, 5MB cada)"}
+              </label>
+              <input
+                id="fotosEventoInput"
+                type="file"
+                accept="image/*"
+                multiple
+                disabled={atingiuLimiteEventos}
+                onChange={fotosEvento.onInputChange}
+                style={{ display: "none" }}
+              />
+              {fotosEvento.urls.length > 0 && (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginTop: "10px" }}>
+                  {fotosEvento.urls.map((url) => (
+                    <div key={url} style={{ position: "relative", width: "56px", height: "56px" }}>
+                      <div style={{ width: "100%", height: "100%", borderRadius: "4px", background: `center / cover no-repeat url(${url})` }} />
+                      <button
+                        type="button"
+                        onClick={() => fotosEvento.remove(url)}
+                        title="Remover foto"
+                        style={{ position: "absolute", top: "-6px", right: "-6px", background: "white", border: "1px solid #DDD", borderRadius: "50%", width: "20px", height: "20px", fontSize: "10px", color: "#C0392B", lineHeight: 1 }}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {fotosEvento.error && <p style={{ fontSize: "12px", color: "#C0392B", marginTop: "6px" }}>{fotosEvento.error}</p>}
+            </div>
+            {erroEvento && <p style={{ fontSize: "12px", color: "#C0392B" }}>{erroEvento}</p>}
+            <button
+              type="button"
+              onClick={onAdicionarEvento}
+              disabled={salvandoEvento || atingiuLimiteEventos}
+              style={{ background: "#009B3A", color: "white", padding: "12px", fontWeight: 700, borderRadius: "6px", fontSize: "14px", border: "none", opacity: salvandoEvento || atingiuLimiteEventos ? 0.6 : 1 }}
+            >
+              {atingiuLimiteEventos ? "Limite atingido" : salvandoEvento ? "Adicionando..." : "Adicionar evento"}
+            </button>
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+            {author.portfolioEventos.map((ev) => (
+              <div key={ev.id} style={{ background: "white", borderRadius: "10px", padding: "16px 20px", display: "flex", gap: "14px", alignItems: "center" }}>
+                <div style={{ display: "flex", gap: "4px", flexShrink: 0 }}>
+                  {ev.fotos.slice(0, 3).map((url) => (
+                    <div key={url} style={{ width: "40px", height: "40px", borderRadius: "4px", background: `center / cover no-repeat url(${url})` }} />
+                  ))}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 700, fontSize: "13px" }}>{ev.titulo}</div>
+                  <div style={{ fontSize: "11px", color: "#666" }}>{ev.fotos.length} foto{ev.fotos.length === 1 ? "" : "s"}</div>
+                </div>
+                <button
+                  onClick={() => onRemoverEvento(ev.id)}
+                  disabled={pendingEventos}
+                  title="Remover evento"
+                  style={{ background: "white", border: "1px solid #DDD", borderRadius: "6px", width: "28px", height: "28px", fontSize: "12px", color: "#C0392B", flexShrink: 0 }}
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+            {author.portfolioEventos.length === 0 && (
+              <div style={{ background: "white", borderRadius: "10px", padding: "32px", textAlign: "center", color: "#666", fontSize: "14px" }}>
+                Você ainda não adicionou eventos ao portfólio.
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

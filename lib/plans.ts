@@ -32,6 +32,7 @@ export function podeUsarRecursosExtras(plano: string) {
 // Restrições do plano Iniciante (perfil "limitado").
 export const BIO_MAX_CARACTERES_INICIANTE = 300;
 export const FOTOS_MAX_INICIANTE = 3;
+export const PORTFOLIO_EVENTOS_MAX_INICIANTE = 3;
 
 // Ordem de destaque (Autores/Livros/Home) — maior primeiro.
 export const PLANO_RANK: Record<string, number> = {

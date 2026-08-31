@@ -86,6 +86,7 @@ model Author {
   mercadoPagoToken     AuthorMercadoPagoToken?
   passkeys             AuthorPasskey[]
   assinaturaPagamentos SubscriptionPayment[]
+  portfolioEventos     PortfolioEvento[]
 }
 
 model AuthorPasskey {
@@ -324,6 +325,18 @@ model SubscriptionPayment {
   valorCentavos  Int
   asaasPaymentId String   @unique
   createdAt      DateTime @default(now())
+
+  @@index([authorId])
+}
+
+model PortfolioEvento {
+  id        String   @id @default(cuid())
+  authorId  String
+  author    Author   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  titulo    String
+  descricao String?
+  fotos     String[] @default([])
+  createdAt DateTime @default(now())
 
   @@index([authorId])
 }

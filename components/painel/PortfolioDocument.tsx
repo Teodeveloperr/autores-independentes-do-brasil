@@ -19,6 +19,7 @@ export type PortfolioData = {
   livros: { titulo: string; capaUrl: string | null; genero: string; precoCentavos: number }[];
   avaliacoes: { nome: string; texto: string; estrelas: number }[];
   fotos: { url: string; titulo: string }[];
+  eventos: { titulo: string; descricao: string | null; fotos: string[] }[];
 };
 
 const AZUL = "#002776";
@@ -36,6 +37,8 @@ const styles = StyleSheet.create({
   coverCidade: { fontSize: 13, color: "#CCD6EE" },
   coverRodape: { position: "absolute", bottom: 40, left: 56, fontSize: 9, color: "#8FA3D1" },
   sectionTitle: { fontSize: 18, fontWeight: 700, color: AZUL, marginBottom: 16, borderBottom: `2px solid ${VERDE}`, paddingBottom: 8 },
+  tituloBarra: { backgroundColor: AZUL, marginHorizontal: -48, marginTop: -48, paddingHorizontal: 48, paddingVertical: 26, marginBottom: 24 },
+  tituloBarraTexto: { fontSize: 24, fontWeight: 700, color: "white", textTransform: "uppercase" },
   paragraph: { fontSize: 11, lineHeight: 1.6, marginBottom: 12, color: "#333" },
   subheading: { fontSize: 12, fontWeight: 700, color: AZUL, marginBottom: 6, marginTop: 14 },
   row: { flexDirection: "row", gap: 24, marginBottom: 20 },
@@ -148,6 +151,23 @@ export default function PortfolioDocument({ data }: { data: PortfolioData }) {
           <Rodape />
         </Page>
       )}
+
+      {data.eventos.map((ev, i) => (
+        <Page key={i} size="A4" orientation="landscape" style={styles.page}>
+          <View style={styles.tituloBarra}>
+            <Text style={styles.tituloBarraTexto}>{ev.titulo}</Text>
+          </View>
+          {ev.fotos.length > 0 && (
+            <View style={styles.fotosGrid}>
+              {ev.fotos.map((url, j) => (
+                <Image key={j} src={url} style={styles.fotoItem} />
+              ))}
+            </View>
+          )}
+          {ev.descricao && <Text style={{ ...styles.paragraph, marginTop: 16 }}>{ev.descricao}</Text>}
+          <Rodape />
+        </Page>
+      ))}
 
       {temDepoimentos && (
         <Page size="A4" orientation="landscape" style={styles.page}>
