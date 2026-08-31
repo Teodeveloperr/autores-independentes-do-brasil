@@ -289,6 +289,65 @@ export async function buscarCobranca(id: string): Promise<CobrancaAsaas | null> 
   }
 }
 
+export type CobrancaRecebida = { id: string; subscription: string | null; customer: string; valueCentavos: number; invoiceUrl: string; status: string; paymentDate: string | null };
+
+/**
+ * Busca todas as cobranças recebidas/confirmadas na Asaas num período — usado só pra
+ * reconciliação manual (comparar com o que já está gravado no nosso banco), não faz
+ * parte do fluxo normal de webhook.
+ */
+export async function listarCobrancasRecebidas(input: { desde: string; ate: string }): Promise<CobrancaRecebida[]> {
+  const accessToken = getAccessToken();
+  if (!accessToken) return [];
+
+  const cobrancas: CobrancaRecebida[] = [];
+
+  for (const status of ["RECEIVED", "CONFIRMED"] as const) {
+    let offset = 0;
+    const limit = 100;
+    for (;;) {
+      const params = new URLSearchParams({
+        status,
+        "paymentDate[ge]": input.desde,
+        "paymentDate[le]": input.ate,
+        offset: String(offset),
+        limit: String(limit),
+      });
+      try {
+        const res = await fetch(`${getBaseUrl()}/payments?${params.toString()}`, {
+          headers: { access_token: accessToken, Accept: "application/json" },
+        });
+        if (!res.ok) {
+          console.error("[asaas] Falha ao listar cobranças pra reconciliação:", res.status, await res.text());
+          break;
+        }
+        const data = (await res.json()) as {
+          data: Array<{ id: string; subscription?: string | null; customer: string; value: number; invoiceUrl: string; status: string; paymentDate?: string | null }>;
+          hasMore: boolean;
+        };
+        for (const p of data.data) {
+          cobrancas.push({
+            id: p.id,
+            subscription: p.subscription ?? null,
+            customer: p.customer,
+            valueCentavos: Math.round(p.value * 100),
+            invoiceUrl: p.invoiceUrl,
+            status: p.status,
+            paymentDate: p.paymentDate ?? null,
+          });
+        }
+        if (!data.hasMore) break;
+        offset += limit;
+      } catch (err) {
+        console.error("[asaas] Falha ao listar cobranças pra reconciliação:", err);
+        break;
+      }
+    }
+  }
+
+  return cobrancas;
+}
+
 export function verificarWebhookAsaas(token: string | null): boolean {
   const esperado = process.env.ASAAS_WEBHOOK_TOKEN;
   if (!esperado || !token) return false;

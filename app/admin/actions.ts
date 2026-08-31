@@ -7,6 +7,7 @@ import { prisma } from "@/lib/db";
 import { createAdminSession, deleteAdminSession, createAdminPending2FA, getAdminPending2FA, deleteAdminPending2FA } from "@/lib/session";
 import { requireAdmin } from "@/lib/auth";
 import { excluirAutorCompletamente } from "@/lib/authorDeletion";
+import { listarCobrancasRecebidas } from "@/lib/asaas";
 import { recalcularAvaliacaoAutor } from "@/lib/reviews";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 import { gerarSegredoTotp, gerarOtpauthUri, verificarCodigoTotp, gerarCodigosBackup } from "@/lib/totp";
@@ -389,4 +390,52 @@ export async function removeArticle(id: string) {
   await prisma.article.delete({ where: { id } });
   revalidatePath("/admin");
   revalidatePath("/blog");
+}
+
+export type CobrancaFaltante = {
+  id: string;
+  valorCentavos: number;
+  invoiceUrl: string;
+  status: string;
+  paymentDate: string | null;
+  tipo: "assinatura" | "venda";
+};
+
+/**
+ * Compara as cobranças recebidas/confirmadas na Asaas num mês com o que já está gravado
+ * no nosso banco (SubscriptionPayment/Order) — só pra conferência manual, não altera nada.
+ */
+export async function reconciliarReceita(mesChave: string): Promise<{ faltantes: CobrancaFaltante[]; totalConferido: number }> {
+  await requireAdmin();
+
+  const [ano, mes] = mesChave.split("-").map(Number);
+  const desde = new Date(ano, mes - 1, 1);
+  const ate = new Date(ano, mes, 0, 23, 59, 59);
+
+  const cobrancas = await listarCobrancasRecebidas({
+    desde: desde.toISOString().slice(0, 10),
+    ate: ate.toISOString().slice(0, 10),
+  });
+
+  const [pagamentosAssinatura, pedidos] = await Promise.all([
+    prisma.subscriptionPayment.findMany({ where: { createdAt: { gte: desde, lte: ate } }, select: { asaasPaymentId: true } }),
+    prisma.order.findMany({ where: { createdAt: { gte: desde, lte: ate }, asaasPaymentId: { not: null } }, select: { asaasPaymentId: true } }),
+  ]);
+  const idsConhecidos = new Set([
+    ...pagamentosAssinatura.map((r) => r.asaasPaymentId),
+    ...pedidos.map((r) => r.asaasPaymentId as string),
+  ]);
+
+  const faltantes: CobrancaFaltante[] = cobrancas
+    .filter((c) => !idsConhecidos.has(c.id))
+    .map((c) => ({
+      id: c.id,
+      valorCentavos: c.valueCentavos,
+      invoiceUrl: c.invoiceUrl,
+      status: c.status,
+      paymentDate: c.paymentDate,
+      tipo: c.subscription ? "assinatura" : "venda",
+    }));
+
+  return { faltantes, totalConferido: cobrancas.length };
 }

@@ -1,9 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { brl } from "@/lib/format";
 import { COMISSAO_PERCENTUAL } from "@/lib/plans";
+import { reconciliarReceita, type CobrancaFaltante } from "@/app/admin/actions";
 import type { OrderComReceita, SubscriptionPaymentRow } from "./types";
+
+const TIPO_LABEL: Record<string, string> = { assinatura: "Assinatura", venda: "Venda de livro" };
 
 function mesChave(data: Date) {
   return `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, "0")}`;
@@ -24,6 +27,22 @@ export default function AdminReceitaView({ pedidos, assinaturaPagamentos }: { pe
   }, [pedidos, assinaturaPagamentos]);
 
   const [mes, setMes] = useState(meses[0]);
+  const [reconciliando, startReconciliar] = useTransition();
+  const [resultado, setResultado] = useState<{ faltantes: CobrancaFaltante[]; totalConferido: number } | null>(null);
+  const [erroReconciliar, setErroReconciliar] = useState("");
+
+  function onReconciliar() {
+    setResultado(null);
+    setErroReconciliar("");
+    startReconciliar(async () => {
+      try {
+        const r = await reconciliarReceita(mes);
+        setResultado(r);
+      } catch (err) {
+        setErroReconciliar(err instanceof Error ? err.message : "Não foi possível reconciliar com a Asaas.");
+      }
+    });
+  }
 
   const dados = useMemo(() => {
     const pedidosDoMes = pedidos.filter((p) => mesChave(p.createdAt) === mes);
@@ -60,17 +79,61 @@ export default function AdminReceitaView({ pedidos, assinaturaPagamentos }: { pe
         Receita da plataforma: comissão sobre vendas de livro + assinaturas de autores, por mês.
       </p>
 
-      <select
-        value={mes}
-        onChange={(e) => setMes(e.target.value)}
-        style={{ padding: "8px 14px", borderRadius: "6px", border: "1px solid #DDD", fontSize: "13px", fontWeight: 600, marginBottom: "24px", textTransform: "capitalize" }}
-      >
-        {meses.map((m) => (
-          <option key={m} value={m} style={{ textTransform: "capitalize" }}>
-            {mesLabel(m)}
-          </option>
-        ))}
-      </select>
+      <div style={{ display: "flex", gap: "12px", alignItems: "center", flexWrap: "wrap", marginBottom: "12px" }}>
+        <select
+          value={mes}
+          onChange={(e) => { setMes(e.target.value); setResultado(null); setErroReconciliar(""); }}
+          style={{ padding: "8px 14px", borderRadius: "6px", border: "1px solid #DDD", fontSize: "13px", fontWeight: 600, textTransform: "capitalize" }}
+        >
+          {meses.map((m) => (
+            <option key={m} value={m} style={{ textTransform: "capitalize" }}>
+              {mesLabel(m)}
+            </option>
+          ))}
+        </select>
+        <button
+          onClick={onReconciliar}
+          disabled={reconciliando}
+          style={{ background: "white", border: "1px solid #002776", color: "#002776", padding: "8px 16px", borderRadius: "6px", fontSize: "13px", fontWeight: 600, opacity: reconciliando ? 0.7 : 1 }}
+        >
+          {reconciliando ? "Reconciliando..." : "🔄 Reconciliar com a Asaas"}
+        </button>
+      </div>
+
+      {erroReconciliar && (
+        <div style={{ color: "#C0392B", fontSize: "13px", background: "#FDEDEC", padding: "10px 14px", borderRadius: "6px", marginBottom: "20px" }}>
+          {erroReconciliar}
+        </div>
+      )}
+
+      {resultado && (
+        <div style={{ background: "white", borderRadius: "10px", padding: "20px", marginBottom: "24px" }}>
+          {resultado.faltantes.length === 0 ? (
+            <div style={{ color: "#009B3A", fontSize: "13px" }}>
+              ✅ Conferido {resultado.totalConferido} cobrança{resultado.totalConferido === 1 ? "" : "s"} recebida{resultado.totalConferido === 1 ? "" : "s"} na Asaas nesse mês — tudo bate com o que está gravado aqui.
+            </div>
+          ) : (
+            <>
+              <div style={{ color: "#C0392B", fontSize: "13px", fontWeight: 700, marginBottom: "12px" }}>
+                ⚠️ {resultado.faltantes.length} cobrança{resultado.faltantes.length === 1 ? "" : "s"} recebida{resultado.faltantes.length === 1 ? "" : "s"} na Asaas mas sem registro aqui (de {resultado.totalConferido} conferidas):
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                {resultado.faltantes.map((f) => (
+                  <div key={f.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px", fontSize: "13px", padding: "8px 0", borderBottom: "1px solid #F0F0F0" }}>
+                    <span>{TIPO_LABEL[f.tipo] ?? f.tipo} · {f.paymentDate ?? "—"} · {f.status}</span>
+                    <span style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+                      <span style={{ fontWeight: 700 }}>{brl(f.valorCentavos)}</span>
+                      <a href={f.invoiceUrl} target="_blank" rel="noopener noreferrer" style={{ color: "#002776", fontWeight: 600 }}>
+                        Ver na Asaas ↗
+                      </a>
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      )}
 
       <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "20px", marginBottom: "28px" }}>
         <div style={{ background: "white", borderRadius: "10px", padding: "20px" }}>
