@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import Lightbox from "./Lightbox";
 import AvaliacaoForm from "./AvaliacaoForm";
-import { podeUsarRecursosExtras, FOTOS_MAX_INICIANTE } from "@/lib/plans";
+import { podeUsarRecursosExtras } from "@/lib/plans";
 import { formatEventoDia } from "@/lib/format";
 
 type Tab = "livros" | "galeria" | "eventos" | "avaliacoes";
@@ -110,7 +110,8 @@ export default function PerfilTabs({
             <div style={{ textAlign: "center", background: "#F6F6F6", borderRadius: "8px", padding: "40px 24px" }}>
               <div style={{ fontSize: "28px", marginBottom: "12px" }}>📷</div>
               <p style={{ fontSize: "14px", color: "#444", lineHeight: 1.6, maxWidth: "380px", margin: "0 auto" }}>
-                Você ainda não adicionou fotos. No seu painel, em &quot;Minhas Fotos&quot;, você pode adicionar até {FOTOS_MAX_INICIANTE}.
+                A galeria de fotos fica disponível a partir do plano Essencial.{" "}
+                <a href="/assinatura" style={{ color: "#002776", fontWeight: 600 }}>Fazer upgrade →</a>
               </p>
             </div>
           ) : (

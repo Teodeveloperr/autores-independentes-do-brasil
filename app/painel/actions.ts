@@ -16,7 +16,7 @@ import { deleteAuthorSession } from "@/lib/session";
 import { centavosFromInput, sanitizeExternalUrl } from "@/lib/format";
 import { validarSenha } from "@/lib/password";
 import { validarCpf } from "@/lib/cpf";
-import { podeUsarRecursosExtras, BIO_MAX_CARACTERES_INICIANTE, FOTOS_MAX_INICIANTE, PORTFOLIO_EVENTOS_MAX_INICIANTE } from "@/lib/plans";
+import { podeUsarRecursosExtras, BIO_MAX_CARACTERES_INICIANTE, PORTFOLIO_EVENTOS_MAX_INICIANTE } from "@/lib/plans";
 import { enviarConfirmacaoRecebimento } from "@/lib/repasse";
 import { checkRateLimit } from "@/lib/rateLimit";
 import { desconectarMercadoPago as desconectarMercadoPagoLib } from "@/lib/mercadoPagoMarketplace";
@@ -220,10 +220,7 @@ export async function addPhoto(formData: FormData) {
   if (!url) return;
 
   if (author.plano === "Iniciante") {
-    const totalFotos = await prisma.authorPhoto.count({ where: { authorId: author.id } });
-    if (totalFotos >= FOTOS_MAX_INICIANTE) {
-      throw new Error(`O plano Iniciante permite até ${FOTOS_MAX_INICIANTE} fotos. Faça upgrade para adicionar mais.`);
-    }
+    throw new Error("A galeria de fotos é exclusiva dos planos Essencial e Premium. Faça upgrade para adicionar fotos.");
   }
 
   await prisma.authorPhoto.create({
