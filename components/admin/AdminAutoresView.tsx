@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useTransition } from "react";
+import { useActionState, useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { removeAuthor, suspendAuthor, reactivateAuthor, alterarPlanoAutor, adminCreateAuthor, type CreateAuthorState } from "@/app/admin/actions";
@@ -8,10 +8,29 @@ import { initials } from "@/lib/format";
 import { TODOS_PLANOS } from "@/lib/plans";
 import type { AuthorWithCount } from "./types";
 
+const AUTORES_POR_PAGINA = 6;
+
 export default function AdminAutoresView({ autores }: { autores: AuthorWithCount[] }) {
   const [pending, startTransition] = useTransition();
   const [state, formAction, createPending] = useActionState<CreateAuthorState, FormData>(adminCreateAuthor, undefined);
+  const [busca, setBusca] = useState("");
+  const [pagina, setPagina] = useState(1);
   const router = useRouter();
+
+  const autoresFiltrados = useMemo(() => {
+    const termo = busca.trim().toLowerCase();
+    if (!termo) return autores;
+    return autores.filter((a) => a.nome.toLowerCase().includes(termo) || (a.cidade ?? "").toLowerCase().includes(termo) || a.email.toLowerCase().includes(termo));
+  }, [autores, busca]);
+
+  const totalPaginas = Math.max(1, Math.ceil(autoresFiltrados.length / AUTORES_POR_PAGINA));
+  const paginaAtual = Math.min(pagina, totalPaginas);
+  const autoresPagina = autoresFiltrados.slice((paginaAtual - 1) * AUTORES_POR_PAGINA, paginaAtual * AUTORES_POR_PAGINA);
+
+  function onBuscaChange(valor: string) {
+    setBusca(valor);
+    setPagina(1);
+  }
 
   function onRemove(id: string, nome: string) {
     const ok = window.confirm(
@@ -93,8 +112,16 @@ export default function AdminAutoresView({ autores }: { autores: AuthorWithCount
           </button>
         </form>
 
-        <div style={{ background: "white", borderRadius: "10px", overflow: "hidden" }}>
-          {autores.map((a) => (
+        <div>
+          <input
+            type="text"
+            value={busca}
+            onChange={(e) => onBuscaChange(e.target.value)}
+            placeholder="🔍 Buscar por nome, cidade ou e-mail..."
+            style={{ width: "100%", padding: "10px 14px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px", marginBottom: "12px", background: "white" }}
+          />
+          <div style={{ background: "white", borderRadius: "10px", overflow: "hidden" }}>
+            {autoresPagina.map((a) => (
             <div key={a.id} style={{ display: "flex", gap: "16px", alignItems: "center", padding: "16px 20px", borderBottom: "1px solid #F0F0F0", flexWrap: "wrap" }}>
               <div
                 style={{
@@ -169,9 +196,34 @@ export default function AdminAutoresView({ autores }: { autores: AuthorWithCount
                 ✕
               </button>
             </div>
-          ))}
-          {autores.length === 0 && (
-            <div style={{ padding: "32px", textAlign: "center", color: "#666", fontSize: "14px" }}>Nenhum autor cadastrado ainda.</div>
+            ))}
+            {autoresFiltrados.length === 0 && (
+              <div style={{ padding: "32px", textAlign: "center", color: "#666", fontSize: "14px" }}>
+                {autores.length === 0 ? "Nenhum autor cadastrado ainda." : "Nenhum autor encontrado para essa busca."}
+              </div>
+            )}
+          </div>
+
+          {totalPaginas > 1 && (
+            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "14px", marginTop: "16px" }}>
+              <button
+                onClick={() => setPagina((p) => Math.max(1, p - 1))}
+                disabled={paginaAtual === 1}
+                style={{ background: "white", border: "1px solid #DDD", borderRadius: "6px", padding: "8px 14px", fontSize: "13px", fontWeight: 600, color: "#002776", opacity: paginaAtual === 1 ? 0.4 : 1 }}
+              >
+                ← Anterior
+              </button>
+              <span style={{ fontSize: "13px", color: "#666" }}>
+                Página {paginaAtual} de {totalPaginas}
+              </span>
+              <button
+                onClick={() => setPagina((p) => Math.min(totalPaginas, p + 1))}
+                disabled={paginaAtual === totalPaginas}
+                style={{ background: "white", border: "1px solid #DDD", borderRadius: "6px", padding: "8px 14px", fontSize: "13px", fontWeight: 600, color: "#002776", opacity: paginaAtual === totalPaginas ? 0.4 : 1 }}
+              >
+                Próxima →
+              </button>
+            </div>
           )}
         </div>
       </div>
