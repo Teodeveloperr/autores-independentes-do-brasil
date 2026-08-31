@@ -12,8 +12,10 @@ import { PLANO_RANK, temDestaque } from "@/lib/plans";
 
 export const dynamic = "force-dynamic";
 
+const MESES_ABREV = ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"];
+
 export default async function HomePage() {
-  const [authorsPool, livrosPool, artigos, eventos] = await Promise.all([
+  const [authorsPool, livrosPool, artigos, eventosPool] = await Promise.all([
     prisma.author.findMany({
       where: { status: "ativo" },
       orderBy: { createdAt: "desc" },
@@ -28,10 +30,7 @@ export default async function HomePage() {
       orderBy: { createdAt: "desc" },
       take: 3,
     }),
-    prisma.collectiveEvent.findMany({
-      orderBy: { createdAt: "desc" },
-      take: 3,
-    }),
+    prisma.collectiveEvent.findMany(),
   ]);
 
   // "Autores em destaque" é benefício exclusivo do plano Premium — Iniciante e Essencial não entram aqui.
@@ -42,6 +41,16 @@ export default async function HomePage() {
   const livros = [...livrosPool]
     .sort((a, b) => (PLANO_RANK[b.author.plano] ?? 0) - (PLANO_RANK[a.author.plano] ?? 0) || b.createdAt.getTime() - a.createdAt.getTime())
     .slice(0, 5);
+
+  // Próximos eventos: ordenados pela data real do evento (mais próximo primeiro), não por quando foi cadastrado.
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+  const eventos = eventosPool
+    .map((ev) => ({ ev, data: new Date(ev.ano, MESES_ABREV.indexOf(ev.mes), ev.dia) }))
+    .filter((e) => e.data >= hoje)
+    .sort((a, b) => a.data.getTime() - b.data.getTime())
+    .slice(0, 3)
+    .map((e) => e.ev);
 
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
