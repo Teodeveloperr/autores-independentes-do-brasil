@@ -79,8 +79,7 @@ export default function CheckoutClient() {
             quantidade: i.quantidade,
           })),
           { nome, email, telefone, cpf },
-          { cep, rua, numero, complemento, bairro, cidade, uf },
-          fretes
+          { cep, rua, numero, complemento, bairro, cidade, uf }
         );
         clearCart();
         setRedirecionando(true);

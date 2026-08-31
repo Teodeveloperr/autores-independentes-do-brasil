@@ -5,6 +5,8 @@ import { prisma } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 import { criarOuBuscarCliente, criarCobranca } from "@/lib/asaas";
 import { validarCpf } from "@/lib/cpf";
+import { podeVenderLivros } from "@/lib/plans";
+import { precoComDescontoCentavos } from "@/lib/desconto";
 
 // Valor fixo provisório por autor (frete via Correios, Registro Módico) — ainda a definir o valor final.
 const FRETE_FIXO_CENTAVOS = 1500;
@@ -66,8 +68,7 @@ export async function calcularFreteCarrinho(items: CheckoutItem[], cepDestino: s
 export async function criarPedido(
   items: CheckoutItem[],
   comprador: CheckoutComprador,
-  endereco: CheckoutEndereco,
-  fretes: FreteAutor[]
+  endereco: CheckoutEndereco
 ): Promise<{ invoiceUrl: string }> {
   if (items.length === 0) {
     throw new Error("Carrinho vazio.");
@@ -89,18 +90,37 @@ export async function criarPedido(
     throw new Error("Endereço de entrega incompleto.");
   }
 
+  // Nunca confiar em preço/vendedor/título vindos do cliente (o carrinho vive no
+  // localStorage e pode ser adulterado) — busca cada livro de verdade no banco e usa só
+  // esses dados pra montar o pedido e a cobrança. Do cliente, só aceitamos bookId e quantidade.
+  const bookIds = [...new Set(items.map((i) => i.bookId))];
+  const books = await prisma.book.findMany({
+    where: { id: { in: bookIds } },
+    include: { author: true },
+  });
+
   const grupoPedidoId = crypto.randomUUID();
   const freteJaAplicado = new Set<string>();
 
   const rows = items.map((item) => {
-    const frete = fretes.find((f) => f.authorId === item.authorId && f.disponivel);
-    const aplicarFrete = frete && !freteJaAplicado.has(item.authorId);
-    if (aplicarFrete) freteJaAplicado.add(item.authorId);
+    const book = books.find((b) => b.id === item.bookId);
+    if (!book) {
+      throw new Error("Um dos livros do carrinho não foi encontrado.");
+    }
+    if (book.author.status !== "ativo" || !podeVenderLivros(book.author.plano)) {
+      throw new Error(`"${book.titulo}" não está disponível para venda no momento.`);
+    }
+
+    const quantidade = Math.max(1, Math.floor(item.quantidade) || 1);
+    const precoUnitarioCentavos = precoComDescontoCentavos(book.precoCentavos, book.descontoPercentual);
+
+    const aplicarFrete = !freteJaAplicado.has(book.authorId);
+    if (aplicarFrete) freteJaAplicado.add(book.authorId);
 
     return {
-      authorId: item.authorId,
-      bookId: item.bookId,
-      livro: item.titulo,
+      authorId: book.authorId,
+      bookId: book.id,
+      livro: book.titulo,
       comprador: comprador.nome.trim(),
       compradorEmail: comprador.email.trim(),
       compradorTelefone: comprador.telefone.trim() || null,
@@ -112,10 +132,10 @@ export async function criarPedido(
       compradorBairro: endereco.bairro.trim(),
       compradorCidade: endereco.cidade.trim(),
       compradorUf: endereco.uf.trim().toUpperCase(),
-      quantidade: item.quantidade,
-      valorCentavos: item.precoCentavos * item.quantidade,
-      freteCentavos: aplicarFrete ? frete!.precoCentavos : null,
-      freteServico: aplicarFrete ? frete!.servico : null,
+      quantidade,
+      valorCentavos: precoUnitarioCentavos * quantidade,
+      freteCentavos: aplicarFrete ? FRETE_FIXO_CENTAVOS : null,
+      freteServico: aplicarFrete ? "Correios — Registro Módico" : null,
       status: "Aguardando pagamento",
       grupoPedidoId,
     };
@@ -136,7 +156,7 @@ export async function criarPedido(
     ? await criarCobranca({
         customerId,
         valueCentavos: totalCentavos,
-        description: `Compra de livro(s) — Autores Independentes do Brasil (${items.map((i) => i.titulo).join(", ")})`.slice(0, 500),
+        description: `Compra de livro(s) — Autores Independentes do Brasil (${rows.map((r) => r.livro).join(", ")})`.slice(0, 500),
         externalReference: grupoPedidoId,
       })
     : null;
