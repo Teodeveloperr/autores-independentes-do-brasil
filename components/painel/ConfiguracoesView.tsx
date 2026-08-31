@@ -20,8 +20,12 @@ const TIPOS_CHAVE_PIX = [
 const STATUS_LABEL: Record<string, string> = {
   pending: "Aguardando confirmação do pagamento",
   authorized: "Ativa",
+  active: "Ativa",
   paused: "Pausada (falha na cobrança)",
+  overdue: "Pagamento em atraso",
   cancelled: "Cancelada",
+  expired: "Expirada",
+  refused: "Recusada",
 };
 
 export default function ConfiguracoesView({
@@ -40,6 +44,7 @@ export default function ConfiguracoesView({
   const [pixErro, setPixErro] = useState("");
   const [pixSalvo, setPixSalvo] = useState(false);
   const router = useRouter();
+  const statusAssinatura = author.asaasPixAutoStatus || author.asaasSubscriptionStatus || author.mpSubscriptionStatus;
 
   function onCancelarAssinatura() {
     if (!confirm("Tem certeza que deseja cancelar sua assinatura? Seu plano voltará para Iniciante.")) return;
@@ -83,10 +88,10 @@ export default function ConfiguracoesView({
               <div style={{ color: "#666", marginBottom: "4px" }}>Plano atual</div>
               <div style={{ fontWeight: 600 }}>{author.plano}</div>
             </div>
-            {author.mpSubscriptionStatus && (
+            {statusAssinatura && (
               <div>
                 <div style={{ color: "#666", marginBottom: "4px" }}>Assinatura</div>
-                <div style={{ fontWeight: 600 }}>{STATUS_LABEL[author.mpSubscriptionStatus] ?? author.mpSubscriptionStatus}</div>
+                <div style={{ fontWeight: 600 }}>{STATUS_LABEL[statusAssinatura] ?? statusAssinatura}</div>
               </div>
             )}
             <div>
@@ -101,7 +106,7 @@ export default function ConfiguracoesView({
             >
               Ver planos e fazer upgrade →
             </Link>
-            {(author.mpSubscriptionStatus === "authorized" || author.mpSubscriptionStatus === "pending") && (
+            {author.plano !== "Iniciante" && (
               <button
                 onClick={onCancelarAssinatura}
                 disabled={cancelando}
