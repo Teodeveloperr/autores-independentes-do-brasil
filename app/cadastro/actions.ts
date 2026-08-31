@@ -8,7 +8,7 @@ import { sendWelcomeEmail } from "@/lib/email";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 import { validarSenha } from "@/lib/password";
 import { validarCpf } from "@/lib/cpf";
-import { criarAssinaturaAsaasParaAutor } from "@/lib/assinatura";
+import { criarAssinaturaPixAutomatico } from "@/lib/assinatura";
 import { PLANOS_PAGOS, valorCicloCentavos, type PlanoPagoSlug, type CicloAssinatura } from "@/lib/plans";
 
 export type Step1Data = {
@@ -56,7 +56,12 @@ export async function validateStep1(formData: FormData): Promise<Step1Result> {
 export type PlanId = "free" | PlanoPagoSlug;
 export type Cycle = CicloAssinatura;
 
-export async function createAccount(step1: Step1Data, planId: PlanId, cycle: Cycle, cpf: string) {
+export async function createAccount(
+  step1: Step1Data,
+  planId: PlanId,
+  cycle: Cycle,
+  cpf: string
+): Promise<{ pixQrCode: { payload: string; image: string } } | undefined> {
   const ip = await getClientIp();
   const permitido = await checkRateLimit(`cadastro:${ip}`, 5, 60);
   if (!permitido) {
@@ -113,9 +118,8 @@ export async function createAccount(step1: Step1Data, planId: PlanId, cycle: Cyc
 
   const plano = PLANOS_PAGOS[planId];
 
-  let invoiceUrl: string;
   try {
-    invoiceUrl = await criarAssinaturaAsaasParaAutor({
+    const { qrCodePayload, qrCodeImage } = await criarAssinaturaPixAutomatico({
       authorId: author.id,
       authorEmail: author.email,
       authorNome: author.nome,
@@ -124,9 +128,8 @@ export async function createAccount(step1: Step1Data, planId: PlanId, cycle: Cyc
       ciclo: cycle,
       valorCentavos: valorCicloCentavos(plano, cycle),
     });
+    return { pixQrCode: { payload: qrCodePayload, image: qrCodeImage } };
   } catch {
     redirect("/painel?assinatura=erro");
   }
-
-  redirect(invoiceUrl);
 }

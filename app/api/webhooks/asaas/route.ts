@@ -86,19 +86,30 @@ export async function POST(request: NextRequest) {
         }).catch((err) => console.error(`[asaas] Falha ao enviar e-mail de nova cobrança para ${author.email}:`, err));
       }
     }
+    // Cobrança do Pix Automático (sem cobranca.subscription, identificada por customer) é debitada
+    // sozinha — não faz sentido mandar e-mail pedindo pra pagar um link.
     return NextResponse.json({ received: true }, { status: 200 });
   }
 
   if (evento === "PAYMENT_OVERDUE" && paymentId) {
     const cobranca = await buscarCobranca(paymentId);
-    if (cobranca?.subscription) {
-      const author = await prisma.author.findUnique({ where: { asaasSubscriptionId: cobranca.subscription } });
-      if (author && author.plano !== "Iniciante") {
-        await prisma.author.update({
-          where: { id: author.id },
-          data: { planoPendente: author.planoPendente ?? author.plano, plano: "Iniciante", asaasSubscriptionStatus: "overdue" },
-        });
-      }
+    const viaAssinaturaLink = Boolean(cobranca?.subscription);
+    const author = viaAssinaturaLink
+      ? await prisma.author.findUnique({ where: { asaasSubscriptionId: cobranca!.subscription! } })
+      : cobranca?.customer
+        ? await prisma.author.findFirst({ where: { asaasPixCustomerId: cobranca.customer, asaasPixAutoStatus: "active" } })
+        : null;
+    if (author && author.plano !== "Iniciante") {
+      await prisma.author.update({
+        where: { id: author.id },
+        data: {
+          planoPendente: author.planoPendente ?? author.plano,
+          plano: "Iniciante",
+          // A assinatura via link avulso passa a "overdue"; o Pix Automático mantém o status da
+          // autorização como está — só essa cobrança do ciclo que falhou, a autorização continua ativa.
+          asaasSubscriptionStatus: viaAssinaturaLink ? "overdue" : author.asaasSubscriptionStatus,
+        },
+      });
     }
     return NextResponse.json({ received: true }, { status: 200 });
   }
@@ -108,23 +119,33 @@ export async function POST(request: NextRequest) {
   }
 
   const cobranca = await buscarCobranca(paymentId);
-  if (cobranca?.subscription) {
-    const author = await prisma.author.findUnique({ where: { asaasSubscriptionId: cobranca.subscription } });
-    if (author) {
-      const jaRegistrado = await prisma.subscriptionPayment.findUnique({ where: { asaasPaymentId: paymentId } });
-      if (!jaRegistrado) {
-        await prisma.subscriptionPayment.create({
-          data: { authorId: author.id, plano: author.planoPendente ?? author.plano, valorCentavos: cobranca.valueCentavos, asaasPaymentId: paymentId },
-        });
-      }
-      if (author.planoPendente) {
-        await prisma.author.update({
-          where: { id: author.id },
-          data: { plano: author.planoPendente, asaasSubscriptionStatus: "active", planoPendente: null },
-        });
-      } else if (author.asaasSubscriptionStatus !== "active") {
-        await prisma.author.update({ where: { id: author.id }, data: { asaasSubscriptionStatus: "active" } });
-      }
+  if (!cobranca) {
+    return NextResponse.json({ received: true }, { status: 200 });
+  }
+  const authorAssinatura = cobranca.subscription
+    ? await prisma.author.findUnique({ where: { asaasSubscriptionId: cobranca.subscription } })
+    : cobranca.customer
+      ? await prisma.author.findFirst({ where: { asaasPixCustomerId: cobranca.customer, asaasPixAutoStatus: "active" } })
+      : null;
+
+  if (authorAssinatura) {
+    const jaRegistrado = await prisma.subscriptionPayment.findUnique({ where: { asaasPaymentId: paymentId } });
+    if (!jaRegistrado) {
+      await prisma.subscriptionPayment.create({
+        data: { authorId: authorAssinatura.id, plano: authorAssinatura.planoPendente ?? authorAssinatura.plano, valorCentavos: cobranca.valueCentavos, asaasPaymentId: paymentId },
+      });
+    }
+    if (authorAssinatura.planoPendente) {
+      await prisma.author.update({
+        where: { id: authorAssinatura.id },
+        data: {
+          plano: authorAssinatura.planoPendente,
+          planoPendente: null,
+          asaasSubscriptionStatus: cobranca.subscription ? "active" : authorAssinatura.asaasSubscriptionStatus,
+        },
+      });
+    } else if (cobranca.subscription && authorAssinatura.asaasSubscriptionStatus !== "active") {
+      await prisma.author.update({ where: { id: authorAssinatura.id }, data: { asaasSubscriptionStatus: "active" } });
     }
     return NextResponse.json({ received: true }, { status: 200 });
   }

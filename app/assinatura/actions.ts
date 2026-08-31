@@ -1,16 +1,15 @@
 "use server";
 
-import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { requireAuthor } from "@/lib/auth";
 import { cancelarAssinaturaMp } from "@/lib/mercadoPago";
 import { cancelarAutorizacaoPixAutomatico, cancelarAssinaturaAsaas } from "@/lib/asaas";
-import { criarAssinaturaAsaasParaAutor } from "@/lib/assinatura";
+import { criarAssinaturaPixAutomatico } from "@/lib/assinatura";
 import { validarCpf } from "@/lib/cpf";
 import { PLANOS_PAGOS, CICLO_MESES, valorCicloCentavos, descontoFidelidade, PLANO_RANK, type PlanoPagoSlug, type CicloAssinatura } from "@/lib/plans";
 import { checkRateLimit } from "@/lib/rateLimit";
 
-export type AssinarState = { error?: string } | undefined;
+export type AssinarState = { error?: string; pixQrCode?: { payload: string; image: string } } | undefined;
 
 async function cancelarAssinaturaAtiva(author: {
   mpPreapprovalId: string | null;
@@ -58,9 +57,8 @@ export async function iniciarAssinatura(_prev: AssinarState, formData: FormData)
 
   await cancelarAssinaturaAtiva(author);
 
-  let invoiceUrl: string;
   try {
-    invoiceUrl = await criarAssinaturaAsaasParaAutor({
+    const { qrCodePayload, qrCodeImage } = await criarAssinaturaPixAutomatico({
       authorId: author.id,
       authorEmail: author.email,
       authorNome: author.nome,
@@ -69,11 +67,10 @@ export async function iniciarAssinatura(_prev: AssinarState, formData: FormData)
       ciclo,
       valorCentavos,
     });
+    return { pixQrCode: { payload: qrCodePayload, image: qrCodeImage } };
   } catch (err) {
     return { error: err instanceof Error ? err.message : "Não foi possível iniciar a assinatura. Tente novamente em instantes." };
   }
-
-  redirect(invoiceUrl);
 }
 
 export async function cancelarAssinatura() {

@@ -102,6 +102,24 @@ function PlanoPagoCard({
         <div style={{ textAlign: "center", background: "#E3F4E9", color: "#009B3A", padding: "12px", fontWeight: 600, borderRadius: "4px", fontSize: "14px" }}>
           ✓ Seu plano atual
         </div>
+      ) : state?.pixQrCode ? (
+        <div style={{ textAlign: "center", background: "#F6F6F6", borderRadius: "6px", padding: "16px" }}>
+          <p style={{ fontSize: "13px", fontWeight: 600, marginBottom: "10px" }}>Escaneie com o app do seu banco pra autorizar a cobrança automática:</p>
+          {state.pixQrCode.image && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={`data:image/png;base64,${state.pixQrCode.image}`} alt="QR Code Pix Automático" style={{ width: "180px", height: "180px", margin: "0 auto 10px" }} />
+          )}
+          <textarea
+            readOnly
+            value={state.pixQrCode.payload}
+            onClick={(e) => e.currentTarget.select()}
+            rows={3}
+            style={{ width: "100%", fontSize: "11px", padding: "8px", border: "1px solid #DDD", borderRadius: "4px", resize: "none" }}
+          />
+          <p style={{ fontSize: "11px", color: "#666", marginTop: "10px" }}>
+            Depois de autorizar, seu plano é ativado automaticamente — você pode fechar esta tela e conferir no seu painel.
+          </p>
+        </div>
       ) : (
         <form action={formAction}>
           <input type="hidden" name="planoSlug" value={slug} />
