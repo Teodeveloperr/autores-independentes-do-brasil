@@ -166,6 +166,7 @@ export async function criarAutorizacaoPixAutomatico(input: {
       id: string;
       immediateQrCode?: { payload?: string; encodedImage?: string };
     };
+    console.log("[asaas][debug] resposta criarAutorizacaoPixAutomatico:", JSON.stringify(data));
     return {
       id: data.id,
       qrCodePayload: data.immediateQrCode?.payload ?? "",
