@@ -1,8 +1,8 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { addCollectiveEvent, removeCollectiveEvent } from "@/app/admin/actions";
+import { addCollectiveEvent, updateCollectiveEvent, removeCollectiveEvent } from "@/app/admin/actions";
 import type { CollectiveEvent } from "./types";
 
 const MESES = ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"];
@@ -10,16 +10,25 @@ const CATEGORIAS = ["Bienais e Feiras", "Palestras e Workshops", "Encontros de A
 
 export default function AdminAgendaView({ eventos }: { eventos: CollectiveEvent[] }) {
   const [pending, startTransition] = useTransition();
+  const [editingId, setEditingId] = useState<string | null>(null);
   const router = useRouter();
+
+  const editing = eventos.find((ev) => ev.id === editingId) ?? null;
 
   function onSubmit(formData: FormData) {
     startTransition(async () => {
-      await addCollectiveEvent(formData);
+      if (editingId) {
+        await updateCollectiveEvent(editingId, formData);
+        setEditingId(null);
+      } else {
+        await addCollectiveEvent(formData);
+      }
       router.refresh();
     });
   }
 
   function onRemove(id: string) {
+    if (editingId === id) setEditingId(null);
     startTransition(async () => {
       await removeCollectiveEvent(id);
       router.refresh();
@@ -33,20 +42,22 @@ export default function AdminAgendaView({ eventos }: { eventos: CollectiveEvent[
         Estes eventos aparecem na página pública &quot;Eventos&quot; para todos os visitantes.
       </p>
       <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1.4fr", gap: "20px", alignItems: "start" }}>
-        <form action={onSubmit} style={{ background: "white", borderRadius: "10px", padding: "24px", display: "flex", flexDirection: "column", gap: "14px" }}>
-          <div style={{ fontWeight: 700, color: "#002776", marginBottom: "4px" }}>📅 Novo evento</div>
+        <form key={editingId ?? "new"} action={onSubmit} style={{ background: "white", borderRadius: "10px", padding: "24px", display: "flex", flexDirection: "column", gap: "14px" }}>
+          <div style={{ fontWeight: 700, color: "#002776", marginBottom: "4px" }}>
+            {editing ? "✏️ Editar evento" : "📅 Novo evento"}
+          </div>
           <div>
             <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>Nome do evento</label>
-            <input name="nome" type="text" required placeholder="Ex: Bienal do Livro – SP" style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px" }} />
+            <input name="nome" type="text" required defaultValue={editing?.nome} placeholder="Ex: Bienal do Livro – SP" style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px" }} />
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
             <div>
               <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>Dia</label>
-              <input name="dia" type="number" required min={1} max={31} placeholder="15" style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px" }} />
+              <input name="dia" type="number" required min={1} max={31} defaultValue={editing?.dia} placeholder="15" style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px" }} />
             </div>
             <div>
               <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>Mês</label>
-              <select name="mes" style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px" }}>
+              <select name="mes" defaultValue={editing?.mes ?? MESES[0]} style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px" }}>
                 {MESES.map((m) => (
                   <option key={m}>{m}</option>
                 ))}
@@ -55,7 +66,7 @@ export default function AdminAgendaView({ eventos }: { eventos: CollectiveEvent[
           </div>
           <div>
             <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>Categoria</label>
-            <select name="categoria" style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px" }}>
+            <select name="categoria" defaultValue={editing?.categoria ?? CATEGORIAS[0]} style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px" }}>
               {CATEGORIAS.map((c) => (
                 <option key={c}>{c}</option>
               ))}
@@ -63,15 +74,22 @@ export default function AdminAgendaView({ eventos }: { eventos: CollectiveEvent[
           </div>
           <div>
             <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>Local</label>
-            <input name="local" type="text" required placeholder="Ex: São Paulo, SP ou Online" style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px" }} />
+            <input name="local" type="text" required defaultValue={editing?.local} placeholder="Ex: São Paulo, SP ou Online" style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px" }} />
           </div>
           <div>
             <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>Período (texto livre)</label>
-            <input name="periodo" type="text" placeholder="Ex: 3 a 13 de setembro" style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px" }} />
+            <input name="periodo" type="text" defaultValue={editing?.periodo ?? ""} placeholder="Ex: 3 a 13 de setembro" style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px" }} />
           </div>
-          <button type="submit" disabled={pending} style={{ background: "#009B3A", color: "white", padding: "12px", fontWeight: 700, borderRadius: "6px", fontSize: "14px", opacity: pending ? 0.7 : 1 }}>
-            {pending ? "Adicionando..." : "Adicionar à agenda"}
-          </button>
+          <div style={{ display: "flex", gap: "10px" }}>
+            {editing && (
+              <button type="button" onClick={() => setEditingId(null)} style={{ flex: "0 0 auto", background: "white", border: "1px solid #DDD", color: "#262626", padding: "12px 20px", fontWeight: 600, borderRadius: "6px", fontSize: "14px" }}>
+                Cancelar
+              </button>
+            )}
+            <button type="submit" disabled={pending} style={{ flex: 1, background: "#009B3A", color: "white", padding: "12px", fontWeight: 700, borderRadius: "6px", fontSize: "14px", opacity: pending ? 0.7 : 1 }}>
+              {pending ? "Salvando..." : editing ? "Salvar alterações" : "Adicionar à agenda"}
+            </button>
+          </div>
         </form>
         <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
           {eventos.map((ev) => (
@@ -85,6 +103,9 @@ export default function AdminAgendaView({ eventos }: { eventos: CollectiveEvent[
                 <div style={{ fontSize: "12px", color: "#666" }}>{ev.categoria} • 📍 {ev.local}</div>
                 <div style={{ fontSize: "12px", color: "#666" }}>{ev.periodo}</div>
               </div>
+              <button onClick={() => setEditingId(ev.id)} title="Editar evento" style={{ background: "white", border: "1px solid #DDD", borderRadius: "6px", width: "32px", height: "32px", fontSize: "13px", color: "#002776", flexShrink: 0 }}>
+                ✏️
+              </button>
               <button onClick={() => onRemove(ev.id)} title="Remover evento" style={{ background: "white", border: "1px solid #DDD", borderRadius: "6px", width: "32px", height: "32px", fontSize: "13px", color: "#C0392B", flexShrink: 0 }}>
                 ✕
               </button>

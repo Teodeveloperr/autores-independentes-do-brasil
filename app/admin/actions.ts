@@ -153,19 +153,31 @@ export async function desativar2FA(_prev: Desativar2FAState, formData: FormData)
   return { ok: true };
 }
 
+function collectiveEventDataFromForm(formData: FormData) {
+  return {
+    nome: ((formData.get("nome") as string) || "Evento").trim(),
+    dia: parseInt((formData.get("dia") as string) || "1", 10) || 1,
+    mes: (formData.get("mes") as string) || "JAN",
+    categoria: (formData.get("categoria") as string) || "Outros",
+    local: ((formData.get("local") as string) || "—").trim(),
+    periodo: ((formData.get("periodo") as string) || "").trim() || null,
+  };
+}
+
 export async function addCollectiveEvent(formData: FormData) {
   await requireAdmin();
 
-  await prisma.collectiveEvent.create({
-    data: {
-      nome: ((formData.get("nome") as string) || "Evento").trim(),
-      dia: parseInt((formData.get("dia") as string) || "1", 10) || 1,
-      mes: (formData.get("mes") as string) || "JAN",
-      categoria: (formData.get("categoria") as string) || "Outros",
-      local: ((formData.get("local") as string) || "—").trim(),
-      periodo: ((formData.get("periodo") as string) || "").trim() || null,
-    },
-  });
+  await prisma.collectiveEvent.create({ data: collectiveEventDataFromForm(formData) });
+
+  revalidatePath("/admin");
+  revalidatePath("/eventos");
+  revalidatePath("/");
+}
+
+export async function updateCollectiveEvent(id: string, formData: FormData) {
+  await requireAdmin();
+
+  await prisma.collectiveEvent.update({ where: { id }, data: collectiveEventDataFromForm(formData) });
 
   revalidatePath("/admin");
   revalidatePath("/eventos");
