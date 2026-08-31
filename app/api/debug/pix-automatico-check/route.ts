@@ -24,7 +24,7 @@ export async function GET(request: Request) {
     customerId,
     frequency: "MONTHLY",
     contractId: `diagnostico-${Date.now()}`,
-    valueCentavos: 100,
+    valueCentavos: 500,
     description: "Teste de diagnóstico — Pix Automático",
   });
 
