@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { processarRepasse, enviarConfirmacaoRecebimento } from "@/lib/repasse";
+import { cancelarAutorizacaoPixAutomatico } from "@/lib/asaas";
 
 const DIAS_LEMBRETE = 3;
 const DIAS_LIBERACAO = 7;
+const DIAS_CADASTRO_PENDENTE = 3;
 
 export async function GET(request: Request) {
   const authHeader = request.headers.get("authorization");
@@ -43,5 +45,19 @@ export async function GET(request: Request) {
     }
   }
 
-  return NextResponse.json({ lembretes: semConfirmacaoEnviada.length, processados: pendentes.length, liberados });
+  const limiteCadastroPendente = new Date(Date.now() - DIAS_CADASTRO_PENDENTE * 24 * 60 * 60 * 1000);
+  const cadastrosAbandonados = await prisma.pendingSignup.findMany({
+    where: { createdAt: { lt: limiteCadastroPendente } },
+  });
+  for (const pendente of cadastrosAbandonados) {
+    await cancelarAutorizacaoPixAutomatico(pendente.asaasPixAutoAuthorizationId);
+    await prisma.pendingSignup.delete({ where: { id: pendente.id } });
+  }
+
+  return NextResponse.json({
+    lembretes: semConfirmacaoEnviada.length,
+    processados: pendentes.length,
+    liberados,
+    cadastrosPendentesLimpos: cadastrosAbandonados.length,
+  });
 }

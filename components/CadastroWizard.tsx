@@ -325,7 +325,7 @@ export default function CadastroWizard() {
         <div>
           <h2 style={{ fontSize: "26px", fontWeight: 700, marginBottom: "6px" }}>Autorize o Pix Automático</h2>
           <p style={{ fontSize: "14px", color: "#666", marginBottom: "24px" }}>
-            Sua conta já foi criada! Escaneie o QR Code com o app do seu banco pra autorizar a cobrança automática do plano {selPlan.nome}.
+            Falta só um passo: escaneie o QR Code com o app do seu banco pra autorizar a cobrança automática do plano {selPlan.nome}.
           </p>
           <div style={{ textAlign: "center", background: "#F6F6F6", borderRadius: "8px", padding: "24px", marginBottom: "20px" }}>
             {pixQrCode.image && (
@@ -340,11 +340,11 @@ export default function CadastroWizard() {
               style={{ width: "100%", fontSize: "11px", padding: "8px", border: "1px solid #DDD", borderRadius: "4px", resize: "none" }}
             />
             <p style={{ fontSize: "12px", color: "#666", marginTop: "14px" }}>
-              Depois de autorizar, seu plano é ativado automaticamente — você já pode acessar o painel enquanto isso.
+              Sua conta só é criada depois que você autorizar — assim que confirmar no app do banco, você recebe um e-mail de boas-vindas e já pode entrar com o e-mail e a senha que você acabou de criar.
             </p>
           </div>
-          <Link href="/painel" style={{ display: "block", textAlign: "center", background: "#009B3A", color: "white", padding: "14px", fontWeight: 700, borderRadius: "6px", fontSize: "15px", textDecoration: "none" }}>
-            Ir para o painel
+          <Link href="/login" style={{ display: "block", textAlign: "center", background: "#009B3A", color: "white", padding: "14px", fontWeight: 700, borderRadius: "6px", fontSize: "15px", textDecoration: "none" }}>
+            Já autorizei, ir para o login
           </Link>
         </div>
       )}
@@ -372,7 +372,7 @@ export default function CadastroWizard() {
             {plan === "free" ? (
               <>🎉 O plano <strong>Iniciante</strong> não tem cobrança. Você pode fazer upgrade quando quiser depois.</>
             ) : (
-              <>🔒 Sua conta será criada agora, e em seguida vamos gerar um QR Code Pix pra você autorizar a cobrança automática no app do seu banco.</>
+              <>🔒 Vamos gerar um QR Code Pix pra você autorizar a cobrança automática no app do seu banco — sua conta só é criada de fato depois que você autorizar.</>
             )}
           </div>
 

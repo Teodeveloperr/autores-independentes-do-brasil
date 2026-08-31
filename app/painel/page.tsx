@@ -7,9 +7,9 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = { title: "Meu Painel" };
 
-export default async function PainelPage({ searchParams }: { searchParams: Promise<{ assinatura?: string; mercadopago?: string }> }) {
+export default async function PainelPage({ searchParams }: { searchParams: Promise<{ mercadopago?: string }> }) {
   const authorSession = await requireAuthor();
-  const { assinatura, mercadopago } = await searchParams;
+  const { mercadopago } = await searchParams;
 
   const [author, visualizacoesAgg] = await Promise.all([
     prisma.author.findUniqueOrThrow({
@@ -38,8 +38,6 @@ export default async function PainelPage({ searchParams }: { searchParams: Promi
     <PainelApp
       author={author}
       temSenha={temSenha}
-      assinaturaPendente={assinatura === "pendente"}
-      assinaturaErro={assinatura === "erro"}
       mercadoPagoStatus={mercadopago}
       maxVisualizacoesGlobal={visualizacoesAgg._max.visualizacoes ?? 0}
     />

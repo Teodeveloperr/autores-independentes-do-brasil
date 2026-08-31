@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { verificarWebhookAsaas, buscarCobranca } from "@/lib/asaas";
-import { sendOrderConfirmationEmail, sendNewSaleEmail, sendNovaCobrancaAssinaturaEmail } from "@/lib/email";
+import { sendOrderConfirmationEmail, sendNewSaleEmail, sendNovaCobrancaAssinaturaEmail, sendWelcomeEmail } from "@/lib/email";
 
 const EVENTOS_PAGO = new Set(["PAYMENT_RECEIVED", "PAYMENT_CONFIRMED"]);
 const EVENTOS_PIX_AUTO_ATIVADO = new Set(["PIX_AUTOMATIC_RECURRING_AUTHORIZATION_ACTIVATED"]);
@@ -52,6 +52,39 @@ export async function POST(request: NextRequest) {
           where: { id: author.id },
           data: { plano: author.planoPendente, asaasPixAutoStatus: "active", planoPendente: null },
         });
+      } else if (!author) {
+        // Cadastro novo: a conta só é criada agora, com o pagamento já confirmado.
+        const pendente = await prisma.pendingSignup.findUnique({ where: { asaasPixAutoAuthorizationId: authorizationId } });
+        if (pendente) {
+          const emailEmUso = await prisma.author.findUnique({ where: { email: pendente.email } });
+          if (emailEmUso) {
+            console.error(`[asaas] PendingSignup ${pendente.id} não pôde virar conta: e-mail ${pendente.email} já está em uso.`);
+          } else {
+            const novoAuthor = await prisma.author.create({
+              data: {
+                nome: pendente.nome,
+                email: pendente.email,
+                senhaHash: pendente.senhaHash,
+                generos: pendente.generos,
+                cidade: pendente.cidade,
+                bio: pendente.bio,
+                anoEntrada: new Date().getFullYear(),
+                plano: pendente.planoNome,
+                planoCiclo: pendente.ciclo,
+                planoValorCentavos: pendente.valorCentavos,
+                planoIniciadoEm: new Date(),
+                cpf: pendente.cpf,
+                asaasPixCustomerId: pendente.asaasPixCustomerId,
+                asaasPixAutoAuthorizationId: pendente.asaasPixAutoAuthorizationId,
+                asaasPixAutoStatus: "active",
+              },
+            });
+            await sendWelcomeEmail(novoAuthor.email, novoAuthor.nome).catch((err) =>
+              console.error("[email] Falha ao enviar e-mail de boas-vindas:", err)
+            );
+            await prisma.pendingSignup.delete({ where: { id: pendente.id } });
+          }
+        }
       }
     }
     return NextResponse.json({ received: true }, { status: 200 });
@@ -66,6 +99,9 @@ export async function POST(request: NextRequest) {
           where: { id: author.id },
           data: { plano: "Iniciante", asaasPixAutoStatus: EVENTOS_PIX_AUTO_ENCERRADO[evento], planoPendente: null },
         });
+      } else {
+        // Autorização de um cadastro que nunca chegou a virar conta — só limpa o pendente, se houver.
+        await prisma.pendingSignup.deleteMany({ where: { asaasPixAutoAuthorizationId: authorizationId } });
       }
     }
     return NextResponse.json({ received: true }, { status: 200 });

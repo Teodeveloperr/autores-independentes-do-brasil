@@ -342,6 +342,27 @@ model PortfolioEvento {
   @@index([authorId])
 }
 
+model PendingSignup {
+  id        String   @id @default(cuid())
+  nome      String
+  email     String   @unique
+  senhaHash String
+  generos   String[]
+  cidade    String
+  bio       String
+
+  planoSlug     String
+  planoNome     String
+  ciclo         String
+  valorCentavos Int
+  cpf           String
+
+  asaasPixCustomerId          String
+  asaasPixAutoAuthorizationId String @unique
+
+  createdAt DateTime @default(now())
+}
+
 model PasswordResetToken {
   id        String    @id @default(cuid())
   authorId  String

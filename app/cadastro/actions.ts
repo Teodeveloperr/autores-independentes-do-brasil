@@ -8,7 +8,8 @@ import { sendWelcomeEmail } from "@/lib/email";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 import { validarSenha } from "@/lib/password";
 import { validarCpf } from "@/lib/cpf";
-import { criarAssinaturaPixAutomatico } from "@/lib/assinatura";
+import { criarCadastroPendente } from "@/lib/assinatura";
+import { cancelarAutorizacaoPixAutomatico } from "@/lib/asaas";
 import { PLANOS_PAGOS, valorCicloCentavos, type PlanoPagoSlug, type CicloAssinatura } from "@/lib/plans";
 
 export type Step1Data = {
@@ -45,8 +46,11 @@ export async function validateStep1(formData: FormData): Promise<Step1Result> {
     return { error: "Selecione ao menos um gênero literário." };
   }
 
-  const existente = await prisma.author.findUnique({ where: { email } });
-  if (existente) {
+  const [existente, pendente] = await Promise.all([
+    prisma.author.findUnique({ where: { email } }),
+    prisma.pendingSignup.findUnique({ where: { email } }),
+  ]);
+  if (existente || pendente) {
     return { error: "Já existe uma conta cadastrada com esse e-mail." };
   }
 
@@ -74,7 +78,10 @@ export async function createAccount(
 
   // Revalida tudo no servidor — nunca confiar apenas na validação do passo 1 no cliente.
   const email = step1.email.trim().toLowerCase();
-  const existente = await prisma.author.findUnique({ where: { email } });
+  const [existente, pendente] = await Promise.all([
+    prisma.author.findUnique({ where: { email } }),
+    prisma.pendingSignup.findUnique({ where: { email } }),
+  ]);
   if (existente) {
     throw new Error("Já existe uma conta cadastrada com esse e-mail.");
   }
@@ -83,53 +90,61 @@ export async function createAccount(
     throw new Error(erroSenha);
   }
 
-  // A conta é sempre criada como Iniciante — se um plano pago foi escolhido, a assinatura
-  // na Asaas é iniciada logo em seguida, e o plano só vira Essencial/Premium de
-  // verdade quando o webhook confirmar o pagamento (mesmo funcionamento do upgrade em /assinatura).
   const senhaHash = await bcrypt.hash(step1.senha, 10);
 
-  const author = await prisma.author.create({
-    data: {
-      nome: step1.nome,
-      email,
-      senhaHash,
-      generos: step1.generos,
-      cidade: step1.cidade,
-      bio:
-        step1.bio ||
-        `Autor(a) independente do coletivo Autores Independentes do Brasil, de ${step1.cidade}.`,
-      anoEntrada: new Date().getFullYear(),
-      plano: "Iniciante",
-    },
-  });
-
-  try {
-    await sendWelcomeEmail(author.email, author.nome);
-  } catch (err) {
-    // Falha no envio do e-mail não deve impedir o cadastro.
-    console.error("[email] Falha ao enviar e-mail de boas-vindas:", err);
-  }
-
-  await createAuthorSession(author.id);
-
   if (planId === "free") {
+    // Se a pessoa tinha uma tentativa de plano pago pendente com esse e-mail e desistiu
+    // pra ir de gratuito, cancela aquela autorização e libera o e-mail.
+    if (pendente) {
+      await cancelarAutorizacaoPixAutomatico(pendente.asaasPixAutoAuthorizationId);
+      await prisma.pendingSignup.delete({ where: { id: pendente.id } });
+    }
+
+    const author = await prisma.author.create({
+      data: {
+        nome: step1.nome,
+        email,
+        senhaHash,
+        generos: step1.generos,
+        cidade: step1.cidade,
+        bio:
+          step1.bio ||
+          `Autor(a) independente do coletivo Autores Independentes do Brasil, de ${step1.cidade}.`,
+        anoEntrada: new Date().getFullYear(),
+        plano: "Iniciante",
+      },
+    });
+
+    try {
+      await sendWelcomeEmail(author.email, author.nome);
+    } catch (err) {
+      // Falha no envio do e-mail não deve impedir o cadastro.
+      console.error("[email] Falha ao enviar e-mail de boas-vindas:", err);
+    }
+
+    await createAuthorSession(author.id);
     redirect("/painel");
   }
 
+  // Plano pago: a conta só é criada de verdade quando o webhook confirmar que o Pix
+  // Automático foi autorizado (ver app/api/webhooks/asaas/route.ts) — até lá, os dados
+  // ficam guardados em PendingSignup. Assim, se a pessoa desistir antes de autorizar,
+  // não sobra nenhuma conta "fantasma".
   const plano = PLANOS_PAGOS[planId];
 
-  try {
-    const { qrCodePayload, qrCodeImage } = await criarAssinaturaPixAutomatico({
-      authorId: author.id,
-      authorEmail: author.email,
-      authorNome: author.nome,
-      cpf,
-      planoNome: plano.nome,
-      ciclo: cycle,
-      valorCentavos: valorCicloCentavos(plano, cycle),
-    });
-    return { pixQrCode: { payload: qrCodePayload, image: qrCodeImage } };
-  } catch {
-    redirect("/painel?assinatura=erro");
-  }
+  const { qrCodePayload, qrCodeImage } = await criarCadastroPendente({
+    nome: step1.nome,
+    email,
+    senhaHash,
+    generos: step1.generos,
+    cidade: step1.cidade,
+    bio: step1.bio || `Autor(a) independente do coletivo Autores Independentes do Brasil, de ${step1.cidade}.`,
+    planoSlug: planId,
+    planoNome: plano.nome,
+    ciclo: cycle,
+    valorCentavos: valorCicloCentavos(plano, cycle),
+    cpf,
+  });
+
+  return { pixQrCode: { payload: qrCodePayload, image: qrCodeImage } };
 }

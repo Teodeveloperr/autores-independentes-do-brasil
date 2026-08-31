@@ -1,7 +1,8 @@
 import "server-only";
+import crypto from "node:crypto";
 import { prisma } from "@/lib/db";
 import { criarAssinatura } from "@/lib/mercadoPago";
-import { criarOuBuscarCliente, criarAutorizacaoPixAutomatico, criarAssinaturaAsaas, type FrequenciaPixAutomatico, type CicloAssinaturaAsaas } from "@/lib/asaas";
+import { criarOuBuscarCliente, criarAutorizacaoPixAutomatico, cancelarAutorizacaoPixAutomatico, criarAssinaturaAsaas, type FrequenciaPixAutomatico, type CicloAssinaturaAsaas } from "@/lib/asaas";
 import { CICLO_MESES, type PlanoPagoSlug, type CicloAssinatura } from "@/lib/plans";
 
 const FREQUENCIA_POR_CICLO: Record<CicloAssinatura, FrequenciaPixAutomatico> = {
@@ -91,6 +92,64 @@ export async function criarAssinaturaPixAutomatico(input: {
       planoCiclo: input.ciclo,
       planoValorCentavos: input.valorCentavos,
       planoPendente: input.planoNome,
+    },
+  });
+
+  return { qrCodePayload: autorizacao.qrCodePayload, qrCodeImage: autorizacao.qrCodeImage };
+}
+
+export async function criarCadastroPendente(input: {
+  nome: string;
+  email: string;
+  senhaHash: string;
+  generos: string[];
+  cidade: string;
+  bio: string;
+  planoSlug: string;
+  planoNome: string;
+  ciclo: CicloAssinatura;
+  valorCentavos: number;
+  cpf: string;
+}): Promise<{ qrCodePayload: string; qrCodeImage: string }> {
+  const pendenteExistente = await prisma.pendingSignup.findUnique({ where: { email: input.email } });
+  if (pendenteExistente) {
+    await cancelarAutorizacaoPixAutomatico(pendenteExistente.asaasPixAutoAuthorizationId);
+    await prisma.pendingSignup.delete({ where: { id: pendenteExistente.id } });
+  }
+
+  const customerId = await criarOuBuscarCliente({ nome: input.nome, cpf: input.cpf, email: input.email });
+  if (!customerId) {
+    throw new Error("Não foi possível validar seus dados na Asaas. Confira o CPF e tente novamente.");
+  }
+
+  const contractId = crypto.randomBytes(16).toString("hex");
+  const autorizacao = await criarAutorizacaoPixAutomatico({
+    customerId,
+    frequency: FREQUENCIA_POR_CICLO[input.ciclo],
+    contractId,
+    valueCentavos: input.valorCentavos,
+    description: `Assinatura ${input.planoNome}`,
+  });
+
+  if (!autorizacao) {
+    throw new Error("Não foi possível gerar o Pix Automático. Tente novamente em instantes.");
+  }
+
+  await prisma.pendingSignup.create({
+    data: {
+      nome: input.nome,
+      email: input.email,
+      senhaHash: input.senhaHash,
+      generos: input.generos,
+      cidade: input.cidade,
+      bio: input.bio,
+      planoSlug: input.planoSlug,
+      planoNome: input.planoNome,
+      ciclo: input.ciclo,
+      valorCentavos: input.valorCentavos,
+      cpf: input.cpf,
+      asaasPixCustomerId: customerId,
+      asaasPixAutoAuthorizationId: autorizacao.id,
     },
   });
 
