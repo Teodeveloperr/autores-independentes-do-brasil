@@ -2,11 +2,11 @@
 
 import bcrypt from "bcryptjs";
 import QRCode from "qrcode";
-import { del } from "@vercel/blob";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { createAdminSession, deleteAdminSession, createAdminPending2FA, getAdminPending2FA, deleteAdminPending2FA } from "@/lib/session";
 import { requireAdmin } from "@/lib/auth";
+import { excluirAutorCompletamente } from "@/lib/authorDeletion";
 import { recalcularAvaliacaoAutor } from "@/lib/reviews";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 import { gerarSegredoTotp, gerarOtpauthUri, verificarCodigoTotp, gerarCodigosBackup } from "@/lib/totp";
@@ -303,29 +303,7 @@ export async function adminCreateAuthor(_prev: CreateAuthorState, formData: Form
 
 export async function removeAuthor(id: string) {
   await requireAdmin();
-
-  const author = await prisma.author.findUnique({
-    where: { id },
-    include: { books: true, fotos: true },
-  });
-
-  const blobUrls = [
-    author?.fotoUrl,
-    author?.bannerUrl,
-    ...(author?.books.map((b) => b.capaUrl) ?? []),
-    ...(author?.fotos.map((f) => f.url) ?? []),
-  ].filter((url): url is string => !!url && url.includes(".blob.vercel-storage.com"));
-
-  await prisma.author.delete({ where: { id } });
-
-  if (blobUrls.length > 0) {
-    try {
-      await del(blobUrls);
-    } catch (err) {
-      // Registros já foram apagados; falha ao limpar arquivos não deve impedir a exclusão.
-      console.error("[admin] Falha ao apagar arquivos do autor removido:", err);
-    }
-  }
+  await excluirAutorCompletamente(id);
 
   revalidatePath("/admin");
   revalidatePath("/autores");

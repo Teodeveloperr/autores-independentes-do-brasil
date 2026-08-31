@@ -20,6 +20,8 @@ import { podeUsarRecursosExtras, BIO_MAX_CARACTERES_INICIANTE, PORTFOLIO_EVENTOS
 import { enviarConfirmacaoRecebimento } from "@/lib/repasse";
 import { checkRateLimit } from "@/lib/rateLimit";
 import { desconectarMercadoPago as desconectarMercadoPagoLib } from "@/lib/mercadoPagoMarketplace";
+import { excluirAutorCompletamente } from "@/lib/authorDeletion";
+import { cancelarAssinaturaAtiva } from "@/app/assinatura/actions";
 import {
   RP_NAME,
   getRpID,
@@ -441,4 +443,25 @@ export async function removerPasskey(id: string) {
   const author = await requireAuthor();
   await prisma.authorPasskey.deleteMany({ where: { id, authorId: author.id } });
   revalidatePath("/painel");
+}
+
+export async function excluirMinhaConta() {
+  const author = await requireAuthor();
+
+  const pedidosPendentes = await prisma.order.count({
+    where: { authorId: author.id, status: { notIn: ["Entregue", "Aguardando pagamento"] } },
+  });
+  if (pedidosPendentes > 0) {
+    throw new Error(
+      "Você tem pedidos em andamento (pagos, aguardando envio ou repasse). Finalize-os antes de excluir sua conta."
+    );
+  }
+
+  // Cancela qualquer assinatura/autorização ativa antes de apagar a conta, pra não deixar
+  // nada pendurado do lado da Asaas/Mercado Pago.
+  await cancelarAssinaturaAtiva(author);
+
+  await excluirAutorCompletamente(author.id);
+  await deleteAuthorSession();
+  redirect("/");
 }

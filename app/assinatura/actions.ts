@@ -11,7 +11,7 @@ import { checkRateLimit } from "@/lib/rateLimit";
 
 export type AssinarState = { error?: string; pixQrCode?: { payload: string; image: string } } | undefined;
 
-async function cancelarAssinaturaAtiva(author: {
+export async function cancelarAssinaturaAtiva(author: {
   mpPreapprovalId: string | null;
   mpSubscriptionStatus: string | null;
   asaasPixAutoAuthorizationId: string | null;

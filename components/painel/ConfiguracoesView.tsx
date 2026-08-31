@@ -3,7 +3,7 @@
 import { useActionState, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { changePassword, updatePixKey, type ChangePasswordState } from "@/app/painel/actions";
+import { changePassword, updatePixKey, excluirMinhaConta, type ChangePasswordState } from "@/app/painel/actions";
 import { cancelarAssinatura } from "@/app/assinatura/actions";
 import PasskeyManager from "./PasskeyManager";
 import PasswordStrengthChecklist from "../PasswordStrengthChecklist";
@@ -43,6 +43,8 @@ export default function ConfiguracoesView({
   const [salvandoPix, startSalvarPix] = useTransition();
   const [pixErro, setPixErro] = useState("");
   const [pixSalvo, setPixSalvo] = useState(false);
+  const [excluindo, startExclusao] = useTransition();
+  const [erroExclusao, setErroExclusao] = useState("");
   const router = useRouter();
   const statusAssinatura = author.asaasPixAutoStatus || author.asaasSubscriptionStatus || author.mpSubscriptionStatus;
 
@@ -51,6 +53,26 @@ export default function ConfiguracoesView({
     startCancelamento(async () => {
       await cancelarAssinatura();
       router.refresh();
+    });
+  }
+
+  function onExcluirConta() {
+    const confirmado = confirm(
+      "Tem certeza que deseja excluir sua conta? Isso apaga permanentemente seu perfil, livros, fotos, portfólio e histórico — não pode ser desfeito."
+    );
+    if (!confirmado) return;
+    setErroExclusao("");
+    startExclusao(async () => {
+      try {
+        await excluirMinhaConta();
+      } catch (err) {
+        // redirect() lança um erro especial (digest "NEXT_REDIRECT") pra navegar depois de
+        // excluir a conta com sucesso — não é um erro de verdade.
+        if (typeof err === "object" && err !== null && "digest" in err && typeof err.digest === "string" && err.digest.startsWith("NEXT_REDIRECT")) {
+          return;
+        }
+        setErroExclusao(err instanceof Error ? err.message : "Não foi possível excluir sua conta.");
+      }
     });
   }
 
@@ -237,6 +259,25 @@ export default function ConfiguracoesView({
         {pixSalvo && (
           <div style={{ color: "#009B3A", fontSize: "13px", background: "#E3F4E9", padding: "10px 14px", borderRadius: "6px", marginTop: "12px" }}>
             ✅ Chave Pix salva.
+          </div>
+        )}
+      </div>
+
+      <div style={{ background: "white", borderRadius: "10px", padding: "24px", marginTop: "20px", border: "1px solid #FDEDEC" }}>
+        <div style={{ fontWeight: 700, color: "#C0392B", marginBottom: "4px" }}>Excluir minha conta</div>
+        <p style={{ fontSize: "12px", color: "#666", marginBottom: "16px", maxWidth: "560px" }}>
+          Apaga permanentemente seu perfil, livros, fotos, portfólio e histórico — não pode ser desfeito. Disponível pra qualquer plano. Se você tiver pedidos pagos aguardando envio ou repasse, finalize-os antes de excluir a conta.
+        </p>
+        <button
+          onClick={onExcluirConta}
+          disabled={excluindo}
+          style={{ background: "white", border: "1px solid #C0392B", color: "#C0392B", padding: "10px 20px", fontWeight: 700, borderRadius: "6px", fontSize: "13px", opacity: excluindo ? 0.7 : 1 }}
+        >
+          {excluindo ? "Excluindo..." : "Excluir minha conta"}
+        </button>
+        {erroExclusao && (
+          <div style={{ color: "#C0392B", fontSize: "13px", background: "#FDEDEC", padding: "10px 14px", borderRadius: "6px", marginTop: "12px" }}>
+            {erroExclusao}
           </div>
         )}
       </div>
