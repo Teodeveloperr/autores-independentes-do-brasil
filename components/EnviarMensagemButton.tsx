@@ -64,7 +64,7 @@ export default function EnviarMensagemButton({ authorId }: { authorId: string })
                   <input name="nome" type="text" required style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px" }} />
                 </div>
                 <div>
-                  <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>Mensagem</label>
+                  <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>Deixe sua mensagem para o escritor</label>
                   <textarea name="texto" required style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px", minHeight: "100px", resize: "vertical" }} />
                 </div>
                 {erro && <p style={{ fontSize: "12px", color: "#C0392B" }}>{erro}</p>}

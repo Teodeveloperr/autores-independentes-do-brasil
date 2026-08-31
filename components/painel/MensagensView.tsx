@@ -2,12 +2,12 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { markConversationRead, sendMessage } from "@/app/painel/actions";
+import { markConversationRead } from "@/app/painel/actions";
 import type { AuthorWithRelations } from "./types";
 
 export default function MensagensView({ author }: { author: AuthorWithRelations }) {
   const [selectedId, setSelectedId] = useState<string | null>(author.conversas[0]?.id ?? null);
-  const [pending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
   const router = useRouter();
 
   const selected = author.conversas.find((c) => c.id === selectedId) ?? null;
@@ -16,15 +16,6 @@ export default function MensagensView({ author }: { author: AuthorWithRelations 
     setSelectedId(id);
     startTransition(async () => {
       await markConversationRead(id);
-      router.refresh();
-    });
-  }
-
-  function onReply(formData: FormData) {
-    if (!selectedId) return;
-    const texto = (formData.get("resposta") as string) || "";
-    startTransition(async () => {
-      await sendMessage(selectedId, texto);
       router.refresh();
     });
   }
@@ -85,21 +76,13 @@ export default function MensagensView({ author }: { author: AuthorWithRelations 
                 </div>
               ))}
             </div>
-            <form
-              action={(fd) => {
-                onReply(fd);
-              }}
-              style={{ display: "flex", gap: "10px", padding: "16px", borderTop: "1px solid #F0F0F0" }}
-            >
-              <input name="resposta" type="text" required placeholder="Escreva uma resposta..." style={{ flex: 1, padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px" }} />
-              <button type="submit" disabled={pending} style={{ background: "#009B3A", color: "white", padding: "10px 20px", fontWeight: 700, borderRadius: "6px", fontSize: "13px", opacity: pending ? 0.7 : 1 }}>
-                Enviar
-              </button>
-            </form>
+            <div style={{ padding: "14px 20px", borderTop: "1px solid #F0F0F0", fontSize: "12px", color: "#999", textAlign: "center" }}>
+              Essa mensagem não tem como ser respondida por aqui — o(a) leitor(a) não deixou um e-mail ou contato.
+            </div>
           </>
         ) : (
           <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: "#999", fontSize: "14px" }}>
-            Selecione uma conversa para responder
+            Selecione uma mensagem para ler
           </div>
         )}
       </div>

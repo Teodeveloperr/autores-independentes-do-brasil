@@ -308,20 +308,6 @@ export async function markConversationRead(id: string) {
   revalidatePath("/painel");
 }
 
-export async function sendMessage(conversationId: string, texto: string) {
-  const author = await requireAuthor();
-  const conversation = await prisma.conversation.findFirst({
-    where: { id: conversationId, authorId: author.id },
-  });
-  if (!conversation || !texto.trim()) return;
-
-  await prisma.message.create({
-    data: { conversationId, de: "me", texto: texto.trim() },
-  });
-
-  revalidatePath("/painel");
-}
-
 export type ChangePasswordState = { error?: string; ok?: boolean } | undefined;
 
 export async function changePassword(_prev: ChangePasswordState, formData: FormData): Promise<ChangePasswordState> {
