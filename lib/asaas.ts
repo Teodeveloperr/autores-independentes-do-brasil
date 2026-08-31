@@ -162,15 +162,11 @@ export async function criarAutorizacaoPixAutomatico(input: {
       console.error("[asaas] Falha ao criar autorização Pix Automático:", res.status, await res.text());
       return null;
     }
-    const data = (await res.json()) as {
-      id: string;
-      immediateQrCode?: { payload?: string; encodedImage?: string };
-    };
-    console.log("[asaas][debug] resposta criarAutorizacaoPixAutomatico:", JSON.stringify(data));
+    const data = (await res.json()) as { id: string; payload?: string; encodedImage?: string };
     return {
       id: data.id,
-      qrCodePayload: data.immediateQrCode?.payload ?? "",
-      qrCodeImage: data.immediateQrCode?.encodedImage ?? "",
+      qrCodePayload: data.payload ?? "",
+      qrCodeImage: data.encodedImage ?? "",
     };
   } catch (err) {
     console.error("[asaas] Falha ao criar autorização Pix Automático:", err);
