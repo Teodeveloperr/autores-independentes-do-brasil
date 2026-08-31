@@ -155,7 +155,7 @@ export default function AdminApp({
                         <div key={ev.id} style={{ display: "flex", gap: "10px", alignItems: "center" }}>
                           <div style={{ background: "#F6F6F6", border: "1px solid #E0E0E0", borderRadius: "6px", padding: "6px 10px", textAlign: "center", flexShrink: 0 }}>
                             <div style={{ fontSize: "16px", fontWeight: 700, color: "#C0392B" }}>{ev.dia}</div>
-                            <div style={{ fontSize: "10px", fontWeight: 700, color: "#666" }}>{ev.mes}</div>
+                            <div style={{ fontSize: "10px", fontWeight: 700, color: "#666" }}>{ev.mes}/{ev.ano}</div>
                           </div>
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <div style={{ fontWeight: 600, fontSize: "13px" }}>{ev.nome}</div>

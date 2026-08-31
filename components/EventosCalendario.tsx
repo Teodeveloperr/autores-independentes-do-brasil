@@ -32,6 +32,7 @@ export type EventoCalendario = {
   nome: string;
   dia: number;
   mes: string;
+  ano: number;
   categoria: string;
   local: string;
   periodo: string | null;
@@ -63,7 +64,9 @@ export default function EventosCalendario({ eventos }: { eventos: EventoCalendar
 
   const eventosFiltrados = categoria ? eventos.filter((e) => e.categoria === categoria) : eventos;
 
-  const diasComEvento = new Set(eventos.filter((e) => e.mes === MESES_ABREV[mesAtual]).map((e) => e.dia));
+  const diasComEvento = new Set(
+    eventos.filter((e) => e.mes === MESES_ABREV[mesAtual] && e.ano === anoAtual).map((e) => e.dia)
+  );
 
   const primeiroDiaSemana = new Date(anoAtual, mesAtual, 1).getDay();
   const diasNoMes = new Date(anoAtual, mesAtual + 1, 0).getDate();
@@ -153,7 +156,7 @@ export default function EventosCalendario({ eventos }: { eventos: EventoCalendar
                   }}
                 >
                   <div style={{ fontSize: "18px", fontWeight: 700, color: "#C0392B" }}>{ev.dia}</div>
-                  <div style={{ fontSize: "11px", fontWeight: 700, color: "#666" }}>{ev.mes}</div>
+                  <div style={{ fontSize: "11px", fontWeight: 700, color: "#666" }}>{ev.mes}/{ev.ano}</div>
                 </div>
                 <div>
                   <div style={{ fontWeight: 600, marginBottom: "4px" }}>{ev.nome}</div>

@@ -172,9 +172,9 @@ async function seedCollectiveEvents() {
 
   await prisma.collectiveEvent.createMany({
     data: [
-      { nome: "Bienal do Livro de São Paulo", dia: 4, mes: "SET", categoria: "Bienais e Feiras", local: "São Paulo, SP", periodo: "04 a 13 de setembro" },
-      { nome: "Lançamento Coletivo", dia: 20, mes: "SET", categoria: "Lançamentos", local: "Fortaleza, CE", periodo: "20 de setembro" },
-      { nome: "Sarau Literário", dia: 10, mes: "OUT", categoria: "Encontros de Autores", local: "Fortaleza, CE", periodo: "10 de outubro" },
+      { nome: "Bienal do Livro de São Paulo", dia: 4, mes: "SET", ano: 2026, categoria: "Bienais e Feiras", local: "São Paulo, SP", periodo: "04 a 13 de setembro" },
+      { nome: "Lançamento Coletivo", dia: 20, mes: "SET", ano: 2026, categoria: "Lançamentos", local: "Fortaleza, CE", periodo: "20 de setembro" },
+      { nome: "Sarau Literário", dia: 10, mes: "OUT", ano: 2026, categoria: "Encontros de Autores", local: "Fortaleza, CE", periodo: "10 de outubro" },
     ],
   });
   console.log("[seed] eventos do coletivo criados.");

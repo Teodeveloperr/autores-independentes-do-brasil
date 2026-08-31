@@ -257,6 +257,7 @@ model CollectiveEvent {
   nome      String
   dia       Int
   mes       String
+  ano       Int
   categoria String
   local     String
   periodo   String?

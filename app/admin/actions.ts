@@ -158,6 +158,7 @@ function collectiveEventDataFromForm(formData: FormData) {
     nome: ((formData.get("nome") as string) || "Evento").trim(),
     dia: parseInt((formData.get("dia") as string) || "1", 10) || 1,
     mes: (formData.get("mes") as string) || "JAN",
+    ano: parseInt((formData.get("ano") as string) || "", 10) || new Date().getFullYear(),
     categoria: (formData.get("categoria") as string) || "Outros",
     local: ((formData.get("local") as string) || "—").trim(),
     periodo: ((formData.get("periodo") as string) || "").trim() || null,

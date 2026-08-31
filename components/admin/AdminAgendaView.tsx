@@ -50,7 +50,7 @@ export default function AdminAgendaView({ eventos }: { eventos: CollectiveEvent[
             <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>Nome do evento</label>
             <input name="nome" type="text" required defaultValue={editing?.nome} placeholder="Ex: Bienal do Livro – SP" style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px" }} />
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px" }}>
             <div>
               <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>Dia</label>
               <input name="dia" type="number" required min={1} max={31} defaultValue={editing?.dia} placeholder="15" style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px" }} />
@@ -62,6 +62,10 @@ export default function AdminAgendaView({ eventos }: { eventos: CollectiveEvent[
                   <option key={m}>{m}</option>
                 ))}
               </select>
+            </div>
+            <div>
+              <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>Ano</label>
+              <input name="ano" type="number" required min={2024} defaultValue={editing?.ano ?? new Date().getFullYear()} placeholder="2026" style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px" }} />
             </div>
           </div>
           <div>
@@ -96,7 +100,7 @@ export default function AdminAgendaView({ eventos }: { eventos: CollectiveEvent[
             <div key={ev.id} style={{ background: "white", borderRadius: "10px", padding: "16px", display: "flex", gap: "16px", alignItems: "center", flexWrap: "wrap" }}>
               <div style={{ background: "#F6F6F6", border: "1px solid #E0E0E0", borderRadius: "6px", padding: "8px 14px", textAlign: "center", flexShrink: 0 }}>
                 <div style={{ fontSize: "20px", fontWeight: 700, color: "#C0392B" }}>{ev.dia}</div>
-                <div style={{ fontSize: "11px", fontWeight: 700, color: "#666" }}>{ev.mes}</div>
+                <div style={{ fontSize: "11px", fontWeight: 700, color: "#666" }}>{ev.mes}/{ev.ano}</div>
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontWeight: 700, fontSize: "14px" }}>{ev.nome}</div>

@@ -241,7 +241,7 @@ export default async function HomePage() {
               {eventos.map((ev) => (
                 <div key={ev.id} style={{ borderLeft: "4px solid #002776", paddingLeft: "16px" }}>
                   <div style={{ fontSize: "28px", fontWeight: 700, color: "#002776" }}>{String(ev.dia).padStart(2, "0")}</div>
-                  <div style={{ fontSize: "12px", color: "#666", textTransform: "uppercase", marginBottom: "8px" }}>{ev.mes}</div>
+                  <div style={{ fontSize: "12px", color: "#666", textTransform: "uppercase", marginBottom: "8px" }}>{ev.mes}/{ev.ano}</div>
                   <div style={{ fontWeight: 600, marginBottom: "4px" }}>{ev.nome}</div>
                   <div style={{ fontSize: "14px", color: "#666" }}>{ev.periodo ? `${ev.periodo} • ${ev.local}` : ev.local}</div>
                 </div>
