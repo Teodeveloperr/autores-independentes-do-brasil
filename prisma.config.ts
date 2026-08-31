@@ -10,6 +10,10 @@ export default defineConfig({
     seed: "tsx prisma/seed.ts",
   },
   datasource: {
-    url: process.env["DATABASE_URL"],
+    // Migrações usam a conexão direta (não-pooled) da Neon — o pool via PgBouncer não
+    // sustenta de forma confiável o advisory lock que o `prisma migrate deploy` precisa,
+    // causando falhas intermitentes (P1002) no build. A aplicação em si (lib/db.ts) continua
+    // usando DATABASE_URL (pooled) via @prisma/adapter-pg, sem nenhuma mudança de comportamento.
+    url: process.env["DATABASE_URL_UNPOOLED"] || process.env["DATABASE_URL"],
   },
 });
