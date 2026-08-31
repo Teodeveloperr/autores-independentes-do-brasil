@@ -173,7 +173,7 @@ export default function AssinaturaPlanos({
             <div style={{ display: "flex", gap: "8px" }}>✅ Perfil público limitado</div>
             <div style={{ display: "flex", gap: "8px" }}>✅ Foto e minibio (até 300 caracteres)</div>
             <div style={{ display: "flex", gap: "8px" }}>✅ Redes sociais</div>
-            <div style={{ display: "flex", gap: "8px" }}>✅ Portfólio cultural em PDF (até 3 fotos)</div>
+            <div style={{ display: "flex", gap: "8px" }}>✅ Portfólio cultural em PDF limitado</div>
             <div style={{ display: "flex", gap: "8px" }}>✅ Avaliações de leitores</div>
           </div>
           {isLoggedIn && planoAtual === "Iniciante" ? (
