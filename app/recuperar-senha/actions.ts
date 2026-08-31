@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/db";
 import { sendPasswordResetEmail } from "@/lib/email";
 import { criarLinkRedefinicaoSenha } from "@/lib/passwordReset";
+import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 
 export type RequestResetState = { sent?: boolean; error?: string } | undefined;
 
@@ -13,6 +14,12 @@ export async function requestPasswordReset(
   const email = ((formData.get("email") as string) || "").trim().toLowerCase();
   if (!email) {
     return { error: "Digite um e-mail válido." };
+  }
+
+  const ip = await getClientIp();
+  const permitido = await checkRateLimit(`recuperar-senha:${ip}`, 5, 60);
+  if (!permitido) {
+    return { error: "Muitas tentativas. Aguarde um pouco e tente novamente." };
   }
 
   const author = await prisma.author.findUnique({ where: { email } });
