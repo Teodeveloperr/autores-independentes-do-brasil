@@ -63,12 +63,15 @@ export type MetodoPagamento = "cartao" | "pix";
 
 export type CreateAccountResult = { error: string } | { pixQrCode: { payload: string; image: string } } | undefined;
 
+export type DadosCartao = { telefone: string; cep: string; numero: string; complemento?: string };
+
 export async function createAccount(
   step1: Step1Data,
   planId: PlanId,
   cycle: Cycle,
   cpf: string,
-  metodoPagamento: MetodoPagamento
+  metodoPagamento: MetodoPagamento,
+  dadosCartao?: DadosCartao
 ): Promise<CreateAccountResult> {
   // Erros lançados com throw numa Server Action são redigidos pelo Next.js em produção
   // (a mensagem some, só sobra um digest genérico) — por isso essa função sempre retorna
@@ -81,6 +84,12 @@ export async function createAccount(
 
   if (planId !== "free" && !validarCpf(cpf)) {
     return { error: "CPF inválido." };
+  }
+
+  if (planId !== "free" && metodoPagamento === "cartao") {
+    if (!dadosCartao?.telefone || !dadosCartao?.cep || !dadosCartao?.numero) {
+      return { error: "Preencha telefone, CEP e número pra pagar com cartão." };
+    }
   }
 
   // Revalida tudo no servidor — nunca confiar apenas na validação do passo 1 no cliente.
@@ -179,6 +188,10 @@ export async function createAccount(
       ciclo: cycle,
       valorCentavos: valorCicloCentavos(plano, cycle),
       cpf,
+      telefone: dadosCartao!.telefone,
+      cep: dadosCartao!.cep,
+      numero: dadosCartao!.numero,
+      complemento: dadosCartao!.complemento,
     }));
   } catch (err) {
     return { error: err instanceof Error ? err.message : "Não foi possível iniciar o pagamento. Tente novamente em instantes." };

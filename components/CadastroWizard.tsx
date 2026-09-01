@@ -8,6 +8,7 @@ import {
   type Step1Data,
   type PlanId,
   type Cycle,
+  type DadosCartao,
 } from "@/app/cadastro/actions";
 import GoogleIcon from "./GoogleIcon";
 import PasswordInput from "./PasswordInput";
@@ -15,6 +16,7 @@ import PasswordStrengthChecklist from "./PasswordStrengthChecklist";
 import { GENEROS } from "@/lib/genres";
 import { PLANOS_PAGOS, valorCicloCentavos } from "@/lib/plans";
 import { validarCpf } from "@/lib/cpf";
+import { buscarEnderecoPorCep } from "@/lib/cep";
 
 const PLANS: { id: PlanId; nome: string; desc: string; badge: string; disponivel: boolean }[] = [
   { id: "free", nome: "Iniciante", desc: "Para começar sua jornada no coletivo", badge: "", disponivel: true },
@@ -57,6 +59,13 @@ export default function CadastroWizard() {
   const [cycle, setCycle] = useState<Cycle>("mensal");
   const [plan, setPlan] = useState<PlanId>("free");
   const [cpf, setCpf] = useState("");
+  const [metodoEscolhido, setMetodoEscolhido] = useState<"cartao" | "pix" | null>(null);
+  const [telefone, setTelefone] = useState("");
+  const [cep, setCep] = useState("");
+  const [numero, setNumero] = useState("");
+  const [complemento, setComplemento] = useState("");
+  const [enderecoResumo, setEnderecoResumo] = useState("");
+  const [buscandoCep, setBuscandoCep] = useState(false);
   const [pixQrCode, setPixQrCode] = useState<{ payload: string; image: string } | null>(null);
   const [step1Data, setStep1Data] = useState<Step1Data | null>(null);
   const [step1Error, setStep1Error] = useState("");
@@ -78,7 +87,18 @@ export default function CadastroWizard() {
     });
   }
 
-  function finish(metodoPagamento: "cartao" | "pix") {
+  async function onCepBlur() {
+    const digits = cep.replace(/\D/g, "");
+    if (digits.length !== 8) return;
+    setBuscandoCep(true);
+    const endereco = await buscarEnderecoPorCep(cep);
+    setBuscandoCep(false);
+    if (endereco) {
+      setEnderecoResumo(`${endereco.logradouro}, ${endereco.bairro} - ${endereco.localidade}/${endereco.uf}`);
+    }
+  }
+
+  function finish(metodoPagamento: "cartao" | "pix", dadosCartao?: DadosCartao) {
     if (!step1Data) return;
     if (plan !== "free" && !validarCpf(cpf)) {
       setFinishError("CPF inválido.");
@@ -87,7 +107,7 @@ export default function CadastroWizard() {
     setFinishError("");
     startTransition(async () => {
       try {
-        const result = await createAccount(step1Data, plan, cycle, cpf, metodoPagamento);
+        const result = await createAccount(step1Data, plan, cycle, cpf, metodoPagamento, dadosCartao);
         if (result && "error" in result) {
           setFinishError(result.error);
           return;
@@ -394,6 +414,31 @@ export default function CadastroWizard() {
             </div>
           )}
 
+          {plan !== "free" && metodoEscolhido === "cartao" && (
+            <div style={{ marginBottom: "24px", display: "flex", flexDirection: "column", gap: "16px" }}>
+              <div>
+                <label style={labelStyle}>Telefone</label>
+                <input type="tel" required placeholder="(11) 91234-5678" style={inputStyle} value={telefone} onChange={(e) => setTelefone(e.target.value)} />
+              </div>
+              <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+                <div>
+                  <label style={labelStyle}>CEP</label>
+                  <input type="text" required placeholder="00000-000" style={inputStyle} value={cep} onChange={(e) => setCep(e.target.value)} onBlur={onCepBlur} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Número</label>
+                  <input type="text" required placeholder="Nº" style={inputStyle} value={numero} onChange={(e) => setNumero(e.target.value)} />
+                </div>
+              </div>
+              {buscandoCep && <p style={{ fontSize: "12px", color: "#999" }}>Buscando endereço...</p>}
+              {enderecoResumo && <p style={{ fontSize: "12px", color: "#666" }}>{enderecoResumo}</p>}
+              <div>
+                <label style={labelStyle}>Complemento (opcional)</label>
+                <input type="text" placeholder="Apto, bloco..." style={inputStyle} value={complemento} onChange={(e) => setComplemento(e.target.value)} />
+              </div>
+            </div>
+          )}
+
           {finishError && (
             <div style={{ color: "#C0392B", fontSize: "13px", background: "#FDEDEC", padding: "10px 14px", borderRadius: "6px", marginBottom: "16px" }}>
               {finishError}
@@ -407,10 +452,18 @@ export default function CadastroWizard() {
               <button onClick={() => finish("cartao")} disabled={pending} style={{ flex: 1, background: "#009B3A", color: "white", padding: "14px", fontWeight: 700, borderRadius: "6px", fontSize: "15px", opacity: pending ? 0.7 : 1 }}>
                 {pending ? "Finalizando..." : "Concluir cadastro"}
               </button>
+            ) : metodoEscolhido === "cartao" ? (
+              <button
+                onClick={() => finish("cartao", { telefone, cep, numero, complemento })}
+                disabled={pending}
+                style={{ flex: 1, background: "#002776", color: "white", padding: "14px", fontWeight: 700, borderRadius: "6px", fontSize: "15px", opacity: pending ? 0.7 : 1 }}
+              >
+                {pending ? "Aguarde..." : "Confirmar e ir para pagamento"}
+              </button>
             ) : (
               <>
-                <button onClick={() => finish("cartao")} disabled={pending} style={{ flex: 1, background: "#002776", color: "white", padding: "14px", fontWeight: 700, borderRadius: "6px", fontSize: "15px", opacity: pending ? 0.7 : 1 }}>
-                  {pending ? "Aguarde..." : "Pagar com cartão"}
+                <button onClick={() => setMetodoEscolhido("cartao")} disabled={pending} style={{ flex: 1, background: "#002776", color: "white", padding: "14px", fontWeight: 700, borderRadius: "6px", fontSize: "15px", opacity: pending ? 0.7 : 1 }}>
+                  Pagar com cartão
                 </button>
                 <button onClick={() => finish("pix")} disabled={pending} style={{ flex: 1, background: "#009B3A", color: "white", padding: "14px", fontWeight: 700, borderRadius: "6px", fontSize: "15px", opacity: pending ? 0.7 : 1 }}>
                   {pending ? "Aguarde..." : "Pagar com Pix"}

@@ -77,6 +77,14 @@ export async function iniciarAssinatura(_prev: AssinarState, formData: FormData)
     }
   }
 
+  const telefone = ((formData.get("telefone") as string) || "").trim();
+  const cep = ((formData.get("cep") as string) || "").trim();
+  const numero = ((formData.get("numero") as string) || "").trim();
+  const complemento = ((formData.get("complemento") as string) || "").trim();
+  if (!telefone || !cep || !numero) {
+    return { error: "Preencha telefone, CEP e número pra pagar com cartão." };
+  }
+
   let checkoutUrl: string;
   try {
     checkoutUrl = await criarAssinaturaAsaasParaAutor({
@@ -87,6 +95,10 @@ export async function iniciarAssinatura(_prev: AssinarState, formData: FormData)
       planoNome: plano.nome,
       ciclo,
       valorCentavos,
+      telefone,
+      cep,
+      numero,
+      complemento,
     });
   } catch (err) {
     return { error: err instanceof Error ? err.message : "Não foi possível iniciar a assinatura. Tente novamente em instantes." };

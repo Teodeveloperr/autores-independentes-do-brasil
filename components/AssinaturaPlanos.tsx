@@ -4,6 +4,7 @@ import { useActionState, useState } from "react";
 import Link from "next/link";
 import { iniciarAssinatura, type AssinarState } from "@/app/assinatura/actions";
 import { PLANOS_PAGOS, CICLO_MESES, valorCicloCentavos, PLANO_RANK, type CicloAssinatura } from "@/lib/plans";
+import { buscarEnderecoPorCep } from "@/lib/cep";
 
 function brl(centavos: number) {
   return "R$ " + (centavos / 100).toFixed(2).replace(".", ",");
@@ -33,6 +34,10 @@ function PlanoPagoCard({
   descontoFidelidadePct: number;
 }) {
   const [state, formAction, pending] = useActionState<AssinarState, FormData>(iniciarAssinatura, undefined);
+  const [metodoEscolhido, setMetodoEscolhido] = useState<"cartao" | null>(null);
+  const [cep, setCep] = useState("");
+  const [enderecoResumo, setEnderecoResumo] = useState("");
+  const [buscandoCep, setBuscandoCep] = useState(false);
   const plano = PLANOS_PAGOS[slug];
   const meses = CICLO_MESES[ciclo];
   const totalCiclo = valorCicloCentavos(plano, ciclo);
@@ -41,6 +46,17 @@ function PlanoPagoCard({
   const temDesconto = ehUpgrade && descontoFidelidadePct > 0;
   const totalCicloComDesconto = temDesconto ? Math.round(totalCiclo * (1 - descontoFidelidadePct / 100)) : totalCiclo;
   const porMes = Math.round(totalCicloComDesconto / meses);
+
+  async function onCepBlur() {
+    const digits = cep.replace(/\D/g, "");
+    if (digits.length !== 8) return;
+    setBuscandoCep(true);
+    const endereco = await buscarEnderecoPorCep(cep);
+    setBuscandoCep(false);
+    if (endereco) {
+      setEnderecoResumo(`${endereco.logradouro}, ${endereco.bairro} - ${endereco.localidade}/${endereco.uf}`);
+    }
+  }
 
   return (
     <div
@@ -131,25 +147,76 @@ function PlanoPagoCard({
             required
             style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "4px", fontSize: "13px", marginBottom: "10px" }}
           />
+          {metodoEscolhido === "cartao" && (
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "10px" }}>
+              <input
+                name="telefone"
+                type="tel"
+                placeholder="Telefone"
+                required
+                style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "4px", fontSize: "13px" }}
+              />
+              <div style={{ display: "flex", gap: "8px" }}>
+                <input
+                  name="cep"
+                  type="text"
+                  placeholder="CEP"
+                  required
+                  value={cep}
+                  onChange={(e) => setCep(e.target.value)}
+                  onBlur={onCepBlur}
+                  style={{ flex: 1, padding: "10px", border: "1px solid #DDD", borderRadius: "4px", fontSize: "13px" }}
+                />
+                <input
+                  name="numero"
+                  type="text"
+                  placeholder="Número"
+                  required
+                  style={{ flex: 1, padding: "10px", border: "1px solid #DDD", borderRadius: "4px", fontSize: "13px" }}
+                />
+              </div>
+              {buscandoCep && <p style={{ fontSize: "11px", color: "#999" }}>Buscando endereço...</p>}
+              {enderecoResumo && <p style={{ fontSize: "11px", color: "#666" }}>{enderecoResumo}</p>}
+              <input
+                name="complemento"
+                type="text"
+                placeholder="Complemento (opcional)"
+                style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "4px", fontSize: "13px" }}
+              />
+            </div>
+          )}
           <div style={{ display: "flex", gap: "8px" }}>
-            <button
-              type="submit"
-              name="metodoPagamento"
-              value="cartao"
-              disabled={pending}
-              style={{ flex: 1, background: "#002776", color: "white", padding: "12px", fontWeight: 600, borderRadius: "4px", border: "none", fontSize: "13px", opacity: pending ? 0.7 : 1 }}
-            >
-              {pending ? "..." : "Cartão"}
-            </button>
-            <button
-              type="submit"
-              name="metodoPagamento"
-              value="pix"
-              disabled={pending}
-              style={{ flex: 1, background: destaque ? "#009B3A" : "#002776", color: "white", padding: "12px", fontWeight: 600, borderRadius: "4px", border: "none", fontSize: "13px", opacity: pending ? 0.7 : 1 }}
-            >
-              {pending ? "..." : "Pix"}
-            </button>
+            {metodoEscolhido === "cartao" ? (
+              <button
+                type="submit"
+                name="metodoPagamento"
+                value="cartao"
+                disabled={pending}
+                style={{ flex: 1, background: "#002776", color: "white", padding: "12px", fontWeight: 600, borderRadius: "4px", border: "none", fontSize: "13px", opacity: pending ? 0.7 : 1 }}
+              >
+                {pending ? "..." : "Confirmar pagamento"}
+              </button>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setMetodoEscolhido("cartao")}
+                  disabled={pending}
+                  style={{ flex: 1, background: "#002776", color: "white", padding: "12px", fontWeight: 600, borderRadius: "4px", border: "none", fontSize: "13px", opacity: pending ? 0.7 : 1 }}
+                >
+                  Cartão
+                </button>
+                <button
+                  type="submit"
+                  name="metodoPagamento"
+                  value="pix"
+                  disabled={pending}
+                  style={{ flex: 1, background: destaque ? "#009B3A" : "#002776", color: "white", padding: "12px", fontWeight: 600, borderRadius: "4px", border: "none", fontSize: "13px", opacity: pending ? 0.7 : 1 }}
+                >
+                  {pending ? "..." : "Pix"}
+                </button>
+              </>
+            )}
           </div>
         </form>
       )}

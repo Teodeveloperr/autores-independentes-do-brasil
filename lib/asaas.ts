@@ -18,11 +18,26 @@ function hoje(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-export async function criarOuBuscarCliente(input: { nome: string; cpf: string; email: string }): Promise<string | null> {
+export async function criarOuBuscarCliente(input: {
+  nome: string;
+  cpf: string;
+  email: string;
+  // Só exigidos pela Asaas pra assinatura recorrente via cartão (checkout RECURRENT) —
+  // o Pix Automático não precisa disso.
+  telefone?: string;
+  cep?: string;
+  numero?: string;
+  complemento?: string;
+}): Promise<string | null> {
   const accessToken = getAccessToken();
   if (!accessToken) return null;
 
   const cpfDigits = input.cpf.replace(/\D/g, "");
+  const dadosEndereco: Record<string, string> = {};
+  if (input.telefone) dadosEndereco.mobilePhone = input.telefone.replace(/\D/g, "");
+  if (input.cep) dadosEndereco.postalCode = input.cep.replace(/\D/g, "");
+  if (input.numero) dadosEndereco.addressNumber = input.numero;
+  if (input.complemento) dadosEndereco.complement = input.complemento;
 
   try {
     const busca = await fetch(`${getBaseUrl()}/customers?cpfCnpj=${cpfDigits}`, {
@@ -30,13 +45,26 @@ export async function criarOuBuscarCliente(input: { nome: string; cpf: string; e
     });
     if (busca.ok) {
       const data = (await busca.json()) as { data: Array<{ id: string }> };
-      if (data.data?.length > 0) return data.data[0].id;
+      const existente = data.data?.[0];
+      if (existente) {
+        if (Object.keys(dadosEndereco).length > 0) {
+          const atualizacao = await fetch(`${getBaseUrl()}/customers/${existente.id}`, {
+            method: "PUT",
+            headers: { access_token: accessToken, "Content-Type": "application/json", Accept: "application/json" },
+            body: JSON.stringify(dadosEndereco),
+          });
+          if (!atualizacao.ok) {
+            console.error("[asaas] Falha ao atualizar dados do cliente:", atualizacao.status, await atualizacao.text());
+          }
+        }
+        return existente.id;
+      }
     }
 
     const criacao = await fetch(`${getBaseUrl()}/customers`, {
       method: "POST",
       headers: { access_token: accessToken, "Content-Type": "application/json", Accept: "application/json" },
-      body: JSON.stringify({ name: input.nome, cpfCnpj: cpfDigits, email: input.email }),
+      body: JSON.stringify({ name: input.nome, cpfCnpj: cpfDigits, email: input.email, ...dadosEndereco }),
     });
     if (!criacao.ok) {
       console.error("[asaas] Falha ao criar cliente:", criacao.status, await criacao.text());

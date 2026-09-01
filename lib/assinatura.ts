@@ -173,6 +173,10 @@ export async function criarCadastroPendenteAssinatura(input: {
   ciclo: CicloAssinatura;
   valorCentavos: number;
   cpf: string;
+  telefone: string;
+  cep: string;
+  numero: string;
+  complemento?: string;
 }): Promise<{ checkoutUrl: string }> {
   const pendenteExistente = await prisma.pendingSignup.findUnique({ where: { email: input.email } });
   if (pendenteExistente) {
@@ -185,7 +189,15 @@ export async function criarCadastroPendenteAssinatura(input: {
     await prisma.pendingSignup.delete({ where: { id: pendenteExistente.id } });
   }
 
-  const customerId = await criarOuBuscarCliente({ nome: input.nome, cpf: input.cpf, email: input.email });
+  const customerId = await criarOuBuscarCliente({
+    nome: input.nome,
+    cpf: input.cpf,
+    email: input.email,
+    telefone: input.telefone,
+    cep: input.cep,
+    numero: input.numero,
+    complemento: input.complemento,
+  });
   if (!customerId) {
     throw new Error("Não foi possível validar seus dados na Asaas. Confira o CPF e tente novamente.");
   }
@@ -239,8 +251,20 @@ export async function criarAssinaturaAsaasParaAutor(input: {
   planoNome: string;
   ciclo: CicloAssinatura;
   valorCentavos: number;
+  telefone: string;
+  cep: string;
+  numero: string;
+  complemento?: string;
 }): Promise<string> {
-  const customerId = await criarOuBuscarCliente({ nome: input.authorNome, cpf: input.cpf, email: input.authorEmail });
+  const customerId = await criarOuBuscarCliente({
+    nome: input.authorNome,
+    cpf: input.cpf,
+    email: input.authorEmail,
+    telefone: input.telefone,
+    cep: input.cep,
+    numero: input.numero,
+    complemento: input.complemento,
+  });
   if (!customerId) {
     throw new Error("Não foi possível validar seus dados na Asaas. Confira o CPF e tente novamente.");
   }
