@@ -240,6 +240,50 @@ export async function criarAssinaturaAsaas(input: {
   }
 }
 
+export type CheckoutAssinaturaCriado = { id: string; link: string };
+
+// Ao contrário de criarAssinaturaAsaas (POST /v3/subscriptions), aqui a assinatura só é
+// criada de fato na Asaas depois que a pessoa termina o pagamento no checkout — se ela
+// desistir ou a sessão expirar, nada fica registrado do lado da Asaas (sem cobrança, sem
+// boleto, sem DDA). billingTypes restrito evita a opção de boleto no checkout.
+export async function criarCheckoutAssinaturaAsaas(input: {
+  customerId: string;
+  cycle: CicloAssinaturaAsaas;
+  valueCentavos: number;
+  description: string;
+  externalReference: string;
+  callback: { successUrl: string; cancelUrl: string; expiredUrl: string };
+}): Promise<CheckoutAssinaturaCriado | null> {
+  const accessToken = getAccessToken();
+  if (!accessToken) return null;
+
+  try {
+    const res = await fetch(`${getBaseUrl()}/checkouts`, {
+      method: "POST",
+      headers: { access_token: accessToken, "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify({
+        billingTypes: ["PIX", "CREDIT_CARD", "DEBIT_CARD"],
+        chargeTypes: ["RECURRENT"],
+        minutesToExpire: 60,
+        customer: input.customerId,
+        externalReference: input.externalReference,
+        callback: input.callback,
+        items: [{ name: input.description, quantity: 1, value: input.valueCentavos / 100 }],
+        subscription: { cycle: input.cycle, nextDueDate: hoje() },
+      }),
+    });
+    if (!res.ok) {
+      console.error("[asaas] Falha ao criar checkout de assinatura:", res.status, await res.text());
+      return null;
+    }
+    const data = (await res.json()) as { id: string; link: string };
+    return { id: data.id, link: data.link };
+  } catch (err) {
+    console.error("[asaas] Falha ao criar checkout de assinatura:", err);
+    return null;
+  }
+}
+
 export async function cancelarAssinaturaAsaas(id: string): Promise<boolean> {
   const accessToken = getAccessToken();
   if (!accessToken) return false;

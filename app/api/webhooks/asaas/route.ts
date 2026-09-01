@@ -107,6 +107,34 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ received: true }, { status: 200 });
   }
 
+  if (evento === "SUBSCRIPTION_CREATED") {
+    // A assinatura via Checkout só é criada na Asaas depois que a pessoa termina o
+    // pagamento — aqui a gente vincula o id real dela ao Author/PendingSignup que estava
+    // aguardando, usando o externalReference que mandamos ao criar o checkout. Os
+    // eventos de pagamento (abaixo) continuam cuidando de ativar o plano/promover a conta.
+    const subscription = (body as { subscription?: { id?: string; externalReference?: string | null } }).subscription;
+    const subscriptionId = subscription?.id;
+    const externalReference = subscription?.externalReference;
+    if (subscriptionId && externalReference) {
+      const author = await prisma.author.findUnique({ where: { asaasCheckoutReference: externalReference } });
+      if (author) {
+        await prisma.author.update({
+          where: { id: author.id },
+          data: { asaasSubscriptionId: subscriptionId, asaasSubscriptionStatus: "pending", asaasCheckoutReference: null },
+        });
+      } else {
+        const pendente = await prisma.pendingSignup.findUnique({ where: { asaasCheckoutReference: externalReference } });
+        if (pendente) {
+          await prisma.pendingSignup.update({
+            where: { id: pendente.id },
+            data: { asaasSubscriptionId: subscriptionId },
+          });
+        }
+      }
+    }
+    return NextResponse.json({ received: true }, { status: 200 });
+  }
+
   const paymentId = body.payment?.id || "";
 
   if (evento === "PAYMENT_CREATED" && paymentId) {

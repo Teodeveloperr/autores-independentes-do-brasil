@@ -2,7 +2,7 @@ import "server-only";
 import crypto from "node:crypto";
 import { prisma } from "@/lib/db";
 import { criarAssinatura } from "@/lib/mercadoPago";
-import { criarOuBuscarCliente, criarAutorizacaoPixAutomatico, cancelarAutorizacaoPixAutomatico, criarAssinaturaAsaas, cancelarAssinaturaAsaas, type FrequenciaPixAutomatico, type CicloAssinaturaAsaas } from "@/lib/asaas";
+import { criarOuBuscarCliente, criarAutorizacaoPixAutomatico, cancelarAutorizacaoPixAutomatico, criarCheckoutAssinaturaAsaas, cancelarAssinaturaAsaas, type FrequenciaPixAutomatico, type CicloAssinaturaAsaas } from "@/lib/asaas";
 import { CICLO_MESES, type PlanoPagoSlug, type CicloAssinatura } from "@/lib/plans";
 
 const FREQUENCIA_POR_CICLO: Record<CicloAssinatura, FrequenciaPixAutomatico> = {
@@ -173,7 +173,7 @@ export async function criarCadastroPendenteAssinatura(input: {
   ciclo: CicloAssinatura;
   valorCentavos: number;
   cpf: string;
-}): Promise<{ invoiceUrl: string }> {
+}): Promise<{ checkoutUrl: string }> {
   const pendenteExistente = await prisma.pendingSignup.findUnique({ where: { email: input.email } });
   if (pendenteExistente) {
     if (pendenteExistente.asaasSubscriptionId) {
@@ -190,15 +190,24 @@ export async function criarCadastroPendenteAssinatura(input: {
     throw new Error("Não foi possível validar seus dados na Asaas. Confira o CPF e tente novamente.");
   }
 
-  const assinatura = await criarAssinaturaAsaas({
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://autoresdobrasil.com.br";
+  const externalReference = crypto.randomBytes(16).toString("hex");
+
+  const checkout = await criarCheckoutAssinaturaAsaas({
     customerId,
     cycle: CYCLE_POR_CICLO[input.ciclo],
     valueCentavos: input.valorCentavos,
     description: `Assinatura ${input.planoNome}`,
+    externalReference,
+    callback: {
+      successUrl: `${siteUrl}/login?cadastro=sucesso`,
+      cancelUrl: `${siteUrl}/cadastro`,
+      expiredUrl: `${siteUrl}/cadastro`,
+    },
   });
 
-  if (!assinatura || !assinatura.invoiceUrl) {
-    throw new Error("Não foi possível iniciar a assinatura. Tente novamente em instantes.");
+  if (!checkout) {
+    throw new Error("Não foi possível iniciar o pagamento. Tente novamente em instantes.");
   }
 
   await prisma.pendingSignup.create({
@@ -215,11 +224,11 @@ export async function criarCadastroPendenteAssinatura(input: {
       valorCentavos: input.valorCentavos,
       cpf: input.cpf,
       asaasCustomerId: customerId,
-      asaasSubscriptionId: assinatura.id,
+      asaasCheckoutReference: externalReference,
     },
   });
 
-  return { invoiceUrl: assinatura.invoiceUrl };
+  return { checkoutUrl: checkout.link };
 }
 
 export async function criarAssinaturaAsaasParaAutor(input: {
@@ -236,28 +245,36 @@ export async function criarAssinaturaAsaasParaAutor(input: {
     throw new Error("Não foi possível validar seus dados na Asaas. Confira o CPF e tente novamente.");
   }
 
-  const assinatura = await criarAssinaturaAsaas({
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://autoresdobrasil.com.br";
+  const externalReference = crypto.randomBytes(16).toString("hex");
+
+  const checkout = await criarCheckoutAssinaturaAsaas({
     customerId,
     cycle: CYCLE_POR_CICLO[input.ciclo],
     valueCentavos: input.valorCentavos,
     description: `Assinatura ${input.planoNome}`,
+    externalReference,
+    callback: {
+      successUrl: `${siteUrl}/painel?assinatura=sucesso`,
+      cancelUrl: `${siteUrl}/assinatura`,
+      expiredUrl: `${siteUrl}/assinatura`,
+    },
   });
 
-  if (!assinatura || !assinatura.invoiceUrl) {
-    throw new Error("Não foi possível iniciar a assinatura. Tente novamente em instantes.");
+  if (!checkout) {
+    throw new Error("Não foi possível iniciar o pagamento. Tente novamente em instantes.");
   }
 
   await prisma.author.update({
     where: { id: input.authorId },
     data: {
       cpf: input.cpf,
-      asaasSubscriptionId: assinatura.id,
-      asaasSubscriptionStatus: "pending",
+      asaasCheckoutReference: externalReference,
       planoCiclo: input.ciclo,
       planoValorCentavos: input.valorCentavos,
       planoPendente: input.planoNome,
     },
   });
 
-  return assinatura.invoiceUrl;
+  return checkout.link;
 }

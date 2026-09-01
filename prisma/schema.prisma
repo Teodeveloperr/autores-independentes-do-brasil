@@ -53,6 +53,7 @@ model Author {
   planoPendente               String?
   asaasSubscriptionId         String? @unique
   asaasSubscriptionStatus     String?
+  asaasCheckoutReference      String? @unique
 
   portfolioFormacao       String?
   portfolioPremios        String?
@@ -360,8 +361,9 @@ model PendingSignup {
   asaasPixCustomerId          String?
   asaasPixAutoAuthorizationId String? @unique
 
-  asaasCustomerId     String?
-  asaasSubscriptionId String? @unique
+  asaasCustomerId        String?
+  asaasSubscriptionId    String? @unique
+  asaasCheckoutReference String? @unique
 
   createdAt DateTime @default(now())
 }

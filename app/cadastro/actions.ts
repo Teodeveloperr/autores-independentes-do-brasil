@@ -137,7 +137,7 @@ export async function createAccount(
   // não sobra nenhuma conta "fantasma".
   const plano = PLANOS_PAGOS[planId];
 
-  const { invoiceUrl } = await criarCadastroPendenteAssinatura({
+  const { checkoutUrl } = await criarCadastroPendenteAssinatura({
     nome: step1.nome,
     email,
     senhaHash,
@@ -151,5 +151,5 @@ export async function createAccount(
     cpf,
   });
 
-  redirect(invoiceUrl);
+  redirect(checkoutUrl);
 }

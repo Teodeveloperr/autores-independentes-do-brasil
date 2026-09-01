@@ -58,9 +58,9 @@ export async function iniciarAssinatura(_prev: AssinarState, formData: FormData)
 
   await cancelarAssinaturaAtiva(author);
 
-  let invoiceUrl: string;
+  let checkoutUrl: string;
   try {
-    invoiceUrl = await criarAssinaturaAsaasParaAutor({
+    checkoutUrl = await criarAssinaturaAsaasParaAutor({
       authorId: author.id,
       authorEmail: author.email,
       authorNome: author.nome,
@@ -73,7 +73,7 @@ export async function iniciarAssinatura(_prev: AssinarState, formData: FormData)
     return { error: err instanceof Error ? err.message : "Não foi possível iniciar a assinatura. Tente novamente em instantes." };
   }
 
-  redirect(invoiceUrl);
+  redirect(checkoutUrl);
 }
 
 export async function cancelarAssinatura() {
