@@ -46,11 +46,11 @@ export async function validateStep1(formData: FormData): Promise<Step1Result> {
     return { error: "Selecione ao menos um gênero literário." };
   }
 
-  const [existente, pendente] = await Promise.all([
-    prisma.author.findUnique({ where: { email } }),
-    prisma.pendingSignup.findUnique({ where: { email } }),
-  ]);
-  if (existente || pendente) {
+  // Não bloqueia por PendingSignup aqui: é só uma tentativa de assinatura em andamento,
+  // não uma conta de verdade — se a pessoa desistiu e quer tentar de novo com o mesmo
+  // e-mail, createAccount() cuida de cancelar a tentativa antiga e abrir uma nova.
+  const existente = await prisma.author.findUnique({ where: { email } });
+  if (existente) {
     return { error: "Já existe uma conta cadastrada com esse e-mail." };
   }
 
