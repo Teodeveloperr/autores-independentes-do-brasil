@@ -186,11 +186,29 @@ export async function POST(request: NextRequest) {
   if (!cobranca) {
     return NextResponse.json({ received: true }, { status: 200 });
   }
-  const authorAssinatura = cobranca.subscription
+  let authorAssinatura = cobranca.subscription
     ? await prisma.author.findUnique({ where: { asaasSubscriptionId: cobranca.subscription } })
     : cobranca.customer
       ? await prisma.author.findFirst({ where: { asaasPixCustomerId: cobranca.customer, asaasPixAutoStatus: "active" } })
       : null;
+
+  // O formato do payload do evento de ativação do Pix Automático não é documentado pela
+  // Asaas — se ele se perder ou não bater com extrairIdAutorizacaoPix, o autor fica com
+  // asaasPixAutoStatus "pending" pra sempre, mesmo pagando certinho. Um pagamento
+  // RECEIVED/CONFIRMED de verdade pra esse customer já é prova de que a autorização foi
+  // aprovada — autocorrige o status aqui em vez de deixar a cobrança cair como "sem
+  // registro" na conferência manual de receita.
+  if (!authorAssinatura && !cobranca.subscription && cobranca.customer) {
+    const authorPendenteAtivacao = await prisma.author.findFirst({
+      where: { asaasPixCustomerId: cobranca.customer, asaasPixAutoAuthorizationId: { not: null } },
+    });
+    if (authorPendenteAtivacao && authorPendenteAtivacao.asaasPixAutoStatus !== "active") {
+      authorAssinatura = await prisma.author.update({
+        where: { id: authorPendenteAtivacao.id },
+        data: { asaasPixAutoStatus: "active" },
+      });
+    }
+  }
 
   if (authorAssinatura) {
     const jaRegistrado = await prisma.subscriptionPayment.findUnique({ where: { asaasPaymentId: paymentId } });
@@ -239,6 +257,45 @@ export async function POST(request: NextRequest) {
             cpf: pendente.cpf,
             asaasSubscriptionId: pendente.asaasSubscriptionId,
             asaasSubscriptionStatus: "active",
+          },
+        });
+        await prisma.subscriptionPayment.create({
+          data: { authorId: novoAuthor.id, plano: novoAuthor.plano, valorCentavos: cobranca.valueCentavos, valorLiquidoCentavos: cobranca.netValueCentavos, asaasPaymentId: paymentId },
+        });
+        await sendWelcomeEmail(novoAuthor.email, novoAuthor.nome).catch((err) =>
+          console.error("[email] Falha ao enviar e-mail de boas-vindas:", err)
+        );
+        await prisma.pendingSignup.delete({ where: { id: pendente.id } });
+      }
+      return NextResponse.json({ received: true }, { status: 200 });
+    }
+  } else if (cobranca.customer) {
+    // Mesmo caso acima, só que pro Pix Automático: se o evento de ativação nunca marcou a
+    // autorização como ativa, mas já existe um pagamento de verdade recebido pra esse
+    // customer, promove o cadastro pendente mesmo assim.
+    const pendente = await prisma.pendingSignup.findFirst({ where: { asaasPixCustomerId: cobranca.customer } });
+    if (pendente) {
+      const emailEmUso = await prisma.author.findUnique({ where: { email: pendente.email } });
+      if (emailEmUso) {
+        console.error(`[asaas] PendingSignup ${pendente.id} não pôde virar conta: e-mail ${pendente.email} já está em uso.`);
+      } else {
+        const novoAuthor = await prisma.author.create({
+          data: {
+            nome: pendente.nome,
+            email: pendente.email,
+            senhaHash: pendente.senhaHash,
+            generos: pendente.generos,
+            cidade: pendente.cidade,
+            bio: pendente.bio,
+            anoEntrada: new Date().getFullYear(),
+            plano: pendente.planoNome,
+            planoCiclo: pendente.ciclo,
+            planoValorCentavos: pendente.valorCentavos,
+            planoIniciadoEm: new Date(),
+            cpf: pendente.cpf,
+            asaasPixCustomerId: pendente.asaasPixCustomerId,
+            asaasPixAutoAuthorizationId: pendente.asaasPixAutoAuthorizationId,
+            asaasPixAutoStatus: "active",
           },
         });
         await prisma.subscriptionPayment.create({

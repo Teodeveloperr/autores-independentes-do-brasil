@@ -203,8 +203,10 @@ export default function AdminReceitaView({ pedidos, assinaturaPagamentos }: { pe
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                 {resultado.faltantes.map((f) => (
-                  <div key={f.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px", fontSize: "13px", padding: "8px 0", borderBottom: "1px solid #F0F0F0" }}>
-                    <span>{TIPO_LABEL[f.tipo] ?? f.tipo} · {f.paymentDate ?? "—"} · {f.status}</span>
+                  <div key={f.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px", fontSize: "13px", padding: "8px 0", borderBottom: "1px solid #F0F0F0", flexWrap: "wrap" }}>
+                    <span>
+                      {TIPO_LABEL[f.tipo] ?? f.tipo} · {f.paymentDate ?? "—"} · {f.status} · <span style={{ fontFamily: "monospace", fontSize: "12px", color: "#666" }}>{f.id}</span>
+                    </span>
                     <span style={{ display: "flex", gap: "12px", alignItems: "center" }}>
                       <span style={{ fontWeight: 700 }}>{brl(f.valorCentavos)}</span>
                       <a href={f.invoiceUrl} target="_blank" rel="noopener noreferrer" style={{ color: "#002776", fontWeight: 600 }}>

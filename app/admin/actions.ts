@@ -426,6 +426,14 @@ export async function reconciliarReceita(mesChave: string): Promise<{ faltantes:
     ...pedidos.map((r) => r.asaasPaymentId as string),
   ]);
 
+  // Cobrança sem "subscription" não é necessariamente venda de livro — Pix Automático não
+  // usa esse campo, é identificado pelo customer. Busca os customers de assinatura via Pix
+  // conhecidos (autor ou cadastro pendente) pra classificar certo.
+  const customersPixConhecidos = new Set([
+    ...(await prisma.author.findMany({ where: { asaasPixCustomerId: { not: null } }, select: { asaasPixCustomerId: true } })).map((a) => a.asaasPixCustomerId),
+    ...(await prisma.pendingSignup.findMany({ where: { asaasPixCustomerId: { not: null } }, select: { asaasPixCustomerId: true } })).map((p) => p.asaasPixCustomerId),
+  ]);
+
   const faltantes: CobrancaFaltante[] = cobrancas
     .filter((c) => !idsConhecidos.has(c.id))
     .map((c) => ({
@@ -434,7 +442,7 @@ export async function reconciliarReceita(mesChave: string): Promise<{ faltantes:
       invoiceUrl: c.invoiceUrl,
       status: c.status,
       paymentDate: c.paymentDate,
-      tipo: c.subscription ? "assinatura" : "venda",
+      tipo: c.subscription || customersPixConhecidos.has(c.customer) ? "assinatura" : "venda",
     }));
 
   return { faltantes, totalConferido: cobrancas.length };
