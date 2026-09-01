@@ -21,7 +21,7 @@ export default async function AssinaturaPage() {
         <div style={{ textAlign: "center", marginBottom: "48px" }}>
           <h1 style={{ fontSize: "42px", fontWeight: 700, marginBottom: "16px" }}>Planos e Assinaturas</h1>
           <p style={{ fontSize: "16px", lineHeight: 1.6, maxWidth: "600px", margin: "0 auto" }}>
-            Escolha o plano ideal para levar suas histórias mais longe. Cancele quando quiser, sem multas.
+            Escolha o plano ideal para levar suas histórias mais longe.
           </p>
         </div>
         <AssinaturaPlanos
@@ -31,7 +31,7 @@ export default async function AssinaturaPage() {
           cta={cta}
         />
         <p style={{ textAlign: "center", fontSize: "13px", color: "rgba(255,255,255,0.7)", marginTop: "32px" }}>
-          Pagamento seguro • Cancele quando quiser • Sem taxa de adesão
+          Pagamento seguro • Sem taxa de adesão
         </p>
       </div>
       </section>
