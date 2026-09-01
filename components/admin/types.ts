@@ -10,4 +10,4 @@ export type Article = Prisma.ArticleGetPayload<Record<string, never>>;
 export type ReviewWithAuthor = Prisma.ReviewGetPayload<{ include: { author: { select: { nome: true } } } }>;
 export type OrderWithAuthor = Prisma.OrderGetPayload<{ include: { author: { select: { nome: true } } } }>;
 export type OrderComReceita = Prisma.OrderGetPayload<{ include: { author: { select: { plano: true } } } }>;
-export type SubscriptionPaymentRow = Prisma.SubscriptionPaymentGetPayload<Record<string, never>>;
+export type SubscriptionPaymentRow = Prisma.SubscriptionPaymentGetPayload<{ include: { author: { select: { nome: true } } } }>;

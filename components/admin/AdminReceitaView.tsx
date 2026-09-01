@@ -18,6 +18,18 @@ function mesLabel(chave: string) {
   return new Date(ano, mes - 1, 1).toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
 }
 
+function dataLabel(data: Date) {
+  return data.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
+}
+
+type EntradaReceita = {
+  id: string;
+  data: Date;
+  tipo: "Assinatura" | "Venda de livro";
+  descricao: string;
+  valorCentavos: number;
+};
+
 export default function AdminReceitaView({ pedidos, assinaturaPagamentos }: { pedidos: OrderComReceita[]; assinaturaPagamentos: SubscriptionPaymentRow[] }) {
   const router = useRouter();
   const meses = useMemo(() => {
@@ -84,6 +96,23 @@ export default function AdminReceitaView({ pedidos, assinaturaPagamentos }: { pe
     // registrados antes dessa informação existir caem no valor bruto como aproximação.
     const assinaturasCentavos = assinaturasDoMes.reduce((sum, s) => sum + (s.valorLiquidoCentavos ?? s.valorCentavos), 0);
 
+    const entradas: EntradaReceita[] = [
+      ...pedidosDoMes.map((p) => ({
+        id: p.id,
+        data: p.createdAt,
+        tipo: "Venda de livro" as const,
+        descricao: `${p.livro} — ${p.comprador}`,
+        valorCentavos: Math.round(p.valorCentavos * ((COMISSAO_PERCENTUAL[p.author.plano] ?? 100) / 100)),
+      })),
+      ...assinaturasDoMes.map((s) => ({
+        id: s.id,
+        data: s.createdAt,
+        tipo: "Assinatura" as const,
+        descricao: `${s.author.nome} — ${s.plano}`,
+        valorCentavos: s.valorLiquidoCentavos ?? s.valorCentavos,
+      })),
+    ].sort((a, b) => b.data.getTime() - a.data.getTime());
+
     return {
       pedidosCount: pedidosDoMes.length,
       assinaturasCount: assinaturasDoMes.length,
@@ -92,6 +121,7 @@ export default function AdminReceitaView({ pedidos, assinaturaPagamentos }: { pe
       repasseLivrosCentavos,
       assinaturasCentavos,
       totalReceitaCentavos: comissaoLivrosCentavos + assinaturasCentavos,
+      entradas,
     };
   }, [pedidos, assinaturaPagamentos, mes]);
 
@@ -221,6 +251,39 @@ export default function AdminReceitaView({ pedidos, assinaturaPagamentos }: { pe
             <span style={{ fontWeight: 700, color: "#002776" }}>{brl(dados.comissaoLivrosCentavos)}</span>
           </div>
         </div>
+      </div>
+
+      <div style={{ background: "white", borderRadius: "10px", padding: "24px", marginTop: "24px" }}>
+        <div style={{ fontWeight: 700, color: "#002776", marginBottom: "16px" }}>Entradas de receita do mês</div>
+        {dados.entradas.length === 0 ? (
+          <div style={{ fontSize: "13px", color: "#666" }}>Nenhuma entrada de receita nesse mês.</div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            {dados.entradas.map((e) => (
+              <div
+                key={`${e.tipo}-${e.id}`}
+                style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px", fontSize: "13px", padding: "10px 0", borderBottom: "1px solid #F0F0F0" }}
+              >
+                <span style={{ color: "#999", flexShrink: 0, width: "80px" }}>{dataLabel(e.data)}</span>
+                <span
+                  style={{
+                    fontSize: "11px",
+                    fontWeight: 700,
+                    padding: "2px 8px",
+                    borderRadius: "10px",
+                    flexShrink: 0,
+                    background: e.tipo === "Assinatura" ? "#E3F4E9" : "#E9EEF9",
+                    color: e.tipo === "Assinatura" ? "#009B3A" : "#002776",
+                  }}
+                >
+                  {e.tipo}
+                </span>
+                <span style={{ flex: 1, color: "#262626", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.descricao}</span>
+                <span style={{ fontWeight: 700, color: "#002776", flexShrink: 0 }}>{brl(e.valorCentavos)}</span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

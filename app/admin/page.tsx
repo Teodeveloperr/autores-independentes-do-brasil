@@ -31,7 +31,7 @@ export default async function AdminPage() {
       orderBy: { createdAt: "desc" },
       include: { author: { select: { plano: true } } },
     }),
-    prisma.subscriptionPayment.findMany({ orderBy: { createdAt: "desc" } }),
+    prisma.subscriptionPayment.findMany({ orderBy: { createdAt: "desc" }, include: { author: { select: { nome: true } } } }),
   ]);
 
   return (
