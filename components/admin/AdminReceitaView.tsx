@@ -3,7 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import { brl } from "@/lib/format";
 import { COMISSAO_PERCENTUAL } from "@/lib/plans";
-import { reconciliarReceita, type CobrancaFaltante } from "@/app/admin/actions";
+import { reconciliarReceita, atualizarValoresLiquidos, type CobrancaFaltante } from "@/app/admin/actions";
 import type { OrderComReceita, SubscriptionPaymentRow } from "./types";
 
 const TIPO_LABEL: Record<string, string> = { assinatura: "Assinatura", venda: "Venda de livro" };
@@ -30,6 +30,9 @@ export default function AdminReceitaView({ pedidos, assinaturaPagamentos }: { pe
   const [reconciliando, startReconciliar] = useTransition();
   const [resultado, setResultado] = useState<{ faltantes: CobrancaFaltante[]; totalConferido: number } | null>(null);
   const [erroReconciliar, setErroReconciliar] = useState("");
+  const [atualizandoLiquido, startAtualizarLiquido] = useTransition();
+  const [resultadoLiquido, setResultadoLiquido] = useState<{ atualizados: number; falhas: number } | null>(null);
+  const [erroLiquido, setErroLiquido] = useState("");
 
   function onReconciliar() {
     setResultado(null);
@@ -40,6 +43,19 @@ export default function AdminReceitaView({ pedidos, assinaturaPagamentos }: { pe
         setResultado(r);
       } catch (err) {
         setErroReconciliar(err instanceof Error ? err.message : "Não foi possível reconciliar com a Asaas.");
+      }
+    });
+  }
+
+  function onAtualizarLiquido() {
+    setResultadoLiquido(null);
+    setErroLiquido("");
+    startAtualizarLiquido(async () => {
+      try {
+        const r = await atualizarValoresLiquidos();
+        setResultadoLiquido(r);
+      } catch (err) {
+        setErroLiquido(err instanceof Error ? err.message : "Não foi possível atualizar os valores líquidos.");
       }
     });
   }
@@ -100,11 +116,42 @@ export default function AdminReceitaView({ pedidos, assinaturaPagamentos }: { pe
         >
           {reconciliando ? "Reconciliando..." : "🔄 Reconciliar com a Asaas"}
         </button>
+        <button
+          onClick={onAtualizarLiquido}
+          disabled={atualizandoLiquido}
+          style={{ background: "white", border: "1px solid #002776", color: "#002776", padding: "8px 16px", borderRadius: "6px", fontSize: "13px", fontWeight: 600, opacity: atualizandoLiquido ? 0.7 : 1 }}
+        >
+          {atualizandoLiquido ? "Atualizando..." : "💧 Atualizar valores líquidos"}
+        </button>
       </div>
 
       {erroReconciliar && (
         <div style={{ color: "#C0392B", fontSize: "13px", background: "#FDEDEC", padding: "10px 14px", borderRadius: "6px", marginBottom: "20px" }}>
           {erroReconciliar}
+        </div>
+      )}
+
+      {erroLiquido && (
+        <div style={{ color: "#C0392B", fontSize: "13px", background: "#FDEDEC", padding: "10px 14px", borderRadius: "6px", marginBottom: "20px" }}>
+          {erroLiquido}
+        </div>
+      )}
+
+      {resultadoLiquido && (
+        <div style={{ background: "white", borderRadius: "10px", padding: "20px", marginBottom: "24px", fontSize: "13px" }}>
+          {resultadoLiquido.atualizados > 0 && (
+            <div style={{ color: "#009B3A" }}>
+              ✅ {resultadoLiquido.atualizados} pagamento{resultadoLiquido.atualizados === 1 ? "" : "s"} atualizado{resultadoLiquido.atualizados === 1 ? "" : "s"} com o valor líquido da Asaas.
+            </div>
+          )}
+          {resultadoLiquido.falhas > 0 && (
+            <div style={{ color: "#A87900", marginTop: resultadoLiquido.atualizados > 0 ? "8px" : 0 }}>
+              ⚠️ {resultadoLiquido.falhas} pagamento{resultadoLiquido.falhas === 1 ? "" : "s"} não encontrado{resultadoLiquido.falhas === 1 ? "" : "s"} ou sem valor líquido disponível na Asaas.
+            </div>
+          )}
+          {resultadoLiquido.atualizados === 0 && resultadoLiquido.falhas === 0 && (
+            <div style={{ color: "#666" }}>Todos os pagamentos já têm valor líquido registrado.</div>
+          )}
         </div>
       )}
 

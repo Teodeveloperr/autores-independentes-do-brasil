@@ -7,7 +7,7 @@ import { prisma } from "@/lib/db";
 import { createAdminSession, deleteAdminSession, createAdminPending2FA, getAdminPending2FA, deleteAdminPending2FA } from "@/lib/session";
 import { requireAdmin } from "@/lib/auth";
 import { excluirAutorCompletamente } from "@/lib/authorDeletion";
-import { listarCobrancasRecebidas } from "@/lib/asaas";
+import { listarCobrancasRecebidas, buscarCobranca } from "@/lib/asaas";
 import { recalcularAvaliacaoAutor } from "@/lib/reviews";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 import { gerarSegredoTotp, gerarOtpauthUri, verificarCodigoTotp, gerarCodigosBackup } from "@/lib/totp";
@@ -438,4 +438,36 @@ export async function reconciliarReceita(mesChave: string): Promise<{ faltantes:
     }));
 
   return { faltantes, totalConferido: cobrancas.length };
+}
+
+/**
+ * Busca na Asaas o valor líquido (já descontada a tarifa) dos pagamentos de assinatura que
+ * ainda não têm essa informação gravada — cobre pagamentos registrados antes do webhook
+ * passar a gravar valorLiquidoCentavos.
+ */
+export async function atualizarValoresLiquidos(): Promise<{ atualizados: number; falhas: number }> {
+  await requireAdmin();
+
+  const pendentes = await prisma.subscriptionPayment.findMany({
+    where: { valorLiquidoCentavos: null },
+    select: { id: true, asaasPaymentId: true },
+  });
+
+  let atualizados = 0;
+  let falhas = 0;
+  for (const pagamento of pendentes) {
+    const cobranca = await buscarCobranca(pagamento.asaasPaymentId);
+    if (!cobranca || cobranca.netValueCentavos === null) {
+      falhas++;
+      continue;
+    }
+    await prisma.subscriptionPayment.update({
+      where: { id: pagamento.id },
+      data: { valorLiquidoCentavos: cobranca.netValueCentavos },
+    });
+    atualizados++;
+  }
+
+  revalidatePath("/admin");
+  return { atualizados, falhas };
 }
