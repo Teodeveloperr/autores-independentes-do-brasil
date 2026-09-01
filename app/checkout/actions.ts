@@ -8,8 +8,14 @@ import { validarCpf } from "@/lib/cpf";
 import { podeVenderLivros } from "@/lib/plans";
 import { precoComDescontoCentavos } from "@/lib/desconto";
 
-// Valor fixo provisório por autor (frete via Correios, Registro Módico) — ainda a definir o valor final.
-const FRETE_FIXO_CENTAVOS = 1500;
+// Frete por autor (Correios, Registro Módico): R$12 pelo 1º livro + R$6 por livro
+// adicional do mesmo autor no carrinho.
+const FRETE_BASE_CENTAVOS = 1200;
+const FRETE_ADICIONAL_CENTAVOS = 600;
+
+function calcularFreteCentavos(quantidadeLivros: number): number {
+  return FRETE_BASE_CENTAVOS + FRETE_ADICIONAL_CENTAVOS * (quantidadeLivros - 1);
+}
 
 export type CheckoutItem = {
   bookId: string;
@@ -54,11 +60,14 @@ export async function calcularFreteCarrinho(items: CheckoutItem[], cepDestino: s
 
   return authorIds.map((authorId) => {
     const author = authors.find((a) => a.id === authorId);
+    const quantidadeLivros = items
+      .filter((i) => i.authorId === authorId)
+      .reduce((sum, i) => sum + Math.max(1, Math.floor(i.quantidade) || 1), 0);
     return {
       authorId,
       autorNome: author?.nome ?? "",
       disponivel: true,
-      precoCentavos: FRETE_FIXO_CENTAVOS,
+      precoCentavos: calcularFreteCentavos(quantidadeLivros),
       servico: "Correios — Registro Módico",
       prazoDias: null,
     };
@@ -102,6 +111,12 @@ export async function criarPedido(
   const grupoPedidoId = crypto.randomUUID();
   const freteJaAplicado = new Set<string>();
 
+  const quantidadePorAutor = new Map<string, number>();
+  for (const item of items) {
+    const quantidade = Math.max(1, Math.floor(item.quantidade) || 1);
+    quantidadePorAutor.set(item.authorId, (quantidadePorAutor.get(item.authorId) ?? 0) + quantidade);
+  }
+
   const rows = items.map((item) => {
     const book = books.find((b) => b.id === item.bookId);
     if (!book) {
@@ -134,7 +149,7 @@ export async function criarPedido(
       compradorUf: endereco.uf.trim().toUpperCase(),
       quantidade,
       valorCentavos: precoUnitarioCentavos * quantidade,
-      freteCentavos: aplicarFrete ? FRETE_FIXO_CENTAVOS : null,
+      freteCentavos: aplicarFrete ? calcularFreteCentavos(quantidadePorAutor.get(book.authorId) ?? quantidade) : null,
       freteServico: aplicarFrete ? "Correios — Registro Módico" : null,
       status: "Aguardando pagamento",
       grupoPedidoId,
