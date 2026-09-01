@@ -88,6 +88,10 @@ export default function CadastroWizard() {
     startTransition(async () => {
       try {
         const result = await createAccount(step1Data, plan, cycle, cpf, metodoPagamento);
+        if (result && "error" in result) {
+          setFinishError(result.error);
+          return;
+        }
         if (result?.pixQrCode) {
           setPixQrCode(result.pixQrCode);
         }

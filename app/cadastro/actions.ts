@@ -61,21 +61,26 @@ export type PlanId = "free" | PlanoPagoSlug;
 export type Cycle = CicloAssinatura;
 export type MetodoPagamento = "cartao" | "pix";
 
+export type CreateAccountResult = { error: string } | { pixQrCode: { payload: string; image: string } } | undefined;
+
 export async function createAccount(
   step1: Step1Data,
   planId: PlanId,
   cycle: Cycle,
   cpf: string,
   metodoPagamento: MetodoPagamento
-): Promise<{ pixQrCode: { payload: string; image: string } } | undefined> {
+): Promise<CreateAccountResult> {
+  // Erros lançados com throw numa Server Action são redigidos pelo Next.js em produção
+  // (a mensagem some, só sobra um digest genérico) — por isso essa função sempre retorna
+  // { error } em vez de lançar, exceto pra redirect(), que o framework trata à parte.
   const ip = await getClientIp();
   const permitido = await checkRateLimit(`cadastro:${ip}`, 5, 60);
   if (!permitido) {
-    throw new Error("Muitas tentativas de cadastro a partir deste endereço. Aguarde um pouco e tente novamente.");
+    return { error: "Muitas tentativas de cadastro a partir deste endereço. Aguarde um pouco e tente novamente." };
   }
 
   if (planId !== "free" && !validarCpf(cpf)) {
-    throw new Error("CPF inválido.");
+    return { error: "CPF inválido." };
   }
 
   // Revalida tudo no servidor — nunca confiar apenas na validação do passo 1 no cliente.
@@ -85,11 +90,11 @@ export async function createAccount(
     prisma.pendingSignup.findUnique({ where: { email } }),
   ]);
   if (existente) {
-    throw new Error("Já existe uma conta cadastrada com esse e-mail.");
+    return { error: "Já existe uma conta cadastrada com esse e-mail." };
   }
   const erroSenha = validarSenha(step1.senha);
   if (erroSenha) {
-    throw new Error(erroSenha);
+    return { error: erroSenha };
   }
 
   const senhaHash = await bcrypt.hash(step1.senha, 10);
@@ -140,7 +145,29 @@ export async function createAccount(
   const plano = PLANOS_PAGOS[planId];
 
   if (metodoPagamento === "pix") {
-    const { qrCodePayload, qrCodeImage } = await criarCadastroPendente({
+    try {
+      const { qrCodePayload, qrCodeImage } = await criarCadastroPendente({
+        nome: step1.nome,
+        email,
+        senhaHash,
+        generos: step1.generos,
+        cidade: step1.cidade,
+        bio: step1.bio || `Autor(a) independente do coletivo Autores Independentes do Brasil, de ${step1.cidade}.`,
+        planoSlug: planId,
+        planoNome: plano.nome,
+        ciclo: cycle,
+        valorCentavos: valorCicloCentavos(plano, cycle),
+        cpf,
+      });
+      return { pixQrCode: { payload: qrCodePayload, image: qrCodeImage } };
+    } catch (err) {
+      return { error: err instanceof Error ? err.message : "Não foi possível gerar o Pix. Tente novamente em instantes." };
+    }
+  }
+
+  let checkoutUrl: string;
+  try {
+    ({ checkoutUrl } = await criarCadastroPendenteAssinatura({
       nome: step1.nome,
       email,
       senhaHash,
@@ -152,23 +179,10 @@ export async function createAccount(
       ciclo: cycle,
       valorCentavos: valorCicloCentavos(plano, cycle),
       cpf,
-    });
-    return { pixQrCode: { payload: qrCodePayload, image: qrCodeImage } };
+    }));
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Não foi possível iniciar o pagamento. Tente novamente em instantes." };
   }
-
-  const { checkoutUrl } = await criarCadastroPendenteAssinatura({
-    nome: step1.nome,
-    email,
-    senhaHash,
-    generos: step1.generos,
-    cidade: step1.cidade,
-    bio: step1.bio || `Autor(a) independente do coletivo Autores Independentes do Brasil, de ${step1.cidade}.`,
-    planoSlug: planId,
-    planoNome: plano.nome,
-    ciclo: cycle,
-    valorCentavos: valorCicloCentavos(plano, cycle),
-    cpf,
-  });
 
   redirect(checkoutUrl);
 }
