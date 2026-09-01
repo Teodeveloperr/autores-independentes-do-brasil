@@ -320,13 +320,14 @@ model RateLimitAttempt {
 }
 
 model SubscriptionPayment {
-  id             String   @id @default(cuid())
-  authorId       String
-  author         Author   @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  plano          String
-  valorCentavos  Int
-  asaasPaymentId String   @unique
-  createdAt      DateTime @default(now())
+  id                  String   @id @default(cuid())
+  authorId            String
+  author              Author   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  plano               String
+  valorCentavos       Int
+  valorLiquidoCentavos Int?
+  asaasPaymentId      String   @unique
+  createdAt           DateTime @default(now())
 
   @@index([authorId])
 }

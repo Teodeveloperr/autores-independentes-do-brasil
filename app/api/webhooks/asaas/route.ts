@@ -196,7 +196,7 @@ export async function POST(request: NextRequest) {
     const jaRegistrado = await prisma.subscriptionPayment.findUnique({ where: { asaasPaymentId: paymentId } });
     if (!jaRegistrado) {
       await prisma.subscriptionPayment.create({
-        data: { authorId: authorAssinatura.id, plano: authorAssinatura.planoPendente ?? authorAssinatura.plano, valorCentavos: cobranca.valueCentavos, asaasPaymentId: paymentId },
+        data: { authorId: authorAssinatura.id, plano: authorAssinatura.planoPendente ?? authorAssinatura.plano, valorCentavos: cobranca.valueCentavos, valorLiquidoCentavos: cobranca.netValueCentavos, asaasPaymentId: paymentId },
       });
     }
     if (authorAssinatura.planoPendente) {
@@ -242,7 +242,7 @@ export async function POST(request: NextRequest) {
           },
         });
         await prisma.subscriptionPayment.create({
-          data: { authorId: novoAuthor.id, plano: novoAuthor.plano, valorCentavos: cobranca.valueCentavos, asaasPaymentId: paymentId },
+          data: { authorId: novoAuthor.id, plano: novoAuthor.plano, valorCentavos: cobranca.valueCentavos, valorLiquidoCentavos: cobranca.netValueCentavos, asaasPaymentId: paymentId },
         });
         await sendWelcomeEmail(novoAuthor.email, novoAuthor.nome).catch((err) =>
           console.error("[email] Falha ao enviar e-mail de boas-vindas:", err)

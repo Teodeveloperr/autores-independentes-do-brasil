@@ -336,7 +336,16 @@ export async function cancelarAssinaturaAsaas(id: string): Promise<boolean> {
   }
 }
 
-export type CobrancaAsaas = { id: string; subscription: string | null; customer: string | null; valueCentavos: number; invoiceUrl: string; status: string };
+export type CobrancaAsaas = {
+  id: string;
+  subscription: string | null;
+  customer: string | null;
+  valueCentavos: number;
+  // Valor que efetivamente cai na conta Asaas, já descontada a tarifa da Asaas.
+  netValueCentavos: number | null;
+  invoiceUrl: string;
+  status: string;
+};
 
 export async function buscarCobranca(id: string): Promise<CobrancaAsaas | null> {
   const accessToken = getAccessToken();
@@ -350,12 +359,13 @@ export async function buscarCobranca(id: string): Promise<CobrancaAsaas | null> 
       console.error("[asaas] Falha ao buscar cobrança:", res.status, await res.text());
       return null;
     }
-    const data = (await res.json()) as { id: string; subscription?: string | null; customer?: string | null; value: number; invoiceUrl: string; status: string };
+    const data = (await res.json()) as { id: string; subscription?: string | null; customer?: string | null; value: number; netValue?: number | null; invoiceUrl: string; status: string };
     return {
       id: data.id,
       subscription: data.subscription ?? null,
       customer: data.customer ?? null,
       valueCentavos: Math.round(data.value * 100),
+      netValueCentavos: typeof data.netValue === "number" ? Math.round(data.netValue * 100) : null,
       invoiceUrl: data.invoiceUrl,
       status: data.status,
     };

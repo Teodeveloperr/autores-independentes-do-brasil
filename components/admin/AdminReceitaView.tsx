@@ -59,7 +59,9 @@ export default function AdminReceitaView({ pedidos, assinaturaPagamentos }: { pe
       vendaLivrosCentavos += p.valorCentavos + (p.freteCentavos ?? 0);
     }
 
-    const assinaturasCentavos = assinaturasDoMes.reduce((sum, s) => sum + s.valorCentavos, 0);
+    // Usa o valor líquido (já descontada a tarifa da Asaas) quando disponível — pagamentos
+    // registrados antes dessa informação existir caem no valor bruto como aproximação.
+    const assinaturasCentavos = assinaturasDoMes.reduce((sum, s) => sum + (s.valorLiquidoCentavos ?? s.valorCentavos), 0);
 
     return {
       pedidosCount: pedidosDoMes.length,
@@ -137,7 +139,7 @@ export default function AdminReceitaView({ pedidos, assinaturaPagamentos }: { pe
 
       <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "20px", marginBottom: "28px" }}>
         <div style={{ background: "white", borderRadius: "10px", padding: "20px" }}>
-          <div style={{ fontSize: "12px", color: "#666", marginBottom: "8px" }}>💰 Receita total (comissão + assinaturas)</div>
+          <div style={{ fontSize: "12px", color: "#666", marginBottom: "8px" }}>💰 Receita total (comissão + assinaturas líquidas)</div>
           <div style={{ fontSize: "28px", fontWeight: 700, color: "#009B3A" }}>{brl(dados.totalReceitaCentavos)}</div>
         </div>
         <div style={{ background: "white", borderRadius: "10px", padding: "20px" }}>
@@ -145,8 +147,9 @@ export default function AdminReceitaView({ pedidos, assinaturaPagamentos }: { pe
           <div style={{ fontSize: "28px", fontWeight: 700, color: "#002776" }}>{brl(dados.comissaoLivrosCentavos)}</div>
         </div>
         <div style={{ background: "white", borderRadius: "10px", padding: "20px" }}>
-          <div style={{ fontSize: "12px", color: "#666", marginBottom: "8px" }}>✍️ Assinaturas ({dados.assinaturasCount} pagamento{dados.assinaturasCount === 1 ? "" : "s"})</div>
+          <div style={{ fontSize: "12px", color: "#666", marginBottom: "8px" }}>✍️ Assinaturas líquidas ({dados.assinaturasCount} pagamento{dados.assinaturasCount === 1 ? "" : "s"})</div>
           <div style={{ fontSize: "28px", fontWeight: 700, color: "#002776" }}>{brl(dados.assinaturasCentavos)}</div>
+          <div style={{ fontSize: "11px", color: "#999", marginTop: "4px" }}>Já descontada a tarifa da Asaas</div>
         </div>
       </div>
 
