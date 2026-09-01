@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { brl } from "@/lib/format";
 import { COMISSAO_PERCENTUAL } from "@/lib/plans";
 import { reconciliarReceita, atualizarValoresLiquidos, type CobrancaFaltante } from "@/app/admin/actions";
@@ -18,6 +19,7 @@ function mesLabel(chave: string) {
 }
 
 export default function AdminReceitaView({ pedidos, assinaturaPagamentos }: { pedidos: OrderComReceita[]; assinaturaPagamentos: SubscriptionPaymentRow[] }) {
+  const router = useRouter();
   const meses = useMemo(() => {
     const chaves = new Set<string>();
     pedidos.forEach((p) => chaves.add(mesChave(p.createdAt)));
@@ -54,6 +56,9 @@ export default function AdminReceitaView({ pedidos, assinaturaPagamentos }: { pe
       try {
         const r = await atualizarValoresLiquidos();
         setResultadoLiquido(r);
+        if (r.atualizados > 0) {
+          router.refresh();
+        }
       } catch (err) {
         setErroLiquido(err instanceof Error ? err.message : "Não foi possível atualizar os valores líquidos.");
       }
