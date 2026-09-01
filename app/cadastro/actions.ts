@@ -8,8 +8,8 @@ import { sendWelcomeEmail } from "@/lib/email";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 import { validarSenha } from "@/lib/password";
 import { validarCpf } from "@/lib/cpf";
-import { criarCadastroPendente } from "@/lib/assinatura";
-import { cancelarAutorizacaoPixAutomatico } from "@/lib/asaas";
+import { criarCadastroPendenteAssinatura } from "@/lib/assinatura";
+import { cancelarAutorizacaoPixAutomatico, cancelarAssinaturaAsaas } from "@/lib/asaas";
 import { PLANOS_PAGOS, valorCicloCentavos, type PlanoPagoSlug, type CicloAssinatura } from "@/lib/plans";
 
 export type Step1Data = {
@@ -65,7 +65,7 @@ export async function createAccount(
   planId: PlanId,
   cycle: Cycle,
   cpf: string
-): Promise<{ pixQrCode: { payload: string; image: string } } | undefined> {
+): Promise<void> {
   const ip = await getClientIp();
   const permitido = await checkRateLimit(`cadastro:${ip}`, 5, 60);
   if (!permitido) {
@@ -96,7 +96,12 @@ export async function createAccount(
     // Se a pessoa tinha uma tentativa de plano pago pendente com esse e-mail e desistiu
     // pra ir de gratuito, cancela aquela autorização e libera o e-mail.
     if (pendente) {
-      await cancelarAutorizacaoPixAutomatico(pendente.asaasPixAutoAuthorizationId);
+      if (pendente.asaasSubscriptionId) {
+        await cancelarAssinaturaAsaas(pendente.asaasSubscriptionId);
+      }
+      if (pendente.asaasPixAutoAuthorizationId) {
+        await cancelarAutorizacaoPixAutomatico(pendente.asaasPixAutoAuthorizationId);
+      }
       await prisma.pendingSignup.delete({ where: { id: pendente.id } });
     }
 
@@ -126,13 +131,13 @@ export async function createAccount(
     redirect("/painel");
   }
 
-  // Plano pago: a conta só é criada de verdade quando o webhook confirmar que o Pix
-  // Automático foi autorizado (ver app/api/webhooks/asaas/route.ts) — até lá, os dados
-  // ficam guardados em PendingSignup. Assim, se a pessoa desistir antes de autorizar,
+  // Plano pago: a conta só é criada de verdade quando o webhook confirmar que o pagamento
+  // da assinatura foi recebido (ver app/api/webhooks/asaas/route.ts) — até lá, os dados
+  // ficam guardados em PendingSignup. Assim, se a pessoa desistir antes de pagar,
   // não sobra nenhuma conta "fantasma".
   const plano = PLANOS_PAGOS[planId];
 
-  const { qrCodePayload, qrCodeImage } = await criarCadastroPendente({
+  const { invoiceUrl } = await criarCadastroPendenteAssinatura({
     nome: step1.nome,
     email,
     senhaHash,
@@ -146,5 +151,5 @@ export async function createAccount(
     cpf,
   });
 
-  return { pixQrCode: { payload: qrCodePayload, image: qrCodeImage } };
+  redirect(invoiceUrl);
 }

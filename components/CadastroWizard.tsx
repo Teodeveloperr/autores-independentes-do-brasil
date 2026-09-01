@@ -57,7 +57,6 @@ export default function CadastroWizard() {
   const [cycle, setCycle] = useState<Cycle>("mensal");
   const [plan, setPlan] = useState<PlanId>("free");
   const [cpf, setCpf] = useState("");
-  const [pixQrCode, setPixQrCode] = useState<{ payload: string; image: string } | null>(null);
   const [step1Data, setStep1Data] = useState<Step1Data | null>(null);
   const [step1Error, setStep1Error] = useState("");
   const [finishError, setFinishError] = useState("");
@@ -87,10 +86,7 @@ export default function CadastroWizard() {
     setFinishError("");
     startTransition(async () => {
       try {
-        const result = await createAccount(step1Data, plan, cycle, cpf);
-        if (result?.pixQrCode) {
-          setPixQrCode(result.pixQrCode);
-        }
+        await createAccount(step1Data, plan, cycle, cpf);
       } catch (e) {
         // redirect() lança um erro especial (digest "NEXT_REDIRECT") pra navegar —
         // não é um erro de verdade, só deixa o redirecionamento seguir normalmente.
@@ -321,35 +317,7 @@ export default function CadastroWizard() {
         </div>
       )}
 
-      {step === 3 && pixQrCode && (
-        <div>
-          <h2 style={{ fontSize: "26px", fontWeight: 700, marginBottom: "6px" }}>Autorize o Pix Automático</h2>
-          <p style={{ fontSize: "14px", color: "#666", marginBottom: "24px" }}>
-            Falta só um passo: escaneie o QR Code com o app do seu banco pra autorizar a cobrança automática do plano {selPlan.nome}.
-          </p>
-          <div style={{ textAlign: "center", background: "#F6F6F6", borderRadius: "8px", padding: "24px", marginBottom: "20px" }}>
-            {pixQrCode.image && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={`data:image/png;base64,${pixQrCode.image}`} alt="QR Code Pix Automático" style={{ width: "200px", height: "200px", margin: "0 auto 14px" }} />
-            )}
-            <textarea
-              readOnly
-              value={pixQrCode.payload}
-              onClick={(e) => e.currentTarget.select()}
-              rows={3}
-              style={{ width: "100%", fontSize: "11px", padding: "8px", border: "1px solid #DDD", borderRadius: "4px", resize: "none" }}
-            />
-            <p style={{ fontSize: "12px", color: "#666", marginTop: "14px" }}>
-              Sua conta só é criada depois que você autorizar — assim que confirmar no app do banco, você recebe um e-mail de boas-vindas e já pode entrar com o e-mail e a senha que você acabou de criar.
-            </p>
-          </div>
-          <Link href="/login" style={{ display: "block", textAlign: "center", background: "#009B3A", color: "white", padding: "14px", fontWeight: 700, borderRadius: "6px", fontSize: "15px", textDecoration: "none" }}>
-            Já autorizei, ir para o login
-          </Link>
-        </div>
-      )}
-
-      {step === 3 && !pixQrCode && (
+      {step === 3 && (
         <div>
           <h2 style={{ fontSize: "26px", fontWeight: 700, marginBottom: "6px" }}>Pagamento</h2>
           <p style={{ fontSize: "14px", color: "#666", marginBottom: "24px" }}>
@@ -372,7 +340,7 @@ export default function CadastroWizard() {
             {plan === "free" ? (
               <>🎉 O plano <strong>Iniciante</strong> não tem cobrança. Você pode fazer upgrade quando quiser depois.</>
             ) : (
-              <>🔒 Vamos gerar um QR Code Pix pra você autorizar a cobrança automática no app do seu banco — sua conta só é criada de fato depois que você autorizar.</>
+              <>🔒 Você será redirecionado(a) para uma página segura da Asaas, onde escolhe entre Pix, boleto ou cartão — sua conta só é criada de fato depois que o pagamento for confirmado.</>
             )}
           </div>
 
@@ -400,7 +368,7 @@ export default function CadastroWizard() {
               ← Voltar
             </button>
             <button onClick={finish} disabled={pending} style={{ flex: 1, background: "#009B3A", color: "white", padding: "14px", fontWeight: 700, borderRadius: "6px", fontSize: "15px", opacity: pending ? 0.7 : 1 }}>
-              {pending ? "Finalizando..." : plan === "free" ? "Concluir cadastro" : "Gerar Pix Automático"}
+              {pending ? "Finalizando..." : plan === "free" ? "Concluir cadastro" : "Ir para pagamento"}
             </button>
           </div>
 

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { processarRepasse, enviarConfirmacaoRecebimento } from "@/lib/repasse";
-import { cancelarAutorizacaoPixAutomatico } from "@/lib/asaas";
+import { cancelarAutorizacaoPixAutomatico, cancelarAssinaturaAsaas } from "@/lib/asaas";
 
 const DIAS_LEMBRETE = 3;
 const DIAS_LIBERACAO = 7;
@@ -50,7 +50,12 @@ export async function GET(request: Request) {
     where: { createdAt: { lt: limiteCadastroPendente } },
   });
   for (const pendente of cadastrosAbandonados) {
-    await cancelarAutorizacaoPixAutomatico(pendente.asaasPixAutoAuthorizationId);
+    if (pendente.asaasSubscriptionId) {
+      await cancelarAssinaturaAsaas(pendente.asaasSubscriptionId);
+    }
+    if (pendente.asaasPixAutoAuthorizationId) {
+      await cancelarAutorizacaoPixAutomatico(pendente.asaasPixAutoAuthorizationId);
+    }
     await prisma.pendingSignup.delete({ where: { id: pendente.id } });
   }
 

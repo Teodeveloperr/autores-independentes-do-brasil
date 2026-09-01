@@ -186,6 +186,45 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ received: true }, { status: 200 });
   }
 
+  if (cobranca.subscription) {
+    // Cadastro novo pago via checkout hospedado da Asaas: a conta só é criada agora,
+    // com o pagamento já confirmado.
+    const pendente = await prisma.pendingSignup.findUnique({ where: { asaasSubscriptionId: cobranca.subscription } });
+    if (pendente) {
+      const emailEmUso = await prisma.author.findUnique({ where: { email: pendente.email } });
+      if (emailEmUso) {
+        console.error(`[asaas] PendingSignup ${pendente.id} não pôde virar conta: e-mail ${pendente.email} já está em uso.`);
+      } else {
+        const novoAuthor = await prisma.author.create({
+          data: {
+            nome: pendente.nome,
+            email: pendente.email,
+            senhaHash: pendente.senhaHash,
+            generos: pendente.generos,
+            cidade: pendente.cidade,
+            bio: pendente.bio,
+            anoEntrada: new Date().getFullYear(),
+            plano: pendente.planoNome,
+            planoCiclo: pendente.ciclo,
+            planoValorCentavos: pendente.valorCentavos,
+            planoIniciadoEm: new Date(),
+            cpf: pendente.cpf,
+            asaasSubscriptionId: pendente.asaasSubscriptionId,
+            asaasSubscriptionStatus: "active",
+          },
+        });
+        await prisma.subscriptionPayment.create({
+          data: { authorId: novoAuthor.id, plano: novoAuthor.plano, valorCentavos: cobranca.valueCentavos, asaasPaymentId: paymentId },
+        });
+        await sendWelcomeEmail(novoAuthor.email, novoAuthor.nome).catch((err) =>
+          console.error("[email] Falha ao enviar e-mail de boas-vindas:", err)
+        );
+        await prisma.pendingSignup.delete({ where: { id: pendente.id } });
+      }
+      return NextResponse.json({ received: true }, { status: 200 });
+    }
+  }
+
   const rows = await prisma.order.findMany({ where: { asaasPaymentId: paymentId } });
   if (rows.length === 0) {
     return NextResponse.json({ received: true }, { status: 200 });

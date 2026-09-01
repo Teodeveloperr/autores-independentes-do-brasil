@@ -357,8 +357,11 @@ model PendingSignup {
   valorCentavos Int
   cpf           String
 
-  asaasPixCustomerId          String
-  asaasPixAutoAuthorizationId String @unique
+  asaasPixCustomerId          String?
+  asaasPixAutoAuthorizationId String? @unique
+
+  asaasCustomerId     String?
+  asaasSubscriptionId String? @unique
 
   createdAt DateTime @default(now())
 }

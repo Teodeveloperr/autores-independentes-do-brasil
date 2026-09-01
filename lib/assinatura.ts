@@ -2,7 +2,7 @@ import "server-only";
 import crypto from "node:crypto";
 import { prisma } from "@/lib/db";
 import { criarAssinatura } from "@/lib/mercadoPago";
-import { criarOuBuscarCliente, criarAutorizacaoPixAutomatico, cancelarAutorizacaoPixAutomatico, criarAssinaturaAsaas, type FrequenciaPixAutomatico, type CicloAssinaturaAsaas } from "@/lib/asaas";
+import { criarOuBuscarCliente, criarAutorizacaoPixAutomatico, cancelarAutorizacaoPixAutomatico, criarAssinaturaAsaas, cancelarAssinaturaAsaas, type FrequenciaPixAutomatico, type CicloAssinaturaAsaas } from "@/lib/asaas";
 import { CICLO_MESES, type PlanoPagoSlug, type CicloAssinatura } from "@/lib/plans";
 
 const FREQUENCIA_POR_CICLO: Record<CicloAssinatura, FrequenciaPixAutomatico> = {
@@ -113,7 +113,12 @@ export async function criarCadastroPendente(input: {
 }): Promise<{ qrCodePayload: string; qrCodeImage: string }> {
   const pendenteExistente = await prisma.pendingSignup.findUnique({ where: { email: input.email } });
   if (pendenteExistente) {
-    await cancelarAutorizacaoPixAutomatico(pendenteExistente.asaasPixAutoAuthorizationId);
+    if (pendenteExistente.asaasSubscriptionId) {
+      await cancelarAssinaturaAsaas(pendenteExistente.asaasSubscriptionId);
+    }
+    if (pendenteExistente.asaasPixAutoAuthorizationId) {
+      await cancelarAutorizacaoPixAutomatico(pendenteExistente.asaasPixAutoAuthorizationId);
+    }
     await prisma.pendingSignup.delete({ where: { id: pendenteExistente.id } });
   }
 
@@ -154,6 +159,67 @@ export async function criarCadastroPendente(input: {
   });
 
   return { qrCodePayload: autorizacao.qrCodePayload, qrCodeImage: autorizacao.qrCodeImage };
+}
+
+export async function criarCadastroPendenteAssinatura(input: {
+  nome: string;
+  email: string;
+  senhaHash: string;
+  generos: string[];
+  cidade: string;
+  bio: string;
+  planoSlug: string;
+  planoNome: string;
+  ciclo: CicloAssinatura;
+  valorCentavos: number;
+  cpf: string;
+}): Promise<{ invoiceUrl: string }> {
+  const pendenteExistente = await prisma.pendingSignup.findUnique({ where: { email: input.email } });
+  if (pendenteExistente) {
+    if (pendenteExistente.asaasSubscriptionId) {
+      await cancelarAssinaturaAsaas(pendenteExistente.asaasSubscriptionId);
+    }
+    if (pendenteExistente.asaasPixAutoAuthorizationId) {
+      await cancelarAutorizacaoPixAutomatico(pendenteExistente.asaasPixAutoAuthorizationId);
+    }
+    await prisma.pendingSignup.delete({ where: { id: pendenteExistente.id } });
+  }
+
+  const customerId = await criarOuBuscarCliente({ nome: input.nome, cpf: input.cpf, email: input.email });
+  if (!customerId) {
+    throw new Error("Não foi possível validar seus dados na Asaas. Confira o CPF e tente novamente.");
+  }
+
+  const assinatura = await criarAssinaturaAsaas({
+    customerId,
+    cycle: CYCLE_POR_CICLO[input.ciclo],
+    valueCentavos: input.valorCentavos,
+    description: `Assinatura ${input.planoNome}`,
+  });
+
+  if (!assinatura || !assinatura.invoiceUrl) {
+    throw new Error("Não foi possível iniciar a assinatura. Tente novamente em instantes.");
+  }
+
+  await prisma.pendingSignup.create({
+    data: {
+      nome: input.nome,
+      email: input.email,
+      senhaHash: input.senhaHash,
+      generos: input.generos,
+      cidade: input.cidade,
+      bio: input.bio,
+      planoSlug: input.planoSlug,
+      planoNome: input.planoNome,
+      ciclo: input.ciclo,
+      valorCentavos: input.valorCentavos,
+      cpf: input.cpf,
+      asaasCustomerId: customerId,
+      asaasSubscriptionId: assinatura.id,
+    },
+  });
+
+  return { invoiceUrl: assinatura.invoiceUrl };
 }
 
 export async function criarAssinaturaAsaasParaAutor(input: {
