@@ -8,7 +8,7 @@ import { sendWelcomeEmail } from "@/lib/email";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 import { validarSenha } from "@/lib/password";
 import { validarCpf } from "@/lib/cpf";
-import { criarCadastroPendenteAssinatura } from "@/lib/assinatura";
+import { criarCadastroPendenteAssinatura, criarCadastroPendente } from "@/lib/assinatura";
 import { cancelarAutorizacaoPixAutomatico, cancelarAssinaturaAsaas } from "@/lib/asaas";
 import { PLANOS_PAGOS, valorCicloCentavos, type PlanoPagoSlug, type CicloAssinatura } from "@/lib/plans";
 
@@ -59,13 +59,15 @@ export async function validateStep1(formData: FormData): Promise<Step1Result> {
 
 export type PlanId = "free" | PlanoPagoSlug;
 export type Cycle = CicloAssinatura;
+export type MetodoPagamento = "cartao" | "pix";
 
 export async function createAccount(
   step1: Step1Data,
   planId: PlanId,
   cycle: Cycle,
-  cpf: string
-): Promise<void> {
+  cpf: string,
+  metodoPagamento: MetodoPagamento
+): Promise<{ pixQrCode: { payload: string; image: string } } | undefined> {
   const ip = await getClientIp();
   const permitido = await checkRateLimit(`cadastro:${ip}`, 5, 60);
   if (!permitido) {
@@ -136,6 +138,23 @@ export async function createAccount(
   // ficam guardados em PendingSignup. Assim, se a pessoa desistir antes de pagar,
   // não sobra nenhuma conta "fantasma".
   const plano = PLANOS_PAGOS[planId];
+
+  if (metodoPagamento === "pix") {
+    const { qrCodePayload, qrCodeImage } = await criarCadastroPendente({
+      nome: step1.nome,
+      email,
+      senhaHash,
+      generos: step1.generos,
+      cidade: step1.cidade,
+      bio: step1.bio || `Autor(a) independente do coletivo Autores Independentes do Brasil, de ${step1.cidade}.`,
+      planoSlug: planId,
+      planoNome: plano.nome,
+      ciclo: cycle,
+      valorCentavos: valorCicloCentavos(plano, cycle),
+      cpf,
+    });
+    return { pixQrCode: { payload: qrCodePayload, image: qrCodeImage } };
+  }
 
   const { checkoutUrl } = await criarCadastroPendenteAssinatura({
     nome: step1.nome,

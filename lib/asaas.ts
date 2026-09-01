@@ -245,7 +245,11 @@ export type CheckoutAssinaturaCriado = { id: string; link: string };
 // Ao contrário de criarAssinaturaAsaas (POST /v3/subscriptions), aqui a assinatura só é
 // criada de fato na Asaas depois que a pessoa termina o pagamento no checkout — se ela
 // desistir ou a sessão expirar, nada fica registrado do lado da Asaas (sem cobrança, sem
-// boleto, sem DDA). billingTypes restrito evita a opção de boleto no checkout.
+// boleto, sem DDA).
+//
+// A Asaas só permite CREDIT_CARD para chargeTypes RECURRENT (confirmado via erro real da
+// API — Pix e débito exigem chargeTypes DETACHED, cobrança avulsa). Por isso esse checkout
+// é só cartão de crédito; Pix recorrente é tratado à parte por criarAutorizacaoPixAutomatico.
 export async function criarCheckoutAssinaturaAsaas(input: {
   customerId: string;
   cycle: CicloAssinaturaAsaas;
@@ -262,7 +266,7 @@ export async function criarCheckoutAssinaturaAsaas(input: {
       method: "POST",
       headers: { access_token: accessToken, "Content-Type": "application/json", Accept: "application/json" },
       body: JSON.stringify({
-        billingTypes: ["PIX", "CREDIT_CARD", "DEBIT_CARD"],
+        billingTypes: ["CREDIT_CARD"],
         chargeTypes: ["RECURRENT"],
         minutesToExpire: 60,
         customer: input.customerId,

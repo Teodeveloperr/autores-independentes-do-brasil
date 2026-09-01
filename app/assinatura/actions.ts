@@ -5,12 +5,12 @@ import { prisma } from "@/lib/db";
 import { requireAuthor } from "@/lib/auth";
 import { cancelarAssinaturaMp } from "@/lib/mercadoPago";
 import { cancelarAutorizacaoPixAutomatico, cancelarAssinaturaAsaas } from "@/lib/asaas";
-import { criarAssinaturaAsaasParaAutor } from "@/lib/assinatura";
+import { criarAssinaturaAsaasParaAutor, criarAssinaturaPixAutomatico } from "@/lib/assinatura";
 import { validarCpf } from "@/lib/cpf";
 import { PLANOS_PAGOS, CICLO_MESES, valorCicloCentavos, descontoFidelidade, PLANO_RANK, type PlanoPagoSlug, type CicloAssinatura } from "@/lib/plans";
 import { checkRateLimit } from "@/lib/rateLimit";
 
-export type AssinarState = { error?: string } | undefined;
+export type AssinarState = { error?: string; pixQrCode?: { payload: string; image: string } } | undefined;
 
 export async function cancelarAssinaturaAtiva(author: {
   mpPreapprovalId: string | null;
@@ -56,7 +56,26 @@ export async function iniciarAssinatura(_prev: AssinarState, formData: FormData)
     return { error: "CPF inválido." };
   }
 
+  const metodoPagamento = (formData.get("metodoPagamento") as string) === "pix" ? "pix" : "cartao";
+
   await cancelarAssinaturaAtiva(author);
+
+  if (metodoPagamento === "pix") {
+    try {
+      const { qrCodePayload, qrCodeImage } = await criarAssinaturaPixAutomatico({
+        authorId: author.id,
+        authorEmail: author.email,
+        authorNome: author.nome,
+        cpf,
+        planoNome: plano.nome,
+        ciclo,
+        valorCentavos,
+      });
+      return { pixQrCode: { payload: qrCodePayload, image: qrCodeImage } };
+    } catch (err) {
+      return { error: err instanceof Error ? err.message : "Não foi possível iniciar a assinatura. Tente novamente em instantes." };
+    }
+  }
 
   let checkoutUrl: string;
   try {

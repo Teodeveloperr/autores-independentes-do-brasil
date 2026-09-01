@@ -57,6 +57,7 @@ export default function CadastroWizard() {
   const [cycle, setCycle] = useState<Cycle>("mensal");
   const [plan, setPlan] = useState<PlanId>("free");
   const [cpf, setCpf] = useState("");
+  const [pixQrCode, setPixQrCode] = useState<{ payload: string; image: string } | null>(null);
   const [step1Data, setStep1Data] = useState<Step1Data | null>(null);
   const [step1Error, setStep1Error] = useState("");
   const [finishError, setFinishError] = useState("");
@@ -77,7 +78,7 @@ export default function CadastroWizard() {
     });
   }
 
-  function finish() {
+  function finish(metodoPagamento: "cartao" | "pix") {
     if (!step1Data) return;
     if (plan !== "free" && !validarCpf(cpf)) {
       setFinishError("CPF inválido.");
@@ -86,7 +87,10 @@ export default function CadastroWizard() {
     setFinishError("");
     startTransition(async () => {
       try {
-        await createAccount(step1Data, plan, cycle, cpf);
+        const result = await createAccount(step1Data, plan, cycle, cpf, metodoPagamento);
+        if (result?.pixQrCode) {
+          setPixQrCode(result.pixQrCode);
+        }
       } catch (e) {
         // redirect() lança um erro especial (digest "NEXT_REDIRECT") pra navegar —
         // não é um erro de verdade, só deixa o redirecionamento seguir normalmente.
@@ -317,7 +321,35 @@ export default function CadastroWizard() {
         </div>
       )}
 
-      {step === 3 && (
+      {step === 3 && pixQrCode && (
+        <div>
+          <h2 style={{ fontSize: "26px", fontWeight: 700, marginBottom: "6px" }}>Autorize o Pix Automático</h2>
+          <p style={{ fontSize: "14px", color: "#666", marginBottom: "24px" }}>
+            Falta só um passo: escaneie o QR Code com o app do seu banco pra autorizar a cobrança automática do plano {selPlan.nome}.
+          </p>
+          <div style={{ textAlign: "center", background: "#F6F6F6", borderRadius: "8px", padding: "24px", marginBottom: "20px" }}>
+            {pixQrCode.image && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={`data:image/png;base64,${pixQrCode.image}`} alt="QR Code Pix Automático" style={{ width: "200px", height: "200px", margin: "0 auto 14px" }} />
+            )}
+            <textarea
+              readOnly
+              value={pixQrCode.payload}
+              onClick={(e) => e.currentTarget.select()}
+              rows={3}
+              style={{ width: "100%", fontSize: "11px", padding: "8px", border: "1px solid #DDD", borderRadius: "4px", resize: "none" }}
+            />
+            <p style={{ fontSize: "12px", color: "#666", marginTop: "14px" }}>
+              Sua conta só é criada depois que você autorizar — assim que confirmar no app do banco, você recebe um e-mail de boas-vindas e já pode entrar com o e-mail e a senha que você acabou de criar.
+            </p>
+          </div>
+          <Link href="/login" style={{ display: "block", textAlign: "center", background: "#009B3A", color: "white", padding: "14px", fontWeight: 700, borderRadius: "6px", fontSize: "15px", textDecoration: "none" }}>
+            Já autorizei, ir para o login
+          </Link>
+        </div>
+      )}
+
+      {step === 3 && !pixQrCode && (
         <div>
           <h2 style={{ fontSize: "26px", fontWeight: 700, marginBottom: "6px" }}>Pagamento</h2>
           <p style={{ fontSize: "14px", color: "#666", marginBottom: "24px" }}>
@@ -340,7 +372,7 @@ export default function CadastroWizard() {
             {plan === "free" ? (
               <>🎉 O plano <strong>Iniciante</strong> não tem cobrança. Você pode fazer upgrade quando quiser depois.</>
             ) : (
-              <>🔒 Você será redirecionado(a) para uma página segura da Asaas, onde escolhe entre Pix, boleto ou cartão — sua conta só é criada de fato depois que o pagamento for confirmado.</>
+              <>🔒 Escolha como pagar: no cartão, você é redirecionado(a) para uma página segura da Asaas; no Pix, autoriza direto pelo app do seu banco. Sua conta só é criada de fato depois que o pagamento for confirmado.</>
             )}
           </div>
 
@@ -367,13 +399,24 @@ export default function CadastroWizard() {
             <button onClick={() => setStep(2)} style={{ flex: "0 0 auto", background: "white", border: "1px solid #CCC", color: "#262626", padding: "14px 24px", fontWeight: 600, borderRadius: "6px", fontSize: "15px" }}>
               ← Voltar
             </button>
-            <button onClick={finish} disabled={pending} style={{ flex: 1, background: "#009B3A", color: "white", padding: "14px", fontWeight: 700, borderRadius: "6px", fontSize: "15px", opacity: pending ? 0.7 : 1 }}>
-              {pending ? "Finalizando..." : plan === "free" ? "Concluir cadastro" : "Ir para pagamento"}
-            </button>
+            {plan === "free" ? (
+              <button onClick={() => finish("cartao")} disabled={pending} style={{ flex: 1, background: "#009B3A", color: "white", padding: "14px", fontWeight: 700, borderRadius: "6px", fontSize: "15px", opacity: pending ? 0.7 : 1 }}>
+                {pending ? "Finalizando..." : "Concluir cadastro"}
+              </button>
+            ) : (
+              <>
+                <button onClick={() => finish("cartao")} disabled={pending} style={{ flex: 1, background: "#002776", color: "white", padding: "14px", fontWeight: 700, borderRadius: "6px", fontSize: "15px", opacity: pending ? 0.7 : 1 }}>
+                  {pending ? "Aguarde..." : "Pagar com cartão"}
+                </button>
+                <button onClick={() => finish("pix")} disabled={pending} style={{ flex: 1, background: "#009B3A", color: "white", padding: "14px", fontWeight: 700, borderRadius: "6px", fontSize: "15px", opacity: pending ? 0.7 : 1 }}>
+                  {pending ? "Aguarde..." : "Pagar com Pix"}
+                </button>
+              </>
+            )}
           </div>
 
           <p style={{ textAlign: "center", fontSize: "12px", color: "#999", marginTop: "20px" }}>
-            🔒 Pagamento seguro · Cancele quando quiser · Sem taxa de adesão
+            🔒 Pagamento seguro · Sem taxa de adesão
           </p>
         </div>
       )}
