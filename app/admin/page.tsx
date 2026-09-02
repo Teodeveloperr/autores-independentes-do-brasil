@@ -27,7 +27,7 @@ export default async function AdminPage() {
     prisma.review.findMany({ orderBy: { createdAt: "desc" }, include: { author: { select: { nome: true } } } }),
     prisma.order.findMany({ orderBy: { createdAt: "desc" }, include: { author: { select: { nome: true } } } }),
     prisma.order.findMany({
-      where: { status: { not: "Aguardando pagamento" } },
+      where: { status: { notIn: ["Aguardando pagamento", "Cancelado"] } },
       orderBy: { createdAt: "desc" },
       include: { author: { select: { plano: true } } },
     }),

@@ -3,13 +3,14 @@
 import { useState } from "react";
 import type { OrderWithAuthor } from "./types";
 
-const FILTERS = ["Todos", "Aguardando pagamento", "Pago", "Aguardando envio", "Enviado", "Entregue"];
+const FILTERS = ["Todos", "Aguardando pagamento", "Pago", "Aguardando envio", "Enviado", "Entregue", "Cancelado"];
 const STATUS_COLOR: Record<string, string> = {
   "Aguardando pagamento": "#C0392B",
   Pago: "#009B3A",
   "Aguardando envio": "#A87900",
   Enviado: "#002776",
   Entregue: "#6B4EAF",
+  Cancelado: "#999999",
 };
 const AGUARDANDO_ENVIO = new Set(["Pago", "Aguardando envio"]);
 

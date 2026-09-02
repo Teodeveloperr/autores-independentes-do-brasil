@@ -449,7 +449,7 @@ export async function excluirMinhaConta() {
   const author = await requireAuthor();
 
   const pedidosPendentes = await prisma.order.count({
-    where: { authorId: author.id, status: { notIn: ["Entregue", "Aguardando pagamento"] } },
+    where: { authorId: author.id, status: { notIn: ["Entregue", "Aguardando pagamento", "Cancelado"] } },
   });
   if (pedidosPendentes > 0) {
     throw new Error(

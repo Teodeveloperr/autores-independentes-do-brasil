@@ -6,13 +6,14 @@ import { setOrderStatus } from "@/app/painel/actions";
 import { brl } from "@/lib/format";
 import type { AuthorWithRelations } from "./types";
 
-const FILTERS = ["Todos", "Aguardando pagamento", "Pago", "Aguardando envio", "Enviado", "Entregue"];
+const FILTERS = ["Todos", "Aguardando pagamento", "Pago", "Aguardando envio", "Enviado", "Entregue", "Cancelado"];
 const STATUS_COLOR: Record<string, string> = {
   "Aguardando pagamento": "#C0392B",
   Pago: "#009B3A",
   "Aguardando envio": "#A87900",
   Enviado: "#002776",
   Entregue: "#6B4EAF",
+  Cancelado: "#999999",
 };
 
 export default function PedidosView({ author }: { author: AuthorWithRelations }) {
@@ -94,7 +95,7 @@ export default function PedidosView({ author }: { author: AuthorWithRelations })
               <select
                 value={p.status}
                 onChange={(e) => onStatusChange(p.id, e.target.value)}
-                disabled={p.status === "Entregue"}
+                disabled={p.status === "Entregue" || p.status === "Cancelado"}
                 style={{ padding: "6px 10px", borderRadius: "6px", fontSize: "12px", fontWeight: 700, border: "1px solid #DDD", color: STATUS_COLOR[p.status] ?? "#666" }}
               >
                 <option>Aguardando pagamento</option>
@@ -102,13 +103,19 @@ export default function PedidosView({ author }: { author: AuthorWithRelations })
                 <option>Aguardando envio</option>
                 <option>Enviado</option>
                 {p.status === "Entregue" && <option>Entregue</option>}
+                {p.status === "Cancelado" && <option>Cancelado</option>}
               </select>
+              {p.status === "Cancelado" && (
+                <div style={{ fontSize: "11px", color: "#999", marginTop: "4px", maxWidth: "180px" }}>
+                  Pedido cancelado automaticamente — o pagamento não foi concluído a tempo.
+                </div>
+              )}
               {p.confirmacaoEnviadaEm && p.repasseStatus !== "transferido" && p.repasseStatus !== "erro" && (
                 <div style={{ fontSize: "11px", color: "#A87900", marginTop: "4px", maxWidth: "180px" }}>
                   ⏳ Aguardando confirmação do comprador (ou liberação em até 7 dias)
                 </div>
               )}
-              {!p.confirmacaoEnviadaEm && p.status !== "Aguardando pagamento" && p.status !== "Entregue" && (
+              {!p.confirmacaoEnviadaEm && p.status !== "Aguardando pagamento" && p.status !== "Entregue" && p.status !== "Cancelado" && (
                 <div style={{ fontSize: "11px", color: "#999", marginTop: "4px", maxWidth: "180px" }}>
                   Se não marcar como enviado, o comprador recebe um lembrete automático em até 3 dias após a compra.
                 </div>

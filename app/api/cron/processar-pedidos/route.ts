@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { processarRepasse, enviarConfirmacaoRecebimento } from "@/lib/repasse";
-import { cancelarAutorizacaoPixAutomatico, cancelarAssinaturaAsaas } from "@/lib/asaas";
+import { cancelarAutorizacaoPixAutomatico, cancelarAssinaturaAsaas, buscarCobranca, cancelarCobranca } from "@/lib/asaas";
 
 const DIAS_LEMBRETE = 3;
 const DIAS_LIBERACAO = 7;
 const DIAS_CADASTRO_PENDENTE = 3;
+const DIAS_PEDIDO_ABANDONADO = 3;
 
 export async function GET(request: Request) {
   const authHeader = request.headers.get("authorization");
@@ -16,7 +17,7 @@ export async function GET(request: Request) {
   const limiteLembrete = new Date(Date.now() - DIAS_LEMBRETE * 24 * 60 * 60 * 1000);
   const semConfirmacaoEnviada = await prisma.order.findMany({
     where: {
-      status: { notIn: ["Aguardando pagamento", "Entregue"] },
+      status: { notIn: ["Aguardando pagamento", "Entregue", "Cancelado"] },
       confirmacaoTokenHash: null,
       createdAt: { lt: limiteLembrete },
     },
@@ -45,6 +46,35 @@ export async function GET(request: Request) {
     }
   }
 
+  // Pedidos criados no checkout mas nunca pagos (a pessoa desistiu antes de concluir o
+  // pagamento) — cancela a cobrança de verdade na Asaas (senão a fatura continua válida e
+  // um pagamento atrasado nela passaria despercebido) e só marca como "Cancelado" aqui se
+  // a Asaas confirmar que ainda não foi pago; se por acaso já tiver sido pago (webhook que
+  // falhou), não mexe, pra não arriscar perder um pagamento real.
+  const limitePedidoAbandonado = new Date(Date.now() - DIAS_PEDIDO_ABANDONADO * 24 * 60 * 60 * 1000);
+  const pedidosAbandonados = await prisma.order.findMany({
+    where: { status: "Aguardando pagamento", createdAt: { lt: limitePedidoAbandonado } },
+  });
+  const gruposAbandonados = new Map<string, string>();
+  for (const order of pedidosAbandonados) {
+    if (order.grupoPedidoId && order.asaasPaymentId && !gruposAbandonados.has(order.grupoPedidoId)) {
+      gruposAbandonados.set(order.grupoPedidoId, order.asaasPaymentId);
+    }
+  }
+
+  let pedidosCancelados = 0;
+  for (const [grupoPedidoId, asaasPaymentId] of gruposAbandonados) {
+    const cobranca = await buscarCobranca(asaasPaymentId);
+    if (!cobranca) continue;
+    if (cobranca.status === "RECEIVED" || cobranca.status === "CONFIRMED") continue;
+
+    const cancelou = await cancelarCobranca(asaasPaymentId);
+    if (cancelou) {
+      await prisma.order.updateMany({ where: { grupoPedidoId }, data: { status: "Cancelado" } });
+      pedidosCancelados++;
+    }
+  }
+
   const limiteCadastroPendente = new Date(Date.now() - DIAS_CADASTRO_PENDENTE * 24 * 60 * 60 * 1000);
   const cadastrosAbandonados = await prisma.pendingSignup.findMany({
     where: { createdAt: { lt: limiteCadastroPendente } },
@@ -63,6 +93,7 @@ export async function GET(request: Request) {
     lembretes: semConfirmacaoEnviada.length,
     processados: pendentes.length,
     liberados,
+    pedidosCancelados,
     cadastrosPendentesLimpos: cadastrosAbandonados.length,
   });
 }

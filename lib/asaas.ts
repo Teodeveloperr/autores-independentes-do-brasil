@@ -375,6 +375,26 @@ export async function buscarCobranca(id: string): Promise<CobrancaAsaas | null> 
   }
 }
 
+export async function cancelarCobranca(id: string): Promise<boolean> {
+  const accessToken = getAccessToken();
+  if (!accessToken) return false;
+
+  try {
+    const res = await fetch(`${getBaseUrl()}/payments/${id}`, {
+      method: "DELETE",
+      headers: { access_token: accessToken, Accept: "application/json" },
+    });
+    if (!res.ok) {
+      console.error("[asaas] Falha ao cancelar cobrança:", res.status, await res.text());
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error("[asaas] Falha ao cancelar cobrança:", err);
+    return false;
+  }
+}
+
 export type CobrancaRecebida = { id: string; subscription: string | null; customer: string; valueCentavos: number; invoiceUrl: string; status: string; paymentDate: string | null };
 
 /**
