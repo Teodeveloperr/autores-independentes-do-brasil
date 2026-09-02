@@ -19,7 +19,7 @@ export default function PoliticaDePrivacidadePage() {
             Como o Autores Independentes do Brasil coleta, usa e protege os seus dados pessoais.
           </p>
           <div className="section-pad-md" style={{ background: "white", color: "#262626", padding: "40px", borderRadius: "8px", maxWidth: "820px", margin: "0 auto" }}>
-            <p style={{ fontSize: "12px", color: "#999", marginBottom: "24px" }}>Última atualização: 12 de agosto de 2026</p>
+            <p style={{ fontSize: "12px", color: "#999", marginBottom: "24px" }}>Última atualização: 1 de setembro de 2026</p>
 
             <p style={pStyle}>
               Esta Política de Privacidade explica quais dados pessoais o Autores Independentes do Brasil coleta ao longo
@@ -29,26 +29,27 @@ export default function PoliticaDePrivacidadePage() {
             </p>
 
             <h2 style={h2Style}>1. Quais dados coletamos</h2>
-            <p style={pStyle}><strong>Se você compra um livro (checkout):</strong> nome completo, e-mail, telefone (opcional) e endereço de entrega (CEP, rua, número, complemento, bairro, cidade e UF).</p>
-            <p style={pStyle}><strong>Se você se cadastra como autor(a):</strong> nome, e-mail, senha (armazenada de forma criptografada), biografia, foto de perfil, redes sociais, cidade e — quando você opta por vender livros físicos — o endereço informado no seu perfil.</p>
+            <p style={pStyle}><strong>Se você compra um livro (checkout):</strong> nome completo, e-mail, telefone (opcional), CPF (necessário para gerar a cobrança) e endereço de entrega (CEP, rua, número, complemento, bairro, cidade e UF).</p>
+            <p style={pStyle}><strong>Se você se cadastra como autor(a):</strong> nome, e-mail, senha (armazenada de forma criptografada), biografia, foto de perfil, redes sociais, cidade e — quando você opta por vender livros físicos — o endereço informado no seu perfil. Para assinar um plano pago, também coletamos CPF e, no caso de pagamento com cartão de crédito, telefone e endereço (CEP e número).</p>
             <p style={pStyle}><strong>De forma automática:</strong> itens adicionados ao carrinho de compras (armazenados no seu navegador) e dados técnicos básicos de acesso (como data e hora da requisição), necessários para o funcionamento do site.</p>
 
             <h2 style={h2Style}>2. Para que usamos esses dados</h2>
             <ul style={{ paddingLeft: "20px", marginBottom: "12px" }}>
               <li style={liStyle}>Processar e entregar os pedidos realizados na plataforma;</li>
-              <li style={liStyle}>Calcular o valor do frete de cada compra (valor fixo definido pela plataforma);</li>
-              <li style={liStyle}>Permitir que o autor entre em contato com o comprador para combinar pagamento e envio, enquanto o pagamento online não está disponível;</li>
+              <li style={liStyle}>Calcular o valor do frete de cada compra, com base na quantidade de livros de cada autor no pedido;</li>
+              <li style={liStyle}>Processar pagamentos de compras e assinaturas, via Pix ou cartão de crédito, através da nossa parceira de pagamentos;</li>
               <li style={liStyle}>Exibir o perfil público do autor (nome, bio, foto, livros e redes sociais informadas);</li>
-              <li style={liStyle}>Enviar comunicações relacionadas ao seu pedido ou cadastro.</li>
+              <li style={liStyle}>Enviar comunicações relacionadas ao seu pedido, assinatura ou cadastro.</li>
             </ul>
 
             <h2 style={h2Style}>3. Com quem compartilhamos seus dados</h2>
             <p style={pStyle}>
               Não vendemos nem alugamos seus dados pessoais a terceiros. Compartilhamos apenas o necessário para viabilizar
-              a compra:
+              a compra ou a assinatura:
             </p>
             <ul style={{ paddingLeft: "20px", marginBottom: "12px" }}>
               <li style={liStyle}><strong>Com o autor vendedor:</strong> nome, contato e endereço de entrega, para que ele possa preparar e enviar o pedido.</li>
+              <li style={liStyle}><strong>Com a Asaas (nossa processadora de pagamentos):</strong> nome, CPF, e-mail, telefone e endereço, exclusivamente para processar pagamentos de compras e assinaturas. A Asaas tem sua própria política de privacidade e é responsável pelo tratamento desses dados durante o processamento do pagamento.</li>
             </ul>
 
             <h2 style={h2Style}>4. Cookies e carrinho de compras</h2>
