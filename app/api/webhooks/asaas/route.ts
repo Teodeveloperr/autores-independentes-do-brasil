@@ -214,7 +214,21 @@ export async function POST(request: NextRequest) {
     const jaRegistrado = await prisma.subscriptionPayment.findUnique({ where: { asaasPaymentId: paymentId } });
     if (!jaRegistrado) {
       await prisma.subscriptionPayment.create({
-        data: { authorId: authorAssinatura.id, plano: authorAssinatura.planoPendente ?? authorAssinatura.plano, valorCentavos: cobranca.valueCentavos, valorLiquidoCentavos: cobranca.netValueCentavos, asaasPaymentId: paymentId },
+        data: {
+          authorId: authorAssinatura.id,
+          plano: authorAssinatura.planoPendente ?? authorAssinatura.plano,
+          valorCentavos: cobranca.valueCentavos,
+          valorLiquidoCentavos: cobranca.netValueCentavos,
+          asaasPaymentId: paymentId,
+          // Pix cai direto em RECEIVED (disponível na hora); cartão passa por CONFIRMED
+          // primeiro e só fica disponível bem depois (D+32) — marcado abaixo quando chegar.
+          disponivelEm: evento === "PAYMENT_RECEIVED" ? new Date() : null,
+        },
+      });
+    } else if (evento === "PAYMENT_RECEIVED" && !jaRegistrado.disponivelEm) {
+      await prisma.subscriptionPayment.update({
+        where: { id: jaRegistrado.id },
+        data: { disponivelEm: new Date(), valorLiquidoCentavos: cobranca.netValueCentavos ?? jaRegistrado.valorLiquidoCentavos },
       });
     }
     if (authorAssinatura.planoPendente) {
@@ -260,7 +274,14 @@ export async function POST(request: NextRequest) {
           },
         });
         await prisma.subscriptionPayment.create({
-          data: { authorId: novoAuthor.id, plano: novoAuthor.plano, valorCentavos: cobranca.valueCentavos, valorLiquidoCentavos: cobranca.netValueCentavos, asaasPaymentId: paymentId },
+          data: {
+            authorId: novoAuthor.id,
+            plano: novoAuthor.plano,
+            valorCentavos: cobranca.valueCentavos,
+            valorLiquidoCentavos: cobranca.netValueCentavos,
+            asaasPaymentId: paymentId,
+            disponivelEm: evento === "PAYMENT_RECEIVED" ? new Date() : null,
+          },
         });
         await sendWelcomeEmail(novoAuthor.email, novoAuthor.nome).catch((err) =>
           console.error("[email] Falha ao enviar e-mail de boas-vindas:", err)
@@ -299,7 +320,14 @@ export async function POST(request: NextRequest) {
           },
         });
         await prisma.subscriptionPayment.create({
-          data: { authorId: novoAuthor.id, plano: novoAuthor.plano, valorCentavos: cobranca.valueCentavos, valorLiquidoCentavos: cobranca.netValueCentavos, asaasPaymentId: paymentId },
+          data: {
+            authorId: novoAuthor.id,
+            plano: novoAuthor.plano,
+            valorCentavos: cobranca.valueCentavos,
+            valorLiquidoCentavos: cobranca.netValueCentavos,
+            asaasPaymentId: paymentId,
+            disponivelEm: evento === "PAYMENT_RECEIVED" ? new Date() : null,
+          },
         });
         await sendWelcomeEmail(novoAuthor.email, novoAuthor.nome).catch((err) =>
           console.error("[email] Falha ao enviar e-mail de boas-vindas:", err)
@@ -315,12 +343,37 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ received: true }, { status: 200 });
   }
 
-  const jaProcessado = rows.every((r) => r.status !== "Aguardando pagamento");
-  if (jaProcessado) {
+  const aindaNaoPago = rows.some((r) => r.status === "Aguardando pagamento");
+  const aindaNaoDisponivel = evento === "PAYMENT_RECEIVED" && rows.some((r) => r.disponivelEm === null);
+
+  if (!aindaNaoPago && !aindaNaoDisponivel) {
     return NextResponse.json({ received: true }, { status: 200 });
   }
 
-  await prisma.order.updateMany({ where: { asaasPaymentId: paymentId }, data: { status: "Pago" } });
+  if (!aindaNaoPago) {
+    // Já tinha sido confirmado antes (PAYMENT_CONFIRMED) — esse evento é só o RECEIVED
+    // chegando depois (cartão de crédito: D+32). Só marca disponível, sem reenviar e-mails.
+    await prisma.order.updateMany({ where: { asaasPaymentId: paymentId, disponivelEm: null }, data: { disponivelEm: new Date() } });
+    return NextResponse.json({ received: true }, { status: 200 });
+  }
+
+  const totalBrutoCobranca = rows.reduce((sum, r) => sum + r.valorCentavos + (r.freteCentavos ?? 0), 0);
+  const proporcaoLiquida =
+    totalBrutoCobranca > 0 && cobranca.netValueCentavos != null ? cobranca.netValueCentavos / totalBrutoCobranca : null;
+
+  await Promise.all(
+    rows.map((r) =>
+      prisma.order.update({
+        where: { id: r.id },
+        data: {
+          status: "Pago",
+          valorLiquidoCentavos:
+            proporcaoLiquida != null ? Math.round((r.valorCentavos + (r.freteCentavos ?? 0)) * proporcaoLiquida) : null,
+          disponivelEm: evento === "PAYMENT_RECEIVED" ? new Date() : null,
+        },
+      })
+    )
+  );
 
   const authorIds = [...new Set(rows.map((r) => r.authorId))];
   const authors = await prisma.author.findMany({ where: { id: { in: authorIds } } });

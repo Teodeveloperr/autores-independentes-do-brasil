@@ -2,8 +2,8 @@ import "server-only";
 import crypto from "node:crypto";
 import type { Order, Author } from "@/app/generated/prisma/client";
 import { prisma } from "@/lib/db";
-import { criarTransferenciaPix } from "@/lib/asaas";
-import { valorRepasseCentavos } from "@/lib/plans";
+import { criarTransferenciaPix, buscarCobranca } from "@/lib/asaas";
+import { valorRepasseCentavos, valorRepasseCentavosLiquido } from "@/lib/plans";
 import { sendConfirmacaoRecebimentoEmail } from "@/lib/email";
 
 export async function processarRepasse(order: Order, author: Author): Promise<{ ok: true } | { ok: false; erro: string }> {
@@ -17,7 +17,20 @@ export async function processarRepasse(order: Order, author: Author): Promise<{ 
     return { ok: false, erro };
   }
 
-  const valorRepasse = valorRepasseCentavos(author.plano, order.valorCentavos, order.freteCentavos ?? 0);
+  // Confere se o dinheiro da cobrança original já está disponível pra movimentação na
+  // Asaas antes de transferir — cartão de crédito só libera em D+32, bem depois do
+  // pagamento confirmar. Não é erro, só ainda não é hora: não marca repasseStatus, tenta
+  // de novo no próximo cron (fica "aguardando" na tela do autor).
+  const cobranca = await buscarCobranca(order.asaasPaymentId);
+  if (!cobranca || cobranca.status !== "RECEIVED") {
+    return { ok: false, erro: "Cobrança ainda não está disponível para movimentação na Asaas." };
+  }
+
+  const valorRepasse =
+    order.valorLiquidoCentavos != null
+      ? valorRepasseCentavosLiquido(author.plano, order.valorCentavos, order.freteCentavos ?? 0, order.valorLiquidoCentavos)
+      : valorRepasseCentavos(author.plano, order.valorCentavos, order.freteCentavos ?? 0);
+
   const transferencia = await criarTransferenciaPix({
     valueCentavos: valorRepasse,
     pixKey: author.pixKey,
@@ -34,7 +47,7 @@ export async function processarRepasse(order: Order, author: Author): Promise<{ 
 
   await prisma.order.update({
     where: { id: order.id },
-    data: { repasseStatus: "transferido", repasseAsaasTransferId: transferencia.id, repasseErro: null },
+    data: { repasseStatus: "transferido", repasseAsaasTransferId: transferencia.id, repasseValorCentavos: valorRepasse, repasseErro: null },
   });
   return { ok: true };
 }

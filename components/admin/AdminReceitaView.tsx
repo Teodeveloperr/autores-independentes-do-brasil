@@ -3,9 +3,26 @@
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { brl } from "@/lib/format";
-import { COMISSAO_PERCENTUAL } from "@/lib/plans";
+import { valorRepasseCentavos, valorRepasseCentavosLiquido } from "@/lib/plans";
 import { reconciliarReceita, atualizarValoresLiquidos, type CobrancaFaltante } from "@/app/admin/actions";
 import type { OrderComReceita, SubscriptionPaymentRow } from "./types";
+
+// Repasse real (já transferido) ou, na falta dele, a melhor estimativa disponível: com
+// base no valor líquido real da Asaas quando já confirmado, ou no valor bruto quando ainda não.
+function repasseDoPedido(p: OrderComReceita): number {
+  if (p.repasseValorCentavos != null) return p.repasseValorCentavos;
+  if (p.valorLiquidoCentavos != null) {
+    return valorRepasseCentavosLiquido(p.author.plano, p.valorCentavos, p.freteCentavos ?? 0, p.valorLiquidoCentavos);
+  }
+  return valorRepasseCentavos(p.author.plano, p.valorCentavos, p.freteCentavos ?? 0);
+}
+
+// Comissão real da plataforma nesse pedido: o que sobra depois do repasse (real ou
+// estimado) sobre o valor líquido real recebido (ou bruto, se ainda não confirmado).
+function comissaoDoPedido(p: OrderComReceita): number {
+  const totalLinha = p.valorLiquidoCentavos ?? p.valorCentavos + (p.freteCentavos ?? 0);
+  return totalLinha - repasseDoPedido(p);
+}
 
 const TIPO_LABEL: Record<string, string> = { assinatura: "Assinatura", venda: "Venda de livro" };
 
@@ -28,6 +45,7 @@ type EntradaReceita = {
   tipo: "Assinatura" | "Venda de livro";
   descricao: string;
   valorCentavos: number;
+  disponivel: boolean;
 };
 
 export default function AdminReceitaView({ pedidos, assinaturaPagamentos }: { pedidos: OrderComReceita[]; assinaturaPagamentos: SubscriptionPaymentRow[] }) {
@@ -81,20 +99,27 @@ export default function AdminReceitaView({ pedidos, assinaturaPagamentos }: { pe
     const pedidosDoMes = pedidos.filter((p) => mesChave(p.createdAt) === mes);
     const assinaturasDoMes = assinaturaPagamentos.filter((s) => mesChave(s.createdAt) === mes);
 
+    // "Confirmado" = a Asaas já confirmou o pagamento (pode ainda não estar disponível
+    // pra movimentação — cartão de crédito só libera em D+32). "Disponível" = já pode
+    // ser de fato movimentado (Pix: quase imediato; cartão: só depois do D+32).
     let comissaoLivrosCentavos = 0;
     let repasseLivrosCentavos = 0;
     let vendaLivrosCentavos = 0;
+    let comissaoLivrosDisponivelCentavos = 0;
     for (const p of pedidosDoMes) {
-      const comissaoPct = COMISSAO_PERCENTUAL[p.author.plano] ?? 100;
-      const comissao = Math.round(p.valorCentavos * (comissaoPct / 100));
+      const comissao = comissaoDoPedido(p);
       comissaoLivrosCentavos += comissao;
-      repasseLivrosCentavos += p.valorCentavos - comissao + (p.freteCentavos ?? 0);
+      repasseLivrosCentavos += repasseDoPedido(p);
       vendaLivrosCentavos += p.valorCentavos + (p.freteCentavos ?? 0);
+      if (p.disponivelEm) comissaoLivrosDisponivelCentavos += comissao;
     }
 
     // Usa o valor líquido (já descontada a tarifa da Asaas) quando disponível — pagamentos
     // registrados antes dessa informação existir caem no valor bruto como aproximação.
     const assinaturasCentavos = assinaturasDoMes.reduce((sum, s) => sum + (s.valorLiquidoCentavos ?? s.valorCentavos), 0);
+    const assinaturasDisponivelCentavos = assinaturasDoMes
+      .filter((s) => s.disponivelEm)
+      .reduce((sum, s) => sum + (s.valorLiquidoCentavos ?? s.valorCentavos), 0);
 
     const entradas: EntradaReceita[] = [
       ...pedidosDoMes.map((p) => ({
@@ -102,7 +127,8 @@ export default function AdminReceitaView({ pedidos, assinaturaPagamentos }: { pe
         data: p.createdAt,
         tipo: "Venda de livro" as const,
         descricao: `${p.livro} — ${p.comprador}`,
-        valorCentavos: Math.round(p.valorCentavos * ((COMISSAO_PERCENTUAL[p.author.plano] ?? 100) / 100)),
+        valorCentavos: comissaoDoPedido(p),
+        disponivel: Boolean(p.disponivelEm),
       })),
       ...assinaturasDoMes.map((s) => ({
         id: s.id,
@@ -110,8 +136,12 @@ export default function AdminReceitaView({ pedidos, assinaturaPagamentos }: { pe
         tipo: "Assinatura" as const,
         descricao: `${s.author.nome} — ${s.plano}`,
         valorCentavos: s.valorLiquidoCentavos ?? s.valorCentavos,
+        disponivel: Boolean(s.disponivelEm),
       })),
     ].sort((a, b) => b.data.getTime() - a.data.getTime());
+
+    const totalConfirmadoCentavos = comissaoLivrosCentavos + assinaturasCentavos;
+    const totalDisponivelCentavos = comissaoLivrosDisponivelCentavos + assinaturasDisponivelCentavos;
 
     return {
       pedidosCount: pedidosDoMes.length,
@@ -120,7 +150,9 @@ export default function AdminReceitaView({ pedidos, assinaturaPagamentos }: { pe
       comissaoLivrosCentavos,
       repasseLivrosCentavos,
       assinaturasCentavos,
-      totalReceitaCentavos: comissaoLivrosCentavos + assinaturasCentavos,
+      totalReceitaCentavos: totalConfirmadoCentavos,
+      totalDisponivelCentavos,
+      totalAguardandoCentavos: totalConfirmadoCentavos - totalDisponivelCentavos,
       entradas,
     };
   }, [pedidos, assinaturaPagamentos, mes]);
@@ -221,14 +253,28 @@ export default function AdminReceitaView({ pedidos, assinaturaPagamentos }: { pe
         </div>
       )}
 
-      <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "20px", marginBottom: "28px" }}>
+      <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "20px", marginBottom: "20px" }}>
         <div style={{ background: "white", borderRadius: "10px", padding: "20px" }}>
-          <div style={{ fontSize: "12px", color: "#666", marginBottom: "8px" }}>💰 Receita total (comissão + assinaturas líquidas)</div>
-          <div style={{ fontSize: "28px", fontWeight: 700, color: "#009B3A" }}>{brl(dados.totalReceitaCentavos)}</div>
+          <div style={{ fontSize: "12px", color: "#666", marginBottom: "8px" }}>✅ Disponível para movimentação</div>
+          <div style={{ fontSize: "28px", fontWeight: 700, color: "#009B3A" }}>{brl(dados.totalDisponivelCentavos)}</div>
+          <div style={{ fontSize: "11px", color: "#999", marginTop: "4px" }}>Pix: quase na hora. Cartão: só depois de ~32 dias (D+32).</div>
         </div>
         <div style={{ background: "white", borderRadius: "10px", padding: "20px" }}>
-          <div style={{ fontSize: "12px", color: "#666", marginBottom: "8px" }}>📚 Comissão sobre vendas ({dados.pedidosCount} pedido{dados.pedidosCount === 1 ? "" : "s"})</div>
+          <div style={{ fontSize: "12px", color: "#666", marginBottom: "8px" }}>⏳ Confirmado, aguardando liquidação</div>
+          <div style={{ fontSize: "28px", fontWeight: 700, color: "#A87900" }}>{brl(dados.totalAguardandoCentavos)}</div>
+          <div style={{ fontSize: "11px", color: "#999", marginTop: "4px" }}>Pago pelo cliente, mas a Asaas ainda não liberou pra saque/transferência.</div>
+        </div>
+      </div>
+
+      <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "20px", marginBottom: "28px" }}>
+        <div style={{ background: "white", borderRadius: "10px", padding: "20px" }}>
+          <div style={{ fontSize: "12px", color: "#666", marginBottom: "8px" }}>💰 Total confirmado (comissão + assinaturas líquidas)</div>
+          <div style={{ fontSize: "28px", fontWeight: 700, color: "#002776" }}>{brl(dados.totalReceitaCentavos)}</div>
+        </div>
+        <div style={{ background: "white", borderRadius: "10px", padding: "20px" }}>
+          <div style={{ fontSize: "12px", color: "#666", marginBottom: "8px" }}>📚 Comissão real sobre vendas ({dados.pedidosCount} pedido{dados.pedidosCount === 1 ? "" : "s"})</div>
           <div style={{ fontSize: "28px", fontWeight: 700, color: "#002776" }}>{brl(dados.comissaoLivrosCentavos)}</div>
+          <div style={{ fontSize: "11px", color: "#999", marginTop: "4px" }}>Já descontada a tarifa da Asaas na cobrança</div>
         </div>
         <div style={{ background: "white", borderRadius: "10px", padding: "20px" }}>
           <div style={{ fontSize: "12px", color: "#666", marginBottom: "8px" }}>✍️ Assinaturas líquidas ({dados.assinaturasCount} pagamento{dados.assinaturasCount === 1 ? "" : "s"})</div>
@@ -249,8 +295,11 @@ export default function AdminReceitaView({ pedidos, assinaturaPagamentos }: { pe
             <span style={{ fontWeight: 600 }}>{brl(dados.repasseLivrosCentavos)}</span>
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", borderTop: "1px solid #F0F0F0", paddingTop: "10px" }}>
-            <span style={{ color: "#666" }}>Comissão da plataforma</span>
+            <span style={{ color: "#666" }}>Comissão real da plataforma</span>
             <span style={{ fontWeight: 700, color: "#002776" }}>{brl(dados.comissaoLivrosCentavos)}</span>
+          </div>
+          <div style={{ fontSize: "11px", color: "#999" }}>
+            Já descontada a tarifa da Asaas na cobrança — pode ser um pouco menor que o percentual nominal do plano do autor.
           </div>
         </div>
       </div>
@@ -281,6 +330,12 @@ export default function AdminReceitaView({ pedidos, assinaturaPagamentos }: { pe
                   {e.tipo}
                 </span>
                 <span style={{ flex: 1, color: "#262626", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.descricao}</span>
+                <span
+                  title={e.disponivel ? "Já disponível para movimentação na Asaas" : "Confirmado, mas ainda não liberado pra movimentação na Asaas"}
+                  style={{ fontSize: "11px", flexShrink: 0, color: e.disponivel ? "#009B3A" : "#A87900" }}
+                >
+                  {e.disponivel ? "✅ Disponível" : "⏳ Aguardando"}
+                </span>
                 <span style={{ fontWeight: 700, color: "#002776", flexShrink: 0 }}>{brl(e.valorCentavos)}</span>
               </div>
             ))}

@@ -203,7 +203,15 @@ model Order {
   asaasPaymentId         String?
   repasseStatus          String  @default("pendente")
   repasseAsaasTransferId String?
+  repasseValorCentavos   Int?
   repasseErro            String?
+
+  // Valor líquido (já descontada a tarifa da Asaas) da fatia dessa linha na cobrança —
+  // gravado quando o pagamento confirma. disponivelEm só é preenchido quando a Asaas
+  // confirma que o saldo já está disponível pra movimentação (PAYMENT_RECEIVED); pra
+  // cartão isso pode demorar bem mais que a confirmação do pagamento em si (D+32).
+  valorLiquidoCentavos Int?
+  disponivelEm         DateTime?
 
   confirmacaoEnviadaEm DateTime?
   confirmacaoTokenHash String?   @unique
@@ -326,6 +334,9 @@ model SubscriptionPayment {
   plano               String
   valorCentavos       Int
   valorLiquidoCentavos Int?
+  // Só preenchido quando a Asaas confirma que o saldo já está disponível pra
+  // movimentação (PAYMENT_RECEIVED) — pode vir bem depois do pagamento em si (cartão: D+32).
+  disponivelEm        DateTime?
   asaasPaymentId      String   @unique
   createdAt           DateTime @default(now())
 

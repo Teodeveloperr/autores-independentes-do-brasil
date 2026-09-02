@@ -15,11 +15,37 @@ export const COMISSAO_PERCENTUAL: Record<string, number> = {
 /**
  * Valor líquido repassado ao autor numa venda: valor do(s) livro(s) já descontada
  * a comissão do plano, mais o frete (o frete não sofre desconto de comissão).
+ *
+ * Essa é uma ESTIMATIVA sobre o valor bruto — não desconta a tarifa da Asaas na
+ * cobrança. Usada como aproximação antes do pagamento confirmar (ainda não existe
+ * valor líquido real da Asaas pra essa venda). Depois que o pagamento confirma, usa
+ * [[valorRepasseCentavosLiquido]] em vez disso, que reflete o valor líquido real.
  */
 export function valorRepasseCentavos(plano: string, valorVendaCentavos: number, freteCentavos: number): number {
   const comissao = COMISSAO_PERCENTUAL[plano] ?? 100;
   const liquidoVenda = Math.round(valorVendaCentavos * (1 - comissao / 100));
   return liquidoVenda + freteCentavos;
+}
+
+/**
+ * Mesmo cálculo de valorRepasseCentavos, mas a partir do valor líquido REAL que a
+ * Asaas devolveu pra essa cobrança (já descontada a tarifa dela) — garante que a
+ * comissão do plano incida sobre o que realmente entrou, não sobre o valor bruto.
+ * A tarifa da Asaas é distribuída proporcionalmente entre livro e frete.
+ */
+export function valorRepasseCentavosLiquido(
+  plano: string,
+  valorVendaCentavos: number,
+  freteCentavos: number,
+  valorLiquidoTotalCentavos: number
+): number {
+  const totalBruto = valorVendaCentavos + freteCentavos;
+  if (totalBruto <= 0) return 0;
+  const comissao = COMISSAO_PERCENTUAL[plano] ?? 100;
+  const proporcaoLiquida = valorLiquidoTotalCentavos / totalBruto;
+  const vendaLiquida = Math.round(valorVendaCentavos * proporcaoLiquida);
+  const freteLiquido = Math.round(freteCentavos * proporcaoLiquida);
+  return Math.round(vendaLiquida * (1 - comissao / 100)) + freteLiquido;
 }
 
 // Galeria de fotos completa (categorizada) e agenda de eventos.
