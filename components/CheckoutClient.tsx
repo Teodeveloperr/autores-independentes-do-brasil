@@ -9,7 +9,7 @@ import { buscarEnderecoPorCep } from "@/lib/cep";
 import { validarCpf } from "@/lib/cpf";
 
 export default function CheckoutClient() {
-  const { items, totalCentavos, clearCart } = useCart();
+  const { items, totalCentavos } = useCart();
   const [pending, startTransition] = useTransition();
   const [buscandoCep, setBuscandoCep] = useState(false);
   const [calculandoFrete, setCalculandoFrete] = useState(false);
@@ -85,7 +85,9 @@ export default function CheckoutClient() {
           setErro(resultado.error);
           return;
         }
-        clearCart();
+        // Não esvazia o carrinho aqui: o pedido já foi criado (aguardando pagamento), mas
+        // a Asaas não avisa o nosso site quando o pagamento é concluído nessa tela — se a
+        // pessoa desistir e voltar sem pagar, o carrinho continua com os itens dela.
         setRedirecionando(true);
         window.location.href = resultado.invoiceUrl;
       } catch (err) {
