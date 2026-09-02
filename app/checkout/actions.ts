@@ -74,19 +74,24 @@ export async function calcularFreteCarrinho(items: CheckoutItem[], cepDestino: s
   });
 }
 
+export type CriarPedidoResult = { invoiceUrl: string } | { error: string };
+
 export async function criarPedido(
   items: CheckoutItem[],
   comprador: CheckoutComprador,
   endereco: CheckoutEndereco
-): Promise<{ invoiceUrl: string }> {
+): Promise<CriarPedidoResult> {
+  // Erros lançados com throw numa Server Action são redigidos pelo Next.js em produção
+  // (a mensagem some, só sobra um digest genérico) — por isso essa função sempre retorna
+  // { error } em vez de lançar.
   if (items.length === 0) {
-    throw new Error("Carrinho vazio.");
+    return { error: "Carrinho vazio." };
   }
   if (!comprador.nome.trim() || !comprador.email.trim()) {
-    throw new Error("Nome e e-mail são obrigatórios.");
+    return { error: "Nome e e-mail são obrigatórios." };
   }
   if (!validarCpf(comprador.cpf)) {
-    throw new Error("CPF inválido.");
+    return { error: "CPF inválido." };
   }
   if (
     !endereco.cep.trim() ||
@@ -96,7 +101,7 @@ export async function criarPedido(
     !endereco.cidade.trim() ||
     !endereco.uf.trim()
   ) {
-    throw new Error("Endereço de entrega incompleto.");
+    return { error: "Endereço de entrega incompleto." };
   }
 
   // Nunca confiar em preço/vendedor/título vindos do cliente (o carrinho vive no
@@ -117,7 +122,9 @@ export async function criarPedido(
     quantidadePorAutor.set(item.authorId, (quantidadePorAutor.get(item.authorId) ?? 0) + quantidade);
   }
 
-  const rows = items.map((item) => {
+  let rows;
+  try {
+    rows = items.map((item) => {
     const book = books.find((b) => b.id === item.bookId);
     if (!book) {
       throw new Error("Um dos livros do carrinho não foi encontrado.");
@@ -154,7 +161,10 @@ export async function criarPedido(
       status: "Aguardando pagamento",
       grupoPedidoId,
     };
-  });
+    });
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Não foi possível montar o pedido." };
+  }
 
   const freteTotalCentavos = rows.reduce((sum, r) => sum + (r.freteCentavos ?? 0), 0);
   const totalCentavos = rows.reduce((sum, r) => sum + r.valorCentavos, 0) + freteTotalCentavos;
@@ -165,6 +175,10 @@ export async function criarPedido(
     nome: comprador.nome.trim(),
     cpf: comprador.cpf,
     email: comprador.email.trim(),
+    telefone: comprador.telefone.trim(),
+    cep: endereco.cep.trim(),
+    numero: endereco.numero.trim(),
+    complemento: endereco.complemento.trim(),
   });
 
   const cobranca = customerId
@@ -179,7 +193,7 @@ export async function criarPedido(
   if (!cobranca) {
     // Rollback: sem cobrança real, não faz sentido manter o pedido registrado.
     await prisma.order.deleteMany({ where: { grupoPedidoId } });
-    throw new Error("Não foi possível iniciar o pagamento. Tente novamente em instantes.");
+    return { error: "Não foi possível iniciar o pagamento. Tente novamente em instantes." };
   }
 
   await prisma.order.updateMany({

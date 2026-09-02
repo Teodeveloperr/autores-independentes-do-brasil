@@ -81,6 +81,10 @@ export default function CheckoutClient() {
           { nome, email, telefone, cpf },
           { cep, rua, numero, complemento, bairro, cidade, uf }
         );
+        if ("error" in resultado) {
+          setErro(resultado.error);
+          return;
+        }
         clearCart();
         setRedirecionando(true);
         window.location.href = resultado.invoiceUrl;
