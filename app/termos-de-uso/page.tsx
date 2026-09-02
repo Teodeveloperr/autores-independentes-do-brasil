@@ -20,7 +20,7 @@ export default function TermosDeUsoPage() {
             As regras que valem para todos que usam o Autores Independentes do Brasil.
           </p>
           <div className="section-pad-md" style={{ background: "white", color: "#262626", padding: "40px", borderRadius: "8px", maxWidth: "820px", margin: "0 auto" }}>
-            <p style={{ fontSize: "12px", color: "#999", marginBottom: "24px" }}>Última atualização: 12 de agosto de 2026</p>
+            <p style={{ fontSize: "12px", color: "#999", marginBottom: "24px" }}>Última atualização: 1 de setembro de 2026</p>
 
             <p style={pStyle}>
               Estes Termos de Uso regem o acesso e uso da plataforma Autores Independentes do Brasil
@@ -51,17 +51,20 @@ export default function TermosDeUsoPage() {
             <h2 style={h2Style}>3. Compra e venda de livros</h2>
             <p style={pStyle}>
               A plataforma atua como intermediária entre autor e comprador — o livro é vendido diretamente pelo
-              autor, que é responsável pela qualidade, pelo estoque e pelo envio do produto. Atualmente, o
-              pagamento online ainda não está disponível: o pedido fica registrado como &quot;Aguardando
-              pagamento&quot; e a forma de pagamento é combinada diretamente entre comprador e autor. O frete
-              exibido no checkout é um valor fixo definido pela plataforma; a postagem em si é feita pelo autor.
+              autor, que é responsável pela qualidade, pelo estoque e pelo envio do produto. O pagamento é
+              processado pela Asaas, nossa parceira de pagamentos, e pode ser feito via Pix ou cartão de
+              crédito. O frete é calculado por autor, de acordo com a quantidade de livros daquele autor no
+              pedido; a postagem em si é feita pelo autor.
             </p>
 
             <h2 style={h2Style}>4. Planos de assinatura</h2>
             <p style={pStyle}>
-              A plataforma oferece diferentes planos para autores, com recursos adicionais (como galeria de
-              fotos, agenda de eventos e avaliações) conforme o plano contratado. A cobrança recorrente de
-              planos pagos ainda não está ativa nesta fase da plataforma.
+              A plataforma oferece diferentes planos para autores, com recursos adicionais (como venda de
+              livros, galeria de fotos, agenda de eventos e portfólio completo) conforme o plano contratado.
+              Planos pagos têm cobrança recorrente (mensal, semestral ou anual, conforme escolhido), via Pix
+              (autorização de débito automático) ou cartão de crédito, processada pela Asaas. Você pode
+              cancelar a assinatura a qualquer momento pelo seu painel, sem multa — o plano volta a ser
+              gratuito (Iniciante) a partir do cancelamento.
             </p>
 
             <h2 style={h2Style}>5. Conteúdo publicado por você</h2>
@@ -92,8 +95,12 @@ export default function TermosDeUsoPage() {
 
             <h2 style={h2Style}>8. Encerramento de conta</h2>
             <p style={pStyle}>
-              Você pode solicitar o encerramento da sua conta a qualquer momento, entrando em contato conosco.
-              Podemos suspender ou encerrar contas que violem estes termos, mediante aviso quando possível.
+              Você pode cancelar sua assinatura paga a qualquer momento pela tela de Configurações do seu
+              painel, voltando ao plano gratuito. Você também pode excluir sua conta permanentemente pela
+              mesma tela — essa ação apaga em definitivo seu perfil, livros, fotos, portfólio e histórico, e
+              não pode ser desfeita. A exclusão fica bloqueada caso existam pedidos pagos aguardando envio ou
+              repasse, até que sejam concluídos. Podemos suspender ou encerrar contas que violem estes termos,
+              mediante aviso quando possível.
             </p>
 
             <h2 style={h2Style}>9. Limitação de responsabilidade</h2>
