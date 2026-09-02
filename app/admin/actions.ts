@@ -449,31 +449,72 @@ export async function reconciliarReceita(mesChave: string): Promise<{ faltantes:
 }
 
 /**
- * Busca na Asaas o valor líquido (já descontada a tarifa) dos pagamentos de assinatura que
- * ainda não têm essa informação gravada — cobre pagamentos registrados antes do webhook
- * passar a gravar valorLiquidoCentavos.
+ * Busca na Asaas o valor líquido (já descontada a tarifa) e a disponibilidade (se o saldo
+ * já está liberado pra movimentação — status RECEIVED) dos pagamentos de assinatura e
+ * pedidos de livro que ainda não têm essa informação gravada — cobre registros de antes
+ * dessas informações passarem a ser gravadas pelo próprio webhook.
  */
 export async function atualizarValoresLiquidos(): Promise<{ atualizados: number; falhas: number }> {
   await requireAdmin();
 
-  const pendentes = await prisma.subscriptionPayment.findMany({
-    where: { valorLiquidoCentavos: null },
-    select: { id: true, asaasPaymentId: true },
-  });
-
   let atualizados = 0;
   let falhas = 0;
-  for (const pagamento of pendentes) {
+
+  const assinaturasPendentes = await prisma.subscriptionPayment.findMany({
+    where: { OR: [{ valorLiquidoCentavos: null }, { disponivelEm: null }] },
+    select: { id: true, asaasPaymentId: true },
+  });
+  for (const pagamento of assinaturasPendentes) {
     const cobranca = await buscarCobranca(pagamento.asaasPaymentId);
-    if (!cobranca || cobranca.netValueCentavos === null) {
+    if (!cobranca) {
       falhas++;
       continue;
     }
     await prisma.subscriptionPayment.update({
       where: { id: pagamento.id },
-      data: { valorLiquidoCentavos: cobranca.netValueCentavos },
+      data: {
+        valorLiquidoCentavos: cobranca.netValueCentavos,
+        disponivelEm: cobranca.status === "RECEIVED" ? new Date() : null,
+      },
     });
     atualizados++;
+  }
+
+  const pedidosPendentes = await prisma.order.findMany({
+    where: {
+      status: { notIn: ["Aguardando pagamento", "Cancelado"] },
+      asaasPaymentId: { not: null },
+      OR: [{ valorLiquidoCentavos: null }, { disponivelEm: null }],
+    },
+    select: { id: true, asaasPaymentId: true, valorCentavos: true, freteCentavos: true },
+  });
+  const pedidosPorCobranca = new Map<string, typeof pedidosPendentes>();
+  for (const pedido of pedidosPendentes) {
+    if (!pedido.asaasPaymentId) continue;
+    const lista = pedidosPorCobranca.get(pedido.asaasPaymentId) ?? [];
+    lista.push(pedido);
+    pedidosPorCobranca.set(pedido.asaasPaymentId, lista);
+  }
+  for (const [asaasPaymentId, linhas] of pedidosPorCobranca) {
+    const cobranca = await buscarCobranca(asaasPaymentId);
+    if (!cobranca) {
+      falhas += linhas.length;
+      continue;
+    }
+    const totalBrutoCobranca = linhas.reduce((sum, r) => sum + r.valorCentavos + (r.freteCentavos ?? 0), 0);
+    const proporcaoLiquida =
+      totalBrutoCobranca > 0 && cobranca.netValueCentavos != null ? cobranca.netValueCentavos / totalBrutoCobranca : null;
+    for (const linha of linhas) {
+      await prisma.order.update({
+        where: { id: linha.id },
+        data: {
+          valorLiquidoCentavos:
+            proporcaoLiquida != null ? Math.round((linha.valorCentavos + (linha.freteCentavos ?? 0)) * proporcaoLiquida) : null,
+          disponivelEm: cobranca.status === "RECEIVED" ? new Date() : null,
+        },
+      });
+      atualizados++;
+    }
   }
 
   revalidatePath("/admin");

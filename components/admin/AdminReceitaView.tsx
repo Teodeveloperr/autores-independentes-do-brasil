@@ -188,7 +188,7 @@ export default function AdminReceitaView({ pedidos, assinaturaPagamentos }: { pe
           disabled={atualizandoLiquido}
           style={{ background: "white", border: "1px solid #002776", color: "#002776", padding: "8px 16px", borderRadius: "6px", fontSize: "13px", fontWeight: 600, opacity: atualizandoLiquido ? 0.7 : 1 }}
         >
-          {atualizandoLiquido ? "Atualizando..." : "💧 Atualizar valores líquidos"}
+          {atualizandoLiquido ? "Atualizando..." : "💧 Atualizar valores líquidos e disponibilidade"}
         </button>
       </div>
 
