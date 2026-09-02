@@ -20,7 +20,7 @@ export default async function PainelPage({ searchParams }: { searchParams: Promi
         eventos: { orderBy: { createdAt: "desc" } },
         fotos: { orderBy: { createdAt: "desc" } },
         portfolioEventos: { orderBy: { createdAt: "desc" } },
-        orders: { orderBy: { createdAt: "desc" } },
+        orders: { orderBy: { createdAt: "desc" }, include: { book: { select: { capaUrl: true } } } },
         conversas: {
           orderBy: { createdAt: "desc" },
           include: { mensagens: { orderBy: { createdAt: "asc" } } },

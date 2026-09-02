@@ -62,7 +62,19 @@ export default function PedidosView({ author }: { author: AuthorWithRelations })
       <div style={{ background: "white", borderRadius: "10px", overflow: "hidden" }}>
         {pedidos.map((p) => (
           <div key={p.id} style={{ display: "flex", gap: "16px", alignItems: "center", padding: "16px 20px", borderBottom: "1px solid #F0F0F0", flexWrap: "wrap" }}>
-            <div style={{ width: "48px", height: "64px", background: "#E0E0E0", borderRadius: "4px", flexShrink: 0 }} />
+            <div
+              style={{
+                width: "48px",
+                height: "64px",
+                borderRadius: "4px",
+                flexShrink: 0,
+                backgroundColor: p.book?.capaUrl ? "#F6F6F6" : "#E0E0E0",
+                backgroundImage: p.book?.capaUrl ? `url(${p.book.capaUrl})` : undefined,
+                backgroundSize: "contain",
+                backgroundPosition: "center",
+                backgroundRepeat: "no-repeat",
+              }}
+            />
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontWeight: 700, fontSize: "14px" }}>
                 {p.livro} {p.quantidade > 1 ? `(x${p.quantidade})` : ""}

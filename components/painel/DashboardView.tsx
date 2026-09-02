@@ -123,7 +123,19 @@ export default function DashboardView({
           <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
             {author.orders.slice(0, 4).map((p) => (
               <div key={p.id} style={{ display: "flex", gap: "12px", alignItems: "center" }}>
-                <div style={{ width: "42px", height: "56px", background: "#E0E0E0", borderRadius: "4px", flexShrink: 0 }} />
+                <div
+                  style={{
+                    width: "42px",
+                    height: "56px",
+                    borderRadius: "4px",
+                    flexShrink: 0,
+                    backgroundColor: p.book?.capaUrl ? "#F6F6F6" : "#E0E0E0",
+                    backgroundImage: p.book?.capaUrl ? `url(${p.book.capaUrl})` : undefined,
+                    backgroundSize: "contain",
+                    backgroundPosition: "center",
+                    backgroundRepeat: "no-repeat",
+                  }}
+                />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 600, fontSize: "13px" }}>{p.livro}</div>
                   <div style={{ fontSize: "11px", color: "#666" }}>Pedido #{p.id.slice(-6)} • {p.createdAt.toLocaleDateString("pt-BR")}</div>
