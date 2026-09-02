@@ -10,6 +10,8 @@ import type { AuthorWithCount } from "./types";
 
 const AUTORES_POR_PAGINA = 6;
 
+const TIPO_CHAVE_PIX_LABEL: Record<string, string> = { CPF: "CPF", CNPJ: "CNPJ", EMAIL: "E-mail", PHONE: "Telefone", EVP: "Aleatória" };
+
 export default function AdminAutoresView({ autores }: { autores: AuthorWithCount[] }) {
   const [pending, startTransition] = useTransition();
   const [state, formAction, createPending] = useActionState<CreateAuthorState, FormData>(adminCreateAuthor, undefined);
@@ -150,6 +152,9 @@ export default function AdminAutoresView({ autores }: { autores: AuthorWithCount
                   )}
                 </div>
                 <div style={{ fontSize: "12px", color: "#666" }}>{a.generos.join(", ")} • {a.cidade}</div>
+                <div style={{ fontSize: "11px", color: a.pixKey ? "#009B3A" : "#C0392B", marginTop: "2px" }}>
+                  {a.pixKey ? `🔑 Pix (${TIPO_CHAVE_PIX_LABEL[a.pixKeyType ?? ""] ?? a.pixKeyType}): ${a.pixKey}` : "⚠️ Sem chave Pix cadastrada"}
+                </div>
               </div>
               <div style={{ fontSize: "12px", color: "#666", textAlign: "center", flexShrink: 0, width: "90px" }}>📚 {a._count.books} livros</div>
               <select
