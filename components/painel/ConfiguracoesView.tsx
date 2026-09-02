@@ -85,7 +85,11 @@ export default function ConfiguracoesView({
     fd.set("pixKeyType", pixKeyType);
     startSalvarPix(async () => {
       try {
-        await updatePixKey(fd);
+        const resultado = await updatePixKey(fd);
+        if (resultado?.error) {
+          setPixErro(resultado.error);
+          return;
+        }
         setPixSalvo(true);
         router.refresh();
       } catch (err) {

@@ -93,17 +93,17 @@ export async function updatePortfolio(formData: FormData) {
 
 const TIPOS_CHAVE_PIX = new Set(["CPF", "CNPJ", "EMAIL", "PHONE", "EVP"]);
 
-export async function updatePixKey(formData: FormData) {
+export async function updatePixKey(formData: FormData): Promise<{ error: string } | undefined> {
   const author = await requireAuthor();
 
   const pixKey = ((formData.get("pixKey") as string) || "").trim();
   const pixKeyType = (formData.get("pixKeyType") as string) || "";
 
   if (!pixKey || !TIPOS_CHAVE_PIX.has(pixKeyType)) {
-    throw new Error("Informe uma chave Pix e o tipo dela.");
+    return { error: "Informe uma chave Pix e o tipo dela." };
   }
   if (pixKeyType === "CPF" && !validarCpf(pixKey)) {
-    throw new Error("CPF inválido.");
+    return { error: "CPF inválido." };
   }
 
   await prisma.author.update({
