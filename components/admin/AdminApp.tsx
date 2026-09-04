@@ -39,6 +39,7 @@ export default function AdminApp({
   pedidos,
   pedidosReceita,
   assinaturaPagamentos,
+  saldoAsaasCentavos,
   totpEnabled,
 }: {
   eventos: CollectiveEvent[];
@@ -50,6 +51,7 @@ export default function AdminApp({
   pedidos: OrderWithAuthor[];
   pedidosReceita: OrderComReceita[];
   assinaturaPagamentos: SubscriptionPaymentRow[];
+  saldoAsaasCentavos: number | null;
   totpEnabled: boolean;
 }) {
   const [view, setView] = useState<AdminView>("dash");
@@ -178,7 +180,9 @@ export default function AdminApp({
           {view === "autores" && <AdminAutoresView autores={autores} />}
           {view === "avaliacoes" && <AdminAvaliacoesView avaliacoes={avaliacoes} />}
           {view === "pedidos" && <AdminPedidosView pedidos={pedidos} />}
-          {view === "receita" && <AdminReceitaView pedidos={pedidosReceita} assinaturaPagamentos={assinaturaPagamentos} />}
+          {view === "receita" && (
+            <AdminReceitaView pedidos={pedidosReceita} assinaturaPagamentos={assinaturaPagamentos} saldoAsaasCentavos={saldoAsaasCentavos} />
+          )}
           {view === "seguranca" && <AdminSegurancaView totpEnabled={totpEnabled} />}
         </div>
       </main>

@@ -48,7 +48,15 @@ type EntradaReceita = {
   disponivel: boolean;
 };
 
-export default function AdminReceitaView({ pedidos, assinaturaPagamentos }: { pedidos: OrderComReceita[]; assinaturaPagamentos: SubscriptionPaymentRow[] }) {
+export default function AdminReceitaView({
+  pedidos,
+  assinaturaPagamentos,
+  saldoAsaasCentavos,
+}: {
+  pedidos: OrderComReceita[];
+  assinaturaPagamentos: SubscriptionPaymentRow[];
+  saldoAsaasCentavos: number | null;
+}) {
   const router = useRouter();
   const meses = useMemo(() => {
     const chaves = new Set<string>();
@@ -164,6 +172,22 @@ export default function AdminReceitaView({ pedidos, assinaturaPagamentos }: { pe
         Receita da plataforma: comissão sobre vendas de livro + assinaturas de autores, por mês.
       </p>
 
+      <div style={{ background: "white", borderRadius: "10px", padding: "20px", marginBottom: "20px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
+        <div>
+          <div style={{ fontSize: "12px", color: "#666", marginBottom: "8px" }}>🏦 Saldo em conta na Asaas (agora)</div>
+          {saldoAsaasCentavos != null ? (
+            <div style={{ fontSize: "28px", fontWeight: 700, color: "#009B3A" }}>{brl(saldoAsaasCentavos)}</div>
+          ) : (
+            <div style={{ fontSize: "13px", color: "#C0392B" }}>Não foi possível buscar o saldo na Asaas agora.</div>
+          )}
+        </div>
+        <div style={{ fontSize: "11px", color: "#999", maxWidth: "320px", textAlign: "right" }}>
+          Valor real, o mesmo do dashboard da Asaas — já descontado tudo que saiu da conta
+          (repasses já feitos, tarifas, etc). Os cards abaixo são receita apurada por mês,
+          não o saldo em si.
+        </div>
+      </div>
+
       <div style={{ display: "flex", gap: "12px", alignItems: "center", flexWrap: "wrap", marginBottom: "12px" }}>
         <select
           value={mes}
@@ -255,9 +279,11 @@ export default function AdminReceitaView({ pedidos, assinaturaPagamentos }: { pe
 
       <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "20px", marginBottom: "20px" }}>
         <div style={{ background: "white", borderRadius: "10px", padding: "20px" }}>
-          <div style={{ fontSize: "12px", color: "#666", marginBottom: "8px" }}>✅ Disponível para movimentação</div>
+          <div style={{ fontSize: "12px", color: "#666", marginBottom: "8px" }}>✅ Receita já liquidada nesse mês</div>
           <div style={{ fontSize: "28px", fontWeight: 700, color: "#009B3A" }}>{brl(dados.totalDisponivelCentavos)}</div>
-          <div style={{ fontSize: "11px", color: "#999", marginTop: "4px" }}>Pix: quase na hora. Cartão: só depois de ~32 dias (D+32).</div>
+          <div style={{ fontSize: "11px", color: "#999", marginTop: "4px" }}>
+            Pix: quase na hora. Cartão: só depois de ~32 dias (D+32). Não é o saldo em conta — não desconta repasses já pagos.
+          </div>
         </div>
         <div style={{ background: "white", borderRadius: "10px", padding: "20px" }}>
           <div style={{ fontSize: "12px", color: "#666", marginBottom: "8px" }}>⏳ Confirmado, aguardando liquidação</div>

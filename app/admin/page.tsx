@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getCurrentAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { buscarSaldoAsaas } from "@/lib/asaas";
 import AdminLoginGate from "@/components/admin/AdminLoginGate";
 import AdminApp from "@/components/admin/AdminApp";
 
@@ -15,7 +16,7 @@ export default async function AdminPage() {
     return <AdminLoginGate />;
   }
 
-  const [eventos, oportunidades, fotos, autores, artigos, avaliacoes, pedidos, pedidosReceita, assinaturaPagamentos] = await Promise.all([
+  const [eventos, oportunidades, fotos, autores, artigos, avaliacoes, pedidos, pedidosReceita, assinaturaPagamentos, saldoAsaasCentavos] = await Promise.all([
     prisma.collectiveEvent.findMany({ orderBy: { createdAt: "desc" } }),
     prisma.opportunity.findMany({ orderBy: { prazoFinal: "asc" } }),
     prisma.collectiveGalleryPhoto.findMany({ orderBy: { createdAt: "desc" } }),
@@ -32,6 +33,7 @@ export default async function AdminPage() {
       include: { author: { select: { plano: true } } },
     }),
     prisma.subscriptionPayment.findMany({ orderBy: { createdAt: "desc" }, include: { author: { select: { nome: true } } } }),
+    buscarSaldoAsaas(),
   ]);
 
   return (
@@ -45,6 +47,7 @@ export default async function AdminPage() {
       pedidos={pedidos}
       pedidosReceita={pedidosReceita}
       assinaturaPagamentos={assinaturaPagamentos}
+      saldoAsaasCentavos={saldoAsaasCentavos}
       totpEnabled={admin.totpEnabled}
     />
   );

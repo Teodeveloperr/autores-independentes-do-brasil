@@ -375,6 +375,30 @@ export async function buscarCobranca(id: string): Promise<CobrancaAsaas | null> 
   }
 }
 
+// Saldo real, ao vivo, da conta da plataforma na Asaas — o mesmo valor mostrado no
+// dashboard deles em "Saldo em conta". Diferente de qualquer soma feita a partir dos
+// nossos próprios registros: já reflete tudo que entrou e saiu da conta (repasses já
+// executados, tarifas, qualquer movimentação manual), sem precisar reconstruir nada.
+export async function buscarSaldoAsaas(): Promise<number | null> {
+  const accessToken = getAccessToken();
+  if (!accessToken) return null;
+
+  try {
+    const res = await fetch(`${getBaseUrl()}/finance/balance`, {
+      headers: { access_token: accessToken, Accept: "application/json" },
+    });
+    if (!res.ok) {
+      console.error("[asaas] Falha ao buscar saldo em conta:", res.status, await res.text());
+      return null;
+    }
+    const data = (await res.json()) as { balance: number };
+    return Math.round(data.balance * 100);
+  } catch (err) {
+    console.error("[asaas] Falha ao buscar saldo em conta:", err);
+    return null;
+  }
+}
+
 export async function cancelarCobranca(id: string): Promise<boolean> {
   const accessToken = getAccessToken();
   if (!accessToken) return false;
