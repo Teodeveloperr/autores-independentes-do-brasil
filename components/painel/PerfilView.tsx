@@ -14,18 +14,22 @@ export default function PerfilView({ author }: { author: AuthorWithRelations }) 
   const banner = useImageUpload("banners", author.bannerUrl ?? "");
   const video = useVideoUpload("videos", author.videoUrl ?? "");
   const [bannerPos, setBannerPos] = useState({ x: author.bannerPositionX ?? 50, y: author.bannerPositionY ?? 50 });
-  const [bio, setBio] = useState(author.bio ?? "");
+  const ehIniciante = author.plano === "Iniciante";
+  const [bio, setBio] = useState((author.bio ?? "").slice(0, ehIniciante ? BIO_MAX_CARACTERES_INICIANTE : undefined));
   const [frase, setFrase] = useState(author.fraseApresentacao ?? "");
   const [saved, setSaved] = useState(false);
   const [erro, setErro] = useState("");
   const [pending, startTransition] = useTransition();
-  const ehIniciante = author.plano === "Iniciante";
 
   function onSubmit(formData: FormData) {
     setErro("");
     startTransition(async () => {
       try {
-        await saveProfile(formData);
+        const resultado = await saveProfile(formData);
+        if (resultado?.error) {
+          setErro(resultado.error);
+          return;
+        }
         setSaved(true);
         setTimeout(() => setSaved(false), 2500);
       } catch (err) {
@@ -206,7 +210,7 @@ export default function PerfilView({ author }: { author: AuthorWithRelations }) 
               <textarea
                 name="bio"
                 value={bio}
-                onChange={(e) => setBio(e.target.value)}
+                onChange={(e) => setBio(ehIniciante ? e.target.value.slice(0, BIO_MAX_CARACTERES_INICIANTE) : e.target.value)}
                 maxLength={ehIniciante ? BIO_MAX_CARACTERES_INICIANTE : undefined}
                 style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px", minHeight: "90px", resize: "vertical" }}
               />

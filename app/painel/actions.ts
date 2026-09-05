@@ -35,15 +35,11 @@ export async function logout() {
   redirect("/login");
 }
 
-export async function saveProfile(formData: FormData) {
+export async function saveProfile(formData: FormData): Promise<{ error?: string }> {
   const author = await requireAuthor();
 
   const generos = formData.getAll("generos") as string[];
-  const bio = ((formData.get("bio") as string) || "").trim();
-
-  if (author.plano === "Iniciante" && bio.length > BIO_MAX_CARACTERES_INICIANTE) {
-    throw new Error(`O plano Iniciante permite bio de até ${BIO_MAX_CARACTERES_INICIANTE} caracteres. Faça upgrade para escrever mais.`);
-  }
+  const bio = ((formData.get("bio") as string) || "").trim().slice(0, author.plano === "Iniciante" ? BIO_MAX_CARACTERES_INICIANTE : undefined);
 
   await prisma.author.update({
     where: { id: author.id },
@@ -66,6 +62,7 @@ export async function saveProfile(formData: FormData) {
   });
 
   revalidatePath("/painel");
+  return {};
 }
 
 export async function updatePortfolio(formData: FormData) {
