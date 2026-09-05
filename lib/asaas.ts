@@ -375,6 +375,28 @@ export async function buscarCobranca(id: string): Promise<CobrancaAsaas | null> 
   }
 }
 
+export type AssinaturaAsaas = { id: string; status: string; value: number; nextDueDate: string; cycle: string };
+
+export async function listarAssinaturasPorCliente(customerId: string): Promise<AssinaturaAsaas[] | null> {
+  const accessToken = getAccessToken();
+  if (!accessToken) return null;
+
+  try {
+    const res = await fetch(`${getBaseUrl()}/subscriptions?customer=${encodeURIComponent(customerId)}`, {
+      headers: { access_token: accessToken, Accept: "application/json" },
+    });
+    if (!res.ok) {
+      console.error("[asaas] Falha ao listar assinaturas do cliente:", res.status, await res.text());
+      return null;
+    }
+    const data = (await res.json()) as { data: AssinaturaAsaas[] };
+    return data.data;
+  } catch (err) {
+    console.error("[asaas] Falha ao listar assinaturas do cliente:", err);
+    return null;
+  }
+}
+
 // Saldo real, ao vivo, da conta da plataforma na Asaas — o mesmo valor mostrado no
 // dashboard deles em "Saldo em conta". Diferente de qualquer soma feita a partir dos
 // nossos próprios registros: já reflete tudo que entrou e saiu da conta (repasses já
