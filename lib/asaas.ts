@@ -377,6 +377,36 @@ export async function buscarCobranca(id: string): Promise<CobrancaAsaas | null> 
 
 export type AssinaturaAsaas = { id: string; status: string; value: number; nextDueDate: string; cycle: string };
 
+export async function listarCobrancasDaAssinatura(subscriptionId: string): Promise<CobrancaAsaas[] | null> {
+  const accessToken = getAccessToken();
+  if (!accessToken) return null;
+
+  try {
+    const res = await fetch(`${getBaseUrl()}/subscriptions/${subscriptionId}/payments`, {
+      headers: { access_token: accessToken, Accept: "application/json" },
+    });
+    if (!res.ok) {
+      console.error("[asaas] Falha ao listar cobranças da assinatura:", res.status, await res.text());
+      return null;
+    }
+    const data = (await res.json()) as {
+      data: { id: string; subscription?: string | null; customer?: string | null; value: number; netValue?: number | null; invoiceUrl: string; status: string }[];
+    };
+    return data.data.map((c) => ({
+      id: c.id,
+      subscription: c.subscription ?? null,
+      customer: c.customer ?? null,
+      valueCentavos: Math.round(c.value * 100),
+      netValueCentavos: typeof c.netValue === "number" ? Math.round(c.netValue * 100) : null,
+      invoiceUrl: c.invoiceUrl,
+      status: c.status,
+    }));
+  } catch (err) {
+    console.error("[asaas] Falha ao listar cobranças da assinatura:", err);
+    return null;
+  }
+}
+
 export async function listarAssinaturasPorCliente(customerId: string): Promise<AssinaturaAsaas[] | null> {
   const accessToken = getAccessToken();
   if (!accessToken) return null;
