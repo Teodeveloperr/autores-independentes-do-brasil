@@ -244,6 +244,7 @@ export default function AssinaturaPlanos({
           <button
             key={c.id}
             onClick={() => setCiclo(c.id)}
+            className="pulse-btn"
             style={{
               background: ciclo === c.id ? "#FFDF00" : "rgba(255,255,255,0.1)",
               color: ciclo === c.id ? "#002776" : "white",

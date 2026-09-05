@@ -275,6 +275,7 @@ export default function CadastroWizard() {
                   key={c.id}
                   type="button"
                   onClick={() => setCycle(c.id)}
+                  className="pulse-btn"
                   style={{
                     background: cycle === c.id ? "#009B3A" : "white",
                     color: cycle === c.id ? "white" : "#262626",

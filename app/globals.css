@@ -48,6 +48,35 @@ a:hover {
   transition: color 0.2s ease;
 }
 
+/* Botões de ciclo de assinatura (Mensal/Semestral/Anual) — chama atenção pra opção de
+   desconto no semestral/anual. Para de pulsar assim que o usuário passa o mouse ou toca. */
+@keyframes pulse-btn {
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(0, 155, 58, 0.45);
+  }
+  50% {
+    transform: scale(1.06);
+    box-shadow: 0 0 0 8px rgba(0, 155, 58, 0);
+  }
+}
+
+.pulse-btn {
+  animation: pulse-btn 2s ease-in-out infinite;
+}
+
+.pulse-btn:hover,
+.pulse-btn:focus-visible {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pulse-btn {
+    animation: none;
+  }
+}
+
 button {
   cursor: pointer;
   border: none;
