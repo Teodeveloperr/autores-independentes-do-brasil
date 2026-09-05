@@ -249,7 +249,22 @@ export async function POST(request: NextRequest) {
   if (cobranca.subscription) {
     // Cadastro novo pago via checkout hospedado da Asaas: a conta só é criada agora,
     // com o pagamento já confirmado.
-    const pendente = await prisma.pendingSignup.findUnique({ where: { asaasSubscriptionId: cobranca.subscription } });
+    let pendente = await prisma.pendingSignup.findUnique({ where: { asaasSubscriptionId: cobranca.subscription } });
+    // O evento SUBSCRIPTION_CREATED (que grava o asaasSubscriptionId aqui) pode não chegar
+    // ou falhar — mesmo problema já visto com a ativação do Pix Automático. O
+    // asaasCustomerId é gravado direto na hora do checkout, sem depender de webhook
+    // nenhum: um pagamento CONFIRMED/RECEIVED de verdade pra esse customer já é prova de
+    // que a assinatura é dele — autocorrige aqui em vez de deixar o cadastro pendente
+    // travado pra sempre.
+    if (!pendente && cobranca.customer) {
+      const pendenteViaCustomer = await prisma.pendingSignup.findFirst({ where: { asaasCustomerId: cobranca.customer } });
+      if (pendenteViaCustomer) {
+        pendente = await prisma.pendingSignup.update({
+          where: { id: pendenteViaCustomer.id },
+          data: { asaasSubscriptionId: cobranca.subscription },
+        });
+      }
+    }
     if (pendente) {
       const emailEmUso = await prisma.author.findUnique({ where: { email: pendente.email } });
       if (emailEmUso) {
