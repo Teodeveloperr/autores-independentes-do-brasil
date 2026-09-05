@@ -89,11 +89,30 @@ export async function GET(request: Request) {
     await prisma.pendingSignup.delete({ where: { id: pendente.id } });
   }
 
+  // Plano concedido manualmente pelo admin (sem cobrança/assinatura real por trás) vence
+  // sozinho no prazo escolhido — volta pro Iniciante. Nunca mexe em quem tem assinatura
+  // paga de verdade ativa (Checkout ou Pix Automático): essa é controlada pela Asaas, não
+  // por esse prazo administrativo.
+  const planosAdminVencidos = await prisma.author.findMany({
+    where: {
+      planoConcedidoAdminAte: { lt: new Date() },
+      asaasSubscriptionStatus: { not: "active" },
+      asaasPixAutoStatus: { not: "active" },
+    },
+  });
+  for (const author of planosAdminVencidos) {
+    await prisma.author.update({
+      where: { id: author.id },
+      data: { plano: "Iniciante", planoConcedidoAdminCiclo: null, planoConcedidoAdminAte: null },
+    });
+  }
+
   return NextResponse.json({
     lembretes: semConfirmacaoEnviada.length,
     processados: pendentes.length,
     liberados,
     pedidosCancelados,
     cadastrosPendentesLimpos: cadastrosAbandonados.length,
+    planosAdminVencidos: planosAdminVencidos.length,
   });
 }

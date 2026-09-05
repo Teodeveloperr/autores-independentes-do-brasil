@@ -93,6 +93,16 @@ export type CicloAssinatura = "mensal" | "semestral" | "anual";
 
 export const CICLO_MESES: Record<CicloAssinatura, number> = { mensal: 1, semestral: 6, anual: 12 };
 
+// Ciclos aceitos numa concessão manual de plano pelo admin (sem cobrança real por trás) —
+// não inclui "mensal" porque não faz sentido conceder um plano gratuito por só um mês.
+export type CicloConcessaoAdmin = "semestral" | "anual";
+
+export function planoAdminExpiraEm(ciclo: CicloConcessaoAdmin, desde: Date = new Date()): Date {
+  const expira = new Date(desde);
+  expira.setMonth(expira.getMonth() + CICLO_MESES[ciclo]);
+  return expira;
+}
+
 /**
  * Valor total cobrado no ciclo (antecipado, no ciclo inteiro).
  * Semestral: 10% de desconto sobre o valor mensal. Anual: valor mensal fixo promocional do plano.

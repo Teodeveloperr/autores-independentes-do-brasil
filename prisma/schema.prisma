@@ -41,6 +41,10 @@ model Author {
   planoCiclo         String?
   planoValorCentavos Int?
   planoIniciadoEm    DateTime?
+  // Plano concedido manualmente pelo admin (sem cobrança/assinatura real por trás) — tem
+  // prazo (semestral ou anual) e expira sozinho via cron, voltando pro Iniciante.
+  planoConcedidoAdminCiclo String?
+  planoConcedidoAdminAte   DateTime?
   status             String    @default("ativo")
 
   mpPreapprovalId      String?

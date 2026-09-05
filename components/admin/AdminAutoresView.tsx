@@ -8,6 +8,17 @@ import { initials } from "@/lib/format";
 import { TODOS_PLANOS } from "@/lib/plans";
 import type { AuthorWithCount } from "./types";
 
+const PLANOS_COM_CICLO = TODOS_PLANOS.filter((p) => p !== "Iniciante");
+
+function temAssinaturaPagaAtiva(a: AuthorWithCount) {
+  return Boolean(a.asaasSubscriptionId) || a.asaasPixAutoStatus === "active";
+}
+
+function planoSelectValue(a: AuthorWithCount) {
+  if (a.plano === "Iniciante") return "Iniciante";
+  return `${a.plano}|${a.planoConcedidoAdminCiclo ?? "semestral"}`;
+}
+
 const AUTORES_POR_PAGINA = 6;
 
 const TIPO_CHAVE_PIX_LABEL: Record<string, string> = { CPF: "CPF", CNPJ: "CNPJ", EMAIL: "E-mail", PHONE: "Telefone", EVP: "Aleatória" };
@@ -17,6 +28,7 @@ export default function AdminAutoresView({ autores }: { autores: AuthorWithCount
   const [state, formAction, createPending] = useActionState<CreateAuthorState, FormData>(adminCreateAuthor, undefined);
   const [busca, setBusca] = useState("");
   const [pagina, setPagina] = useState(1);
+  const [erroPlano, setErroPlano] = useState<{ id: string; mensagem: string } | null>(null);
   const router = useRouter();
 
   const autoresFiltrados = useMemo(() => {
@@ -63,9 +75,14 @@ export default function AdminAutoresView({ autores }: { autores: AuthorWithCount
     });
   }
 
-  function onChangePlano(id: string, plano: string) {
+  function onChangePlano(id: string, valorSelect: string) {
+    setErroPlano(null);
+    const [plano, ciclo] = valorSelect.split("|");
     startTransition(async () => {
-      await alterarPlanoAutor(id, plano);
+      const resultado = await alterarPlanoAutor(id, plano, ciclo);
+      if (resultado?.error) {
+        setErroPlano({ id, mensagem: resultado.error });
+      }
       router.refresh();
     });
   }
@@ -100,6 +117,16 @@ export default function AdminAutoresView({ autores }: { autores: AuthorWithCount
                 <option key={p}>{p}</option>
               ))}
             </select>
+          </div>
+          <div>
+            <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>Ciclo do plano (se não for Iniciante)</label>
+            <select name="ciclo" defaultValue="semestral" style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px" }}>
+              <option value="semestral">Semestral</option>
+              <option value="anual">Anual</option>
+            </select>
+            <p style={{ fontSize: "11px", color: "#999", marginTop: "4px" }}>
+              Sem cobrança real — vence sozinho no prazo e volta pro Iniciante.
+            </p>
           </div>
           {state?.error && (
             <div style={{ color: "#C0392B", fontSize: "13px", background: "#FDEDEC", padding: "10px 14px", borderRadius: "6px" }}>{state.error}</div>
@@ -155,21 +182,41 @@ export default function AdminAutoresView({ autores }: { autores: AuthorWithCount
                 <div style={{ fontSize: "11px", color: a.pixKey ? "#009B3A" : "#C0392B", marginTop: "2px" }}>
                   {a.pixKey ? `🔑 Pix (${TIPO_CHAVE_PIX_LABEL[a.pixKeyType ?? ""] ?? a.pixKeyType}): ${a.pixKey}` : "⚠️ Sem chave Pix cadastrada"}
                 </div>
+                {a.planoConcedidoAdminAte && (
+                  <div style={{ fontSize: "11px", color: "#A87900", marginTop: "2px" }}>
+                    ⏳ Plano concedido pelo admin até {a.planoConcedidoAdminAte.toLocaleDateString("pt-BR")} — volta pro Iniciante sozinho depois disso.
+                  </div>
+                )}
+                {erroPlano?.id === a.id && (
+                  <div style={{ fontSize: "11px", color: "#C0392B", marginTop: "2px" }}>⚠️ {erroPlano.mensagem}</div>
+                )}
               </div>
               <div style={{ fontSize: "12px", color: "#666", textAlign: "center", flexShrink: 0, width: "90px" }}>📚 {a._count.books} livros</div>
-              <select
-                value={a.plano}
-                onChange={(e) => onChangePlano(a.id, e.target.value)}
-                disabled={pending}
-                title="Alterar plano manualmente"
-                style={{ fontSize: "12px", fontWeight: 700, textAlign: "center", flexShrink: 0, width: "150px", color: "#009B3A", border: "1px solid #DDD", borderRadius: "6px", padding: "6px 4px", background: "white" }}
-              >
-                {TODOS_PLANOS.map((p) => (
-                  <option key={p} value={p}>
-                    {p}
-                  </option>
-                ))}
-              </select>
+              {temAssinaturaPagaAtiva(a) ? (
+                <div
+                  title="Plano vinculado a uma assinatura paga ativa — gerenciado automaticamente pela Asaas, não editável aqui."
+                  style={{ fontSize: "12px", fontWeight: 700, textAlign: "center", flexShrink: 0, width: "150px", color: "#009B3A" }}
+                >
+                  🔄 {a.plano}
+                  <div style={{ fontSize: "10px", fontWeight: 500, color: "#999" }}>assinatura paga ativa</div>
+                </div>
+              ) : (
+                <select
+                  value={planoSelectValue(a)}
+                  onChange={(e) => onChangePlano(a.id, e.target.value)}
+                  disabled={pending}
+                  title="Alterar plano manualmente (sem cobrança — expira sozinho no ciclo escolhido)"
+                  style={{ fontSize: "12px", fontWeight: 700, textAlign: "center", flexShrink: 0, width: "150px", color: "#009B3A", border: "1px solid #DDD", borderRadius: "6px", padding: "6px 4px", background: "white" }}
+                >
+                  <option value="Iniciante">Iniciante</option>
+                  {PLANOS_COM_CICLO.map((p) => (
+                    <optgroup key={p} label={p}>
+                      <option value={`${p}|semestral`}>{p} — semestral</option>
+                      <option value={`${p}|anual`}>{p} — anual</option>
+                    </optgroup>
+                  ))}
+                </select>
+              )}
               <Link href={`/perfil/${a.id}`} style={{ background: "white", border: "1px solid #DDD", borderRadius: "6px", padding: "8px 14px", fontSize: "12px", fontWeight: 600, color: "#002776", flexShrink: 0 }}>
                 Ver perfil
               </Link>

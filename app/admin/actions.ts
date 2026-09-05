@@ -13,7 +13,7 @@ import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 import { gerarSegredoTotp, gerarOtpauthUri, verificarCodigoTotp, gerarCodigosBackup } from "@/lib/totp";
 import { criarLinkRedefinicaoSenha } from "@/lib/passwordReset";
 import { sendAccountCreatedEmail } from "@/lib/email";
-import { TODOS_PLANOS } from "@/lib/plans";
+import { TODOS_PLANOS, planoAdminExpiraEm, type CicloConcessaoAdmin } from "@/lib/plans";
 import { sanitizeExternalUrl } from "@/lib/format";
 
 export type AdminLoginState = { error?: string; precisa2fa?: boolean } | undefined;
@@ -267,12 +267,18 @@ export async function adminCreateAuthor(_prev: CreateAuthorState, formData: Form
   const nome = ((formData.get("nome") as string) || "").trim();
   const email = ((formData.get("email") as string) || "").trim().toLowerCase();
   const plano = (formData.get("plano") as string) || "Iniciante";
+  const ciclo = (formData.get("ciclo") as string) || undefined;
 
   if (!nome || !email) {
     return { error: "Preencha nome e e-mail." };
   }
   if (!TODOS_PLANOS.includes(plano)) {
     return { error: "Selecione um plano válido." };
+  }
+  // Plano pago concedido direto na criação (sem cobrança real) também tem prazo — mesma
+  // regra da troca manual de plano de um autor já existente.
+  if (plano !== "Iniciante" && ciclo !== "semestral" && ciclo !== "anual") {
+    return { error: "Selecione o ciclo (semestral ou anual) do plano." };
   }
 
   const existente = await prisma.author.findUnique({ where: { email } });
@@ -285,6 +291,8 @@ export async function adminCreateAuthor(_prev: CreateAuthorState, formData: Form
       nome,
       email,
       plano,
+      planoConcedidoAdminCiclo: plano !== "Iniciante" ? ciclo : null,
+      planoConcedidoAdminAte: plano !== "Iniciante" ? planoAdminExpiraEm(ciclo as CicloConcessaoAdmin) : null,
       anoEntrada: new Date().getFullYear(),
       bio: "Autor(a) independente do coletivo Autores Independentes do Brasil.",
     },
@@ -330,19 +338,39 @@ export async function reactivateAuthor(id: string) {
   await setAuthorStatus(id, "ativo");
 }
 
-export async function alterarPlanoAutor(id: string, plano: string) {
+export async function alterarPlanoAutor(id: string, plano: string, ciclo?: string): Promise<{ error?: string }> {
   await requireAdmin();
 
   if (!TODOS_PLANOS.includes(plano)) {
-    throw new Error("Plano inválido.");
+    return { error: "Plano inválido." };
   }
 
-  await prisma.author.update({ where: { id }, data: { plano } });
+  // Concessão manual pelo admin (sem cobrança real por trás) tem prazo — expira sozinha
+  // via cron e volta pro Iniciante, a menos que o admin renove antes.
+  if (plano === "Iniciante") {
+    await prisma.author.update({
+      where: { id },
+      data: { plano, planoConcedidoAdminCiclo: null, planoConcedidoAdminAte: null },
+    });
+  } else {
+    if (ciclo !== "semestral" && ciclo !== "anual") {
+      return { error: "Selecione o ciclo (semestral ou anual) da concessão." };
+    }
+    await prisma.author.update({
+      where: { id },
+      data: {
+        plano,
+        planoConcedidoAdminCiclo: ciclo,
+        planoConcedidoAdminAte: planoAdminExpiraEm(ciclo as CicloConcessaoAdmin),
+      },
+    });
+  }
   revalidatePath("/admin");
   revalidatePath("/autores");
   revalidatePath("/livros");
   revalidatePath(`/perfil/${id}`);
   revalidatePath("/");
+  return {};
 }
 
 export async function removeReview(id: string) {
