@@ -293,6 +293,7 @@ export async function criarAssinaturaAsaasParaAutor(input: {
     where: { id: input.authorId },
     data: {
       cpf: input.cpf,
+      asaasCustomerId: customerId,
       asaasCheckoutReference: externalReference,
       planoCiclo: input.ciclo,
       planoValorCentavos: input.valorCentavos,

@@ -158,11 +158,18 @@ export async function POST(request: NextRequest) {
   if (evento === "PAYMENT_OVERDUE" && paymentId) {
     const cobranca = await buscarCobranca(paymentId);
     const viaAssinaturaLink = Boolean(cobranca?.subscription);
-    const author = viaAssinaturaLink
+    let author = viaAssinaturaLink
       ? await prisma.author.findUnique({ where: { asaasSubscriptionId: cobranca!.subscription! } })
       : cobranca?.customer
         ? await prisma.author.findFirst({ where: { asaasPixCustomerId: cobranca.customer, asaasPixAutoStatus: "active" } })
         : null;
+    // Mesmo caso do SUBSCRIPTION_CREATED perdido — se ainda não achou por asaasSubscriptionId,
+    // tenta pelo asaasCustomerId (gravado sem depender de webhook) antes de desistir.
+    if (!author && viaAssinaturaLink && cobranca?.customer) {
+      author = await prisma.author.findFirst({
+        where: { asaasCustomerId: cobranca.customer, asaasCheckoutReference: { not: null } },
+      });
+    }
     if (author && author.plano !== "Iniciante") {
       await prisma.author.update({
         where: { id: author.id },
@@ -172,6 +179,10 @@ export async function POST(request: NextRequest) {
           // A assinatura via link avulso passa a "overdue"; o Pix Automático mantém o status da
           // autorização como está — só essa cobrança do ciclo que falhou, a autorização continua ativa.
           asaasSubscriptionStatus: viaAssinaturaLink ? "overdue" : author.asaasSubscriptionStatus,
+          // Se achou pelo caminho alternativo (asaasCustomerId), aproveita e já linka o
+          // asaasSubscriptionId de verdade, sem precisar esperar outro evento.
+          asaasSubscriptionId: viaAssinaturaLink && !author.asaasSubscriptionId ? cobranca!.subscription : author.asaasSubscriptionId,
+          asaasCheckoutReference: viaAssinaturaLink && !author.asaasSubscriptionId ? null : author.asaasCheckoutReference,
         },
       });
     }
@@ -206,6 +217,23 @@ export async function POST(request: NextRequest) {
       authorAssinatura = await prisma.author.update({
         where: { id: authorPendenteAtivacao.id },
         data: { asaasPixAutoStatus: "active" },
+      });
+    }
+  }
+
+  // Mesmo problema, só que pro upgrade de plano via cartão (checkout hospedado): o evento
+  // SUBSCRIPTION_CREATED (que grava o asaasSubscriptionId aqui) pode não chegar ou falhar,
+  // deixando o autor com asaasCheckoutReference preso pra sempre mesmo pagando certinho. O
+  // asaasCustomerId é gravado direto na hora de criar o checkout, sem depender de nenhum
+  // webhook — autocorrige aqui em vez de deixar o upgrade sem efeito.
+  if (!authorAssinatura && cobranca.subscription && cobranca.customer) {
+    const authorPendenteLink = await prisma.author.findFirst({
+      where: { asaasCustomerId: cobranca.customer, asaasCheckoutReference: { not: null } },
+    });
+    if (authorPendenteLink) {
+      authorAssinatura = await prisma.author.update({
+        where: { id: authorPendenteLink.id },
+        data: { asaasSubscriptionId: cobranca.subscription, asaasCheckoutReference: null },
       });
     }
   }

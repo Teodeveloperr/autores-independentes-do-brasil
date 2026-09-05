@@ -55,6 +55,9 @@ model Author {
   asaasPixAutoAuthorizationId String? @unique
   asaasPixAutoStatus          String?
   planoPendente               String?
+  // Gravado assim que o checkout de upgrade é criado (sem depender de webhook) — serve de
+  // caminho alternativo pra achar o autor se o evento SUBSCRIPTION_CREATED não chegar.
+  asaasCustomerId             String?
   asaasSubscriptionId         String? @unique
   asaasSubscriptionStatus     String?
   asaasCheckoutReference      String? @unique
