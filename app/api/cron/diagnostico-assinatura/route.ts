@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server";
+import { getCurrentAdmin } from "@/lib/auth";
 import { listarAssinaturasPorCliente } from "@/lib/asaas";
 
 // Endpoint temporário de diagnóstico — busca as assinaturas de um cliente na Asaas pra
 // investigar um cadastro pendente travado (José Sérgio Batista, PendingSignup sem
-// asaasSubscriptionId). Remover depois de usado.
+// asaasSubscriptionId). Gated por sessão de admin (visitar logado no /admin). Remover
+// depois de usado.
 export async function GET(request: Request) {
-  const authHeader = request.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  const admin = await getCurrentAdmin();
+  if (!admin) {
     return new NextResponse("Unauthorized", { status: 401 });
   }
 
