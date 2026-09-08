@@ -36,7 +36,7 @@ export default async function ConfirmarPedidoPage({
               <h1 style={{ fontSize: "22px", fontWeight: 700, color: "#002776", marginBottom: "12px" }}>Link inválido</h1>
               <p style={{ fontSize: "14px", color: "#666", lineHeight: 1.6 }}>Este link de confirmação não é válido.</p>
             </>
-          ) : order.repasseStatus === "transferido" ? (
+          ) : order.confirmadoEm ? (
             <>
               <div style={{ fontSize: "32px", marginBottom: "12px" }}>✅</div>
               <h1 style={{ fontSize: "22px", fontWeight: 700, color: "#002776", marginBottom: "12px" }}>Recebimento já confirmado</h1>
