@@ -4,10 +4,10 @@ import PublicHeader from "@/components/PublicHeader";
 import PublicFooter from "@/components/PublicFooter";
 import BlogCarousel from "@/components/BlogCarousel";
 import DepoimentosCarousel from "@/components/DepoimentosCarousel";
+import AutoresDestaqueCarousel from "@/components/AutoresDestaqueCarousel";
 import ContactForm from "@/components/ContactForm";
 import PrecoComDesconto from "@/components/PrecoComDesconto";
 import { prisma } from "@/lib/db";
-import { initials } from "@/lib/format";
 import { PLANO_RANK, temDestaque } from "@/lib/plans";
 
 export const dynamic = "force-dynamic";
@@ -138,36 +138,7 @@ export default async function HomePage() {
           <Link href="/autores" style={{ fontWeight: 600, color: "#002776" }}>VER TODOS OS AUTORES →</Link>
         </div>
         {authors.length > 0 ? (
-          <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: "24px" }}>
-            {authors.map((a) => (
-              <div key={a.id} style={{ background: "#F6F6F6", padding: "24px", borderRadius: "8px", textAlign: "center" }}>
-                <div
-                  style={{
-                    width: "100px",
-                    height: "100px",
-                    borderRadius: "50%",
-                    margin: "0 auto 16px",
-                    background: a.fotoUrl ? `center / cover no-repeat url(${a.fotoUrl})` : "#E0E0E0",
-                    display: a.fotoUrl ? undefined : "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontWeight: 700,
-                    color: "#002776",
-                  }}
-                >
-                  {!a.fotoUrl && initials(a.nome)}
-                </div>
-                <div style={{ fontWeight: 600, marginBottom: "8px", color: "#262626" }}>{a.nome}</div>
-                <div style={{ fontSize: "14px", color: "#666", marginBottom: "16px" }}>{a.generos.join(", ") || "—"}</div>
-                <Link
-                  href={`/perfil/${a.id}`}
-                  style={{ display: "block", textAlign: "center", background: "#002776", color: "white", padding: "10px 20px", fontWeight: 600, width: "100%", borderRadius: "4px", textDecoration: "none" }}
-                >
-                  VER PERFIL
-                </Link>
-              </div>
-            ))}
-          </div>
+          <AutoresDestaqueCarousel autores={authors} />
         ) : authorsPool.length > 0 ? (
           <div style={{ background: "#F6F6F6", borderRadius: "8px", padding: "60px 40px", textAlign: "center" }}>
             <p style={{ fontSize: "16px", color: "#666", marginBottom: "20px" }}>

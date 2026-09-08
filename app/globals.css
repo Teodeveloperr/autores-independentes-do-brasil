@@ -114,6 +114,43 @@ img {
   }
 }
 
+/* Autores em destaque: grid normal (6 colunas, 2 no tablet) em telas médias/grandes —
+   cada "página" só existe como agrupamento lógico (display:contents não cria caixa
+   própria, os cards viram itens diretos do grid). No mobile vira carrossel de 3 em 3:
+   só a página ativa aparece, navegação por setas/pontinhos (ver AutoresDestaqueCarousel). */
+.autores-destaque-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 24px;
+}
+.autores-destaque-pagina {
+  display: contents;
+}
+.autores-destaque-nav {
+  display: none;
+}
+@media (max-width: 900px) {
+  .autores-destaque-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 560px) {
+  .autores-destaque-grid {
+    display: block;
+  }
+  .autores-destaque-pagina {
+    display: none;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .autores-destaque-pagina.autores-destaque-ativa {
+    display: flex;
+  }
+  .autores-destaque-nav {
+    display: flex;
+  }
+}
+
 /* Linhas flex (grids 2 colunas feitos com display:flex) que devem empilhar */
 @media (max-width: 900px) {
   .responsive-flex-row {
