@@ -3,6 +3,7 @@ import PublicHeader from "@/components/PublicHeader";
 import PublicFooter from "@/components/PublicFooter";
 import { prisma } from "@/lib/db";
 import { extrairYoutubeId } from "@/lib/youtube";
+import TalkShowDescricao from "@/components/TalkShowDescricao";
 
 export const dynamic = "force-dynamic";
 
@@ -45,7 +46,7 @@ export default async function TalkShowPage() {
                   )}
                   <div style={{ padding: "16px" }}>
                     <div style={{ fontWeight: 700, fontSize: "16px", color: "#002776", marginBottom: "6px" }}>{v.titulo}</div>
-                    {v.descricao && <p style={{ fontSize: "13px", color: "#666", lineHeight: 1.6 }}>{v.descricao}</p>}
+                    {v.descricao && <TalkShowDescricao texto={v.descricao} />}
                   </div>
                 </div>
               );
