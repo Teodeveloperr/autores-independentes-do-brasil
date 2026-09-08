@@ -314,6 +314,15 @@ model Article {
   createdAt DateTime @default(now())
 }
 
+model TalkShowVideo {
+  id         String  @id @default(cuid())
+  titulo     String
+  descricao  String?
+  youtubeUrl String
+
+  createdAt DateTime @default(now())
+}
+
 model Admin {
   id        String @id @default(cuid())
   email     String @unique

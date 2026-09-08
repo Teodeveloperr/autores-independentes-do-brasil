@@ -4,12 +4,13 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { adminLogout } from "@/app/admin/actions";
-import type { AdminView, Article, AuthorWithCount, CollectiveEvent, CollectiveGalleryPhoto, Opportunity, ReviewWithAuthor, OrderWithAuthor, OrderComReceita, SubscriptionPaymentRow } from "./types";
+import type { AdminView, Article, AuthorWithCount, CollectiveEvent, CollectiveGalleryPhoto, Opportunity, ReviewWithAuthor, OrderWithAuthor, OrderComReceita, SubscriptionPaymentRow, TalkShowVideo } from "./types";
 import AdminAgendaView from "./AdminAgendaView";
 import AdminOportunidadesView from "./AdminOportunidadesView";
 import AdminGaleriaView from "./AdminGaleriaView";
 import AdminAutoresView from "./AdminAutoresView";
 import AdminBlogView from "./AdminBlogView";
+import AdminTalkShowView from "./AdminTalkShowView";
 import AdminAvaliacoesView from "./AdminAvaliacoesView";
 import AdminPedidosView from "./AdminPedidosView";
 import AdminReceitaView from "./AdminReceitaView";
@@ -35,6 +36,7 @@ export default function AdminApp({
   fotos,
   autores,
   artigos,
+  talkShowVideos,
   avaliacoes,
   pedidos,
   pedidosReceita,
@@ -47,6 +49,7 @@ export default function AdminApp({
   fotos: CollectiveGalleryPhoto[];
   autores: AuthorWithCount[];
   artigos: Article[];
+  talkShowVideos: TalkShowVideo[];
   avaliacoes: ReviewWithAuthor[];
   pedidos: OrderWithAuthor[];
   pedidosReceita: OrderComReceita[];
@@ -71,6 +74,7 @@ export default function AdminApp({
         <button onClick={() => setView("oportunidades")} style={sidebarBtn(view === "oportunidades")}>🚀 Oportunidades</button>
         <button onClick={() => setView("galeria")} style={sidebarBtn(view === "galeria")}>🖼️ Galeria do Coletivo</button>
         <button onClick={() => setView("blog")} style={sidebarBtn(view === "blog")}>📝 Blog do Coletivo</button>
+        <button onClick={() => setView("talkshow")} style={sidebarBtn(view === "talkshow")}>🎙️ Talk Show / Conteúdos</button>
         <button onClick={() => setView("autores")} style={sidebarBtn(view === "autores")}>✍️ Autores</button>
         <button onClick={() => setView("avaliacoes")} style={sidebarBtn(view === "avaliacoes")}>⭐ Avaliações</button>
         <button onClick={() => setView("pedidos")} style={sidebarBtn(view === "pedidos")}>📋 Pedidos</button>
@@ -177,6 +181,7 @@ export default function AdminApp({
           {view === "oportunidades" && <AdminOportunidadesView oportunidades={oportunidades} />}
           {view === "galeria" && <AdminGaleriaView fotos={fotos} />}
           {view === "blog" && <AdminBlogView artigos={artigos} />}
+          {view === "talkshow" && <AdminTalkShowView videos={talkShowVideos} />}
           {view === "autores" && <AdminAutoresView autores={autores} />}
           {view === "avaliacoes" && <AdminAvaliacoesView avaliacoes={avaliacoes} />}
           {view === "pedidos" && <AdminPedidosView pedidos={pedidos} />}

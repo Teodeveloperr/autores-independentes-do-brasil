@@ -15,6 +15,7 @@ import { criarLinkRedefinicaoSenha } from "@/lib/passwordReset";
 import { sendAccountCreatedEmail } from "@/lib/email";
 import { TODOS_PLANOS, planoAdminExpiraEm, type CicloConcessaoAdmin } from "@/lib/plans";
 import { sanitizeExternalUrl } from "@/lib/format";
+import { extrairYoutubeId } from "@/lib/youtube";
 
 export type AdminLoginState = { error?: string; precisa2fa?: boolean } | undefined;
 
@@ -418,6 +419,49 @@ export async function removeArticle(id: string) {
   await prisma.article.delete({ where: { id } });
   revalidatePath("/admin");
   revalidatePath("/blog");
+}
+
+function talkShowDataFromForm(formData: FormData): { error: string } | { data: { titulo: string; descricao: string | null; youtubeUrl: string } } {
+  const titulo = ((formData.get("titulo") as string) || "").trim();
+  const descricao = ((formData.get("descricao") as string) || "").trim() || null;
+  const youtubeUrl = ((formData.get("youtubeUrl") as string) || "").trim();
+
+  if (!titulo || !youtubeUrl) {
+    return { error: "Preencha o título e o link do YouTube." };
+  }
+  if (!extrairYoutubeId(youtubeUrl)) {
+    return { error: "Link do YouTube inválido. Use um link como https://www.youtube.com/watch?v=... ou https://youtu.be/..." };
+  }
+  return { data: { titulo, descricao, youtubeUrl } };
+}
+
+export async function addTalkShowVideo(formData: FormData): Promise<{ error?: string }> {
+  await requireAdmin();
+  const parsed = talkShowDataFromForm(formData);
+  if ("error" in parsed) return parsed;
+
+  await prisma.talkShowVideo.create({ data: parsed.data });
+  revalidatePath("/admin");
+  revalidatePath("/talk-show");
+  return {};
+}
+
+export async function updateTalkShowVideo(id: string, formData: FormData): Promise<{ error?: string }> {
+  await requireAdmin();
+  const parsed = talkShowDataFromForm(formData);
+  if ("error" in parsed) return parsed;
+
+  await prisma.talkShowVideo.update({ where: { id }, data: parsed.data });
+  revalidatePath("/admin");
+  revalidatePath("/talk-show");
+  return {};
+}
+
+export async function removeTalkShowVideo(id: string) {
+  await requireAdmin();
+  await prisma.talkShowVideo.delete({ where: { id } });
+  revalidatePath("/admin");
+  revalidatePath("/talk-show");
 }
 
 export type CobrancaFaltante = {
