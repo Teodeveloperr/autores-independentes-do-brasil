@@ -109,7 +109,7 @@ function PlanoPagoCard({
       )}
       {!isLoggedIn ? (
         <Link
-          href="/cadastro"
+          href={`/cadastro?plano=${slug}&ciclo=${ciclo}`}
           style={{ display: "block", textAlign: "center", background: destaque ? "#009B3A" : "#002776", color: "white", padding: "12px", fontWeight: 600, borderRadius: "4px", textDecoration: "none" }}
         >
           Assinar {plano.nome.replace("Autor ", "")}

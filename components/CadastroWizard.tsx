@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   validateStep1,
   createAccount,
@@ -55,9 +56,18 @@ const inputStyle: React.CSSProperties = {
 const labelStyle: React.CSSProperties = { display: "block", fontSize: "14px", fontWeight: 600, marginBottom: "8px" };
 
 export default function CadastroWizard() {
+  // Quem já escolheu plano e ciclo na página de Planos e Assinaturas chega aqui com
+  // ?plano=essencial|premium&ciclo=mensal|semestral|anual — sem isso, a pessoa via os
+  // botões de ciclo resetados pro padrão e podia nem notar que precisava escolher de novo.
+  const searchParams = useSearchParams();
+  const planoParam = searchParams.get("plano");
+  const cicloParam = searchParams.get("ciclo");
+  const planoInicial: PlanId = planoParam === "essencial" || planoParam === "premium" ? planoParam : "free";
+  const cicloInicial: Cycle = cicloParam === "semestral" || cicloParam === "anual" ? cicloParam : "mensal";
+
   const [step, setStep] = useState<1 | 2 | 3>(1);
-  const [cycle, setCycle] = useState<Cycle>("mensal");
-  const [plan, setPlan] = useState<PlanId>("free");
+  const [cycle, setCycle] = useState<Cycle>(cicloInicial);
+  const [plan, setPlan] = useState<PlanId>(planoInicial);
   const [cpf, setCpf] = useState("");
   const [metodoEscolhido, setMetodoEscolhido] = useState<"cartao" | "pix" | null>(null);
   const [telefone, setTelefone] = useState("");
