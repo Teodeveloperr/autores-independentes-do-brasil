@@ -59,7 +59,7 @@ export default function AdminTalkShowView({ videos }: { videos: TalkShowVideo[] 
               router.refresh();
             });
           }}
-          style={{ background: "white", borderRadius: "10px", padding: "24px", display: "flex", flexDirection: "column", gap: "14px" }}
+          style={{ background: "white", borderRadius: "10px", padding: "24px", display: "flex", flexDirection: "column", gap: "14px", minWidth: 0 }}
         >
           <div style={{ fontWeight: 700, color: "#002776", marginBottom: "4px" }}>
             {editing ? "✏️ Editar vídeo" : "🎙️ Novo vídeo"}
@@ -126,11 +126,11 @@ export default function AdminTalkShowView({ videos }: { videos: TalkShowVideo[] 
             </button>
           </div>
         </form>
-        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "12px", minWidth: 0 }}>
           {videos.map((v) => {
             const id = extrairYoutubeId(v.youtubeUrl);
             return (
-              <div key={v.id} style={{ background: "white", borderRadius: "10px", padding: "16px", display: "flex", gap: "16px", alignItems: "center", flexWrap: "wrap" }}>
+              <div key={v.id} style={{ background: "white", borderRadius: "10px", padding: "16px", display: "flex", gap: "16px", alignItems: "center", flexWrap: "wrap", minWidth: 0 }}>
                 <div
                   style={{
                     width: "80px",
