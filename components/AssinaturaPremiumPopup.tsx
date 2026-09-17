@@ -23,8 +23,12 @@ function getSnapshot() {
     return false;
   }
 }
+// No servidor não há como saber o que está no sessionStorage do visitante — trata como
+// "já visto" por padrão, então o popup nunca faz parte do HTML inicial. Depois que o
+// React confere o valor real no navegador, ele aparece (se for o caso) — sem esse cuidado,
+// a página recarregada mostra o popup por uma fração de segundo e ele some sozinho.
 function getServerSnapshot() {
-  return false;
+  return true;
 }
 
 export default function AssinaturaPremiumPopup({ planoAtual }: { planoAtual: string }) {
