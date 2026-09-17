@@ -240,7 +240,7 @@ export default function AssinaturaPlanos({
 
   return (
     <>
-      <AssinaturaPremiumPopup planoAtual={planoAtual} />
+      <AssinaturaPremiumPopup planoAtual={planoAtual} isLoggedIn={isLoggedIn} onEscolherCiclo={setCiclo} />
       <div style={{ display: "flex", justifyContent: "center", gap: "8px", marginBottom: "32px" }}>
         {CICLOS.map((c) => (
           <button
