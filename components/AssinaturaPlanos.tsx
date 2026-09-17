@@ -5,6 +5,7 @@ import Link from "next/link";
 import { iniciarAssinatura, type AssinarState } from "@/app/assinatura/actions";
 import { PLANOS_PAGOS, CICLO_MESES, valorCicloCentavos, PLANO_RANK, type CicloAssinatura } from "@/lib/plans";
 import { buscarEnderecoPorCep } from "@/lib/cep";
+import AssinaturaPremiumPopup from "./AssinaturaPremiumPopup";
 
 function brl(centavos: number) {
   return "R$ " + (centavos / 100).toFixed(2).replace(".", ",");
@@ -239,6 +240,7 @@ export default function AssinaturaPlanos({
 
   return (
     <>
+      <AssinaturaPremiumPopup planoAtual={planoAtual} />
       <div style={{ display: "flex", justifyContent: "center", gap: "8px", marginBottom: "32px" }}>
         {CICLOS.map((c) => (
           <button
