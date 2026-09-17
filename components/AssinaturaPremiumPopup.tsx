@@ -1,49 +1,21 @@
 "use client";
 
-import { useState, useSyncExternalStore } from "react";
+import { useState } from "react";
 import { PLANOS_PAGOS, CICLO_MESES, valorCicloCentavos } from "@/lib/plans";
-
-// Só mostra uma vez por sessão do navegador — evita insistir toda vez que a pessoa navega
-// de volta pra essa página dentro da mesma visita.
-const SESSION_KEY = "popup-premium-visto";
 
 function brl(centavos: number) {
   return "R$ " + (centavos / 100).toFixed(2).replace(".", ",");
 }
 
-// sessionStorage não notifica mudanças feitas na própria aba — não precisamos de
-// inscrição real, só de um jeito seguro (sem quebrar no servidor) de ler o valor atual.
-function subscribe() {
-  return () => {};
-}
-function getSnapshot() {
-  try {
-    return sessionStorage.getItem(SESSION_KEY) === "1";
-  } catch {
-    return false;
-  }
-}
-// No servidor não há como saber o que está no sessionStorage do visitante — trata como
-// "já visto" por padrão, então o popup nunca faz parte do HTML inicial. Depois que o
-// React confere o valor real no navegador, ele aparece (se for o caso) — sem esse cuidado,
-// a página recarregada mostra o popup por uma fração de segundo e ele some sozinho.
-function getServerSnapshot() {
-  return true;
-}
-
+// Aparece toda vez que a página de planos é aberta ou recarregada — sem persistir
+// "já visto" em lugar nenhum, o estado reseta sozinho a cada carregamento novo da página.
 export default function AssinaturaPremiumPopup({ planoAtual }: { planoAtual: string }) {
-  const jaVistoNestaSessao = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
-  const [fechadoAgora, setFechadoAgora] = useState(false);
+  const [fechado, setFechado] = useState(false);
 
-  const visivel = planoAtual !== "Autor Premium" && !jaVistoNestaSessao && !fechadoAgora;
+  const visivel = planoAtual !== "Autor Premium" && !fechado;
 
   function fechar() {
-    setFechadoAgora(true);
-    try {
-      sessionStorage.setItem(SESSION_KEY, "1");
-    } catch {
-      // sessionStorage indisponível — sem problema, só não persiste entre navegações
-    }
+    setFechado(true);
   }
 
   if (!visivel) return null;
