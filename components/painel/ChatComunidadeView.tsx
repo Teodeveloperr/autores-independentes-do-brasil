@@ -74,7 +74,7 @@ export default function ChatComunidadeView({ authorId }: { authorId: string }) {
             </div>
           ) : (
             mensagens.map((m) => {
-              const minhaMensagem = m.authorId === authorId;
+              const minhaMensagem = !m.deAdmin && m.authorId === authorId;
               return (
                 <div key={m.id} style={{ display: "flex", gap: "10px", flexDirection: minhaMensagem ? "row-reverse" : "row" }}>
                   <div
@@ -83,26 +83,31 @@ export default function ChatComunidadeView({ authorId }: { authorId: string }) {
                       height: "32px",
                       borderRadius: "50%",
                       flexShrink: 0,
-                      background: m.authorFotoUrl ? `center / cover no-repeat url(${m.authorFotoUrl})` : "#E0E0E0",
-                      display: m.authorFotoUrl ? undefined : "flex",
+                      background: m.deAdmin ? "#002776" : m.authorFotoUrl ? `center / cover no-repeat url(${m.authorFotoUrl})` : "#E0E0E0",
+                      display: m.deAdmin || !m.authorFotoUrl ? "flex" : undefined,
                       alignItems: "center",
                       justifyContent: "center",
-                      fontSize: "11px",
+                      fontSize: m.deAdmin ? "15px" : "11px",
                       fontWeight: 700,
-                      color: "#002776",
+                      color: m.deAdmin ? "white" : "#002776",
                     }}
                   >
-                    {!m.authorFotoUrl && initials(m.authorNome)}
+                    {m.deAdmin ? "🏛️" : !m.authorFotoUrl && initials(m.authorNome)}
                   </div>
                   <div style={{ maxWidth: "65%", display: "flex", flexDirection: "column", alignItems: minhaMensagem ? "flex-end" : "flex-start" }}>
-                    {!minhaMensagem && <div style={{ fontSize: "11px", fontWeight: 700, color: "#666", marginBottom: "3px" }}>{m.authorNome}</div>}
+                    {!minhaMensagem && (
+                      <div style={{ fontSize: "11px", fontWeight: 700, color: m.deAdmin ? "#002776" : "#666", marginBottom: "3px" }}>
+                        {m.authorNome}
+                      </div>
+                    )}
                     <div
                       style={{
                         padding: "10px 14px",
                         borderRadius: "12px",
                         fontSize: "13px",
-                        background: minhaMensagem ? "#009B3A" : "#F6F6F6",
+                        background: minhaMensagem ? "#009B3A" : m.deAdmin ? "#EAF0FB" : "#F6F6F6",
                         color: minhaMensagem ? "white" : "#262626",
+                        border: m.deAdmin ? "1px solid #C9D7F2" : undefined,
                         whiteSpace: "pre-line",
                         overflowWrap: "break-word",
                       }}

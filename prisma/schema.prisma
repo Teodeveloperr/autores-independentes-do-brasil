@@ -241,8 +241,11 @@ model Order {
 // conversa (sem DM/privado). Lido via polling simples, sem infraestrutura de tempo real.
 model ChatMensagem {
   id        String   @id @default(cuid())
-  authorId  String
-  author    Author   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  // authorId fica nulo quando a mensagem é da equipe (deAdmin) — o Admin não é um Author,
+  // não tem como vincular a uma conta de autor.
+  authorId  String?
+  author    Author?  @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  deAdmin   Boolean  @default(false)
   texto     String
   createdAt DateTime @default(now())
 

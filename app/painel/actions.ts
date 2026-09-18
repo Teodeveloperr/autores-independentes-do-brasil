@@ -19,6 +19,7 @@ import { validarCpf } from "@/lib/cpf";
 import { podeUsarRecursosExtras, BIO_MAX_CARACTERES_INICIANTE, PORTFOLIO_EVENTOS_MAX_INICIANTE } from "@/lib/plans";
 import { enviarConfirmacaoRecebimento } from "@/lib/repasse";
 import { checkRateLimit } from "@/lib/rateLimit";
+import { CHAT_NOME_ADMIN } from "@/lib/chat";
 import { desconectarMercadoPago as desconectarMercadoPagoLib } from "@/lib/mercadoPagoMarketplace";
 import { excluirAutorCompletamente } from "@/lib/authorDeletion";
 import { cancelarAssinaturaAtiva } from "@/app/assinatura/actions";
@@ -45,9 +46,10 @@ export type ChatMensagemRow = {
   id: string;
   texto: string;
   createdAt: Date;
-  authorId: string;
+  authorId: string | null;
   authorNome: string;
   authorFotoUrl: string | null;
+  deAdmin: boolean;
 };
 
 const CHAT_MENSAGEM_MAX_CARACTERES = 1000;
@@ -69,8 +71,9 @@ export async function listarMensagensChat(): Promise<ChatMensagemRow[]> {
     texto: m.texto,
     createdAt: m.createdAt,
     authorId: m.authorId,
-    authorNome: m.author.nome,
-    authorFotoUrl: m.author.fotoUrl,
+    authorNome: m.deAdmin ? CHAT_NOME_ADMIN : (m.author?.nome ?? "Autor removido"),
+    authorFotoUrl: m.deAdmin ? null : (m.author?.fotoUrl ?? null),
+    deAdmin: m.deAdmin,
   }));
 }
 

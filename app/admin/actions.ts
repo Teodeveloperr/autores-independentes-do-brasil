@@ -16,6 +16,7 @@ import { sendAccountCreatedEmail } from "@/lib/email";
 import { TODOS_PLANOS, planoAdminExpiraEm, type CicloConcessaoAdmin } from "@/lib/plans";
 import { sanitizeExternalUrl } from "@/lib/format";
 import { extrairYoutubeId } from "@/lib/youtube";
+import { CHAT_NOME_ADMIN } from "@/lib/chat";
 import type { ChatMensagemRow } from "@/app/painel/actions";
 
 export type AdminLoginState = { error?: string; precisa2fa?: boolean } | undefined;
@@ -594,8 +595,8 @@ export async function atualizarValoresLiquidos(): Promise<{ atualizados: number;
   return { atualizados, falhas };
 }
 
-// Acompanhamento/moderação do Chat da Comunidade (autores) pelo admin — mesma sala única,
-// só que aqui o admin só lê e pode remover mensagens, não escreve.
+// Chat da Comunidade (autores) visto e usado pelo admin — mesma sala única. O admin não
+// tem conta de Author, então as mensagens dele ficam com authorId nulo e deAdmin=true.
 export async function listarMensagensChatAdmin(): Promise<ChatMensagemRow[]> {
   await requireAdmin();
 
@@ -610,9 +611,22 @@ export async function listarMensagensChatAdmin(): Promise<ChatMensagemRow[]> {
     texto: m.texto,
     createdAt: m.createdAt,
     authorId: m.authorId,
-    authorNome: m.author.nome,
-    authorFotoUrl: m.author.fotoUrl,
+    authorNome: m.deAdmin ? CHAT_NOME_ADMIN : (m.author?.nome ?? "Autor removido"),
+    authorFotoUrl: m.deAdmin ? null : (m.author?.fotoUrl ?? null),
+    deAdmin: m.deAdmin,
   }));
+}
+
+export async function enviarMensagemChatAdmin(texto: string): Promise<{ error?: string }> {
+  await requireAdmin();
+
+  const limpo = texto.trim().slice(0, 1000);
+  if (!limpo) {
+    return { error: "Escreva algo antes de enviar." };
+  }
+
+  await prisma.chatMensagem.create({ data: { texto: limpo, deAdmin: true } });
+  return {};
 }
 
 export async function removerMensagemChat(id: string) {
