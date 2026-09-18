@@ -16,6 +16,7 @@ import { sendAccountCreatedEmail } from "@/lib/email";
 import { TODOS_PLANOS, planoAdminExpiraEm, type CicloConcessaoAdmin } from "@/lib/plans";
 import { sanitizeExternalUrl } from "@/lib/format";
 import { extrairYoutubeId } from "@/lib/youtube";
+import type { ChatMensagemRow } from "@/app/painel/actions";
 
 export type AdminLoginState = { error?: string; precisa2fa?: boolean } | undefined;
 
@@ -591,4 +592,30 @@ export async function atualizarValoresLiquidos(): Promise<{ atualizados: number;
 
   revalidatePath("/admin");
   return { atualizados, falhas };
+}
+
+// Acompanhamento/moderação do Chat da Comunidade (autores) pelo admin — mesma sala única,
+// só que aqui o admin só lê e pode remover mensagens, não escreve.
+export async function listarMensagensChatAdmin(): Promise<ChatMensagemRow[]> {
+  await requireAdmin();
+
+  const mensagens = await prisma.chatMensagem.findMany({
+    orderBy: { createdAt: "desc" },
+    take: 100,
+    include: { author: { select: { nome: true, fotoUrl: true } } },
+  });
+
+  return mensagens.reverse().map((m) => ({
+    id: m.id,
+    texto: m.texto,
+    createdAt: m.createdAt,
+    authorId: m.authorId,
+    authorNome: m.author.nome,
+    authorFotoUrl: m.author.fotoUrl,
+  }));
+}
+
+export async function removerMensagemChat(id: string) {
+  await requireAdmin();
+  await prisma.chatMensagem.delete({ where: { id } });
 }

@@ -11,6 +11,7 @@ import AdminGaleriaView from "./AdminGaleriaView";
 import AdminAutoresView from "./AdminAutoresView";
 import AdminBlogView from "./AdminBlogView";
 import AdminTalkShowView from "./AdminTalkShowView";
+import AdminChatView from "./AdminChatView";
 import AdminAvaliacoesView from "./AdminAvaliacoesView";
 import AdminPedidosView from "./AdminPedidosView";
 import AdminReceitaView from "./AdminReceitaView";
@@ -75,6 +76,7 @@ export default function AdminApp({
         <button onClick={() => setView("galeria")} style={sidebarBtn(view === "galeria")}>🖼️ Galeria do Coletivo</button>
         <button onClick={() => setView("blog")} style={sidebarBtn(view === "blog")}>📝 Blog do Coletivo</button>
         <button onClick={() => setView("talkshow")} style={sidebarBtn(view === "talkshow")}>🎙️ Talk Show / Conteúdos</button>
+        <button onClick={() => setView("chat")} style={sidebarBtn(view === "chat")}>🗨️ Chat da Comunidade</button>
         <button onClick={() => setView("autores")} style={sidebarBtn(view === "autores")}>✍️ Autores</button>
         <button onClick={() => setView("avaliacoes")} style={sidebarBtn(view === "avaliacoes")}>⭐ Avaliações</button>
         <button onClick={() => setView("pedidos")} style={sidebarBtn(view === "pedidos")}>📋 Pedidos</button>
@@ -182,6 +184,7 @@ export default function AdminApp({
           {view === "galeria" && <AdminGaleriaView fotos={fotos} />}
           {view === "blog" && <AdminBlogView artigos={artigos} />}
           {view === "talkshow" && <AdminTalkShowView videos={talkShowVideos} />}
+          {view === "chat" && <AdminChatView />}
           {view === "autores" && <AdminAutoresView autores={autores} />}
           {view === "avaliacoes" && <AdminAvaliacoesView avaliacoes={avaliacoes} />}
           {view === "pedidos" && <AdminPedidosView pedidos={pedidos} />}

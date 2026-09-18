@@ -1,6 +1,6 @@
 import type { Prisma } from "@/app/generated/prisma/client";
 
-export type AdminView = "dash" | "agenda" | "oportunidades" | "galeria" | "autores" | "blog" | "talkshow" | "avaliacoes" | "pedidos" | "receita" | "seguranca";
+export type AdminView = "dash" | "agenda" | "oportunidades" | "galeria" | "autores" | "blog" | "talkshow" | "chat" | "avaliacoes" | "pedidos" | "receita" | "seguranca";
 
 export type CollectiveEvent = Prisma.CollectiveEventGetPayload<Record<string, never>>;
 export type Opportunity = Prisma.OpportunityGetPayload<Record<string, never>>;
