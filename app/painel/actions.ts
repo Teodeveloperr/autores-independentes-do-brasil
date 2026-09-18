@@ -41,6 +41,56 @@ export async function marcarAgradecimentoGrupoVisto() {
   revalidatePath("/painel");
 }
 
+export type ChatMensagemRow = {
+  id: string;
+  texto: string;
+  createdAt: Date;
+  authorId: string;
+  authorNome: string;
+  authorFotoUrl: string | null;
+};
+
+const CHAT_MENSAGEM_MAX_CARACTERES = 1000;
+const CHAT_MENSAGENS_POR_PAGINA = 100;
+
+// Chat de sala única — todo autor lê e escreve na mesma conversa. Sem tempo real de
+// verdade: o cliente busca as últimas mensagens de novo a cada poucos segundos (polling).
+export async function listarMensagensChat(): Promise<ChatMensagemRow[]> {
+  await requireAuthor();
+
+  const mensagens = await prisma.chatMensagem.findMany({
+    orderBy: { createdAt: "desc" },
+    take: CHAT_MENSAGENS_POR_PAGINA,
+    include: { author: { select: { nome: true, fotoUrl: true } } },
+  });
+
+  return mensagens.reverse().map((m) => ({
+    id: m.id,
+    texto: m.texto,
+    createdAt: m.createdAt,
+    authorId: m.authorId,
+    authorNome: m.author.nome,
+    authorFotoUrl: m.author.fotoUrl,
+  }));
+}
+
+export async function enviarMensagemChat(texto: string): Promise<{ error?: string }> {
+  const author = await requireAuthor();
+
+  const limpo = texto.trim().slice(0, CHAT_MENSAGEM_MAX_CARACTERES);
+  if (!limpo) {
+    return { error: "Escreva algo antes de enviar." };
+  }
+
+  const permitido = await checkRateLimit(`chat-comunidade:${author.id}`, 20, 1);
+  if (!permitido) {
+    return { error: "Você está enviando mensagens rápido demais. Aguarde um pouco." };
+  }
+
+  await prisma.chatMensagem.create({ data: { authorId: author.id, texto: limpo } });
+  return {};
+}
+
 export async function saveProfile(formData: FormData): Promise<{ error?: string }> {
   const author = await requireAuthor();
 

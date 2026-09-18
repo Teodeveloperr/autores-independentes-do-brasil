@@ -101,6 +101,7 @@ model Author {
   passkeys             AuthorPasskey[]
   assinaturaPagamentos SubscriptionPayment[]
   portfolioEventos     PortfolioEvento[]
+  chatMensagens        ChatMensagem[]
 }
 
 model AuthorPasskey {
@@ -234,6 +235,18 @@ model Order {
 
   @@index([authorId])
   @@index([grupoPedidoId])
+}
+
+// Chat de sala única entre autores da plataforma — todo mundo vê e escreve na mesma
+// conversa (sem DM/privado). Lido via polling simples, sem infraestrutura de tempo real.
+model ChatMensagem {
+  id        String   @id @default(cuid())
+  authorId  String
+  author    Author   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  texto     String
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
 }
 
 model Conversation {
