@@ -35,6 +35,12 @@ export async function logout() {
   redirect("/login");
 }
 
+export async function marcarAgradecimentoGrupoVisto() {
+  const author = await requireAuthor();
+  await prisma.author.update({ where: { id: author.id }, data: { agradecimentoGrupoWhatsappVisto: true } });
+  revalidatePath("/painel");
+}
+
 export async function saveProfile(formData: FormData): Promise<{ error?: string }> {
   const author = await requireAuthor();
 

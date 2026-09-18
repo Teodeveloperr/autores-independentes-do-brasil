@@ -17,6 +17,7 @@ import AvaliacoesView from "./AvaliacoesView";
 import VendasView from "./VendasView";
 import PortfolioView from "./PortfolioView";
 import ConfiguracoesView from "./ConfiguracoesView";
+import AgradecimentoGrupoPopup from "./AgradecimentoGrupoPopup";
 
 const sidebarBtn = (active: boolean): React.CSSProperties => ({
   display: "flex",
@@ -50,6 +51,7 @@ export default function PainelApp({
 
   return (
     <div className="app-shell" style={{ display: "flex", minHeight: "100vh", background: "#F6F6F6" }}>
+      <AgradecimentoGrupoPopup mostrar={!author.agradecimentoGrupoWhatsappVisto} plano={author.plano} />
       <aside className="app-sidebar" style={{ flex: "0 0 250px", background: "#002776", color: "white", padding: "24px 16px", display: "flex", flexDirection: "column", gap: "6px" }}>
         <Link href="/" style={{ marginBottom: "20px", display: "block" }}>
           <Image src="/logo.png" alt="Logo" width={200} height={56} style={{ height: "56px", width: "100%", objectFit: "contain", background: "white", borderRadius: "8px", padding: "6px" }} />
