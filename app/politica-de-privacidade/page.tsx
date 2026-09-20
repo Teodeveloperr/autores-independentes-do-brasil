@@ -19,7 +19,7 @@ export default function PoliticaDePrivacidadePage() {
             Como o Autores Independentes do Brasil coleta, usa e protege os seus dados pessoais.
           </p>
           <div className="section-pad-md" style={{ background: "white", color: "#262626", padding: "40px", borderRadius: "8px", maxWidth: "820px", margin: "0 auto" }}>
-            <p style={{ fontSize: "12px", color: "#999", marginBottom: "24px" }}>Última atualização: 1 de setembro de 2026</p>
+            <p style={{ fontSize: "12px", color: "#999", marginBottom: "24px" }}>Última atualização: 20 de setembro de 2026</p>
 
             <p style={pStyle}>
               Esta Política de Privacidade explica quais dados pessoais o Autores Independentes do Brasil coleta ao longo
@@ -50,6 +50,16 @@ export default function PoliticaDePrivacidadePage() {
             <ul style={{ paddingLeft: "20px", marginBottom: "12px" }}>
               <li style={liStyle}><strong>Com o autor vendedor:</strong> nome, contato e endereço de entrega, para que ele possa preparar e enviar o pedido.</li>
               <li style={liStyle}><strong>Com a Asaas (nossa processadora de pagamentos):</strong> nome, CPF, e-mail, telefone e endereço, exclusivamente para processar pagamentos de compras e assinaturas. A Asaas tem sua própria política de privacidade e é responsável pelo tratamento desses dados durante o processamento do pagamento.</li>
+              <li style={liStyle}>
+                <strong>Com a Cloudflare (proteção contra robôs no cadastro):</strong> usamos o Cloudflare Turnstile para
+                impedir cadastros automatizados por robôs, de forma invisível para quem preenche o formulário
+                normalmente. Isso envolve o processamento de alguns dados técnicos do seu navegador pela Cloudflare,
+                descrito no{" "}
+                <a href="https://www.cloudflare.com/turnstile-privacy-policy/" target="_blank" rel="noopener noreferrer" style={{ color: "#002776", fontWeight: 600 }}>
+                  Adendo de Privacidade do Turnstile
+                </a>
+                .
+              </li>
             </ul>
 
             <h2 style={h2Style}>4. Cookies e carrinho de compras</h2>
