@@ -12,6 +12,7 @@ import {
   type DadosCartao,
 } from "@/app/cadastro/actions";
 import GoogleIcon from "./GoogleIcon";
+import TurnstileWidget from "./TurnstileWidget";
 import PasswordInput from "./PasswordInput";
 import PasswordStrengthChecklist from "./PasswordStrengthChecklist";
 import { GENEROS } from "@/lib/genres";
@@ -246,6 +247,7 @@ export default function CadastroWizard() {
                 </Link>
               </span>
             </label>
+            <TurnstileWidget />
             {step1Error && (
               <div style={{ color: "#C0392B", fontSize: "13px", background: "#FDEDEC", padding: "10px 14px", borderRadius: "6px" }}>
                 {step1Error}

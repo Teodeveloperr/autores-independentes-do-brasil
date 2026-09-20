@@ -11,6 +11,7 @@ import { validarCpf } from "@/lib/cpf";
 import { criarCadastroPendenteAssinatura, criarCadastroPendente } from "@/lib/assinatura";
 import { cancelarAutorizacaoPixAutomatico, cancelarAssinaturaAsaas } from "@/lib/asaas";
 import { PLANOS_PAGOS, valorCicloCentavos, type PlanoPagoSlug, type CicloAssinatura } from "@/lib/plans";
+import { verificarTurnstile } from "@/lib/turnstile";
 
 export type Step1Data = {
   nome: string;
@@ -44,6 +45,12 @@ export async function validateStep1(formData: FormData): Promise<Step1Result> {
   }
   if (generos.length === 0) {
     return { error: "Selecione ao menos um gênero literário." };
+  }
+
+  const turnstileToken = (formData.get("cf-turnstile-response") as string) || null;
+  const humano = await verificarTurnstile(turnstileToken);
+  if (!humano) {
+    return { error: "Não foi possível confirmar que você não é um robô. Atualize a página e tente de novo." };
   }
 
   // Não bloqueia por PendingSignup aqui: é só uma tentativa de assinatura em andamento,
