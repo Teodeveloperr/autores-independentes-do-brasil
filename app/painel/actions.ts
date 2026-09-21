@@ -20,7 +20,6 @@ import { podeUsarRecursosExtras, BIO_MAX_CARACTERES_INICIANTE, PORTFOLIO_EVENTOS
 import { enviarConfirmacaoRecebimento } from "@/lib/repasse";
 import { checkRateLimit } from "@/lib/rateLimit";
 import { CHAT_NOME_ADMIN } from "@/lib/chat";
-import { perguntarAssistenteIA, type MensagemIA } from "@/lib/ia";
 import { desconectarMercadoPago as desconectarMercadoPagoLib } from "@/lib/mercadoPagoMarketplace";
 import { excluirAutorCompletamente } from "@/lib/authorDeletion";
 import { cancelarAssinaturaAtiva } from "@/app/assinatura/actions";
@@ -93,37 +92,6 @@ export async function enviarMensagemChat(texto: string): Promise<{ error?: strin
 
   await prisma.chatMensagem.create({ data: { authorId: author.id, texto: limpo } });
   return {};
-}
-
-const IA_HISTORICO_MAX_MENSAGENS = 12;
-
-// Assistente de dúvidas: não guarda histórico no banco — o cliente reenvia a conversa
-// inteira (limitada às últimas mensagens) a cada pergunta, junto com o manual da
-// plataforma (ver lib/ia.ts), e a Claude responde com base nisso.
-export async function perguntarIA(historico: MensagemIA[]): Promise<{ resposta: string } | { error: string }> {
-  const author = await requireAuthor();
-
-  const permitido = await checkRateLimit(`assistente-ia:${author.id}`, 15, 5);
-  if (!permitido) {
-    return { error: "Muitas perguntas em pouco tempo. Aguarde alguns minutos e tente de novo." };
-  }
-
-  const ultima = historico.at(-1);
-  if (!ultima || ultima.role !== "user" || !ultima.texto.trim()) {
-    return { error: "Escreva uma pergunta antes de enviar." };
-  }
-
-  const historicoLimitado = historico.slice(-IA_HISTORICO_MAX_MENSAGENS).map((m) => ({
-    role: m.role,
-    texto: m.texto.trim().slice(0, 2000),
-  }));
-
-  const resposta = await perguntarAssistenteIA(historicoLimitado);
-  if (!resposta) {
-    return { error: "O assistente de IA ainda não está disponível. Tente novamente mais tarde ou fale com a nossa equipe." };
-  }
-
-  return { resposta };
 }
 
 export async function saveProfile(formData: FormData): Promise<{ error?: string }> {

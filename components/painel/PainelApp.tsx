@@ -14,7 +14,6 @@ import EventosView from "./EventosView";
 import GaleriaView from "./GaleriaView";
 import MensagensView from "./MensagensView";
 import ChatComunidadeView from "./ChatComunidadeView";
-import AssistenteIAView from "./AssistenteIAView";
 import AvaliacoesView from "./AvaliacoesView";
 import VendasView from "./VendasView";
 import PortfolioView from "./PortfolioView";
@@ -76,7 +75,6 @@ export default function PainelApp({
           )}
         </button>
         <button onClick={() => setView("chat")} style={sidebarBtn(view === "chat")}>🗨️ Chat da Comunidade</button>
-        <button onClick={() => setView("assistenteIA")} style={sidebarBtn(view === "assistenteIA")}>🤖 Tirar Dúvidas com IA</button>
         <button onClick={() => setView("avaliacoes")} style={sidebarBtn(view === "avaliacoes")}>⭐ Avaliações</button>
         <button onClick={() => setView("portfolio")} style={sidebarBtn(view === "portfolio")}>📄 Portfólio</button>
         <button onClick={() => setView("configuracoes")} style={sidebarBtn(view === "configuracoes")}>⚙️ Configurações</button>
@@ -151,7 +149,6 @@ export default function PainelApp({
           {view === "galeria" && <GaleriaView author={author} />}
           {view === "mensagens" && <MensagensView author={author} />}
           {view === "chat" && <ChatComunidadeView authorId={author.id} />}
-          {view === "assistenteIA" && <AssistenteIAView />}
           {view === "avaliacoes" && <AvaliacoesView author={author} />}
           {view === "vendas" && <VendasView author={author} />}
           {view === "portfolio" && <PortfolioView author={author} />}
