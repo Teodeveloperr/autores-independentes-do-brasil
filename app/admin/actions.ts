@@ -2,6 +2,7 @@
 
 import bcrypt from "bcryptjs";
 import QRCode from "qrcode";
+import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { createAdminSession, deleteAdminSession, createAdminPending2FA, getAdminPending2FA, deleteAdminPending2FA } from "@/lib/session";
@@ -17,6 +18,9 @@ import { TODOS_PLANOS, planoAdminExpiraEm, type CicloConcessaoAdmin } from "@/li
 import { sanitizeExternalUrl } from "@/lib/format";
 import { extrairYoutubeId } from "@/lib/youtube";
 import { CHAT_NOME_ADMIN } from "@/lib/chat";
+import { MESES_EVENTO } from "@/lib/painelOptions";
+import { CATEGORIAS_AGENDA_ADMIN, CATEGORIAS_GALERIA_ADMIN, CATEGORIAS_OPORTUNIDADES, CATEGORIAS_BLOG } from "@/lib/adminOptions";
+import { emailSchema, textoSchema, intSchema, primeiroErroZod } from "@/lib/validation";
 import type { ChatMensagemRow } from "@/app/painel/actions";
 
 export type AdminLoginState = { error?: string; precisa2fa?: boolean } | undefined;
@@ -26,6 +30,9 @@ export async function adminLogin(
   formData: FormData
 ): Promise<AdminLoginState> {
   const senha = (formData.get("senha") as string) || "";
+  if (!senha) {
+    return { error: "Informe sua senha." };
+  }
 
   const ip = await getClientIp();
   const permitido = await checkRateLimit(`admin-login:${ip}`, 5, 15);
@@ -157,15 +164,40 @@ export async function desativar2FA(_prev: Desativar2FAState, formData: FormData)
   return { ok: true };
 }
 
+const anoAtualAdmin = new Date().getFullYear();
+
+const collectiveEventSchema = z.object({
+  nome: textoSchema(150, false),
+  dia: intSchema(1, 31),
+  mes: z.enum(MESES_EVENTO),
+  ano: intSchema(anoAtualAdmin, anoAtualAdmin + 5),
+  categoria: z.enum(CATEGORIAS_AGENDA_ADMIN),
+  local: textoSchema(200, false),
+  periodo: textoSchema(60, false),
+});
+
 function collectiveEventDataFromForm(formData: FormData) {
-  return {
+  const parsed = collectiveEventSchema.safeParse({
     nome: ((formData.get("nome") as string) || "Evento").trim(),
-    dia: parseInt((formData.get("dia") as string) || "1", 10) || 1,
+    dia: (formData.get("dia") as string) || "1",
     mes: (formData.get("mes") as string) || "JAN",
-    ano: parseInt((formData.get("ano") as string) || "", 10) || new Date().getFullYear(),
-    categoria: (formData.get("categoria") as string) || "Outros",
+    ano: (formData.get("ano") as string) || String(anoAtualAdmin),
+    categoria: (formData.get("categoria") as string) || CATEGORIAS_AGENDA_ADMIN[0],
     local: ((formData.get("local") as string) || "—").trim(),
-    periodo: ((formData.get("periodo") as string) || "").trim() || null,
+    periodo: (formData.get("periodo") as string) || "",
+  });
+  if (!parsed.success) {
+    throw new Error(primeiroErroZod(parsed.error));
+  }
+
+  return {
+    nome: parsed.data.nome || "Evento",
+    dia: parsed.data.dia,
+    mes: parsed.data.mes,
+    ano: parsed.data.ano,
+    categoria: parsed.data.categoria,
+    local: parsed.data.local || "—",
+    periodo: parsed.data.periodo || null,
   };
 }
 
@@ -197,6 +229,13 @@ export async function removeCollectiveEvent(id: string) {
   revalidatePath("/");
 }
 
+const opportunitySchema = z.object({
+  nome: textoSchema(150),
+  categoria: z.enum(CATEGORIAS_OPORTUNIDADES),
+  estado: textoSchema(60, false),
+  valor: textoSchema(60, false),
+});
+
 function opportunityDataFromForm(formData: FormData) {
   const link = sanitizeExternalUrl((formData.get("link") as string) || "");
   if (!link) {
@@ -207,12 +246,22 @@ function opportunityDataFromForm(formData: FormData) {
     throw new Error("Informe um prazo final válido.");
   }
 
+  const parsed = opportunitySchema.safeParse({
+    nome: (formData.get("nome") as string) || "",
+    categoria: (formData.get("categoria") as string) || CATEGORIAS_OPORTUNIDADES[0],
+    estado: (formData.get("estado") as string) || "",
+    valor: (formData.get("valor") as string) || "",
+  });
+  if (!parsed.success) {
+    throw new Error(primeiroErroZod(parsed.error));
+  }
+
   return {
-    nome: ((formData.get("nome") as string) || "").trim(),
-    categoria: (formData.get("categoria") as string) || "Editais",
+    nome: parsed.data.nome,
+    categoria: parsed.data.categoria,
     prazoFinal,
-    estado: ((formData.get("estado") as string) || "").trim(),
-    valor: ((formData.get("valor") as string) || "").trim() || null,
+    estado: parsed.data.estado,
+    valor: parsed.data.valor || null,
     link,
   };
 }
@@ -238,15 +287,28 @@ export async function removeOpportunity(id: string) {
   revalidatePath("/oportunidades");
 }
 
+const galeriaAdminSchema = z.object({
+  titulo: textoSchema(120, false),
+  categoria: z.enum(CATEGORIAS_GALERIA_ADMIN),
+});
+
 export async function addCollectiveGalleryPhoto(formData: FormData) {
   await requireAdmin();
   const url = (formData.get("url") as string) || "";
   if (!url) return;
 
+  const parsed = galeriaAdminSchema.safeParse({
+    titulo: (formData.get("titulo") as string) || "Foto",
+    categoria: (formData.get("categoria") as string) || CATEGORIAS_GALERIA_ADMIN[0],
+  });
+  if (!parsed.success) {
+    throw new Error(primeiroErroZod(parsed.error));
+  }
+
   await prisma.collectiveGalleryPhoto.create({
     data: {
-      titulo: ((formData.get("titulo") as string) || "Foto").trim(),
-      categoria: (formData.get("categoria") as string) || "Outros",
+      titulo: parsed.data.titulo || "Foto",
+      categoria: parsed.data.categoria,
       url,
     },
   });
@@ -267,14 +329,19 @@ export type CreateAuthorState = { error?: string; success?: boolean } | undefine
 export async function adminCreateAuthor(_prev: CreateAuthorState, formData: FormData): Promise<CreateAuthorState> {
   await requireAdmin();
 
-  const nome = ((formData.get("nome") as string) || "").trim();
-  const email = ((formData.get("email") as string) || "").trim().toLowerCase();
+  const nome = ((formData.get("nome") as string) || "").trim().slice(0, 120);
   const plano = (formData.get("plano") as string) || "Iniciante";
   const ciclo = (formData.get("ciclo") as string) || undefined;
 
-  if (!nome || !email) {
-    return { error: "Preencha nome e e-mail." };
+  if (!nome) {
+    return { error: "Preencha o nome." };
   }
+  const emailParsed = emailSchema.safeParse((formData.get("email") as string) || "");
+  if (!emailParsed.success) {
+    return { error: "Informe um e-mail válido." };
+  }
+  const email = emailParsed.data;
+
   if (!TODOS_PLANOS.includes(plano)) {
     return { error: "Selecione um plano válido." };
   }
@@ -391,13 +458,32 @@ export async function removeReview(id: string) {
   revalidatePath(`/perfil/${review.authorId}`);
 }
 
+const articleSchema = z.object({
+  titulo: textoSchema(200, false),
+  resumo: textoSchema(500, false),
+  conteudo: textoSchema(50000, false),
+  categoria: z.enum(CATEGORIAS_BLOG),
+  autorNome: textoSchema(120, false),
+});
+
 function articleDataFromForm(formData: FormData) {
+  const parsed = articleSchema.safeParse({
+    titulo: (formData.get("titulo") as string) || "Artigo",
+    resumo: (formData.get("resumo") as string) || "",
+    conteudo: (formData.get("conteudo") as string) || "",
+    categoria: (formData.get("categoria") as string) || CATEGORIAS_BLOG[2],
+    autorNome: (formData.get("autorNome") as string) || "Coletivo",
+  });
+  if (!parsed.success) {
+    throw new Error(primeiroErroZod(parsed.error));
+  }
+
   return {
-    titulo: ((formData.get("titulo") as string) || "Artigo").trim(),
-    resumo: ((formData.get("resumo") as string) || "").trim(),
-    conteudo: ((formData.get("conteudo") as string) || "").trim(),
-    categoria: (formData.get("categoria") as string) || "Para Leitores",
-    autorNome: ((formData.get("autorNome") as string) || "Coletivo").trim(),
+    titulo: parsed.data.titulo || "Artigo",
+    resumo: parsed.data.resumo,
+    conteudo: parsed.data.conteudo,
+    categoria: parsed.data.categoria,
+    autorNome: parsed.data.autorNome || "Coletivo",
     capaUrl: (formData.get("capaUrl") as string) || null,
   };
 }
@@ -424,8 +510,8 @@ export async function removeArticle(id: string) {
 }
 
 function talkShowDataFromForm(formData: FormData): { error: string } | { data: { titulo: string; descricao: string | null; youtubeUrl: string } } {
-  const titulo = ((formData.get("titulo") as string) || "").trim();
-  const descricao = ((formData.get("descricao") as string) || "").trim() || null;
+  const titulo = ((formData.get("titulo") as string) || "").trim().slice(0, 200);
+  const descricao = ((formData.get("descricao") as string) || "").trim().slice(0, 1000) || null;
   const youtubeUrl = ((formData.get("youtubeUrl") as string) || "").trim();
 
   if (!titulo || !youtubeUrl) {
@@ -481,6 +567,10 @@ export type CobrancaFaltante = {
  */
 export async function reconciliarReceita(mesChave: string): Promise<{ faltantes: CobrancaFaltante[]; totalConferido: number }> {
   await requireAdmin();
+
+  if (!/^\d{4}-\d{2}$/.test(mesChave)) {
+    throw new Error("Mês inválido — use o formato AAAA-MM.");
+  }
 
   const [ano, mes] = mesChave.split("-").map(Number);
   const desde = new Date(ano, mes - 1, 1);
@@ -620,12 +710,12 @@ export async function listarMensagensChatAdmin(): Promise<ChatMensagemRow[]> {
 export async function enviarMensagemChatAdmin(texto: string): Promise<{ error?: string }> {
   await requireAdmin();
 
-  const limpo = texto.trim().slice(0, 1000);
-  if (!limpo) {
+  const parsed = textoSchema(1000).safeParse(texto);
+  if (!parsed.success) {
     return { error: "Escreva algo antes de enviar." };
   }
 
-  await prisma.chatMensagem.create({ data: { texto: limpo, deAdmin: true } });
+  await prisma.chatMensagem.create({ data: { texto: parsed.data, deAdmin: true } });
   return {};
 }
 

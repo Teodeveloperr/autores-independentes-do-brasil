@@ -5,9 +5,8 @@ import { useRouter } from "next/navigation";
 import { useImageUpload } from "@/hooks/useImageUpload";
 import { uploadImage } from "@/lib/upload-client";
 import { addArticle, updateArticle, removeArticle } from "@/app/admin/actions";
+import { CATEGORIAS_BLOG as CATEGORIAS } from "@/lib/adminOptions";
 import type { Article } from "./types";
-
-const CATEGORIAS = ["Para Autores", "Mercado Literário", "Para Leitores", "Histórias"];
 
 function wrapSelection(textarea: HTMLTextAreaElement, before: string, after: string = before) {
   const { selectionStart, selectionEnd, value } = textarea;

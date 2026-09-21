@@ -4,9 +4,8 @@ import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useImageUpload } from "@/hooks/useImageUpload";
 import { addCollectiveGalleryPhoto, removeCollectiveGalleryPhoto } from "@/app/admin/actions";
+import { CATEGORIAS_GALERIA_ADMIN as CATEGORIAS } from "@/lib/adminOptions";
 import type { CollectiveGalleryPhoto } from "./types";
-
-const CATEGORIAS = ["Bienais e Feiras", "Lançamentos de Livros", "Palestras e Workshops", "Encontros de Autores", "Eventos Culturais", "Outros"];
 
 export default function AdminGaleriaView({ fotos }: { fotos: CollectiveGalleryPhoto[] }) {
   const foto = useImageUpload("galeria-coletivo");

@@ -3,10 +3,9 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { addCollectiveEvent, updateCollectiveEvent, removeCollectiveEvent } from "@/app/admin/actions";
+import { MESES_EVENTO as MESES } from "@/lib/painelOptions";
+import { CATEGORIAS_AGENDA_ADMIN as CATEGORIAS } from "@/lib/adminOptions";
 import type { CollectiveEvent } from "./types";
-
-const MESES = ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"];
-const CATEGORIAS = ["Bienais e Feiras", "Palestras e Workshops", "Encontros de Autores", "Lançamentos", "Eventos Online"];
 
 export default function AdminAgendaView({ eventos }: { eventos: CollectiveEvent[] }) {
   const [pending, startTransition] = useTransition();

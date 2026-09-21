@@ -3,20 +3,8 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { addOpportunity, updateOpportunity, removeOpportunity } from "@/app/admin/actions";
+import { CATEGORIAS_OPORTUNIDADES as CATEGORIAS } from "@/lib/adminOptions";
 import type { Opportunity } from "./types";
-
-const CATEGORIAS = [
-  "Editais",
-  "Bienais",
-  "Feiras",
-  "Antologias",
-  "Concursos",
-  "Prêmios",
-  "Cursos",
-  "Chamadas abertas",
-  "Residências",
-  "Financiamento cultural",
-];
 
 function toDateInputValue(date: Date) {
   return date.toISOString().slice(0, 10);
