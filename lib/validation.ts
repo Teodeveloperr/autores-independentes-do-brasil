@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { validarCpf } from "@/lib/cpf";
+import { validarCpf, validarCnpj } from "@/lib/cpf";
 import { validarSenha } from "@/lib/password";
 
 // Schemas reutilizáveis pra validar em runtime dados que chegam de fora (formulários,
@@ -22,6 +22,18 @@ export const cpfSchema = z
   .refine(validarCpf, "CPF inválido.")
   .brand<"Cpf">();
 export type Cpf = z.infer<typeof cpfSchema>;
+
+export const cnpjSchema = z
+  .string()
+  .trim()
+  .refine(validarCnpj, "CNPJ inválido.")
+  .brand<"Cnpj">();
+export type Cnpj = z.infer<typeof cnpjSchema>;
+
+/** Número inteiro dentro de um intervalo, coagido a partir de string de formulário. */
+export function intSchema(min: number, max: number) {
+  return z.coerce.number().int().min(min).max(max);
+}
 
 export const senhaNovaSchema = z.string().superRefine((senha, ctx) => {
   const erro = validarSenha(senha);

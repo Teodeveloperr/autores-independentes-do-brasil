@@ -4,9 +4,8 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useImageUpload } from "@/hooks/useImageUpload";
 import { addPhoto, removePhoto } from "@/app/painel/actions";
+import { CATEGORIAS_FOTO as CATEGORIAS } from "@/lib/painelOptions";
 import type { AuthorWithRelations } from "./types";
-
-const CATEGORIAS = ["Bienais e Feiras", "Lançamentos", "Palestras e Workshops", "Encontros de Autores", "Eventos Culturais", "Outros"];
 
 export default function GaleriaView({ author }: { author: AuthorWithRelations }) {
   const foto = useImageUpload("galeria-pessoal");

@@ -5,9 +5,8 @@ import { useRouter } from "next/navigation";
 import { addEvent, updateEvent, removeEvent } from "@/app/painel/actions";
 import { formatEventoDia } from "@/lib/format";
 import { podeUsarRecursosExtras } from "@/lib/plans";
+import { MESES_EVENTO as MESES, STATUS_EVENTO } from "@/lib/painelOptions";
 import type { AuthorWithRelations } from "./types";
-
-const MESES = ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"];
 
 const chipStyle = (status: string): React.CSSProperties => ({
   fontSize: "11px",
@@ -112,8 +111,9 @@ export default function EventosView({ author }: { author: AuthorWithRelations })
           <div>
             <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>Status</label>
             <select name="status" defaultValue={editing?.status ?? "Confirmado"} style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px" }}>
-              <option>Confirmado</option>
-              <option>Pendente</option>
+              {STATUS_EVENTO.map((s) => (
+                <option key={s}>{s}</option>
+              ))}
             </select>
           </div>
           <div style={{ display: "flex", gap: "10px" }}>

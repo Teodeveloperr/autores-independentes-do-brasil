@@ -1,6 +1,7 @@
 "use server";
 
 import bcrypt from "bcryptjs";
+import { z } from "zod";
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -14,9 +15,10 @@ import { prisma } from "@/lib/db";
 import { requireAuthor } from "@/lib/auth";
 import { deleteAuthorSession } from "@/lib/session";
 import { centavosFromInput, sanitizeExternalUrl } from "@/lib/format";
-import { validarSenha } from "@/lib/password";
-import { validarCpf } from "@/lib/cpf";
 import { podeUsarRecursosExtras, BIO_MAX_CARACTERES_INICIANTE, PORTFOLIO_EVENTOS_MAX_INICIANTE } from "@/lib/plans";
+import { GENEROS } from "@/lib/genres";
+import { MESES_EVENTO, STATUS_EVENTO, STATUS_PEDIDO, CATEGORIAS_FOTO } from "@/lib/painelOptions";
+import { emailSchema, cpfSchema, cnpjSchema, senhaNovaSchema, textoSchema, intSchema, primeiroErroZod } from "@/lib/validation";
 import { enviarConfirmacaoRecebimento } from "@/lib/repasse";
 import { checkRateLimit } from "@/lib/rateLimit";
 import { CHAT_NOME_ADMIN } from "@/lib/chat";
@@ -30,6 +32,8 @@ import {
   WEBAUTHN_CHALLENGE_COOKIE,
   WEBAUTHN_CHALLENGE_MAX_AGE_SECONDS,
 } from "@/lib/webauthn";
+
+const GENERO_ENUM = GENEROS as [string, ...string[]];
 
 export async function logout() {
   await deleteAuthorSession();
@@ -80,8 +84,8 @@ export async function listarMensagensChat(): Promise<ChatMensagemRow[]> {
 export async function enviarMensagemChat(texto: string): Promise<{ error?: string }> {
   const author = await requireAuthor();
 
-  const limpo = texto.trim().slice(0, CHAT_MENSAGEM_MAX_CARACTERES);
-  if (!limpo) {
+  const parsed = textoSchema(CHAT_MENSAGEM_MAX_CARACTERES).safeParse(texto);
+  if (!parsed.success) {
     return { error: "Escreva algo antes de enviar." };
   }
 
@@ -90,30 +94,42 @@ export async function enviarMensagemChat(texto: string): Promise<{ error?: strin
     return { error: "Você está enviando mensagens rápido demais. Aguarde um pouco." };
   }
 
-  await prisma.chatMensagem.create({ data: { authorId: author.id, texto: limpo } });
+  await prisma.chatMensagem.create({ data: { authorId: author.id, texto: parsed.data } });
   return {};
+}
+
+function clampInt(value: string, min: number, max: number, fallback: number): number {
+  const n = parseInt(value, 10);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.min(max, Math.max(min, n));
 }
 
 export async function saveProfile(formData: FormData): Promise<{ error?: string }> {
   const author = await requireAuthor();
 
   const generos = formData.getAll("generos") as string[];
+  if (generos.length > 0) {
+    const generosParsed = z.array(z.enum(GENERO_ENUM)).safeParse(generos);
+    if (!generosParsed.success) {
+      return { error: "Selecione apenas gêneros literários válidos." };
+    }
+  }
   const bio = ((formData.get("bio") as string) || "").trim().slice(0, author.plano === "Iniciante" ? BIO_MAX_CARACTERES_INICIANTE : undefined);
 
   await prisma.author.update({
     where: { id: author.id },
     data: {
-      nome: ((formData.get("nome") as string) || author.nome).trim(),
+      nome: ((formData.get("nome") as string) || author.nome).trim().slice(0, 120),
       generos: generos.length > 0 ? generos : author.generos,
-      cidade: ((formData.get("cidade") as string) || "").trim(),
+      cidade: ((formData.get("cidade") as string) || "").trim().slice(0, 120),
       bio,
       fraseApresentacao: ((formData.get("fraseApresentacao") as string) || "").trim().slice(0, 140) || null,
       profissoes: ((formData.get("profissoes") as string) || "").trim().slice(0, 120) || null,
       fotoUrl: (formData.get("fotoUrl") as string) || author.fotoUrl,
       bannerUrl: (formData.get("bannerUrl") as string) || author.bannerUrl,
-      bannerPositionX: parseInt((formData.get("bannerPositionX") as string) || "", 10) || 50,
-      bannerPositionY: parseInt((formData.get("bannerPositionY") as string) || "", 10) || 50,
-      videoUrl: (formData.get("videoUrl") as string) || null,
+      bannerPositionX: clampInt((formData.get("bannerPositionX") as string) || "", 0, 100, 50),
+      bannerPositionY: clampInt((formData.get("bannerPositionY") as string) || "", 0, 100, 50),
+      videoUrl: sanitizeExternalUrl((formData.get("videoUrl") as string) || ""),
       instagramUrl: sanitizeExternalUrl((formData.get("instagramUrl") as string) || ""),
       twitterUrl: sanitizeExternalUrl((formData.get("twitterUrl") as string) || ""),
       siteUrl: sanitizeExternalUrl((formData.get("siteUrl") as string) || ""),
@@ -124,6 +140,12 @@ export async function saveProfile(formData: FormData): Promise<{ error?: string 
   return {};
 }
 
+const portfolioSchema = z.object({
+  portfolioFormacao: textoSchema(500, false),
+  portfolioPremios: textoSchema(500, false),
+  portfolioCitacao: textoSchema(500, false),
+});
+
 export async function updatePortfolio(formData: FormData) {
   const author = await requireAuthor();
 
@@ -133,12 +155,21 @@ export async function updatePortfolio(formData: FormData) {
     if (!obra) throw new Error("Obra em destaque inválida.");
   }
 
+  const parsed = portfolioSchema.safeParse({
+    portfolioFormacao: (formData.get("portfolioFormacao") as string) || "",
+    portfolioPremios: (formData.get("portfolioPremios") as string) || "",
+    portfolioCitacao: (formData.get("portfolioCitacao") as string) || "",
+  });
+  if (!parsed.success) {
+    throw new Error(primeiroErroZod(parsed.error));
+  }
+
   await prisma.author.update({
     where: { id: author.id },
     data: {
-      portfolioFormacao: ((formData.get("portfolioFormacao") as string) || "").trim() || null,
-      portfolioPremios: ((formData.get("portfolioPremios") as string) || "").trim() || null,
-      portfolioCitacao: ((formData.get("portfolioCitacao") as string) || "").trim() || null,
+      portfolioFormacao: parsed.data.portfolioFormacao || null,
+      portfolioPremios: parsed.data.portfolioPremios || null,
+      portfolioCitacao: parsed.data.portfolioCitacao || null,
       portfolioObraDestaqueId: obraDestaqueId || null,
       portfolioCapaUrl: (formData.get("portfolioCapaUrl") as string) || null,
     },
@@ -149,6 +180,26 @@ export async function updatePortfolio(formData: FormData) {
 
 const TIPOS_CHAVE_PIX = new Set(["CPF", "CNPJ", "EMAIL", "PHONE", "EVP"]);
 
+// Chave Pix "EVP" (aleatória) é sempre um UUID gerado pelo banco/instituição.
+const EVP_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function chavePixValida(tipo: string, chave: string): boolean {
+  switch (tipo) {
+    case "CPF":
+      return cpfSchema.safeParse(chave).success;
+    case "CNPJ":
+      return cnpjSchema.safeParse(chave).success;
+    case "EMAIL":
+      return emailSchema.safeParse(chave).success;
+    case "PHONE":
+      return /^\+?\d{10,13}$/.test(chave.replace(/[^\d+]/g, ""));
+    case "EVP":
+      return EVP_REGEX.test(chave);
+    default:
+      return false;
+  }
+}
+
 export async function updatePixKey(formData: FormData): Promise<{ error: string } | undefined> {
   const author = await requireAuthor();
 
@@ -158,8 +209,8 @@ export async function updatePixKey(formData: FormData): Promise<{ error: string 
   if (!pixKey || !TIPOS_CHAVE_PIX.has(pixKeyType)) {
     return { error: "Informe uma chave Pix e o tipo dela." };
   }
-  if (pixKeyType === "CPF" && !validarCpf(pixKey)) {
-    return { error: "CPF inválido." };
+  if (!chavePixValida(pixKeyType, pixKey)) {
+    return { error: "Chave Pix inválida para o tipo selecionado." };
   }
 
   await prisma.author.update({
@@ -170,22 +221,44 @@ export async function updatePixKey(formData: FormData): Promise<{ error: string 
   revalidatePath("/painel");
 }
 
+const bookSchema = z.object({
+  titulo: textoSchema(200, false),
+  genero: z.enum(GENERO_ENUM),
+  estoque: intSchema(0, 100000),
+  descricao: textoSchema(3000, false),
+});
+
 function bookDataFromForm(formData: FormData) {
-  const titulo = ((formData.get("titulo") as string) || "").trim() || "Sem título";
-  const genero = (formData.get("genero") as string) || "Romance";
+  const parsed = bookSchema.safeParse({
+    titulo: ((formData.get("titulo") as string) || "").trim() || "Sem título",
+    genero: (formData.get("genero") as string) || GENEROS[0],
+    estoque: (formData.get("estoque") as string) || "0",
+    descricao: (formData.get("descricao") as string) || "",
+  });
+  if (!parsed.success) {
+    throw new Error(primeiroErroZod(parsed.error));
+  }
+
+  const descontoRaw = ((formData.get("descontoPercentual") as string) || "").trim();
+  let descontoPercentual: number | null = null;
+  if (descontoRaw) {
+    const n = parseInt(descontoRaw, 10);
+    if (!Number.isFinite(n) || n < 0 || n > 90) {
+      throw new Error("O desconto deve ser um número entre 0% e 90%.");
+    }
+    descontoPercentual = n;
+  }
+
   const preco = (formData.get("preco") as string) || "0";
-  const estoque = parseInt((formData.get("estoque") as string) || "0", 10) || 0;
   const capaUrl = (formData.get("capaUrl") as string) || null;
-  const descricao = ((formData.get("descricao") as string) || "").trim() || null;
-  const descontoPercentual = parseInt((formData.get("descontoPercentual") as string) || "", 10) || null;
 
   return {
-    titulo,
-    genero,
-    precoCentavos: centavosFromInput(preco),
-    estoque,
+    titulo: parsed.data.titulo || "Sem título",
+    genero: parsed.data.genero,
+    precoCentavos: Math.max(0, centavosFromInput(preco)),
+    estoque: parsed.data.estoque,
     capaUrl,
-    descricao,
+    descricao: parsed.data.descricao || null,
     descontoPercentual,
   };
 }
@@ -220,19 +293,43 @@ export async function removeBook(id: string) {
   revalidatePath("/painel");
 }
 
-function eventDataFromForm(formData: FormData) {
-  const diaInicio = parseInt((formData.get("diaInicio") as string) || "1", 10) || 1;
-  const diaFimRaw = (formData.get("diaFim") as string) || "";
-  const diaFim = diaFimRaw.trim() ? parseInt(diaFimRaw, 10) || null : null;
+const anoAtual = new Date().getFullYear();
 
-  return {
+const eventoSchema = z.object({
+  nome: textoSchema(120, false),
+  diaInicio: intSchema(1, 31),
+  mes: z.enum(MESES_EVENTO),
+  ano: intSchema(anoAtual, anoAtual + 5),
+  local: textoSchema(200, false),
+  status: z.enum(STATUS_EVENTO),
+});
+
+function eventDataFromForm(formData: FormData) {
+  const diaFimRaw = (formData.get("diaFim") as string) || "";
+
+  const parsed = eventoSchema.safeParse({
     nome: ((formData.get("nome") as string) || "Evento").trim(),
-    diaInicio,
-    diaFim: diaFim && diaFim > diaInicio ? diaFim : null,
+    diaInicio: (formData.get("diaInicio") as string) || "1",
     mes: (formData.get("mes") as string) || "JAN",
-    ano: parseInt((formData.get("ano") as string) || "", 10) || new Date().getFullYear(),
+    ano: (formData.get("ano") as string) || String(anoAtual),
     local: ((formData.get("local") as string) || "—").trim(),
     status: (formData.get("status") as string) || "Pendente",
+  });
+  if (!parsed.success) {
+    throw new Error(primeiroErroZod(parsed.error));
+  }
+
+  const diaFimParsed = diaFimRaw.trim() ? parseInt(diaFimRaw, 10) : null;
+  const diaFim = diaFimParsed && diaFimParsed > parsed.data.diaInicio && diaFimParsed <= 31 ? diaFimParsed : null;
+
+  return {
+    nome: parsed.data.nome || "Evento",
+    diaInicio: parsed.data.diaInicio,
+    diaFim,
+    mes: parsed.data.mes,
+    ano: parsed.data.ano,
+    local: parsed.data.local || "—",
+    status: parsed.data.status,
   };
 }
 
@@ -272,6 +369,11 @@ export async function removeEvent(id: string) {
   revalidatePath("/painel");
 }
 
+const fotoSchema = z.object({
+  titulo: textoSchema(120, false),
+  categoria: z.enum(CATEGORIAS_FOTO),
+});
+
 export async function addPhoto(formData: FormData) {
   const author = await requireAuthor();
   const url = (formData.get("url") as string) || "";
@@ -281,11 +383,19 @@ export async function addPhoto(formData: FormData) {
     throw new Error("A galeria de fotos é exclusiva dos planos Essencial e Premium. Faça upgrade para adicionar fotos.");
   }
 
+  const parsed = fotoSchema.safeParse({
+    titulo: (formData.get("titulo") as string) || "Foto",
+    categoria: (formData.get("categoria") as string) || "Outros",
+  });
+  if (!parsed.success) {
+    throw new Error(primeiroErroZod(parsed.error));
+  }
+
   await prisma.authorPhoto.create({
     data: {
       authorId: author.id,
-      titulo: ((formData.get("titulo") as string) || "Foto").trim(),
-      categoria: (formData.get("categoria") as string) || "Outros",
+      titulo: parsed.data.titulo || "Foto",
+      categoria: parsed.data.categoria,
       url,
     },
   });
@@ -299,6 +409,11 @@ export async function removePhoto(id: string) {
   revalidatePath("/painel");
 }
 
+const portfolioEventoSchema = z.object({
+  titulo: z.string().trim().min(1, "Informe o título do evento.").max(150, "Título muito longo."),
+  descricao: textoSchema(2000, false),
+});
+
 export async function addPortfolioEvento(formData: FormData) {
   const author = await requireAuthor();
 
@@ -309,9 +424,12 @@ export async function addPortfolioEvento(formData: FormData) {
     }
   }
 
-  const titulo = ((formData.get("titulo") as string) || "").trim();
-  if (!titulo) {
-    throw new Error("Informe o título do evento.");
+  const parsed = portfolioEventoSchema.safeParse({
+    titulo: (formData.get("titulo") as string) || "",
+    descricao: (formData.get("descricao") as string) || "",
+  });
+  if (!parsed.success) {
+    throw new Error(primeiroErroZod(parsed.error));
   }
 
   const fotos = (formData.getAll("fotos") as string[]).filter(Boolean);
@@ -325,8 +443,8 @@ export async function addPortfolioEvento(formData: FormData) {
   await prisma.portfolioEvento.create({
     data: {
       authorId: author.id,
-      titulo,
-      descricao: ((formData.get("descricao") as string) || "").trim() || null,
+      titulo: parsed.data.titulo,
+      descricao: parsed.data.descricao || null,
       fotos,
     },
   });
@@ -342,21 +460,28 @@ export async function removePortfolioEvento(id: string) {
 
 export async function setOrderStatus(id: string, status: string) {
   const author = await requireAuthor();
+
+  const statusParsed = z.enum(STATUS_PEDIDO).safeParse(status);
+  if (!statusParsed.success) {
+    throw new Error("Status de pedido inválido.");
+  }
+  const novoStatus = statusParsed.data;
+
   const order = await prisma.order.findFirst({ where: { id, authorId: author.id } });
   if (!order) throw new Error("Pedido não encontrado.");
 
-  if (status === "Entregue") {
+  if (novoStatus === "Entregue") {
     throw new Error("Esse status é definido automaticamente quando o comprador confirma o recebimento.");
   }
 
-  if (status === "Enviado" && order.status !== "Enviado") {
-    await prisma.order.update({ where: { id }, data: { status } });
+  if (novoStatus === "Enviado" && order.status !== "Enviado") {
+    await prisma.order.update({ where: { id }, data: { status: novoStatus } });
     await enviarConfirmacaoRecebimento(order, author);
     revalidatePath("/painel");
     return;
   }
 
-  await prisma.order.updateMany({ where: { id, authorId: author.id }, data: { status } });
+  await prisma.order.updateMany({ where: { id, authorId: author.id }, data: { status: novoStatus } });
   revalidatePath("/painel");
 }
 
@@ -377,8 +502,6 @@ export async function changePassword(_prev: ChangePasswordState, formData: FormD
   }
 
   const senhaAtual = (formData.get("senhaAtual") as string) || "";
-  const novaSenha = (formData.get("novaSenha") as string) || "";
-  const confirmar = (formData.get("confirmar") as string) || "";
 
   if (author.senhaHash) {
     if (!senhaAtual) {
@@ -390,15 +513,18 @@ export async function changePassword(_prev: ChangePasswordState, formData: FormD
     }
   }
 
-  const erroSenha = validarSenha(novaSenha);
-  if (erroSenha) {
-    return { error: erroSenha };
-  }
-  if (novaSenha !== confirmar) {
-    return { error: "As senhas não coincidem." };
+  const parsed = z
+    .object({ novaSenha: senhaNovaSchema, confirmar: z.string() })
+    .refine((d) => d.novaSenha === d.confirmar, { message: "As senhas não coincidem.", path: ["confirmar"] })
+    .safeParse({
+      novaSenha: (formData.get("novaSenha") as string) || "",
+      confirmar: (formData.get("confirmar") as string) || "",
+    });
+  if (!parsed.success) {
+    return { error: primeiroErroZod(parsed.error) };
   }
 
-  const senhaHash = await bcrypt.hash(novaSenha, 10);
+  const senhaHash = await bcrypt.hash(parsed.data.novaSenha, 10);
   await prisma.author.update({ where: { id: author.id }, data: { senhaHash } });
 
   return { ok: true };
