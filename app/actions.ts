@@ -1,9 +1,18 @@
 "use server";
 
+import { z } from "zod";
 import { sendContactFormEmail } from "@/lib/email";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
+import { emailSchema, nomeSchema, textoSchema, primeiroErroZod } from "@/lib/validation";
 
 export type ContactFormState = { error?: string; success?: boolean } | undefined;
+
+const contatoSchema = z.object({
+  nome: nomeSchema,
+  email: emailSchema,
+  assunto: textoSchema(200, false),
+  mensagem: textoSchema(5000),
+});
 
 export async function submitContactForm(_prev: ContactFormState, formData: FormData): Promise<ContactFormState> {
   // Campo honeypot: invisível para pessoas, mas bots costumam preencher todo input do formulário.
@@ -11,14 +20,16 @@ export async function submitContactForm(_prev: ContactFormState, formData: FormD
     return { success: true };
   }
 
-  const nome = ((formData.get("nome") as string) || "").trim();
-  const email = ((formData.get("email") as string) || "").trim();
-  const assunto = ((formData.get("assunto") as string) || "").trim();
-  const mensagem = ((formData.get("mensagem") as string) || "").trim();
-
-  if (!nome || !email || !mensagem) {
-    return { error: "Preencha nome, e-mail e mensagem." };
+  const parsed = contatoSchema.safeParse({
+    nome: (formData.get("nome") as string) || "",
+    email: (formData.get("email") as string) || "",
+    assunto: (formData.get("assunto") as string) || "",
+    mensagem: (formData.get("mensagem") as string) || "",
+  });
+  if (!parsed.success) {
+    return { error: primeiroErroZod(parsed.error) };
   }
+  const { nome, email, assunto, mensagem } = parsed.data;
 
   const ip = await getClientIp();
   const permitido = await checkRateLimit(`contato:${ip}`, 5, 60);

@@ -1,6 +1,8 @@
 import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
+import { del } from "@vercel/blob";
 import { NextResponse } from "next/server";
 import { getCurrentAdmin, getCurrentAuthor } from "@/lib/auth";
+import { magicBytesConferem } from "@/lib/uploadValidation";
 
 export async function POST(request: Request) {
   const body = (await request.json()) as HandleUploadBody;
@@ -27,9 +29,15 @@ export async function POST(request: Request) {
           addRandomSuffix: true,
         };
       },
-      onUploadCompleted: async () => {
-        // A URL final do blob é devolvida ao cliente e persistida por uma Server Action
-        // específica (perfil, livro, evento, foto etc.) — nada a fazer aqui.
+      onUploadCompleted: async ({ blob }) => {
+        // O Content-Type declarado no upload é só o que o navegador informou — fácil de
+        // forjar. Aqui a gente confere os bytes reais do arquivo já salvo e remove o blob
+        // se não baterem (ex: alguém renomeou um arquivo malicioso pra passar como imagem).
+        const valido = await magicBytesConferem(blob.url, blob.contentType);
+        if (!valido) {
+          console.error("[upload] Conteúdo do arquivo não bate com o tipo declarado, removendo:", blob.url, blob.contentType);
+          await del(blob.url).catch((err) => console.error("[upload] Falha ao remover blob inválido:", err));
+        }
       },
     });
     return NextResponse.json(jsonResponse);

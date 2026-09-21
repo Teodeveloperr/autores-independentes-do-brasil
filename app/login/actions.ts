@@ -9,20 +9,29 @@ import {
   type AuthenticationResponseJSON,
   type AuthenticatorTransportFuture,
 } from "@simplewebauthn/server";
+import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { createAuthorSession } from "@/lib/session";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 import { getRpID, getExpectedOrigin, WEBAUTHN_CHALLENGE_COOKIE, WEBAUTHN_CHALLENGE_MAX_AGE_SECONDS } from "@/lib/webauthn";
+import { emailSchema, primeiroErroZod } from "@/lib/validation";
 
 export type LoginState = { error?: string } | undefined;
 
-export async function login(_prevState: LoginState, formData: FormData): Promise<LoginState> {
-  const email = (formData.get("email") as string || "").trim().toLowerCase();
-  const senha = (formData.get("senha") as string) || "";
+const loginSchema = z.object({
+  email: emailSchema,
+  senha: z.string().min(1, "Informe sua senha."),
+});
 
-  if (!email || !senha) {
-    return { error: "Preencha e-mail e senha para continuar." };
+export async function login(_prevState: LoginState, formData: FormData): Promise<LoginState> {
+  const parsed = loginSchema.safeParse({
+    email: (formData.get("email") as string) || "",
+    senha: (formData.get("senha") as string) || "",
+  });
+  if (!parsed.success) {
+    return { error: primeiroErroZod(parsed.error) };
   }
+  const { email, senha } = parsed.data;
 
   const ip = await getClientIp();
   const permitido = await checkRateLimit(`login:${ip}`, 8, 10);

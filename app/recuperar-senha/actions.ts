@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { sendPasswordResetEmail } from "@/lib/email";
 import { criarLinkRedefinicaoSenha } from "@/lib/passwordReset";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
+import { emailSchema } from "@/lib/validation";
 
 export type RequestResetState = { sent?: boolean; error?: string } | undefined;
 
@@ -11,10 +12,11 @@ export async function requestPasswordReset(
   _prev: RequestResetState,
   formData: FormData
 ): Promise<RequestResetState> {
-  const email = ((formData.get("email") as string) || "").trim().toLowerCase();
-  if (!email) {
+  const parsed = emailSchema.safeParse((formData.get("email") as string) || "");
+  if (!parsed.success) {
     return { error: "Digite um e-mail válido." };
   }
+  const email = parsed.data;
 
   const ip = await getClientIp();
   const permitido = await checkRateLimit(`recuperar-senha:${ip}`, 5, 60);

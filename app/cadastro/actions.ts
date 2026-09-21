@@ -1,17 +1,18 @@
 "use server";
 
 import bcrypt from "bcryptjs";
+import { z } from "zod";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { createAuthorSession } from "@/lib/session";
 import { sendWelcomeEmail } from "@/lib/email";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 import { validarSenha } from "@/lib/password";
-import { validarCpf } from "@/lib/cpf";
 import { criarCadastroPendenteAssinatura, criarCadastroPendente } from "@/lib/assinatura";
 import { cancelarAutorizacaoPixAutomatico, cancelarAssinaturaAsaas } from "@/lib/asaas";
 import { PLANOS_PAGOS, valorCicloCentavos, type PlanoPagoSlug, type CicloAssinatura } from "@/lib/plans";
 import { verificarTurnstile } from "@/lib/turnstile";
+import { emailSchema, senhaNovaSchema, cpfSchema, textoSchema, primeiroErroZod } from "@/lib/validation";
 
 export type Step1Data = {
   nome: string;
@@ -24,28 +25,37 @@ export type Step1Data = {
 
 export type Step1Result = { error: string } | { ok: true; data: Step1Data };
 
-export async function validateStep1(formData: FormData): Promise<Step1Result> {
-  const nome = ((formData.get("nome") as string) || "").trim() || "Autor(a)";
-  const email = ((formData.get("email") as string) || "").trim().toLowerCase();
-  const senha = (formData.get("senha") as string) || "";
-  const confirmar = (formData.get("confirmar") as string) || "";
-  const generos = formData.getAll("generos") as string[];
-  const cidade = ((formData.get("cidade") as string) || "").trim() || "Brasil";
-  const bio = ((formData.get("bio") as string) || "").trim();
+const step1Schema = z
+  .object({
+    nome: textoSchema(120, false),
+    email: emailSchema,
+    senha: senhaNovaSchema,
+    confirmar: z.string(),
+    generos: z.array(z.string().min(1)).min(1, "Selecione ao menos um gênero literário."),
+    cidade: textoSchema(120, false),
+    bio: textoSchema(5000, false),
+  })
+  .refine((d) => d.senha === d.confirmar, { message: "As senhas não coincidem.", path: ["confirmar"] });
 
-  const erroSenha = validarSenha(senha);
-  if (erroSenha) {
-    return { error: erroSenha };
+export async function validateStep1(formData: FormData): Promise<Step1Result> {
+  const parsed = step1Schema.safeParse({
+    nome: (formData.get("nome") as string) || "",
+    email: (formData.get("email") as string) || "",
+    senha: (formData.get("senha") as string) || "",
+    confirmar: (formData.get("confirmar") as string) || "",
+    generos: formData.getAll("generos") as string[],
+    cidade: (formData.get("cidade") as string) || "",
+    bio: (formData.get("bio") as string) || "",
+  });
+  if (!parsed.success) {
+    return { error: primeiroErroZod(parsed.error) };
   }
-  if (senha !== confirmar) {
-    return { error: "As senhas não coincidem." };
-  }
-  if (!email) {
-    return { error: "Informe um e-mail válido." };
-  }
-  if (generos.length === 0) {
-    return { error: "Selecione ao menos um gênero literário." };
-  }
+  const nome = parsed.data.nome || "Autor(a)";
+  const email = parsed.data.email;
+  const senha = parsed.data.senha;
+  const generos = parsed.data.generos;
+  const cidade = parsed.data.cidade || "Brasil";
+  const bio = parsed.data.bio;
 
   const turnstileToken = (formData.get("cf-turnstile-response") as string) || null;
   const humano = await verificarTurnstile(turnstileToken);
@@ -89,7 +99,7 @@ export async function createAccount(
     return { error: "Muitas tentativas de cadastro a partir deste endereço. Aguarde um pouco e tente novamente." };
   }
 
-  if (planId !== "free" && !validarCpf(cpf)) {
+  if (planId !== "free" && !cpfSchema.safeParse(cpf).success) {
     return { error: "CPF inválido." };
   }
 

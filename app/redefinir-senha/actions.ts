@@ -1,27 +1,31 @@
 "use server";
 
 import bcrypt from "bcryptjs";
+import { z } from "zod";
 import { prisma } from "@/lib/db";
-import { validarSenha } from "@/lib/password";
 import { hashToken } from "@/lib/passwordReset";
+import { senhaNovaSchema, primeiroErroZod } from "@/lib/validation";
 
 export type ResetState = { error?: string; ok?: boolean } | undefined;
 
-export async function resetPassword(_prev: ResetState, formData: FormData): Promise<ResetState> {
-  const token = (formData.get("token") as string) || "";
-  const senha = (formData.get("senha") as string) || "";
-  const confirmar = (formData.get("confirmar") as string) || "";
+const resetSchema = z
+  .object({
+    token: z.string().min(1, "Link de redefinição inválido."),
+    senha: senhaNovaSchema,
+    confirmar: z.string(),
+  })
+  .refine((d) => d.senha === d.confirmar, { message: "As senhas não coincidem.", path: ["confirmar"] });
 
-  if (!token) {
-    return { error: "Link de redefinição inválido." };
+export async function resetPassword(_prev: ResetState, formData: FormData): Promise<ResetState> {
+  const parsed = resetSchema.safeParse({
+    token: (formData.get("token") as string) || "",
+    senha: (formData.get("senha") as string) || "",
+    confirmar: (formData.get("confirmar") as string) || "",
+  });
+  if (!parsed.success) {
+    return { error: primeiroErroZod(parsed.error) };
   }
-  const erroSenha = validarSenha(senha);
-  if (erroSenha) {
-    return { error: erroSenha };
-  }
-  if (senha !== confirmar) {
-    return { error: "As senhas não coincidem." };
-  }
+  const { token, senha } = parsed.data;
 
   const record = await prisma.passwordResetToken.findUnique({
     where: { tokenHash: hashToken(token) },
