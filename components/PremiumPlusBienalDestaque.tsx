@@ -9,6 +9,10 @@ export default function PremiumPlusBienalDestaque() {
           borderTop: "4px solid #FFDF00",
           position: "relative",
           overflow: "hidden",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          textAlign: "center",
         }}
       >
         <div style={{ fontSize: "36px", marginBottom: "14px" }}>📚</div>
