@@ -2,8 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { verificarWebhookAsaas, buscarCobranca } from "@/lib/asaas";
 import { sendOrderConfirmationEmail, sendNewSaleEmail, sendNovaCobrancaAssinaturaEmail, sendWelcomeEmail } from "@/lib/email";
+import { PREMIUM_PLUS_VALOR_PARCEIRO_CENTAVOS } from "@/lib/plans";
 
 const EVENTOS_PAGO = new Set(["PAYMENT_RECEIVED", "PAYMENT_CONFIRMED"]);
+
+// Marca, já na criação do SubscriptionPayment, quanto desse pagamento cabe ao parceiro do
+// Premium+ (ver lib/repasseParceiro.ts, que efetivamente transfere via cron depois que
+// disponivelEm for preenchido) — pros outros planos não grava nada.
+function repasseParceiroDataNaCriacao(plano: string) {
+  return plano === "Autor Premium+" ? { repasseParceiroValorCentavos: PREMIUM_PLUS_VALOR_PARCEIRO_CENTAVOS } : {};
+}
 const EVENTOS_PIX_AUTO_ATIVADO = new Set(["PIX_AUTOMATIC_RECURRING_AUTHORIZATION_ACTIVATED"]);
 const EVENTOS_PIX_AUTO_ENCERRADO: Record<string, string> = {
   PIX_AUTOMATIC_RECURRING_AUTHORIZATION_EXPIRED: "expired",
@@ -251,6 +259,7 @@ export async function POST(request: NextRequest) {
           // Pix cai direto em RECEIVED (disponível na hora); cartão passa por CONFIRMED
           // primeiro e só fica disponível bem depois (D+32) — marcado abaixo quando chegar.
           disponivelEm: evento === "PAYMENT_RECEIVED" ? new Date() : null,
+          ...repasseParceiroDataNaCriacao(authorAssinatura.planoPendente ?? authorAssinatura.plano),
         },
       });
     } else if (evento === "PAYMENT_RECEIVED" && !jaRegistrado.disponivelEm) {
@@ -324,6 +333,7 @@ export async function POST(request: NextRequest) {
             valorLiquidoCentavos: cobranca.netValueCentavos,
             asaasPaymentId: paymentId,
             disponivelEm: evento === "PAYMENT_RECEIVED" ? new Date() : null,
+            ...repasseParceiroDataNaCriacao(novoAuthor.plano),
           },
         });
         await sendWelcomeEmail(novoAuthor.email, novoAuthor.nome).catch((err) =>
@@ -370,6 +380,7 @@ export async function POST(request: NextRequest) {
             valorLiquidoCentavos: cobranca.netValueCentavos,
             asaasPaymentId: paymentId,
             disponivelEm: evento === "PAYMENT_RECEIVED" ? new Date() : null,
+            ...repasseParceiroDataNaCriacao(novoAuthor.plano),
           },
         });
         await sendWelcomeEmail(novoAuthor.email, novoAuthor.nome).catch((err) =>

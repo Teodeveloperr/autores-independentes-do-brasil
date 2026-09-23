@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { processarRepasse, enviarConfirmacaoRecebimento } from "@/lib/repasse";
+import { processarRepasseParceiro } from "@/lib/repasseParceiro";
 import { cancelarAutorizacaoPixAutomatico, cancelarAssinaturaAsaas, buscarCobranca, cancelarCobranca } from "@/lib/asaas";
 
 const DIAS_LEMBRETE = 3;
@@ -44,6 +45,18 @@ export async function GET(request: Request) {
       await prisma.order.update({ where: { id: order.id }, data: { status: "Entregue" } });
       liberados++;
     }
+  }
+
+  // Fatia do parceiro em cada assinatura Premium+ (ver lib/repasseParceiro.ts) — só depende
+  // de disponivelEm já estar preenchido, sem prazo de espera adicional (não tem confirmação
+  // de recebimento física envolvida aqui, diferente do repasse de Order acima).
+  const pagamentosParceiroPendentes = await prisma.subscriptionPayment.findMany({
+    where: { plano: "Autor Premium+", repasseParceiroStatus: { not: "transferido" }, disponivelEm: { not: null } },
+  });
+  let repassesParceiroLiberados = 0;
+  for (const pagamento of pagamentosParceiroPendentes) {
+    const resultado = await processarRepasseParceiro(pagamento);
+    if (resultado.ok) repassesParceiroLiberados++;
   }
 
   // Pedidos criados no checkout mas nunca pagos (a pessoa desistiu antes de concluir o
@@ -111,6 +124,8 @@ export async function GET(request: Request) {
     lembretes: semConfirmacaoEnviada.length,
     processados: pendentes.length,
     liberados,
+    repassesParceiroProcessados: pagamentosParceiroPendentes.length,
+    repassesParceiroLiberados,
     pedidosCancelados,
     cadastrosPendentesLimpos: cadastrosAbandonados.length,
     planosAdminVencidos: planosAdminVencidos.length,

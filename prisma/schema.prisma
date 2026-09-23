@@ -354,6 +354,11 @@ model Admin {
   totpEnabled     Boolean  @default(false)
   totpBackupCodes String[] @default([])
 
+  // Chave Pix pra onde vai automaticamente a fatia do parceiro em cada assinatura
+  // Premium+ (ver SubscriptionPayment.repasseParceiro*) — única pra toda a plataforma.
+  premiumPlusPixKey     String?
+  premiumPlusPixKeyType String?
+
   createdAt DateTime @default(now())
 }
 
@@ -377,6 +382,14 @@ model SubscriptionPayment {
   disponivelEm        DateTime?
   asaasPaymentId      String   @unique
   createdAt           DateTime @default(now())
+
+  // Fatia desse pagamento (só relevante quando plano === "Autor Premium+") repassada
+  // automaticamente via Pix pra conta de terceiro configurada em Admin.premiumPlusPixKey —
+  // mesmo padrão de Order.repasseStatus/repasseAsaasTransferId/repasseValorCentavos/repasseErro.
+  repasseParceiroStatus          String  @default("pendente")
+  repasseParceiroAsaasTransferId String?
+  repasseParceiroValorCentavos   Int?
+  repasseParceiroErro            String?
 
   @@index([authorId])
 }

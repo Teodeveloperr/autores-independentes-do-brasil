@@ -103,6 +103,10 @@ export async function createAccount(
     return { error: "CPF inválido." };
   }
 
+  if (planId === "premiumPlus" && cycle !== "anual") {
+    return { error: "O plano Premium+ está disponível apenas no ciclo anual." };
+  }
+
   if (planId !== "free" && metodoPagamento === "cartao") {
     if (!dadosCartao?.telefone || !dadosCartao?.cep || !dadosCartao?.numero) {
       return { error: "Preencha telefone, CEP e número pra pagar com cartão." };

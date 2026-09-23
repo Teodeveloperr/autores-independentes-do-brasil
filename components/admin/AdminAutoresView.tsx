@@ -211,7 +211,7 @@ export default function AdminAutoresView({ autores }: { autores: AuthorWithCount
                   <option value="Iniciante">Iniciante</option>
                   {PLANOS_COM_CICLO.map((p) => (
                     <optgroup key={p} label={p}>
-                      <option value={`${p}|semestral`}>{p} — semestral</option>
+                      {p !== "Autor Premium+" && <option value={`${p}|semestral`}>{p} — semestral</option>}
                       <option value={`${p}|anual`}>{p} — anual</option>
                     </optgroup>
                   ))}

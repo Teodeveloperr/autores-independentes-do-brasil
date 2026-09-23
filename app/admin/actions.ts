@@ -21,6 +21,7 @@ import { CHAT_NOME_ADMIN } from "@/lib/chat";
 import { MESES_EVENTO } from "@/lib/painelOptions";
 import { CATEGORIAS_AGENDA_ADMIN, CATEGORIAS_GALERIA_ADMIN, CATEGORIAS_OPORTUNIDADES, CATEGORIAS_BLOG } from "@/lib/adminOptions";
 import { emailSchema, textoSchema, intSchema, primeiroErroZod } from "@/lib/validation";
+import { TIPOS_CHAVE_PIX, chavePixValida } from "@/lib/pixKey";
 import type { ChatMensagemRow } from "@/app/painel/actions";
 
 export type AdminLoginState = { error?: string; precisa2fa?: boolean } | undefined;
@@ -369,6 +370,9 @@ export async function adminCreateAuthor(_prev: CreateAuthorState, formData: Form
   if (plano !== "Iniciante" && ciclo !== "semestral" && ciclo !== "anual") {
     return { error: "Selecione o ciclo (semestral ou anual) do plano." };
   }
+  if (plano === "Autor Premium+" && ciclo !== "anual") {
+    return { error: "O plano Premium+ só pode ser concedido no ciclo anual." };
+  }
 
   const existente = await prisma.author.findUnique({ where: { email } });
   if (existente) {
@@ -444,6 +448,9 @@ export async function alterarPlanoAutor(id: string, plano: string, ciclo?: strin
   } else {
     if (ciclo !== "semestral" && ciclo !== "anual") {
       return { error: "Selecione o ciclo (semestral ou anual) da concessão." };
+    }
+    if (plano === "Autor Premium+" && ciclo !== "anual") {
+      return { error: "O plano Premium+ só pode ser concedido no ciclo anual." };
     }
     await prisma.author.update({
       where: { id },
@@ -758,4 +765,29 @@ export async function enviarMensagemChatAdmin(texto: string): Promise<{ error?: 
 export async function removerMensagemChat(id: string) {
   await requireAdmin();
   await prisma.chatMensagem.delete({ where: { id } });
+}
+
+// Chave Pix de destino do repasse automático da fatia do parceiro em cada assinatura
+// Premium+ (ver lib/repasseParceiro.ts) — única pra toda a plataforma, guardada no
+// registro do Admin (hoje só existe um).
+export async function atualizarChavePixParceiro(formData: FormData): Promise<{ error?: string }> {
+  const admin = await requireAdmin();
+
+  const pixKey = ((formData.get("pixKey") as string) || "").trim();
+  const pixKeyType = (formData.get("pixKeyType") as string) || "";
+
+  if (!pixKey || !TIPOS_CHAVE_PIX.has(pixKeyType)) {
+    return { error: "Informe uma chave Pix e o tipo dela." };
+  }
+  if (!chavePixValida(pixKeyType, pixKey)) {
+    return { error: "Chave Pix inválida para o tipo selecionado." };
+  }
+
+  await prisma.admin.update({
+    where: { id: admin.id },
+    data: { premiumPlusPixKey: pixKey, premiumPlusPixKeyType: pixKeyType },
+  });
+
+  revalidatePath("/admin");
+  return {};
 }

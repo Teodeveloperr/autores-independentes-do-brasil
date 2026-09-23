@@ -1,6 +1,6 @@
-export const TODOS_PLANOS = ["Iniciante", "Autor Essencial", "Autor Premium"];
+export const TODOS_PLANOS = ["Iniciante", "Autor Essencial", "Autor Premium", "Autor Premium+"];
 
-export const PLANOS_COM_VENDA = ["Autor Essencial", "Autor Premium"];
+export const PLANOS_COM_VENDA = ["Autor Essencial", "Autor Premium", "Autor Premium+"];
 
 export function podeVenderLivros(plano: string) {
   return PLANOS_COM_VENDA.includes(plano);
@@ -10,6 +10,7 @@ export function podeVenderLivros(plano: string) {
 export const COMISSAO_PERCENTUAL: Record<string, number> = {
   "Autor Essencial": 25,
   "Autor Premium": 10,
+  "Autor Premium+": 10,
 };
 
 /**
@@ -49,7 +50,7 @@ export function valorRepasseCentavosLiquido(
 }
 
 // Galeria de fotos completa (categorizada) e agenda de eventos.
-export const PLANOS_COM_RECURSOS_EXTRAS = ["Autor Essencial", "Autor Premium"];
+export const PLANOS_COM_RECURSOS_EXTRAS = ["Autor Essencial", "Autor Premium", "Autor Premium+"];
 
 export function podeUsarRecursosExtras(plano: string) {
   return PLANOS_COM_RECURSOS_EXTRAS.includes(plano);
@@ -61,33 +62,51 @@ export const PORTFOLIO_EVENTOS_MAX_INICIANTE = 3;
 
 // Ordem de destaque (Autores/Livros/Home) — maior primeiro.
 export const PLANO_RANK: Record<string, number> = {
+  "Autor Premium+": 3,
   "Autor Premium": 2,
   "Autor Essencial": 1,
   Iniciante: 0,
 };
 
 export function temDestaque(plano: string) {
-  return plano === "Autor Premium";
+  return plano === "Autor Premium" || plano === "Autor Premium+";
 }
 
 export function temSeloVerificado(plano: string) {
-  return plano === "Autor Premium";
+  return plano === "Autor Premium" || plano === "Autor Premium+";
 }
 
 export type NivelRelatorioVendas = "nenhum" | "basico" | "detalhado";
 
 export function relatorioVendasNivel(plano: string): NivelRelatorioVendas {
-  if (plano === "Autor Premium") return "detalhado";
+  if (plano === "Autor Premium" || plano === "Autor Premium+") return "detalhado";
   if (plano === "Autor Essencial") return "basico";
   return "nenhum";
 }
 
-export type PlanoPagoSlug = "essencial" | "premium";
+export type PlanoPagoSlug = "essencial" | "premium" | "premiumPlus";
 
 export const PLANOS_PAGOS: Record<PlanoPagoSlug, { nome: string; valorMensalCentavos: number; valorMensalAnualCentavos: number }> = {
   essencial: { nome: "Autor Essencial", valorMensalCentavos: 2990, valorMensalAnualCentavos: 1990 },
   premium: { nome: "Autor Premium", valorMensalCentavos: 4990, valorMensalAnualCentavos: 3990 },
+  // Só vendido no ciclo anual (ver CICLOS_PLANO_PAGO) — valorMensalCentavos não é usado de
+  // fato, mantido só por consistência de tipo. valorMensalAnualCentavos * 12 = R$ 900,00.
+  premiumPlus: { nome: "Autor Premium+", valorMensalCentavos: 7500, valorMensalAnualCentavos: 7500 },
 };
+
+// Premium+ é vendido só no ciclo anual — parte do valor (ver PREMIUM_PLUS_VALOR_*) é
+// repassada automaticamente a um parceiro (lib/repasseParceiro.ts), o que só faz sentido
+// atrelado a uma cobrança anual fixa, não a mensalidades.
+export const CICLOS_PLANO_PAGO: Record<PlanoPagoSlug, CicloAssinatura[]> = {
+  essencial: ["mensal", "semestral", "anual"],
+  premium: ["mensal", "semestral", "anual"],
+  premiumPlus: ["anual"],
+};
+
+// Do total anual do Premium+ (R$ 900,00): quanto fica na plataforma e quanto é repassado
+// automaticamente via Pix pra conta de terceiro configurada pelo admin.
+export const PREMIUM_PLUS_VALOR_BASE_CENTAVOS = 47880;
+export const PREMIUM_PLUS_VALOR_PARCEIRO_CENTAVOS = 42120;
 
 export type CicloAssinatura = "mensal" | "semestral" | "anual";
 

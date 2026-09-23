@@ -16,6 +16,7 @@ import AdminAvaliacoesView from "./AdminAvaliacoesView";
 import AdminPedidosView from "./AdminPedidosView";
 import AdminReceitaView from "./AdminReceitaView";
 import AdminSegurancaView from "./AdminSegurancaView";
+import AdminConfiguracoesView from "./AdminConfiguracoesView";
 
 const sidebarBtn = (active: boolean): React.CSSProperties => ({
   display: "flex",
@@ -44,6 +45,8 @@ export default function AdminApp({
   assinaturaPagamentos,
   saldoAsaasCentavos,
   totpEnabled,
+  premiumPlusPixKey,
+  premiumPlusPixKeyType,
 }: {
   eventos: CollectiveEvent[];
   oportunidades: Opportunity[];
@@ -57,6 +60,8 @@ export default function AdminApp({
   assinaturaPagamentos: SubscriptionPaymentRow[];
   saldoAsaasCentavos: number | null;
   totpEnabled: boolean;
+  premiumPlusPixKey: string | null;
+  premiumPlusPixKeyType: string | null;
 }) {
   const [view, setView] = useState<AdminView>("dash");
   const totalLivros = autores.reduce((sum, a) => sum + a._count.books, 0);
@@ -82,6 +87,7 @@ export default function AdminApp({
         <button onClick={() => setView("pedidos")} style={sidebarBtn(view === "pedidos")}>📋 Pedidos</button>
         <button onClick={() => setView("receita")} style={sidebarBtn(view === "receita")}>💰 Receita</button>
         <button onClick={() => setView("seguranca")} style={sidebarBtn(view === "seguranca")}>🔐 Segurança</button>
+        <button onClick={() => setView("configuracoes")} style={sidebarBtn(view === "configuracoes")}>⚙️ Configurações</button>
         <button
           onClick={() => adminLogout()}
           style={{ display: "flex", gap: "10px", alignItems: "center", padding: "10px 12px", color: "white", fontSize: "14px", fontWeight: 600, marginTop: "12px", background: "transparent" }}
@@ -192,6 +198,7 @@ export default function AdminApp({
             <AdminReceitaView pedidos={pedidosReceita} assinaturaPagamentos={assinaturaPagamentos} saldoAsaasCentavos={saldoAsaasCentavos} />
           )}
           {view === "seguranca" && <AdminSegurancaView totpEnabled={totpEnabled} />}
+          {view === "configuracoes" && <AdminConfiguracoesView premiumPlusPixKey={premiumPlusPixKey} premiumPlusPixKeyType={premiumPlusPixKeyType} />}
         </div>
       </main>
     </div>

@@ -46,6 +46,9 @@ export async function iniciarAssinatura(_prev: AssinarState, formData: FormData)
   if (!plano || !CICLO_MESES[ciclo]) {
     return { error: "Plano ou ciclo inválido." };
   }
+  if (planoSlug === "premiumPlus" && ciclo !== "anual") {
+    return { error: "O plano Premium+ está disponível apenas no ciclo anual." };
+  }
 
   const ehUpgrade = author.plano !== "Iniciante" && (PLANO_RANK[plano.nome] ?? 0) > (PLANO_RANK[author.plano] ?? 0);
   const desconto = ehUpgrade ? descontoFidelidade(author.planoIniciadoEm) : 0;

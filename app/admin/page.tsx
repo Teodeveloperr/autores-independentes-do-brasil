@@ -51,6 +51,8 @@ export default async function AdminPage() {
       assinaturaPagamentos={assinaturaPagamentos}
       saldoAsaasCentavos={saldoAsaasCentavos}
       totpEnabled={admin.totpEnabled}
+      premiumPlusPixKey={admin.premiumPlusPixKey}
+      premiumPlusPixKeyType={admin.premiumPlusPixKeyType}
     />
   );
 }

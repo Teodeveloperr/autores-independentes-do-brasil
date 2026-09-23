@@ -18,7 +18,8 @@ import { centavosFromInput, sanitizeExternalUrl } from "@/lib/format";
 import { podeUsarRecursosExtras, BIO_MAX_CARACTERES_INICIANTE, PORTFOLIO_EVENTOS_MAX_INICIANTE } from "@/lib/plans";
 import { GENEROS } from "@/lib/genres";
 import { MESES_EVENTO, STATUS_EVENTO, STATUS_PEDIDO, CATEGORIAS_FOTO } from "@/lib/painelOptions";
-import { emailSchema, cpfSchema, cnpjSchema, senhaNovaSchema, textoSchema, intSchema, primeiroErroZod } from "@/lib/validation";
+import { senhaNovaSchema, textoSchema, intSchema, primeiroErroZod } from "@/lib/validation";
+import { TIPOS_CHAVE_PIX, chavePixValida } from "@/lib/pixKey";
 import { enviarConfirmacaoRecebimento } from "@/lib/repasse";
 import { checkRateLimit } from "@/lib/rateLimit";
 import { CHAT_NOME_ADMIN } from "@/lib/chat";
@@ -177,28 +178,6 @@ export async function updatePortfolio(formData: FormData): Promise<{ error?: str
 
   revalidatePath("/painel");
   return {};
-}
-
-const TIPOS_CHAVE_PIX = new Set(["CPF", "CNPJ", "EMAIL", "PHONE", "EVP"]);
-
-// Chave Pix "EVP" (aleatória) é sempre um UUID gerado pelo banco/instituição.
-const EVP_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-function chavePixValida(tipo: string, chave: string): boolean {
-  switch (tipo) {
-    case "CPF":
-      return cpfSchema.safeParse(chave).success;
-    case "CNPJ":
-      return cnpjSchema.safeParse(chave).success;
-    case "EMAIL":
-      return emailSchema.safeParse(chave).success;
-    case "PHONE":
-      return /^\+?\d{10,13}$/.test(chave.replace(/[^\d+]/g, ""));
-    case "EVP":
-      return EVP_REGEX.test(chave);
-    default:
-      return false;
-  }
 }
 
 export async function updatePixKey(formData: FormData): Promise<{ error: string } | undefined> {
