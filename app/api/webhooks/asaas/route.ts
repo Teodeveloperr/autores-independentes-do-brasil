@@ -12,6 +12,13 @@ const EVENTOS_PAGO = new Set(["PAYMENT_RECEIVED", "PAYMENT_CONFIRMED"]);
 function repasseParceiroDataNaCriacao(plano: string) {
   return plano === "Autor Premium+" ? { repasseParceiroValorCentavos: PREMIUM_PLUS_VALOR_PARCEIRO_CENTAVOS } : {};
 }
+
+// Autor que vira Premium+ (cadastro novo ou upgrade) vê, na próxima vez que entrar no
+// painel, um popup de agradecimento convidando pro grupo do WhatsApp (ver
+// AgradecimentoGrupoPopup e marcarAgradecimentoGrupoVisto) — pros outros planos não mexe.
+function agradecimentoGrupoDataNaAtivacao(plano: string) {
+  return plano === "Autor Premium+" ? { agradecimentoGrupoWhatsappVisto: false } : {};
+}
 const EVENTOS_PIX_AUTO_ATIVADO = new Set(["PIX_AUTOMATIC_RECURRING_AUTHORIZATION_ACTIVATED"]);
 const EVENTOS_PIX_AUTO_ENCERRADO: Record<string, string> = {
   PIX_AUTOMATIC_RECURRING_AUTHORIZATION_EXPIRED: "expired",
@@ -58,7 +65,12 @@ export async function POST(request: NextRequest) {
       if (author && author.planoPendente) {
         await prisma.author.update({
           where: { id: author.id },
-          data: { plano: author.planoPendente, asaasPixAutoStatus: "active", planoPendente: null },
+          data: {
+            plano: author.planoPendente,
+            asaasPixAutoStatus: "active",
+            planoPendente: null,
+            ...agradecimentoGrupoDataNaAtivacao(author.planoPendente),
+          },
         });
       } else if (!author) {
         // Cadastro novo: a conta só é criada agora, com o pagamento já confirmado.
@@ -85,6 +97,7 @@ export async function POST(request: NextRequest) {
                 asaasPixCustomerId: pendente.asaasPixCustomerId,
                 asaasPixAutoAuthorizationId: pendente.asaasPixAutoAuthorizationId,
                 asaasPixAutoStatus: "active",
+                ...agradecimentoGrupoDataNaAtivacao(pendente.planoNome),
               },
             });
             await sendWelcomeEmail(novoAuthor.email, novoAuthor.nome).catch((err) =>
@@ -275,6 +288,7 @@ export async function POST(request: NextRequest) {
           plano: authorAssinatura.planoPendente,
           planoPendente: null,
           asaasSubscriptionStatus: cobranca.subscription ? "active" : authorAssinatura.asaasSubscriptionStatus,
+          ...agradecimentoGrupoDataNaAtivacao(authorAssinatura.planoPendente),
         },
       });
     } else if (cobranca.subscription && authorAssinatura.asaasSubscriptionStatus !== "active") {
@@ -323,6 +337,7 @@ export async function POST(request: NextRequest) {
             cpf: pendente.cpf,
             asaasSubscriptionId: pendente.asaasSubscriptionId,
             asaasSubscriptionStatus: "active",
+            ...agradecimentoGrupoDataNaAtivacao(pendente.planoNome),
           },
         });
         await prisma.subscriptionPayment.create({
@@ -370,6 +385,7 @@ export async function POST(request: NextRequest) {
             asaasPixCustomerId: pendente.asaasPixCustomerId,
             asaasPixAutoAuthorizationId: pendente.asaasPixAutoAuthorizationId,
             asaasPixAutoStatus: "active",
+            ...agradecimentoGrupoDataNaAtivacao(pendente.planoNome),
           },
         });
         await prisma.subscriptionPayment.create({

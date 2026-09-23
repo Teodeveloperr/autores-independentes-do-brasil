@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { marcarAgradecimentoGrupoVisto } from "@/app/painel/actions";
 
-const LINK_GRUPO = "https://chat.whatsapp.com/BrJufmpdatC0r1bl4HNZb9?mode=gi_t";
+const LINK_GRUPO = "https://chat.whatsapp.com/Gx9FZBM9Fny97CpumWDYBl?mode=gi_t";
 
 export default function AgradecimentoGrupoPopup({ mostrar, plano }: { mostrar: boolean; plano: string }) {
   const [fechado, setFechado] = useState(false);
