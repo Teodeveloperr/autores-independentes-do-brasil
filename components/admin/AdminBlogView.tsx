@@ -9,20 +9,24 @@ import { CATEGORIAS_BLOG as CATEGORIAS } from "@/lib/adminOptions";
 import type { Article } from "./types";
 
 function wrapSelection(textarea: HTMLTextAreaElement, before: string, after: string = before) {
-  const { selectionStart, selectionEnd, value } = textarea;
+  const { selectionStart, selectionEnd, value, scrollTop } = textarea;
   const selected = value.slice(selectionStart, selectionEnd);
   textarea.value = value.slice(0, selectionStart) + before + selected + after + value.slice(selectionEnd);
   const cursorPos = selectionStart + before.length + selected.length + after.length;
-  textarea.focus();
+  // focus({ preventScroll: true }) evita que o navegador role a página pra "reencontrar"
+  // o campo ao devolver o foco pra ele depois do clique no botão da barra de ferramentas.
+  textarea.focus({ preventScroll: true });
   textarea.setSelectionRange(cursorPos, cursorPos);
+  textarea.scrollTop = scrollTop;
 }
 
 function insertAtCursor(textarea: HTMLTextAreaElement, text: string) {
-  const { selectionStart, selectionEnd, value } = textarea;
+  const { selectionStart, selectionEnd, value, scrollTop } = textarea;
   textarea.value = value.slice(0, selectionStart) + text + value.slice(selectionEnd);
   const cursorPos = selectionStart + text.length;
-  textarea.focus();
+  textarea.focus({ preventScroll: true });
   textarea.setSelectionRange(cursorPos, cursorPos);
+  textarea.scrollTop = scrollTop;
 }
 
 const toolbarBtnStyle: React.CSSProperties = {
