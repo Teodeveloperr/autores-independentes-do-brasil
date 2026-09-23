@@ -10,18 +10,20 @@ import type { CollectiveEvent } from "./types";
 export default function AdminAgendaView({ eventos }: { eventos: CollectiveEvent[] }) {
   const [pending, startTransition] = useTransition();
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [erro, setErro] = useState("");
   const router = useRouter();
 
   const editing = eventos.find((ev) => ev.id === editingId) ?? null;
 
   function onSubmit(formData: FormData) {
+    setErro("");
     startTransition(async () => {
-      if (editingId) {
-        await updateCollectiveEvent(editingId, formData);
-        setEditingId(null);
-      } else {
-        await addCollectiveEvent(formData);
+      const resultado = editingId ? await updateCollectiveEvent(editingId, formData) : await addCollectiveEvent(formData);
+      if (resultado?.error) {
+        setErro(resultado.error);
+        return;
       }
+      if (editingId) setEditingId(null);
       router.refresh();
     });
   }
@@ -83,6 +85,7 @@ export default function AdminAgendaView({ eventos }: { eventos: CollectiveEvent[
             <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>Período (texto livre)</label>
             <input name="periodo" type="text" defaultValue={editing?.periodo ?? ""} placeholder="Ex: 3 a 13 de setembro" style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px" }} />
           </div>
+          {erro && <p style={{ fontSize: "13px", color: "#C0392B", margin: 0 }}>{erro}</p>}
           <div style={{ display: "flex", gap: "10px" }}>
             {editing && (
               <button type="button" onClick={() => setEditingId(null)} style={{ flex: "0 0 auto", background: "white", border: "1px solid #DDD", color: "#262626", padding: "12px 20px", fontWeight: 600, borderRadius: "6px", fontSize: "14px" }}>

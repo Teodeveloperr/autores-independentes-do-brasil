@@ -21,17 +21,13 @@ export default function AdminOportunidadesView({ oportunidades }: { oportunidade
   function onSubmit(formData: FormData) {
     setErro("");
     startTransition(async () => {
-      try {
-        if (editingId) {
-          await updateOpportunity(editingId, formData);
-          setEditingId(null);
-        } else {
-          await addOpportunity(formData);
-        }
-        router.refresh();
-      } catch (err) {
-        setErro(err instanceof Error ? err.message : "Não foi possível salvar a oportunidade.");
+      const resultado = editingId ? await updateOpportunity(editingId, formData) : await addOpportunity(formData);
+      if (resultado?.error) {
+        setErro(resultado.error);
+        return;
       }
+      if (editingId) setEditingId(null);
+      router.refresh();
     });
   }
 

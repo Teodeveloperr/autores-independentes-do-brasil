@@ -141,18 +141,18 @@ export async function saveProfile(formData: FormData): Promise<{ error?: string 
 }
 
 const portfolioSchema = z.object({
-  portfolioFormacao: textoSchema(500, false),
-  portfolioPremios: textoSchema(500, false),
-  portfolioCitacao: textoSchema(500, false),
+  portfolioFormacao: textoSchema(1000, false),
+  portfolioPremios: textoSchema(1000, false),
+  portfolioCitacao: textoSchema(1000, false),
 });
 
-export async function updatePortfolio(formData: FormData) {
+export async function updatePortfolio(formData: FormData): Promise<{ error?: string }> {
   const author = await requireAuthor();
 
   const obraDestaqueId = ((formData.get("portfolioObraDestaqueId") as string) || "").trim();
   if (obraDestaqueId) {
     const obra = await prisma.book.findFirst({ where: { id: obraDestaqueId, authorId: author.id } });
-    if (!obra) throw new Error("Obra em destaque inválida.");
+    if (!obra) return { error: "Obra em destaque inválida." };
   }
 
   const parsed = portfolioSchema.safeParse({
@@ -161,7 +161,7 @@ export async function updatePortfolio(formData: FormData) {
     portfolioCitacao: (formData.get("portfolioCitacao") as string) || "",
   });
   if (!parsed.success) {
-    throw new Error(primeiroErroZod(parsed.error));
+    return { error: primeiroErroZod(parsed.error) };
   }
 
   await prisma.author.update({
@@ -176,6 +176,7 @@ export async function updatePortfolio(formData: FormData) {
   });
 
   revalidatePath("/painel");
+  return {};
 }
 
 const TIPOS_CHAVE_PIX = new Set(["CPF", "CNPJ", "EMAIL", "PHONE", "EVP"]);
@@ -228,7 +229,17 @@ const bookSchema = z.object({
   descricao: textoSchema(3000, false),
 });
 
-function bookDataFromForm(formData: FormData) {
+type BookData = {
+  titulo: string;
+  genero: string;
+  precoCentavos: number;
+  estoque: number;
+  capaUrl: string | null;
+  descricao: string | null;
+  descontoPercentual: number | null;
+};
+
+function bookDataFromForm(formData: FormData): { error: string } | { data: BookData } {
   const parsed = bookSchema.safeParse({
     titulo: ((formData.get("titulo") as string) || "").trim() || "Sem título",
     genero: (formData.get("genero") as string) || GENEROS[0],
@@ -236,7 +247,7 @@ function bookDataFromForm(formData: FormData) {
     descricao: (formData.get("descricao") as string) || "",
   });
   if (!parsed.success) {
-    throw new Error(primeiroErroZod(parsed.error));
+    return { error: primeiroErroZod(parsed.error) };
   }
 
   const descontoRaw = ((formData.get("descontoPercentual") as string) || "").trim();
@@ -244,7 +255,7 @@ function bookDataFromForm(formData: FormData) {
   if (descontoRaw) {
     const n = parseInt(descontoRaw, 10);
     if (!Number.isFinite(n) || n < 0 || n > 90) {
-      throw new Error("O desconto deve ser um número entre 0% e 90%.");
+      return { error: "O desconto deve ser um número entre 0% e 90%." };
     }
     descontoPercentual = n;
   }
@@ -253,38 +264,48 @@ function bookDataFromForm(formData: FormData) {
   const capaUrl = (formData.get("capaUrl") as string) || null;
 
   return {
-    titulo: parsed.data.titulo || "Sem título",
-    genero: parsed.data.genero,
-    precoCentavos: Math.max(0, centavosFromInput(preco)),
-    estoque: parsed.data.estoque,
-    capaUrl,
-    descricao: parsed.data.descricao || null,
-    descontoPercentual,
+    data: {
+      titulo: parsed.data.titulo || "Sem título",
+      genero: parsed.data.genero,
+      precoCentavos: Math.max(0, centavosFromInput(preco)),
+      estoque: parsed.data.estoque,
+      capaUrl,
+      descricao: parsed.data.descricao || null,
+      descontoPercentual,
+    },
   };
 }
 
-export async function addBook(formData: FormData) {
+export async function addBook(formData: FormData): Promise<{ error?: string }> {
   const author = await requireAuthor();
+
+  const parsed = bookDataFromForm(formData);
+  if ("error" in parsed) return parsed;
 
   await prisma.book.create({
     data: {
       authorId: author.id,
-      ...bookDataFromForm(formData),
+      ...parsed.data,
     },
   });
 
   revalidatePath("/painel");
+  return {};
 }
 
-export async function updateBook(id: string, formData: FormData) {
+export async function updateBook(id: string, formData: FormData): Promise<{ error?: string }> {
   const author = await requireAuthor();
+
+  const parsed = bookDataFromForm(formData);
+  if ("error" in parsed) return parsed;
 
   await prisma.book.updateMany({
     where: { id, authorId: author.id },
-    data: bookDataFromForm(formData),
+    data: parsed.data,
   });
 
   revalidatePath("/painel");
+  return {};
 }
 
 export async function removeBook(id: string) {
@@ -304,7 +325,9 @@ const eventoSchema = z.object({
   status: z.enum(STATUS_EVENTO),
 });
 
-function eventDataFromForm(formData: FormData) {
+type EventData = { nome: string; diaInicio: number; diaFim: number | null; mes: string; ano: number; local: string; status: string };
+
+function eventDataFromForm(formData: FormData): { error: string } | { data: EventData } {
   const diaFimRaw = (formData.get("diaFim") as string) || "";
 
   const parsed = eventoSchema.safeParse({
@@ -316,51 +339,61 @@ function eventDataFromForm(formData: FormData) {
     status: (formData.get("status") as string) || "Pendente",
   });
   if (!parsed.success) {
-    throw new Error(primeiroErroZod(parsed.error));
+    return { error: primeiroErroZod(parsed.error) };
   }
 
   const diaFimParsed = diaFimRaw.trim() ? parseInt(diaFimRaw, 10) : null;
   const diaFim = diaFimParsed && diaFimParsed > parsed.data.diaInicio && diaFimParsed <= 31 ? diaFimParsed : null;
 
   return {
-    nome: parsed.data.nome || "Evento",
-    diaInicio: parsed.data.diaInicio,
-    diaFim,
-    mes: parsed.data.mes,
-    ano: parsed.data.ano,
-    local: parsed.data.local || "—",
-    status: parsed.data.status,
+    data: {
+      nome: parsed.data.nome || "Evento",
+      diaInicio: parsed.data.diaInicio,
+      diaFim,
+      mes: parsed.data.mes,
+      ano: parsed.data.ano,
+      local: parsed.data.local || "—",
+      status: parsed.data.status,
+    },
   };
 }
 
-export async function addEvent(formData: FormData) {
+export async function addEvent(formData: FormData): Promise<{ error?: string }> {
   const author = await requireAuthor();
   if (!podeUsarRecursosExtras(author.plano)) {
-    throw new Error("A agenda de eventos não está disponível no seu plano. Faça upgrade para usar esse recurso.");
+    return { error: "A agenda de eventos não está disponível no seu plano. Faça upgrade para usar esse recurso." };
   }
+
+  const parsed = eventDataFromForm(formData);
+  if ("error" in parsed) return parsed;
 
   await prisma.authorEvent.create({
     data: {
       authorId: author.id,
-      ...eventDataFromForm(formData),
+      ...parsed.data,
     },
   });
 
   revalidatePath("/painel");
+  return {};
 }
 
-export async function updateEvent(id: string, formData: FormData) {
+export async function updateEvent(id: string, formData: FormData): Promise<{ error?: string }> {
   const author = await requireAuthor();
   if (!podeUsarRecursosExtras(author.plano)) {
-    throw new Error("A agenda de eventos não está disponível no seu plano. Faça upgrade para usar esse recurso.");
+    return { error: "A agenda de eventos não está disponível no seu plano. Faça upgrade para usar esse recurso." };
   }
+
+  const parsed = eventDataFromForm(formData);
+  if ("error" in parsed) return parsed;
 
   await prisma.authorEvent.updateMany({
     where: { id, authorId: author.id },
-    data: eventDataFromForm(formData),
+    data: parsed.data,
   });
 
   revalidatePath("/painel");
+  return {};
 }
 
 export async function removeEvent(id: string) {
@@ -374,13 +407,13 @@ const fotoSchema = z.object({
   categoria: z.enum(CATEGORIAS_FOTO),
 });
 
-export async function addPhoto(formData: FormData) {
+export async function addPhoto(formData: FormData): Promise<{ error?: string }> {
   const author = await requireAuthor();
   const url = (formData.get("url") as string) || "";
-  if (!url) return;
+  if (!url) return {};
 
   if (author.plano === "Iniciante") {
-    throw new Error("A galeria de fotos é exclusiva dos planos Essencial e Premium. Faça upgrade para adicionar fotos.");
+    return { error: "A galeria de fotos é exclusiva dos planos Essencial e Premium. Faça upgrade para adicionar fotos." };
   }
 
   const parsed = fotoSchema.safeParse({
@@ -388,7 +421,7 @@ export async function addPhoto(formData: FormData) {
     categoria: (formData.get("categoria") as string) || "Outros",
   });
   if (!parsed.success) {
-    throw new Error(primeiroErroZod(parsed.error));
+    return { error: primeiroErroZod(parsed.error) };
   }
 
   await prisma.authorPhoto.create({
@@ -401,6 +434,7 @@ export async function addPhoto(formData: FormData) {
   });
 
   revalidatePath("/painel");
+  return {};
 }
 
 export async function removePhoto(id: string) {
@@ -414,13 +448,13 @@ const portfolioEventoSchema = z.object({
   descricao: textoSchema(2000, false),
 });
 
-export async function addPortfolioEvento(formData: FormData) {
+export async function addPortfolioEvento(formData: FormData): Promise<{ error?: string }> {
   const author = await requireAuthor();
 
   if (author.plano === "Iniciante") {
     const total = await prisma.portfolioEvento.count({ where: { authorId: author.id } });
     if (total >= PORTFOLIO_EVENTOS_MAX_INICIANTE) {
-      throw new Error(`O plano Iniciante permite até ${PORTFOLIO_EVENTOS_MAX_INICIANTE} eventos no portfólio. Faça upgrade para adicionar mais.`);
+      return { error: `O plano Iniciante permite até ${PORTFOLIO_EVENTOS_MAX_INICIANTE} eventos no portfólio. Faça upgrade para adicionar mais.` };
     }
   }
 
@@ -429,15 +463,15 @@ export async function addPortfolioEvento(formData: FormData) {
     descricao: (formData.get("descricao") as string) || "",
   });
   if (!parsed.success) {
-    throw new Error(primeiroErroZod(parsed.error));
+    return { error: primeiroErroZod(parsed.error) };
   }
 
   const fotos = (formData.getAll("fotos") as string[]).filter(Boolean);
   if (fotos.length === 0) {
-    throw new Error("Adicione ao menos uma foto do evento.");
+    return { error: "Adicione ao menos uma foto do evento." };
   }
   if (fotos.length > 6) {
-    throw new Error("No máximo 6 fotos por evento.");
+    return { error: "No máximo 6 fotos por evento." };
   }
 
   await prisma.portfolioEvento.create({
@@ -450,6 +484,7 @@ export async function addPortfolioEvento(formData: FormData) {
   });
 
   revalidatePath("/painel");
+  return {};
 }
 
 export async function removePortfolioEvento(id: string) {
@@ -458,31 +493,32 @@ export async function removePortfolioEvento(id: string) {
   revalidatePath("/painel");
 }
 
-export async function setOrderStatus(id: string, status: string) {
+export async function setOrderStatus(id: string, status: string): Promise<{ error?: string }> {
   const author = await requireAuthor();
 
   const statusParsed = z.enum(STATUS_PEDIDO).safeParse(status);
   if (!statusParsed.success) {
-    throw new Error("Status de pedido inválido.");
+    return { error: "Status de pedido inválido." };
   }
   const novoStatus = statusParsed.data;
 
   const order = await prisma.order.findFirst({ where: { id, authorId: author.id } });
-  if (!order) throw new Error("Pedido não encontrado.");
+  if (!order) return { error: "Pedido não encontrado." };
 
   if (novoStatus === "Entregue") {
-    throw new Error("Esse status é definido automaticamente quando o comprador confirma o recebimento.");
+    return { error: "Esse status é definido automaticamente quando o comprador confirma o recebimento." };
   }
 
   if (novoStatus === "Enviado" && order.status !== "Enviado") {
     await prisma.order.update({ where: { id }, data: { status: novoStatus } });
     await enviarConfirmacaoRecebimento(order, author);
     revalidatePath("/painel");
-    return;
+    return {};
   }
 
   await prisma.order.updateMany({ where: { id, authorId: author.id }, data: { status: novoStatus } });
   revalidatePath("/painel");
+  return {};
 }
 
 export async function markConversationRead(id: string) {

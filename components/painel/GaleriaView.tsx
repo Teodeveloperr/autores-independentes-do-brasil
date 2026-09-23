@@ -50,13 +50,13 @@ export default function GaleriaView({ author }: { author: AuthorWithRelations })
             fd.set("url", foto.url);
             setErro("");
             startTransition(async () => {
-              try {
-                await addPhoto(fd);
-                foto.setUrl("");
-                router.refresh();
-              } catch (err) {
-                setErro(err instanceof Error ? err.message : "Não foi possível adicionar a foto.");
+              const resultado = await addPhoto(fd);
+              if (resultado?.error) {
+                setErro(resultado.error);
+                return;
               }
+              foto.setUrl("");
+              router.refresh();
             });
           }}
           style={{ background: "white", borderRadius: "10px", padding: "24px", display: "flex", flexDirection: "column", gap: "14px" }}

@@ -22,6 +22,7 @@ const chipStyle = (status: string): React.CSSProperties => ({
 export default function EventosView({ author }: { author: AuthorWithRelations }) {
   const [pending, startTransition] = useTransition();
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [erro, setErro] = useState("");
   const router = useRouter();
 
   const editing = author.eventos.find((ev) => ev.id === editingId) ?? null;
@@ -29,13 +30,14 @@ export default function EventosView({ author }: { author: AuthorWithRelations })
   const podeUsar = podeUsarRecursosExtras(author.plano);
 
   function onSubmit(formData: FormData) {
+    setErro("");
     startTransition(async () => {
-      if (editingId) {
-        await updateEvent(editingId, formData);
-        setEditingId(null);
-      } else {
-        await addEvent(formData);
+      const resultado = editingId ? await updateEvent(editingId, formData) : await addEvent(formData);
+      if (resultado?.error) {
+        setErro(resultado.error);
+        return;
       }
+      if (editingId) setEditingId(null);
       router.refresh();
     });
   }
@@ -116,6 +118,7 @@ export default function EventosView({ author }: { author: AuthorWithRelations })
               ))}
             </select>
           </div>
+          {erro && <p style={{ fontSize: "12px", color: "#C0392B" }}>{erro}</p>}
           <div style={{ display: "flex", gap: "10px" }}>
             {editing && (
               <button type="button" onClick={() => setEditingId(null)} style={{ flex: "0 0 auto", background: "white", border: "1px solid #DDD", color: "#262626", padding: "12px 20px", fontWeight: 600, borderRadius: "6px", fontSize: "14px" }}>

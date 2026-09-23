@@ -1,6 +1,6 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useImageUpload } from "@/hooks/useImageUpload";
 import { addCollectiveGalleryPhoto, removeCollectiveGalleryPhoto } from "@/app/admin/actions";
@@ -10,6 +10,7 @@ import type { CollectiveGalleryPhoto } from "./types";
 export default function AdminGaleriaView({ fotos }: { fotos: CollectiveGalleryPhoto[] }) {
   const foto = useImageUpload("galeria-coletivo");
   const [pending, startTransition] = useTransition();
+  const [erro, setErro] = useState("");
   const router = useRouter();
 
   function onRemove(id: string) {
@@ -29,8 +30,13 @@ export default function AdminGaleriaView({ fotos }: { fotos: CollectiveGalleryPh
         <form
           action={(fd) => {
             fd.set("url", foto.url);
+            setErro("");
             startTransition(async () => {
-              await addCollectiveGalleryPhoto(fd);
+              const resultado = await addCollectiveGalleryPhoto(fd);
+              if (resultado?.error) {
+                setErro(resultado.error);
+                return;
+              }
               foto.setUrl("");
               router.refresh();
             });
@@ -75,6 +81,7 @@ export default function AdminGaleriaView({ fotos }: { fotos: CollectiveGalleryPh
           </label>
           <input id="fotoInput" type="file" accept="image/*" onChange={foto.onInputChange} style={{ display: "none" }} />
           {foto.error && <p style={{ fontSize: "12px", color: "#C0392B" }}>{foto.error}</p>}
+          {erro && <p style={{ fontSize: "12px", color: "#C0392B" }}>{erro}</p>}
           <button type="submit" disabled={pending} style={{ background: "#009B3A", color: "white", padding: "12px", fontWeight: 700, borderRadius: "6px", fontSize: "14px", opacity: pending ? 0.7 : 1 }}>
             {pending ? "Adicionando..." : "Adicionar à galeria"}
           </button>

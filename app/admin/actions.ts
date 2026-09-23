@@ -170,7 +170,7 @@ const collectiveEventSchema = z.object({
   nome: textoSchema(150, false),
   dia: intSchema(1, 31),
   mes: z.enum(MESES_EVENTO),
-  ano: intSchema(anoAtualAdmin, anoAtualAdmin + 5),
+  ano: intSchema(2020, anoAtualAdmin + 10),
   categoria: z.enum(CATEGORIAS_AGENDA_ADMIN),
   local: textoSchema(200, false),
   periodo: textoSchema(60, false),
@@ -187,38 +187,48 @@ function collectiveEventDataFromForm(formData: FormData) {
     periodo: (formData.get("periodo") as string) || "",
   });
   if (!parsed.success) {
-    throw new Error(primeiroErroZod(parsed.error));
+    return { error: primeiroErroZod(parsed.error) };
   }
 
   return {
-    nome: parsed.data.nome || "Evento",
-    dia: parsed.data.dia,
-    mes: parsed.data.mes,
-    ano: parsed.data.ano,
-    categoria: parsed.data.categoria,
-    local: parsed.data.local || "—",
-    periodo: parsed.data.periodo || null,
+    data: {
+      nome: parsed.data.nome || "Evento",
+      dia: parsed.data.dia,
+      mes: parsed.data.mes,
+      ano: parsed.data.ano,
+      categoria: parsed.data.categoria,
+      local: parsed.data.local || "—",
+      periodo: parsed.data.periodo || null,
+    },
   };
 }
 
-export async function addCollectiveEvent(formData: FormData) {
+export async function addCollectiveEvent(formData: FormData): Promise<{ error?: string }> {
   await requireAdmin();
 
-  await prisma.collectiveEvent.create({ data: collectiveEventDataFromForm(formData) });
+  const parsed = collectiveEventDataFromForm(formData);
+  if ("error" in parsed) return parsed;
+
+  await prisma.collectiveEvent.create({ data: parsed.data });
 
   revalidatePath("/admin");
   revalidatePath("/eventos");
   revalidatePath("/");
+  return {};
 }
 
-export async function updateCollectiveEvent(id: string, formData: FormData) {
+export async function updateCollectiveEvent(id: string, formData: FormData): Promise<{ error?: string }> {
   await requireAdmin();
 
-  await prisma.collectiveEvent.update({ where: { id }, data: collectiveEventDataFromForm(formData) });
+  const parsed = collectiveEventDataFromForm(formData);
+  if ("error" in parsed) return parsed;
+
+  await prisma.collectiveEvent.update({ where: { id }, data: parsed.data });
 
   revalidatePath("/admin");
   revalidatePath("/eventos");
   revalidatePath("/");
+  return {};
 }
 
 export async function removeCollectiveEvent(id: string) {
@@ -236,14 +246,14 @@ const opportunitySchema = z.object({
   valor: textoSchema(60, false),
 });
 
-function opportunityDataFromForm(formData: FormData) {
+function opportunityDataFromForm(formData: FormData): { error: string } | { data: { nome: string; categoria: string; prazoFinal: Date; estado: string; valor: string | null; link: string } } {
   const link = sanitizeExternalUrl((formData.get("link") as string) || "");
   if (!link) {
-    throw new Error("Informe um link válido para a oportunidade.");
+    return { error: "Informe um link válido para a oportunidade." };
   }
   const prazoFinal = new Date(`${(formData.get("prazoFinal") as string) || ""}T00:00:00`);
   if (Number.isNaN(prazoFinal.getTime())) {
-    throw new Error("Informe um prazo final válido.");
+    return { error: "Informe um prazo final válido." };
   }
 
   const parsed = opportunitySchema.safeParse({
@@ -253,31 +263,39 @@ function opportunityDataFromForm(formData: FormData) {
     valor: (formData.get("valor") as string) || "",
   });
   if (!parsed.success) {
-    throw new Error(primeiroErroZod(parsed.error));
+    return { error: primeiroErroZod(parsed.error) };
   }
 
   return {
-    nome: parsed.data.nome,
-    categoria: parsed.data.categoria,
-    prazoFinal,
-    estado: parsed.data.estado,
-    valor: parsed.data.valor || null,
-    link,
+    data: {
+      nome: parsed.data.nome,
+      categoria: parsed.data.categoria,
+      prazoFinal,
+      estado: parsed.data.estado,
+      valor: parsed.data.valor || null,
+      link,
+    },
   };
 }
 
-export async function addOpportunity(formData: FormData) {
+export async function addOpportunity(formData: FormData): Promise<{ error?: string }> {
   await requireAdmin();
-  await prisma.opportunity.create({ data: opportunityDataFromForm(formData) });
+  const parsed = opportunityDataFromForm(formData);
+  if ("error" in parsed) return parsed;
+  await prisma.opportunity.create({ data: parsed.data });
   revalidatePath("/admin");
   revalidatePath("/oportunidades");
+  return {};
 }
 
-export async function updateOpportunity(id: string, formData: FormData) {
+export async function updateOpportunity(id: string, formData: FormData): Promise<{ error?: string }> {
   await requireAdmin();
-  await prisma.opportunity.update({ where: { id }, data: opportunityDataFromForm(formData) });
+  const parsed = opportunityDataFromForm(formData);
+  if ("error" in parsed) return parsed;
+  await prisma.opportunity.update({ where: { id }, data: parsed.data });
   revalidatePath("/admin");
   revalidatePath("/oportunidades");
+  return {};
 }
 
 export async function removeOpportunity(id: string) {
@@ -292,17 +310,17 @@ const galeriaAdminSchema = z.object({
   categoria: z.enum(CATEGORIAS_GALERIA_ADMIN),
 });
 
-export async function addCollectiveGalleryPhoto(formData: FormData) {
+export async function addCollectiveGalleryPhoto(formData: FormData): Promise<{ error?: string }> {
   await requireAdmin();
   const url = (formData.get("url") as string) || "";
-  if (!url) return;
+  if (!url) return {};
 
   const parsed = galeriaAdminSchema.safeParse({
     titulo: (formData.get("titulo") as string) || "Foto",
     categoria: (formData.get("categoria") as string) || CATEGORIAS_GALERIA_ADMIN[0],
   });
   if (!parsed.success) {
-    throw new Error(primeiroErroZod(parsed.error));
+    return { error: primeiroErroZod(parsed.error) };
   }
 
   await prisma.collectiveGalleryPhoto.create({
@@ -315,6 +333,7 @@ export async function addCollectiveGalleryPhoto(formData: FormData) {
 
   revalidatePath("/admin");
   revalidatePath("/galeria");
+  return {};
 }
 
 export async function removeCollectiveGalleryPhoto(id: string) {

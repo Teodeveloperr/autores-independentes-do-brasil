@@ -29,6 +29,7 @@ export default function PortfolioView({ author }: { author: AuthorWithRelations 
   const [showPreview, setShowPreview] = useState(false);
   const [salvando, startSalvar] = useTransition();
   const [salvo, setSalvo] = useState(false);
+  const [erroSalvar, setErroSalvar] = useState("");
   const router = useRouter();
 
   const [tituloEvento, setTituloEvento] = useState("");
@@ -48,15 +49,15 @@ export default function PortfolioView({ author }: { author: AuthorWithRelations 
     fd.set("descricao", descricaoEvento);
     fotosEvento.urls.forEach((url) => fd.append("fotos", url));
     startSalvarEvento(async () => {
-      try {
-        await addPortfolioEvento(fd);
-        setTituloEvento("");
-        setDescricaoEvento("");
-        fotosEvento.reset();
-        router.refresh();
-      } catch (err) {
-        setErroEvento(err instanceof Error ? err.message : "Não foi possível adicionar o evento.");
+      const resultado = await addPortfolioEvento(fd);
+      if (resultado?.error) {
+        setErroEvento(resultado.error);
+        return;
       }
+      setTituloEvento("");
+      setDescricaoEvento("");
+      fotosEvento.reset();
+      router.refresh();
     });
   }
 
@@ -69,6 +70,7 @@ export default function PortfolioView({ author }: { author: AuthorWithRelations 
 
   function onSalvar() {
     setSalvo(false);
+    setErroSalvar("");
     const fd = new FormData();
     fd.set("portfolioFormacao", formacao);
     fd.set("portfolioPremios", premios);
@@ -76,7 +78,11 @@ export default function PortfolioView({ author }: { author: AuthorWithRelations 
     fd.set("portfolioObraDestaqueId", obraDestaqueId);
     fd.set("portfolioCapaUrl", capa.url);
     startSalvar(async () => {
-      await updatePortfolio(fd);
+      const resultado = await updatePortfolio(fd);
+      if (resultado?.error) {
+        setErroSalvar(resultado.error);
+        return;
+      }
       setSalvo(true);
       router.refresh();
     });
@@ -200,6 +206,7 @@ export default function PortfolioView({ author }: { author: AuthorWithRelations 
               ✅ Dados salvos.
             </div>
           )}
+          {erroSalvar && <p style={{ fontSize: "12px", color: "#C0392B" }}>{erroSalvar}</p>}
 
           <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
             <button

@@ -29,18 +29,17 @@ export default function LivrosView({ author }: { author: AuthorWithRelations }) 
   function onSubmit(formData: FormData) {
     setErro("");
     startTransition(async () => {
-      try {
-        if (editingId) {
-          await updateBook(editingId, formData);
-          setEditingId(null);
-        } else {
-          await addBook(formData);
-          capa.setUrl("");
-        }
-        router.refresh();
-      } catch (err) {
-        setErro(err instanceof Error ? err.message : "Não foi possível salvar o livro.");
+      const resultado = editingId ? await updateBook(editingId, formData) : await addBook(formData);
+      if (resultado?.error) {
+        setErro(resultado.error);
+        return;
       }
+      if (editingId) {
+        setEditingId(null);
+      } else {
+        capa.setUrl("");
+      }
+      router.refresh();
     });
   }
 

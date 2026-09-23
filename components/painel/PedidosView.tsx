@@ -27,13 +27,11 @@ export default function PedidosView({ author }: { author: AuthorWithRelations })
   function onStatusChange(id: string, status: string) {
     setErro(null);
     startTransition(async () => {
-      try {
-        await setOrderStatus(id, status);
-        router.refresh();
-      } catch (err) {
-        setErro({ id, mensagem: err instanceof Error ? err.message : "Não foi possível atualizar o status." });
-        router.refresh();
+      const resultado = await setOrderStatus(id, status);
+      if (resultado?.error) {
+        setErro({ id, mensagem: resultado.error });
       }
+      router.refresh();
     });
   }
 
