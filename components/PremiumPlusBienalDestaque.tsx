@@ -21,6 +21,11 @@ export default function PremiumPlusBienalDestaque() {
           quem passa pelo estande do coletivo. É a chance de sair da tela e se conectar de verdade com quem lê
           você.
         </p>
+        <p style={{ fontSize: "11px", lineHeight: 1.6, color: "#999", maxWidth: "600px", margin: "16px 0 0" }}>
+          *A participação de 2 horas está condicionada à disponibilidade, programação e regras da respectiva
+          Bienal. Os descontos e benefícios em eventos serão aplicados conforme os pacotes e condições vigentes
+          no momento da contratação.
+        </p>
       </div>
     </div>
   );
