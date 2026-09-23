@@ -20,15 +20,17 @@ const CICLOS: { id: CicloAssinatura; label: string }[] = [
 function PlanoPagoCard({
   slug,
   ciclo,
-  destaque,
+  destaqueLabel,
+  elevado,
   recursos,
   isLoggedIn,
   planoAtual,
   descontoFidelidadePct,
 }: {
-  slug: "essencial" | "premium";
+  slug: "essencial" | "premium" | "premiumPlus";
   ciclo: CicloAssinatura;
-  destaque?: boolean;
+  destaqueLabel?: string;
+  elevado?: boolean;
   recursos: string[];
   isLoggedIn: boolean;
   planoAtual: string;
@@ -40,8 +42,11 @@ function PlanoPagoCard({
   const [enderecoResumo, setEnderecoResumo] = useState("");
   const [buscandoCep, setBuscandoCep] = useState(false);
   const plano = PLANOS_PAGOS[slug];
-  const meses = CICLO_MESES[ciclo];
-  const totalCiclo = valorCicloCentavos(plano, ciclo);
+  // Premium+ só existe no ciclo anual — ignora o ciclo global (o seletor de ciclo no topo
+  // não se aplica a esse card) e sempre calcula/cobra no anual.
+  const ciclo2 = slug === "premiumPlus" ? "anual" : ciclo;
+  const meses = CICLO_MESES[ciclo2];
+  const totalCiclo = valorCicloCentavos(plano, ciclo2);
   const jaAssinante = planoAtual === plano.nome;
   const ehUpgrade = planoAtual !== "Iniciante" && !jaAssinante && (PLANO_RANK[plano.nome] ?? 0) > (PLANO_RANK[planoAtual] ?? 0);
   const temDesconto = ehUpgrade && descontoFidelidadePct > 0;
@@ -61,21 +66,24 @@ function PlanoPagoCard({
 
   return (
     <div
+      id={slug === "premiumPlus" ? "premium-plus-card" : undefined}
       style={{
         background: "white",
         color: "#262626",
-        borderRadius: "8px",
-        padding: "32px",
+        borderRadius: elevado ? "12px" : "8px",
+        padding: elevado ? "38px 32px 32px" : "32px",
         display: "flex",
         flexDirection: "column",
         gap: "20px",
-        border: destaque ? "3px solid #FFDF00" : undefined,
+        border: destaqueLabel ? "3px solid #FFDF00" : undefined,
+        boxShadow: elevado ? "0 12px 32px rgba(0,39,118,0.18)" : undefined,
+        marginTop: elevado ? "-20px" : undefined,
         position: "relative",
       }}
     >
-      {destaque && (
-        <div style={{ position: "absolute", top: "-14px", left: "50%", transform: "translateX(-50%)", background: "#FFDF00", color: "#002776", fontSize: "12px", fontWeight: 700, padding: "4px 16px", borderRadius: "12px", whiteSpace: "nowrap" }}>
-          MAIS POPULAR
+      {destaqueLabel && (
+        <div style={{ position: "absolute", top: "-15px", left: "50%", transform: "translateX(-50%)", background: "#FFDF00", color: "#002776", fontSize: "12px", fontWeight: 700, padding: "5px 16px", borderRadius: "12px", whiteSpace: "nowrap" }}>
+          {destaqueLabel}
         </div>
       )}
       <div>
@@ -93,7 +101,7 @@ function PlanoPagoCard({
           <span style={{ fontSize: "14px", fontWeight: 500, color: "#666" }}>/mês</span>
         </div>
         <p style={{ fontSize: "13px", color: "#666", marginTop: "8px" }}>
-          {ciclo === "mensal" ? "Cobrado mensalmente" : `Cobrado a cada ${meses} meses: ${brl(totalCicloComDesconto)}`}
+          {ciclo2 === "mensal" ? "Cobrado mensalmente" : `Cobrado a cada ${meses} meses: ${brl(totalCicloComDesconto)}`}
         </p>
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: "12px", fontSize: "14px", flex: 1 }}>
@@ -110,8 +118,8 @@ function PlanoPagoCard({
       )}
       {!isLoggedIn ? (
         <Link
-          href={`/cadastro?plano=${slug}&ciclo=${ciclo}`}
-          style={{ display: "block", textAlign: "center", background: destaque ? "#009B3A" : "#002776", color: "white", padding: "12px", fontWeight: 600, borderRadius: "4px", textDecoration: "none" }}
+          href={`/cadastro?plano=${slug}&ciclo=${ciclo2}`}
+          style={{ display: "block", textAlign: "center", background: destaqueLabel ? "#009B3A" : "#002776", color: "white", padding: "12px", fontWeight: 600, borderRadius: "4px", textDecoration: "none" }}
         >
           Assinar {plano.nome.replace("Autor ", "")}
         </Link>
@@ -140,7 +148,7 @@ function PlanoPagoCard({
       ) : (
         <form action={formAction}>
           <input type="hidden" name="planoSlug" value={slug} />
-          <input type="hidden" name="ciclo" value={ciclo} />
+          <input type="hidden" name="ciclo" value={ciclo2} />
           <input
             name="cpf"
             type="text"
@@ -212,7 +220,7 @@ function PlanoPagoCard({
                   name="metodoPagamento"
                   value="pix"
                   disabled={pending}
-                  style={{ flex: 1, background: destaque ? "#009B3A" : "#002776", color: "white", padding: "12px", fontWeight: 600, borderRadius: "4px", border: "none", fontSize: "13px", opacity: pending ? 0.7 : 1 }}
+                  style={{ flex: 1, background: destaqueLabel ? "#009B3A" : "#002776", color: "white", padding: "12px", fontWeight: 600, borderRadius: "4px", border: "none", fontSize: "13px", opacity: pending ? 0.7 : 1 }}
                 >
                   {pending ? "..." : "Pix"}
                 </button>
@@ -240,7 +248,7 @@ export default function AssinaturaPlanos({
 
   return (
     <>
-      <AssinaturaPremiumPopup planoAtual={planoAtual} isLoggedIn={isLoggedIn} onEscolherCiclo={setCiclo} />
+      <AssinaturaPremiumPopup planoAtual={planoAtual} isLoggedIn={isLoggedIn} />
       <div style={{ display: "flex", justifyContent: "center", gap: "8px", marginBottom: "32px" }}>
         {CICLOS.map((c) => (
           <button
@@ -261,7 +269,7 @@ export default function AssinaturaPlanos({
           </button>
         ))}
       </div>
-      <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "24px", maxWidth: "1100px", margin: "0 auto", alignItems: "start" }}>
+      <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "20px", maxWidth: "1360px", margin: "0 auto", alignItems: "start" }}>
         <div style={{ background: "white", color: "#262626", borderRadius: "8px", padding: "32px", display: "flex", flexDirection: "column", gap: "20px" }}>
           <div>
             <div style={{ fontWeight: 700, fontSize: "18px", marginBottom: "8px" }}>Iniciante</div>
@@ -291,7 +299,6 @@ export default function AssinaturaPlanos({
         <PlanoPagoCard
           slug="essencial"
           ciclo={ciclo}
-          destaque
           isLoggedIn={isLoggedIn}
           planoAtual={planoAtual}
           descontoFidelidadePct={descontoFidelidadePct}
@@ -321,6 +328,24 @@ export default function AssinaturaPlanos({
             "Desconto de 10% em bienais",
             "Relatório de vendas detalhado",
             "Prioridade no suporte",
+          ]}
+        />
+
+        <PlanoPagoCard
+          slug="premiumPlus"
+          ciclo={ciclo}
+          destaqueLabel="★ MAIS COMPLETO"
+          elevado
+          isLoggedIn={isLoggedIn}
+          planoAtual={planoAtual}
+          descontoFidelidadePct={descontoFidelidadePct}
+          recursos={[
+            "Tudo do Autor Premium",
+            "Card exclusivo no Instagram do coletivo",
+            "2 horas de participação em uma Bienal de 2027",
+            "Acesso ao Grupo Premium exclusivo",
+            "Acesso a editais e chamadas exclusivas",
+            "Até 20% de desconto em pacotes de Bienal",
           ]}
         />
       </div>

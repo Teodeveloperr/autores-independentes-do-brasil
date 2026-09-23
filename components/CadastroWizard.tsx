@@ -24,6 +24,7 @@ const PLANS: { id: PlanId; nome: string; desc: string; badge: string; disponivel
   { id: "free", nome: "Iniciante", desc: "Para começar sua jornada no coletivo", badge: "", disponivel: true },
   { id: "essencial", nome: "Autor Essencial", desc: "Tudo que você precisa para vender e divulgar", badge: "", disponivel: true },
   { id: "premium", nome: "Autor Premium", desc: "Máxima visibilidade para suas obras", badge: "", disponivel: true },
+  { id: "premiumPlus", nome: "Autor Premium+", desc: "Visibilidade, oportunidades e presença na Bienal 2027", badge: "★ MAIS COMPLETO", disponivel: true },
 ];
 
 const CICLOS: { id: Cycle; label: string }[] = [
@@ -38,8 +39,11 @@ function brl(centavos: number) {
 
 function priceFor(id: PlanId, cycle: Cycle) {
   if (id === "free") return { preco: brl(0), suffix: "/mês" };
-  const total = valorCicloCentavos(PLANOS_PAGOS[id], cycle);
-  const suffix = cycle === "anual" ? "/ano" : cycle === "semestral" ? "/semestre" : "/mês";
+  // Premium+ só existe no ciclo anual — ignora o ciclo passado (o seletor nem aparece
+  // quando esse plano está selecionado) e sempre mostra o preço anual fixo.
+  const cicloEfetivo = id === "premiumPlus" ? "anual" : cycle;
+  const total = valorCicloCentavos(PLANOS_PAGOS[id], cicloEfetivo);
+  const suffix = cicloEfetivo === "anual" ? "/ano" : cicloEfetivo === "semestral" ? "/semestre" : "/mês";
   return { preco: brl(total), suffix };
 }
 
@@ -63,7 +67,8 @@ export default function CadastroWizard() {
   const searchParams = useSearchParams();
   const planoParam = searchParams.get("plano");
   const cicloParam = searchParams.get("ciclo");
-  const planoInicial: PlanId = planoParam === "essencial" || planoParam === "premium" ? planoParam : "free";
+  const planoInicial: PlanId =
+    planoParam === "essencial" || planoParam === "premium" || planoParam === "premiumPlus" ? planoParam : "free";
   const cicloInicial: Cycle = cicloParam === "semestral" || cicloParam === "anual" ? cicloParam : "mensal";
 
   const [step, setStep] = useState<1 | 2 | 3>(1);
@@ -109,6 +114,11 @@ export default function CadastroWizard() {
     }
   }
 
+  // Premium+ só existe no ciclo anual — o seletor de ciclo nem aparece quando esse plano
+  // está selecionado, então usa sempre "anual" pra ele, independente do que `cycle` (que
+  // guarda a última escolha feita pra Essencial/Premium) esteja no momento.
+  const cicloEfetivo: Cycle = plan === "premiumPlus" ? "anual" : cycle;
+
   function finish(metodoPagamento: "cartao" | "pix", dadosCartao?: DadosCartao) {
     if (!step1Data) return;
     if (plan !== "free" && !validarCpf(cpf)) {
@@ -118,7 +128,7 @@ export default function CadastroWizard() {
     setFinishError("");
     startTransition(async () => {
       try {
-        const result = await createAccount(step1Data, plan, cycle, cpf, metodoPagamento, dadosCartao);
+        const result = await createAccount(step1Data, plan, cicloEfetivo, cpf, metodoPagamento, dadosCartao);
         if (result && "error" in result) {
           setFinishError(result.error);
           return;
@@ -163,7 +173,7 @@ export default function CadastroWizard() {
   });
 
   const selPlan = PLANS.find((p) => p.id === plan)!;
-  const selPrice = priceFor(selPlan.id, cycle);
+  const selPrice = priceFor(selPlan.id, cicloEfetivo);
 
   return (
     <div className="section-pad-md" style={{ flex: 1, background: "white", color: "#262626", padding: "40px 48px", borderRadius: "12px", maxWidth: "720px", width: "100%" }}>
@@ -280,7 +290,12 @@ export default function CadastroWizard() {
           <p style={{ fontSize: "14px", color: "#666", marginBottom: "20px" }}>
             Comece grátis no Iniciante ou já escolha um plano pago — você pode trocar quando quiser depois.
           </p>
-          {plan !== "free" && (
+          {plan === "premiumPlus" && (
+            <p style={{ fontSize: "12px", color: "#666", background: "#F6F6F6", padding: "10px 14px", borderRadius: "6px", marginBottom: "20px" }}>
+              O Premium+ é cobrado só no ciclo anual (R$ 900,00/ano).
+            </p>
+          )}
+          {plan !== "free" && plan !== "premiumPlus" && (
             <div style={{ display: "flex", gap: "8px", marginBottom: "20px" }}>
               {CICLOS.map((c) => (
                 <button
@@ -396,7 +411,7 @@ export default function CadastroWizard() {
             <div>
               <div style={{ fontSize: "12px", color: "#666" }}>Plano selecionado</div>
               <div style={{ fontWeight: 700, fontSize: "16px" }}>
-                {selPlan.nome} · {cycleLabel(cycle)}
+                {selPlan.nome} · {cycleLabel(cicloEfetivo)}
               </div>
             </div>
             <div style={{ textAlign: "right" }}>

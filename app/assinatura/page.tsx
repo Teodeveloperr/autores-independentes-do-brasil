@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import PublicHeader from "@/components/PublicHeader";
 import PublicFooter from "@/components/PublicFooter";
 import AssinaturaPlanos from "@/components/AssinaturaPlanos";
+import PremiumPlusPilares from "@/components/PremiumPlusPilares";
+import PremiumPlusBienalDestaque from "@/components/PremiumPlusBienalDestaque";
 import { getCurrentAuthor } from "@/lib/auth";
 import { descontoFidelidade } from "@/lib/plans";
 
@@ -34,6 +36,8 @@ export default async function AssinaturaPage() {
           Pagamento seguro • Sem taxa de adesão
         </p>
       </div>
+      <PremiumPlusPilares />
+      <PremiumPlusBienalDestaque />
       </section>
       <PublicFooter variant="minimal" />
     </div>

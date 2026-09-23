@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { PLANOS_PAGOS, CICLO_MESES, valorCicloCentavos, type CicloAssinatura } from "@/lib/plans";
+import { PLANOS_PAGOS, valorCicloCentavos } from "@/lib/plans";
 
 function brl(centavos: number) {
   return "R$ " + (centavos / 100).toFixed(2).replace(".", ",");
@@ -13,50 +13,28 @@ function brl(centavos: number) {
 export default function AssinaturaPremiumPopup({
   planoAtual,
   isLoggedIn,
-  onEscolherCiclo,
 }: {
   planoAtual: string;
   isLoggedIn: boolean;
-  // Quem já tem conta assina direto no card da página (que já fica visível atrás do
-  // popup) — só precisamos avisar qual ciclo a pessoa escolheu, pra não ter que
-  // selecionar de novo. Quem ainda não tem conta é redirecionado pro cadastro.
-  onEscolherCiclo: (ciclo: CicloAssinatura) => void;
 }) {
   const [fechado, setFechado] = useState(false);
 
-  const visivel = planoAtual !== "Autor Premium" && !fechado;
+  const visivel = planoAtual !== "Autor Premium+" && !fechado;
 
   function fechar() {
     setFechado(true);
   }
 
-  function assinar(ciclo: CicloAssinatura) {
-    onEscolherCiclo(ciclo);
+  function verCard() {
     fechar();
+    document.getElementById("premium-plus-card")?.scrollIntoView({ behavior: "smooth", block: "center" });
   }
 
   if (!visivel) return null;
 
-  const plano = PLANOS_PAGOS.premium;
-  const semestralTotal = valorCicloCentavos(plano, "semestral");
-  const semestralPorMes = Math.round(semestralTotal / CICLO_MESES.semestral);
+  const plano = PLANOS_PAGOS.premiumPlus;
   const anualTotal = valorCicloCentavos(plano, "anual");
-  const anualPorMes = Math.round(anualTotal / CICLO_MESES.anual);
-
-  const botaoStyle: React.CSSProperties = {
-    display: "block",
-    width: "100%",
-    textAlign: "center",
-    marginTop: "12px",
-    background: "#009B3A",
-    color: "white",
-    padding: "10px",
-    fontWeight: 700,
-    borderRadius: "6px",
-    border: "none",
-    fontSize: "13px",
-    textDecoration: "none",
-  };
+  const anualPorMes = Math.round(anualTotal / 12);
 
   return (
     <div
@@ -70,58 +48,66 @@ export default function AssinaturaPremiumPopup({
         <button
           onClick={fechar}
           aria-label="Fechar"
-          style={{ position: "absolute", top: "16px", right: "16px", background: "none", border: "none", fontSize: "20px", color: "#999", width: "32px", height: "32px" }}
+          style={{ position: "absolute", top: "16px", right: "16px", background: "none", border: "none", fontSize: "20px", color: "#999", width: "32px", height: "32px", cursor: "pointer" }}
         >
           ✕
         </button>
         <div style={{ fontSize: "40px", marginBottom: "12px" }}>🌟</div>
-        <h2 style={{ fontSize: "22px", fontWeight: 700, color: "#002776", marginBottom: "12px" }}>
-          Destaque-se com o Autor Premium
+        <h2 style={{ fontSize: "22px", fontWeight: 700, color: "#002776", marginBottom: "12px", lineHeight: 1.3 }}>
+          Premium+ Anual: sua presença em todo lugar que importa
         </h2>
-        <p style={{ fontSize: "14px", color: "#444", lineHeight: 1.6, marginBottom: "24px" }}>
-          Assinando o Premium no ciclo semestral ou anual, você garante <strong>acesso antecipado a eventos, editais
-          e oportunidades</strong> do coletivo — além de destaque nas páginas de Autores e Livros, selo de perfil
-          verificado e comissão reduzida nas suas vendas.
+        <p style={{ fontSize: "14px", color: "#444", lineHeight: 1.6, marginBottom: "20px" }}>
+          Um plano pensado pra transformar sua participação no coletivo numa experiência contínua de
+          visibilidade, relacionamento e oportunidades reais.
         </p>
-        <div style={{ display: "flex", gap: "12px" }}>
-          <div style={{ flex: 1, background: "#F6F6F6", borderRadius: "8px", padding: "16px" }}>
-            <div style={{ fontSize: "12px", fontWeight: 700, color: "#666", marginBottom: "6px" }}>SEMESTRAL</div>
-            <div style={{ fontSize: "20px", fontWeight: 700, color: "#002776" }}>
-              {brl(semestralPorMes)}
-              <span style={{ fontSize: "12px", fontWeight: 500, color: "#666" }}>/mês</span>
-            </div>
-            <div style={{ fontSize: "11px", color: "#999", marginTop: "4px" }}>{brl(semestralTotal)} a cada 6 meses</div>
-            {isLoggedIn ? (
-              <button onClick={() => assinar("semestral")} style={botaoStyle}>
-                Assinar
-              </button>
-            ) : (
-              <Link href="/cadastro?plano=premium&ciclo=semestral" style={botaoStyle}>
-                Assinar
-              </Link>
-            )}
+        <div style={{ textAlign: "left", display: "flex", flexDirection: "column", gap: "8px", marginBottom: "20px", background: "#F6F6F6", borderRadius: "8px", padding: "16px 18px" }}>
+          <div style={{ fontSize: "13px", color: "#262626", display: "flex", gap: "8px" }}>
+            <span>✅</span><span>Card exclusivo seu no Instagram do Autores do Brasil, com minibio e suas obras</span>
           </div>
-          <div style={{ flex: 1, background: "#F1F8F4", border: "2px solid #009B3A", borderRadius: "8px", padding: "16px", position: "relative" }}>
-            <div style={{ position: "absolute", top: "-10px", left: "50%", transform: "translateX(-50%)", background: "#009B3A", color: "white", fontSize: "10px", fontWeight: 700, padding: "2px 10px", borderRadius: "10px", whiteSpace: "nowrap" }}>
-              MENOR PREÇO
-            </div>
-            <div style={{ fontSize: "12px", fontWeight: 700, color: "#666", marginBottom: "6px" }}>ANUAL</div>
-            <div style={{ fontSize: "20px", fontWeight: 700, color: "#002776" }}>
-              {brl(anualPorMes)}
-              <span style={{ fontSize: "12px", fontWeight: 500, color: "#666" }}>/mês</span>
-            </div>
-            <div style={{ fontSize: "11px", color: "#999", marginTop: "4px" }}>{brl(anualTotal)} por ano</div>
-            {isLoggedIn ? (
-              <button onClick={() => assinar("anual")} style={botaoStyle}>
-                Assinar
-              </button>
-            ) : (
-              <Link href="/cadastro?plano=premium&ciclo=anual" style={botaoStyle}>
-                Assinar
-              </Link>
-            )}
+          <div style={{ fontSize: "13px", color: "#262626", display: "flex", gap: "8px" }}>
+            <span>✅</span><span>2 horas de participação em uma Bienal do Livro de 2027 — lançamento, bate-papo ou autógrafos</span>
+          </div>
+          <div style={{ fontSize: "13px", color: "#262626", display: "flex", gap: "8px" }}>
+            <span>✅</span><span>Acesso ao Grupo Premium, com prioridade em oportunidades e networking</span>
+          </div>
+          <div style={{ fontSize: "13px", color: "#262626", display: "flex", gap: "8px" }}>
+            <span>✅</span><span>Acesso exclusivo a editais, concursos e chamadas literárias de todo o Brasil</span>
+          </div>
+          <div style={{ fontSize: "13px", color: "#262626", display: "flex", gap: "8px" }}>
+            <span>✅</span><span>Comissão reduzida a 10% + até 20% de desconto em pacotes de Bienal</span>
+          </div>
+          <div style={{ fontSize: "13px", color: "#262626", display: "flex", gap: "8px" }}>
+            <span>✅</span><span>Tudo do Autor Essencial, com destaque total nas páginas do coletivo</span>
           </div>
         </div>
+        <div style={{ marginBottom: "20px" }}>
+          <div style={{ fontSize: "28px", fontWeight: 700, color: "#002776" }}>
+            {brl(anualPorMes)}
+            <span style={{ fontSize: "13px", fontWeight: 500, color: "#666" }}>/mês</span>
+          </div>
+          <div style={{ fontSize: "12px", color: "#999" }}>{brl(anualTotal)} por ano · só no ciclo anual</div>
+        </div>
+        {isLoggedIn ? (
+          <button
+            onClick={verCard}
+            style={{ display: "block", width: "100%", textAlign: "center", background: "#009B3A", color: "white", padding: "12px", fontWeight: 700, borderRadius: "6px", border: "none", fontSize: "14px", cursor: "pointer" }}
+          >
+            Quero ser Premium+ Anual
+          </button>
+        ) : (
+          <Link
+            href="/cadastro?plano=premiumPlus&ciclo=anual"
+            style={{ display: "block", textAlign: "center", background: "#009B3A", color: "white", padding: "12px", fontWeight: 700, borderRadius: "6px", textDecoration: "none", fontSize: "14px" }}
+          >
+            Quero ser Premium+ Anual
+          </Link>
+        )}
+        <button
+          onClick={fechar}
+          style={{ display: "block", width: "100%", marginTop: "12px", background: "none", border: "none", color: "#002776", fontWeight: 600, fontSize: "12px", cursor: "pointer" }}
+        >
+          Ver todos os planos
+        </button>
       </div>
     </div>
   );
