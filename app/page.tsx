@@ -4,6 +4,7 @@ import PublicHeader from "@/components/PublicHeader";
 import PublicFooter from "@/components/PublicFooter";
 import BlogCarousel from "@/components/BlogCarousel";
 import HomeBannerCarousel from "@/components/HomeBannerCarousel";
+import HomePremiumToast from "@/components/HomePremiumToast";
 import DepoimentosCarousel from "@/components/DepoimentosCarousel";
 import AutoresDestaqueCarousel from "@/components/AutoresDestaqueCarousel";
 import ContactForm from "@/components/ContactForm";
@@ -250,6 +251,7 @@ export default async function HomePage() {
 
       </div>
 
+      <HomePremiumToast />
       <PublicFooter showAdminLink />
     </div>
   );
