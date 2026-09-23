@@ -74,7 +74,7 @@ export default function AssinaturaPremiumPopup({
             <span>✅</span><span>Acesso exclusivo a editais, concursos e chamadas literárias de todo o Brasil</span>
           </div>
           <div style={{ fontSize: "13px", color: "#262626", display: "flex", gap: "8px" }}>
-            <span>✅</span><span>Comissão reduzida a 10% + até 20% de desconto em pacotes de Bienal</span>
+            <span>✅</span><span>Até 20% de desconto em pacotes de Bienal</span>
           </div>
           <div style={{ fontSize: "13px", color: "#262626", display: "flex", gap: "8px" }}>
             <span>✅</span><span>Tudo do Autor Essencial, com destaque total nas páginas do coletivo</span>
