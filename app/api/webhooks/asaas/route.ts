@@ -13,11 +13,12 @@ function repasseParceiroDataNaCriacao(plano: string) {
   return plano === "Autor Premium+" ? { repasseParceiroValorCentavos: PREMIUM_PLUS_VALOR_PARCEIRO_CENTAVOS } : {};
 }
 
-// Autor que vira Premium+ (cadastro novo ou upgrade) vê, na próxima vez que entrar no
-// painel, um popup de agradecimento convidando pro grupo do WhatsApp (ver
-// AgradecimentoGrupoPopup e marcarAgradecimentoGrupoVisto) — pros outros planos não mexe.
+// Autor que vira Premium ou Premium+ (cadastro novo ou upgrade) vê, na próxima vez que
+// entrar no painel, um popup de agradecimento convidando pro grupo do WhatsApp certo pro
+// plano dele (ver AgradecimentoGrupoPopup e marcarAgradecimentoGrupoVisto) — Essencial e
+// Iniciante não têm grupo, não mexe nesse campo.
 function agradecimentoGrupoDataNaAtivacao(plano: string) {
-  return plano === "Autor Premium+" ? { agradecimentoGrupoWhatsappVisto: false } : {};
+  return plano === "Autor Premium" || plano === "Autor Premium+" ? { agradecimentoGrupoWhatsappVisto: false } : {};
 }
 const EVENTOS_PIX_AUTO_ATIVADO = new Set(["PIX_AUTOMATIC_RECURRING_AUTHORIZATION_ACTIVATED"]);
 const EVENTOS_PIX_AUTO_ENCERRADO: Record<string, string> = {

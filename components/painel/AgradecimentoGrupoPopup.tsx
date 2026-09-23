@@ -3,12 +3,15 @@
 import { useState } from "react";
 import { marcarAgradecimentoGrupoVisto } from "@/app/painel/actions";
 
-const LINK_GRUPO = "https://chat.whatsapp.com/Gx9FZBM9Fny97CpumWDYBl?mode=gi_t";
+const LINK_GRUPO_PREMIUM = "https://chat.whatsapp.com/BrJufmpdatC0r1bl4HNZb9?mode=gi_t";
+const LINK_GRUPO_PREMIUM_PLUS = "https://chat.whatsapp.com/Gx9FZBM9Fny97CpumWDYBl?mode=gi_t";
 
 export default function AgradecimentoGrupoPopup({ mostrar, plano }: { mostrar: boolean; plano: string }) {
   const [fechado, setFechado] = useState(false);
 
   if (!mostrar || fechado) return null;
+
+  const linkGrupo = plano === "Autor Premium+" ? LINK_GRUPO_PREMIUM_PLUS : LINK_GRUPO_PREMIUM;
 
   function fechar() {
     setFechado(true);
@@ -41,7 +44,7 @@ export default function AgradecimentoGrupoPopup({ mostrar, plano }: { mostrar: b
           novidades e trocamos experiências entre autores.
         </p>
         <a
-          href={LINK_GRUPO}
+          href={linkGrupo}
           target="_blank"
           rel="noopener noreferrer"
           onClick={fechar}
