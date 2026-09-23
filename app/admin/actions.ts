@@ -460,13 +460,18 @@ export async function removeReview(id: string) {
 
 const articleSchema = z.object({
   titulo: textoSchema(200, false),
-  resumo: textoSchema(500, false),
+  resumo: textoSchema(1000, false),
   conteudo: textoSchema(50000, false),
   categoria: z.enum(CATEGORIAS_BLOG),
   autorNome: textoSchema(120, false),
 });
 
-function articleDataFromForm(formData: FormData) {
+type ArticleData = { titulo: string; resumo: string; conteudo: string; categoria: string; autorNome: string; capaUrl: string | null };
+
+// Erros lançados com throw numa Server Action ficam sem mensagem em produção e derrubam a
+// tela inteira se o cliente não capturar — por isso essa função sempre retorna { error }
+// em vez de lançar, e addArticle/updateArticle repassam isso pro formulário tratar.
+function articleDataFromForm(formData: FormData): { error: string } | { data: ArticleData } {
   const parsed = articleSchema.safeParse({
     titulo: (formData.get("titulo") as string) || "Artigo",
     resumo: (formData.get("resumo") as string) || "",
@@ -475,31 +480,41 @@ function articleDataFromForm(formData: FormData) {
     autorNome: (formData.get("autorNome") as string) || "Coletivo",
   });
   if (!parsed.success) {
-    throw new Error(primeiroErroZod(parsed.error));
+    return { error: primeiroErroZod(parsed.error) };
   }
 
   return {
-    titulo: parsed.data.titulo || "Artigo",
-    resumo: parsed.data.resumo,
-    conteudo: parsed.data.conteudo,
-    categoria: parsed.data.categoria,
-    autorNome: parsed.data.autorNome || "Coletivo",
-    capaUrl: (formData.get("capaUrl") as string) || null,
+    data: {
+      titulo: parsed.data.titulo || "Artigo",
+      resumo: parsed.data.resumo,
+      conteudo: parsed.data.conteudo,
+      categoria: parsed.data.categoria,
+      autorNome: parsed.data.autorNome || "Coletivo",
+      capaUrl: (formData.get("capaUrl") as string) || null,
+    },
   };
 }
 
-export async function addArticle(formData: FormData) {
+export async function addArticle(formData: FormData): Promise<{ error?: string }> {
   await requireAdmin();
-  await prisma.article.create({ data: articleDataFromForm(formData) });
+  const parsed = articleDataFromForm(formData);
+  if ("error" in parsed) return parsed;
+
+  await prisma.article.create({ data: parsed.data });
   revalidatePath("/admin");
   revalidatePath("/blog");
+  return {};
 }
 
-export async function updateArticle(id: string, formData: FormData) {
+export async function updateArticle(id: string, formData: FormData): Promise<{ error?: string }> {
   await requireAdmin();
-  await prisma.article.update({ where: { id }, data: articleDataFromForm(formData) });
+  const parsed = articleDataFromForm(formData);
+  if ("error" in parsed) return parsed;
+
+  await prisma.article.update({ where: { id }, data: parsed.data });
   revalidatePath("/admin");
   revalidatePath("/blog");
+  return {};
 }
 
 export async function removeArticle(id: string) {

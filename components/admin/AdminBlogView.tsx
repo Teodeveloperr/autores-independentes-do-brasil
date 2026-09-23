@@ -44,6 +44,7 @@ export default function AdminBlogView({ artigos }: { artigos: Article[] }) {
   const [pending, startTransition] = useTransition();
   const [enviandoImagemConteudo, setEnviandoImagemConteudo] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [erro, setErro] = useState("");
   const conteudoRef = useRef<HTMLTextAreaElement>(null);
   const router = useRouter();
 
@@ -94,13 +95,14 @@ export default function AdminBlogView({ artigos }: { artigos: Article[] }) {
           key={editingId ?? "new"}
           action={(fd) => {
             fd.set("capaUrl", capa.url);
+            setErro("");
             startTransition(async () => {
-              if (editingId) {
-                await updateArticle(editingId, fd);
-                setEditingId(null);
-              } else {
-                await addArticle(fd);
+              const resultado = editingId ? await updateArticle(editingId, fd) : await addArticle(fd);
+              if (resultado?.error) {
+                setErro(resultado.error);
+                return;
               }
+              if (editingId) setEditingId(null);
               capa.setUrl("");
               router.refresh();
             });
@@ -189,6 +191,7 @@ export default function AdminBlogView({ artigos }: { artigos: Article[] }) {
             <input id="capaInput" type="file" accept="image/*" onChange={capa.onInputChange} style={{ display: "none" }} />
             {capa.error && <p style={{ fontSize: "12px", color: "#C0392B", marginTop: "6px" }}>{capa.error}</p>}
           </div>
+          {erro && <p style={{ fontSize: "13px", color: "#C0392B", margin: 0 }}>{erro}</p>}
           <div style={{ display: "flex", gap: "10px" }}>
             {editing && (
               <button type="button" onClick={() => setEditingId(null)} style={{ flex: "0 0 auto", background: "white", border: "1px solid #DDD", color: "#262626", padding: "12px 20px", fontWeight: 600, borderRadius: "6px", fontSize: "14px" }}>
