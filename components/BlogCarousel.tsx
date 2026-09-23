@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
+
+const AUTOPLAY_INTERVALO_MS = 6000;
 
 type Artigo = {
   id: string;
@@ -14,6 +16,18 @@ type Artigo = {
 
 export default function BlogCarousel({ artigos }: { artigos: Artigo[] }) {
   const [index, setIndex] = useState(0);
+  const total = artigos.length;
+
+  // Passa pro próximo artigo sozinho a cada alguns segundos — não pausa quando o mouse
+  // passa por cima (pedido explícito), só reinicia a contagem quando o índice muda
+  // (autoplay ou clique manual), pra não trocar de novo logo em seguida a uma navegação manual.
+  useEffect(() => {
+    if (total <= 1) return;
+    const intervalo = setInterval(() => {
+      setIndex((i) => (i + 1) % total);
+    }, AUTOPLAY_INTERVALO_MS);
+    return () => clearInterval(intervalo);
+  }, [total, index]);
 
   if (artigos.length === 0) {
     return (
