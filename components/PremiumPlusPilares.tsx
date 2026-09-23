@@ -51,10 +51,10 @@ export default function PremiumPlusPilares() {
       </p>
       <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "20px" }}>
         {PILARES.map((p) => (
-          <div key={p.titulo} style={{ background: "white", borderRadius: "10px", padding: "24px 20px" }}>
+          <div key={p.titulo} style={{ background: "white", borderRadius: "10px", padding: "24px 20px", textAlign: "center" }}>
             <div style={{ fontSize: "32px", marginBottom: "12px" }}>{p.emoji}</div>
             <h3 style={{ fontSize: "16px", fontWeight: 700, color: "#002776", marginBottom: "14px" }}>{p.titulo}</h3>
-            <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: "10px" }}>
+            <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", alignItems: "center", gap: "10px" }}>
               {p.itens.map((item) => (
                 <li key={item} style={{ fontSize: "13px", color: "#444", lineHeight: 1.5 }}>
                   {item}

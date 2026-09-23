@@ -64,8 +64,6 @@ function PlanoPagoCard({
     }
   }
 
-  const centralizado = slug === "premiumPlus";
-
   return (
     <div
       id={slug === "premiumPlus" ? "premium-plus-card" : undefined}
@@ -76,8 +74,6 @@ function PlanoPagoCard({
         padding: elevado ? "38px 32px 32px" : "32px",
         display: "flex",
         flexDirection: "column",
-        alignItems: centralizado ? "center" : undefined,
-        textAlign: centralizado ? "center" : undefined,
         gap: "20px",
         border: destaqueLabel ? "3px solid #FFDF00" : undefined,
         boxShadow: elevado ? "0 12px 32px rgba(0,39,118,0.18)" : undefined,
@@ -93,7 +89,7 @@ function PlanoPagoCard({
       <div>
         <div style={{ fontWeight: 700, fontSize: "18px", marginBottom: "8px" }}>{plano.nome}</div>
         {temDesconto && (
-          <div style={{ display: "flex", gap: "8px", alignItems: "center", justifyContent: centralizado ? "center" : undefined, marginBottom: "4px" }}>
+          <div style={{ display: "flex", gap: "8px", alignItems: "center", marginBottom: "4px" }}>
             <span style={{ fontSize: "14px", color: "#999", textDecoration: "line-through" }}>{brl(Math.round(totalCiclo / meses))}</span>
             <span style={{ fontSize: "11px", fontWeight: 700, color: "white", background: "#C0392B", padding: "1px 6px", borderRadius: "10px" }}>
               🎉 Fidelidade: -{descontoFidelidadePct}%
@@ -108,9 +104,9 @@ function PlanoPagoCard({
           {ciclo2 === "mensal" ? "Cobrado mensalmente" : `Cobrado a cada ${meses} meses: ${brl(totalCicloComDesconto)}`}
         </p>
       </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: "12px", fontSize: "14px", flex: 1, width: "100%" }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: "12px", fontSize: "14px", flex: 1 }}>
         {recursos.map((r) => (
-          <div key={r} style={{ display: "flex", gap: "8px", justifyContent: centralizado ? "center" : undefined }}>
+          <div key={r} style={{ display: "flex", gap: "8px" }}>
             ✅ {r}
           </div>
         ))}
