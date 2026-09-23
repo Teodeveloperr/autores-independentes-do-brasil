@@ -3,6 +3,7 @@ import Link from "next/link";
 import PublicHeader from "@/components/PublicHeader";
 import PublicFooter from "@/components/PublicFooter";
 import BlogCarousel from "@/components/BlogCarousel";
+import HomeBannerCarousel from "@/components/HomeBannerCarousel";
 import DepoimentosCarousel from "@/components/DepoimentosCarousel";
 import AutoresDestaqueCarousel from "@/components/AutoresDestaqueCarousel";
 import ContactForm from "@/components/ContactForm";
@@ -99,6 +100,8 @@ export default async function HomePage() {
         </div>
       </section>
 
+      <HomeBannerCarousel />
+
       <section className="responsive-grid section-pad-lg" style={{ background: "white", padding: "48px 40px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "60px", alignItems: "center", marginTop: "20px" }}>
         <div>
           <h2 style={{ fontSize: "32px", fontWeight: 700, color: "#002776", marginBottom: "24px" }}>Sobre o coletivo</h2>
@@ -145,16 +148,6 @@ export default async function HomePage() {
             </Link>
           </div>
         )}
-      </section>
-
-      <section className="responsive-flex-row section-pad-md" style={{ background: "#FFDF00", color: "#002776", padding: "32px 40px", display: "flex", justifyContent: "space-between", alignItems: "center", margin: "0 40px", borderRadius: "8px", gap: "16px" }}>
-        <div>
-          <div style={{ fontWeight: 700, fontSize: "18px", marginBottom: "6px" }}>🏆 Vire um Autor Premium+ e suba ao palco da Bienal 2027</div>
-          <div style={{ fontSize: "14px" }}>Destaque nas páginas do coletivo, card exclusivo no Instagram e 2 horas suas numa Bienal do Livro — no plano anual.</div>
-        </div>
-        <Link href="/assinatura" style={{ flexShrink: 0, background: "#002776", color: "white", padding: "12px 32px", fontWeight: 700, borderRadius: "4px", whiteSpace: "nowrap" }}>
-          QUERO SER PREMIUM+
-        </Link>
       </section>
 
       <section className="section-pad-lg" style={{ background: "white", padding: "48px 40px", marginTop: "20px" }}>
