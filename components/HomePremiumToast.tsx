@@ -1,33 +1,29 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 
-const DELAY_MS = 9000;
-const SESSION_KEY = "premiumPlusToastShown";
+const DELAY_INICIAL_MS = 5000;
+const REEXIBIR_INTERVALO_MS = 5 * 60 * 1000;
 
-// Reforço discreto do Premium+ na home: aparece uma vez, depois de alguns segundos de
-// navegação, e não volta a aparecer na mesma aba/sessão (sessionStorage). Ao contrário do
-// popup de /assinatura, não é modal — não bloqueia a página nem exige fechamento.
+// Reforço discreto do Premium+ na home: aparece 5s depois de cada carregamento da
+// página (sem persistir "já visto" — reaparece sempre que a pessoa entrar na home de
+// novo). Se for fechado, volta a aparecer a cada 5 minutos enquanto ela continuar na
+// página. Ao contrário do popup de /assinatura, não é modal — não bloqueia a página.
 export default function HomePremiumToast() {
   const [visivel, setVisivel] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => {
-    try {
-      if (sessionStorage.getItem(SESSION_KEY)) return;
-    } catch {
-      // sessionStorage indisponível (ex: navegação privada) — mostra normalmente, sem persistir
-    }
-    const timer = setTimeout(() => {
-      setVisivel(true);
-      try {
-        sessionStorage.setItem(SESSION_KEY, "1");
-      } catch {
-        // ignora — pior caso é reaparecer numa próxima visita
-      }
-    }, DELAY_MS);
-    return () => clearTimeout(timer);
+    timerRef.current = setTimeout(() => setVisivel(true), DELAY_INICIAL_MS);
+    return () => clearTimeout(timerRef.current);
   }, []);
+
+  function fechar() {
+    setVisivel(false);
+    clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => setVisivel(true), REEXIBIR_INTERVALO_MS);
+  }
 
   if (!visivel) return null;
 
@@ -44,7 +40,7 @@ export default function HomePremiumToast() {
       }}
     >
       <button
-        onClick={() => setVisivel(false)}
+        onClick={fechar}
         aria-label="Fechar"
         style={{ position: "absolute", top: "6px", right: "8px", background: "transparent", color: "#999", fontSize: "18px", lineHeight: 1, padding: "6px" }}
       >
