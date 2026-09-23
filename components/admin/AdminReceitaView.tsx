@@ -78,12 +78,12 @@ export default function AdminReceitaView({
     setResultado(null);
     setErroReconciliar("");
     startReconciliar(async () => {
-      try {
-        const r = await reconciliarReceita(mes);
-        setResultado(r);
-      } catch (err) {
-        setErroReconciliar(err instanceof Error ? err.message : "Não foi possível reconciliar com a Asaas.");
+      const r = await reconciliarReceita(mes);
+      if (r.error) {
+        setErroReconciliar(r.error);
+        return;
       }
+      setResultado({ faltantes: r.faltantes ?? [], totalConferido: r.totalConferido ?? 0 });
     });
   }
 

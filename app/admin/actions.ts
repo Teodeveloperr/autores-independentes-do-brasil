@@ -599,11 +599,13 @@ export type CobrancaFaltante = {
  * Compara as cobranças recebidas/confirmadas na Asaas num mês com o que já está gravado
  * no nosso banco (SubscriptionPayment/Order) — só pra conferência manual, não altera nada.
  */
-export async function reconciliarReceita(mesChave: string): Promise<{ faltantes: CobrancaFaltante[]; totalConferido: number }> {
+export async function reconciliarReceita(
+  mesChave: string
+): Promise<{ error?: string; faltantes?: CobrancaFaltante[]; totalConferido?: number }> {
   await requireAdmin();
 
   if (!/^\d{4}-\d{2}$/.test(mesChave)) {
-    throw new Error("Mês inválido — use o formato AAAA-MM.");
+    return { error: "Mês inválido — use o formato AAAA-MM." };
   }
 
   const [ano, mes] = mesChave.split("-").map(Number);

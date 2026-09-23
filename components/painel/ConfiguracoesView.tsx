@@ -63,16 +63,11 @@ export default function ConfiguracoesView({
     if (!confirmado) return;
     setErroExclusao("");
     startExclusao(async () => {
-      try {
-        await excluirMinhaConta();
-      } catch (err) {
-        // redirect() lança um erro especial (digest "NEXT_REDIRECT") pra navegar depois de
-        // excluir a conta com sucesso — não é um erro de verdade.
-        if (typeof err === "object" && err !== null && "digest" in err && typeof err.digest === "string" && err.digest.startsWith("NEXT_REDIRECT")) {
-          return;
-        }
-        setErroExclusao(err instanceof Error ? err.message : "Não foi possível excluir sua conta.");
+      const resultado = await excluirMinhaConta();
+      if (resultado?.error) {
+        setErroExclusao(resultado.error);
       }
+      // Sem erro, excluirMinhaConta() chama redirect() e a navegação acontece sozinha.
     });
   }
 

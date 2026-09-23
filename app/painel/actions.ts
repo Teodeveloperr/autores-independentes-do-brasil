@@ -663,16 +663,16 @@ export async function removerPasskey(id: string) {
   revalidatePath("/painel");
 }
 
-export async function excluirMinhaConta() {
+export async function excluirMinhaConta(): Promise<{ error?: string }> {
   const author = await requireAuthor();
 
   const pedidosPendentes = await prisma.order.count({
     where: { authorId: author.id, status: { notIn: ["Entregue", "Aguardando pagamento", "Cancelado"] } },
   });
   if (pedidosPendentes > 0) {
-    throw new Error(
-      "Você tem pedidos em andamento (pagos, aguardando envio ou repasse). Finalize-os antes de excluir sua conta."
-    );
+    return {
+      error: "Você tem pedidos em andamento (pagos, aguardando envio ou repasse). Finalize-os antes de excluir sua conta.",
+    };
   }
 
   // Cancela qualquer assinatura/autorização ativa antes de apagar a conta, pra não deixar
