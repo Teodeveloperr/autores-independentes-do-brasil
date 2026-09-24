@@ -227,9 +227,10 @@ export type CobrancaParceladaCriada = { id: string; invoiceUrl: string; installm
 // Cobrança única parcelada no cartão (não é assinatura recorrente — o valor total já é
 // "vendido" de uma vez, só dividido em N parcelas na fatura do cliente). Usa totalValue em
 // vez de installmentValue pra deixar a Asaas calcular o valor de cada parcela (ela joga
-// eventual diferença de arredondamento na última). billingType UNDEFINED: a pessoa escolhe
-// cartão na página de fatura hospedada, a plataforma nunca vê dado de cartão bruto — mesmo
-// padrão já usado em criarCobranca.
+// eventual diferença de arredondamento na última). billingType CREDIT_CARD (não UNDEFINED):
+// como a pessoa já escolheu explicitamente "parcelar no cartão", a página de fatura
+// hospedada não deve oferecer boleto/Pix como alternativa — só cartão, a plataforma nunca
+// vê dado de cartão bruto, mesmo padrão já usado em criarCobranca.
 export async function criarCobrancaParcelada(input: {
   customerId: string;
   totalValueCentavos: number;
@@ -246,7 +247,7 @@ export async function criarCobrancaParcelada(input: {
       headers: { access_token: accessToken, "Content-Type": "application/json", Accept: "application/json" },
       body: JSON.stringify({
         customer: input.customerId,
-        billingType: "UNDEFINED",
+        billingType: "CREDIT_CARD",
         dueDate: hoje(),
         installmentCount: input.installmentCount,
         totalValue: input.totalValueCentavos / 100,
