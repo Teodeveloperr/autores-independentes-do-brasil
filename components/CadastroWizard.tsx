@@ -511,13 +511,16 @@ export default function CadastroWizard() {
           </div>
 
           {plan !== "free" && metodoEscolhido !== "cartao" && cicloEfetivo !== "mensal" && (
-            <div style={{ marginTop: "12px" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
-                <label style={{ fontSize: "13px", color: "#666" }}>Em quantas parcelas?</label>
+            <div style={{ background: "#FFF9E6", border: "2px solid #FFDF00", borderRadius: "6px", padding: "16px", marginTop: "16px" }}>
+              <div style={{ fontSize: "14px", fontWeight: 700, color: "#8A6116", marginBottom: "10px" }}>
+                💳 Ou parcele no cartão, sem assinatura recorrente
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "10px" }}>
+                <label style={{ fontSize: "13px", fontWeight: 600, color: "#262626" }}>Em quantas parcelas?</label>
                 <select
                   value={installmentCount}
                   onChange={(e) => setParcelasEscolhidas(Number(e.target.value))}
-                  style={{ padding: "6px 10px", border: "1px solid #DDD", borderRadius: "4px", fontSize: "13px" }}
+                  style={{ flex: 1, padding: "8px 10px", border: "1px solid #CCC", borderRadius: "4px", fontSize: "13px", fontWeight: 600 }}
                 >
                   {parcelasOpcoes.map((n) => (
                     <option key={n} value={n}>
@@ -529,7 +532,7 @@ export default function CadastroWizard() {
               <button
                 onClick={() => finish("parcelado", undefined, installmentCount)}
                 disabled={pending}
-                style={{ width: "100%", background: "white", border: "2px solid #002776", color: "#002776", padding: "14px", fontWeight: 700, borderRadius: "6px", fontSize: "15px", opacity: pending ? 0.7 : 1 }}
+                style={{ width: "100%", background: "#002776", border: "none", color: "white", padding: "14px", fontWeight: 700, borderRadius: "6px", fontSize: "15px", opacity: pending ? 0.7 : 1 }}
               >
                 {pending ? "Aguarde..." : `Parcelar no cartão — ${installmentCount}x de ${brl(installmentValueCentavos)}`}
               </button>

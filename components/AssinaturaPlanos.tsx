@@ -252,17 +252,20 @@ function PlanoPagoCard({
             )}
           </div>
           {metodoEscolhido !== "cartao" && ciclo2 !== "mensal" && (
-            <>
-              <div style={{ display: "flex", alignItems: "center", gap: "6px", marginTop: "10px" }}>
-                <label htmlFor={`parcelas-${slug}`} style={{ fontSize: "12px", color: "#666" }}>
-                  Parcelas:
+            <div style={{ background: "#FFF9E6", border: "2px solid #FFDF00", borderRadius: "6px", padding: "12px", marginTop: "12px" }}>
+              <div style={{ fontSize: "13px", fontWeight: 700, color: "#8A6116", marginBottom: "8px" }}>
+                💳 Ou parcele no cartão, sem assinatura recorrente
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "10px" }}>
+                <label htmlFor={`parcelas-${slug}`} style={{ fontSize: "13px", fontWeight: 600, color: "#262626" }}>
+                  Em quantas parcelas?
                 </label>
                 <select
                   id={`parcelas-${slug}`}
                   name="parcelas"
                   value={parcelasSelecionadas}
                   onChange={(e) => setParcelasEscolhidas(Number(e.target.value))}
-                  style={{ flex: 1, padding: "6px 8px", border: "1px solid #DDD", borderRadius: "4px", fontSize: "12px" }}
+                  style={{ flex: 1, padding: "8px 10px", border: "1px solid #CCC", borderRadius: "4px", fontSize: "13px", fontWeight: 600 }}
                 >
                   {parcelasOpcoes.map((n) => (
                     <option key={n} value={n}>
@@ -276,11 +279,11 @@ function PlanoPagoCard({
                 name="metodoPagamento"
                 value="parcelado"
                 disabled={pending}
-                style={{ width: "100%", marginTop: "8px", background: "white", border: "2px solid #002776", color: "#002776", padding: "10px", fontWeight: 600, borderRadius: "4px", fontSize: "13px", opacity: pending ? 0.7 : 1 }}
+                style={{ width: "100%", background: "#002776", border: "none", color: "white", padding: "12px", fontWeight: 700, borderRadius: "4px", fontSize: "14px", opacity: pending ? 0.7 : 1 }}
               >
                 {pending ? "..." : `Parcelar no cartão — ${parcelasSelecionadas}x de ${brl(valorParcelaCentavos)}`}
               </button>
-            </>
+            </div>
           )}
         </form>
       )}
