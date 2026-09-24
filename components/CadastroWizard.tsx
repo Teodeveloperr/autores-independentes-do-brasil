@@ -482,6 +482,11 @@ export default function CadastroWizard() {
               {finishError}
             </div>
           )}
+          {plan !== "free" && (
+            <p style={{ fontSize: "12px", color: "#999", marginBottom: "8px" }}>
+              Cartão e Pix renovam automaticamente a cada ciclo, cobrando o valor cheio.
+            </p>
+          )}
           <div style={{ display: "flex", gap: "12px" }}>
             <button onClick={() => setStep(2)} style={{ flex: "0 0 auto", background: "white", border: "1px solid #CCC", color: "#262626", padding: "14px 24px", fontWeight: 600, borderRadius: "6px", fontSize: "15px" }}>
               ← Voltar
@@ -501,7 +506,7 @@ export default function CadastroWizard() {
             ) : (
               <>
                 <button onClick={() => setMetodoEscolhido("cartao")} disabled={pending} style={{ flex: 1, background: "#002776", color: "white", padding: "14px", fontWeight: 700, borderRadius: "6px", fontSize: "15px", opacity: pending ? 0.7 : 1 }}>
-                  Pagar com cartão
+                  Cartão à vista
                 </button>
                 <button onClick={() => finish("pix")} disabled={pending} style={{ flex: 1, background: "#009B3A", color: "white", padding: "14px", fontWeight: 700, borderRadius: "6px", fontSize: "15px", opacity: pending ? 0.7 : 1 }}>
                   {pending ? "Aguarde..." : "Pagar com Pix"}

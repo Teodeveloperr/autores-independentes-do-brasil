@@ -218,6 +218,9 @@ function PlanoPagoCard({
               />
             </div>
           )}
+          <p style={{ fontSize: "11px", color: "#999", marginBottom: "6px" }}>
+            Cartão e Pix renovam automaticamente a cada ciclo, cobrando o valor cheio.
+          </p>
           <div style={{ display: "flex", gap: "8px" }}>
             {metodoEscolhido === "cartao" ? (
               <button
@@ -237,7 +240,7 @@ function PlanoPagoCard({
                   disabled={pending}
                   style={{ flex: 1, background: "#002776", color: "white", padding: "12px", fontWeight: 600, borderRadius: "4px", border: "none", fontSize: "13px", opacity: pending ? 0.7 : 1 }}
                 >
-                  Cartão
+                  Cartão à vista
                 </button>
                 <button
                   type="submit"
