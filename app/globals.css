@@ -99,6 +99,52 @@ a:hover {
   }
 }
 
+/* Demo animada "como funciona" da home (ver HomeDemoAnimado): simula um campo de
+   formulário se preenchendo sozinho, revelando o texto caractere por caractere via a
+   largura (--typed-width, em "ch", calculada no componente a partir do tamanho do texto). */
+@keyframes home-demo-digitar {
+  from {
+    width: 0;
+  }
+  to {
+    width: var(--typed-width, 0);
+  }
+}
+
+.home-demo-typed {
+  display: inline-block;
+  overflow: hidden;
+  white-space: nowrap;
+  vertical-align: bottom;
+}
+
+@keyframes home-demo-cursor {
+  50% {
+    border-color: transparent;
+  }
+}
+
+.home-demo-cursor::after {
+  content: "";
+  display: inline-block;
+  width: 2px;
+  height: 14px;
+  border-right: 2px solid #002776;
+  margin-left: 2px;
+  vertical-align: middle;
+  animation: home-demo-cursor 0.8s step-end infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-demo-typed {
+    animation: none !important;
+    width: var(--typed-width, 0) !important;
+  }
+  .home-demo-cursor::after {
+    animation: none;
+  }
+}
+
 /* Toast discreto de reforço do Premium+ na home (ver HomePremiumToast) — desliza
    de baixo à direita, some no fechamento manual, aparece só 1x por sessão. */
 .home-toast {

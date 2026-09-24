@@ -7,6 +7,7 @@ import HomeBannerCarousel from "@/components/HomeBannerCarousel";
 import HomePremiumToast from "@/components/HomePremiumToast";
 import DepoimentosCarousel from "@/components/DepoimentosCarousel";
 import CounterStats from "@/components/CounterStats";
+import HomeDemoAnimado from "@/components/HomeDemoAnimado";
 import AutoresDestaqueCarousel from "@/components/AutoresDestaqueCarousel";
 import ContactForm from "@/components/ContactForm";
 import PrecoComDesconto from "@/components/PrecoComDesconto";
@@ -156,6 +157,8 @@ export default async function HomePage() {
           ))}
         </div>
       </section>
+
+      <HomeDemoAnimado />
 
       <section className="section-pad-lg" style={{ background: "white", padding: "48px 40px", marginTop: "20px" }}>
         <div className="responsive-flex-row" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "40px", gap: "12px" }}>
