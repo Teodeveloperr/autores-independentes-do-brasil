@@ -48,20 +48,23 @@ function Card({ a, largura }: { a: AutorDestaque; largura: number }) {
 }
 
 // Faixa infinita que avança 1 autor por vez a cada 5s (pausa entre os passos, não fica
-// girando sem parar) e desliza suavemente até a próxima posição. A lista é duplicada uma
-// vez; ao alcançar a cópia (visualmente idêntica ao início), volta pro índice 0 sem
-// transição — como as duas metades são iguais, esse "salto" é imperceptível e o carrossel
-// parece continuar pra sempre, sem nenhuma célula vazia (cada card é sempre um autor de
-// verdade). A largura de cada card é recalculada a partir da largura real do container
-// (ResizeObserver) pra sempre caber um número inteiro de cards, sem cortar o próximo card
-// na borda — se ajusta sozinho em qualquer tamanho de tela, sem depender de breakpoints
-// fixos. Não pausa no hover, mesmo padrão dos outros carrosséis do site.
+// girando sem parar) e desliza suavemente até a próxima posição — mais as setas pra
+// navegar manualmente pra frente/trás. Um clone do último autor entra no início da faixa e
+// um clone do primeiro entra no final; ao alcançar qualquer um desses clones (visualmente
+// idênticos ao autor real do outro lado), a faixa salta pro índice real correspondente sem
+// transição — como o clone e o real são iguais, o salto é imperceptível e o carrossel
+// parece continuar pra sempre nos dois sentidos, sem nenhuma célula vazia (cada card é
+// sempre um autor de verdade). A largura de cada card é recalculada a partir da largura
+// real do container (ResizeObserver) pra sempre caber um número inteiro de cards, sem
+// cortar o próximo na borda. Não pausa no hover, mesmo padrão dos outros carrosséis do site.
 export default function AutoresDestaqueCarousel({ autores }: { autores: AutorDestaque[] }) {
   const total = autores.length;
   const containerRef = useRef<HTMLDivElement>(null);
+  const travadoRef = useRef(false);
   const [cardWidth, setCardWidth] = useState(LARGURA_MIN_CARD_PX);
-  const [index, setIndex] = useState(0);
+  const [index, setIndex] = useState(total > 1 ? 1 : 0);
   const [comTransicao, setComTransicao] = useState(true);
+  const [travando, setTravando] = useState(false);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -78,46 +81,101 @@ export default function AutoresDestaqueCarousel({ autores }: { autores: AutorDes
     return () => observer.disconnect();
   }, []);
 
-  useEffect(() => {
-    if (total <= 1) return;
-    const intervalo = setInterval(() => setIndex((i) => i + 1), INTERVALO_MS);
-    return () => clearInterval(intervalo);
-  }, [total]);
+  // Avança/retrocede 1 passo, ignorando o pedido se o passo anterior ainda não terminou de
+  // deslizar — evita que cliques rápidos ou um clique bem na hora do autoplay empurrem o
+  // índice pra além do único clone de cada ponta (ver comentário da faixa estendida abaixo).
+  function passo(delta: number) {
+    if (travadoRef.current) return;
+    travadoRef.current = true;
+    setTravando(true);
+    setIndex((i) => i + delta);
+  }
+
+  function liberar() {
+    travadoRef.current = false;
+    setTravando(false);
+  }
 
   useEffect(() => {
-    if (index === total) {
-      const t = setTimeout(() => {
+    if (total <= 1) return;
+    const intervalo = setInterval(() => passo(1), INTERVALO_MS);
+    return () => clearInterval(intervalo);
+  }, [total, index]);
+
+  // Sempre TRANSICAO_MS depois de qualquer passo: se caiu num clone da ponta, salta sem
+  // transição pro índice real correspondente; de qualquer forma, libera o próximo passo.
+  // Não depende do evento "transitionend" (pouco confiável em aba em segundo plano/inativa
+  // — o passo tem que liberar de qualquer jeito, nem que a transição não tenha "terminado"
+  // de verdade pro navegador).
+  useEffect(() => {
+    if (total <= 1 || !comTransicao) return;
+    const t = setTimeout(() => {
+      if (index === total + 1) {
         setComTransicao(false);
-        setIndex(0);
-      }, TRANSICAO_MS);
+        setIndex(1);
+      } else if (index === 0) {
+        setComTransicao(false);
+        setIndex(total);
+      }
+      liberar();
+    }, TRANSICAO_MS);
+    return () => clearTimeout(t);
+  }, [index, total, comTransicao]);
+
+  useEffect(() => {
+    if (!comTransicao) {
+      const t = setTimeout(() => setComTransicao(true), 50);
       return () => clearTimeout(t);
     }
-    if (!comTransicao) {
-      const frame = requestAnimationFrame(() => setComTransicao(true));
-      return () => cancelAnimationFrame(frame);
-    }
-  }, [index, total, comTransicao]);
+  }, [comTransicao]);
 
   if (total === 0) return null;
 
-  const duplicado = [...autores, ...autores];
+  // Um clone do último autor entra no início da faixa e um clone do primeiro entra no
+  // final; ao alcançar qualquer um desses clones (visualmente idêntico ao autor real do
+  // outro lado), a faixa salta pro índice real correspondente sem transição — como o clone
+  // e o real são iguais, o salto é imperceptível e o carrossel parece continuar pra sempre
+  // nos dois sentidos, sem nenhuma célula vazia.
+  const estendido = total > 1 ? [autores[total - 1], ...autores, autores[0]] : autores;
   const passoPx = cardWidth + GAP_PX;
 
   return (
-    <div ref={containerRef} style={{ overflow: "hidden" }}>
-      <div
-        style={{
-          display: "flex",
-          gap: `${GAP_PX}px`,
-          width: "max-content",
-          transform: `translateX(-${index * passoPx}px)`,
-          transition: comTransicao ? `transform ${TRANSICAO_MS}ms ease` : "none",
-        }}
-      >
-        {duplicado.map((a, i) => (
-          <Card key={`${a.id}-${i}`} a={a} largura={cardWidth} />
-        ))}
+    <div>
+      <div ref={containerRef} style={{ overflow: "hidden" }}>
+        <div
+          style={{
+            display: "flex",
+            gap: `${GAP_PX}px`,
+            width: "max-content",
+            transform: `translateX(-${index * passoPx}px)`,
+            transition: comTransicao ? `transform ${TRANSICAO_MS}ms ease` : "none",
+          }}
+        >
+          {estendido.map((a, i) => (
+            <Card key={`${a.id}-${i}`} a={a} largura={cardWidth} />
+          ))}
+        </div>
       </div>
+      {total > 1 && (
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "16px", marginTop: "20px" }}>
+          <button
+            onClick={() => passo(-1)}
+            disabled={travando}
+            aria-label="Autor anterior"
+            style={{ background: "white", border: "1px solid #DDD", borderRadius: "50%", width: "36px", height: "36px", flexShrink: 0, fontSize: "16px", color: "#002776", opacity: travando ? 0.5 : 1 }}
+          >
+            ‹
+          </button>
+          <button
+            onClick={() => passo(1)}
+            disabled={travando}
+            aria-label="Próximo autor"
+            style={{ background: "white", border: "1px solid #DDD", borderRadius: "50%", width: "36px", height: "36px", flexShrink: 0, fontSize: "16px", color: "#002776", opacity: travando ? 0.5 : 1 }}
+          >
+            ›
+          </button>
+        </div>
+      )}
     </div>
   );
 }
