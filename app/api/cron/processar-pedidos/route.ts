@@ -3,11 +3,13 @@ import { prisma } from "@/lib/db";
 import { processarRepasse, enviarConfirmacaoRecebimento } from "@/lib/repasse";
 import { processarRepasseParceiro } from "@/lib/repasseParceiro";
 import { cancelarAutorizacaoPixAutomatico, cancelarAssinaturaAsaas, buscarCobranca, cancelarCobranca } from "@/lib/asaas";
+import { sendPlanoParceladoVencendoEmail } from "@/lib/email";
 
 const DIAS_LEMBRETE = 3;
 const DIAS_LIBERACAO = 7;
 const DIAS_CADASTRO_PENDENTE = 3;
 const DIAS_PEDIDO_ABANDONADO = 3;
+const DIAS_LEMBRETE_PARCELADO = 15;
 
 export async function GET(request: Request) {
   const authHeader = request.headers.get("authorization");
@@ -120,6 +122,42 @@ export async function GET(request: Request) {
     });
   }
 
+  // Plano comprado parcelado no cartão (sem assinatura recorrente por trás — ver
+  // asaasParceladoInstallmentId) não renova sozinho: manda um lembrete uma vez, perto do
+  // vencimento, e derruba pro Iniciante quando vencer de fato, se ninguém renovar antes.
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://autoresdobrasil.com.br";
+  const limiteLembreteParcelado = new Date(Date.now() + DIAS_LEMBRETE_PARCELADO * 24 * 60 * 60 * 1000);
+  const parceladosParaLembrar = await prisma.author.findMany({
+    where: {
+      asaasParceladoInstallmentId: { not: null },
+      planoParceladoAte: { lt: limiteLembreteParcelado, gt: new Date() },
+      planoParceladoLembreteEnviadoEm: null,
+    },
+  });
+  for (const author of parceladosParaLembrar) {
+    await sendPlanoParceladoVencendoEmail(author.email, {
+      planoNome: author.plano,
+      dataVencimento: author.planoParceladoAte!.toLocaleDateString("pt-BR"),
+      renovarUrl: `${siteUrl}/assinatura`,
+    }).catch((err) => console.error(`[cron] Falha ao enviar lembrete de plano parcelado para ${author.email}:`, err));
+    await prisma.author.update({ where: { id: author.id }, data: { planoParceladoLembreteEnviadoEm: new Date() } });
+  }
+
+  const parceladosVencidos = await prisma.author.findMany({
+    where: { asaasParceladoInstallmentId: { not: null }, planoParceladoAte: { lt: new Date() } },
+  });
+  for (const author of parceladosVencidos) {
+    await prisma.author.update({
+      where: { id: author.id },
+      data: {
+        plano: "Iniciante",
+        asaasParceladoInstallmentId: null,
+        planoParceladoAte: null,
+        planoParceladoLembreteEnviadoEm: null,
+      },
+    });
+  }
+
   return NextResponse.json({
     lembretes: semConfirmacaoEnviada.length,
     processados: pendentes.length,
@@ -129,5 +167,7 @@ export async function GET(request: Request) {
     pedidosCancelados,
     cadastrosPendentesLimpos: cadastrosAbandonados.length,
     planosAdminVencidos: planosAdminVencidos.length,
+    lembretesParceladoEnviados: parceladosParaLembrar.length,
+    planosParceladosVencidos: parceladosVencidos.length,
   });
 }

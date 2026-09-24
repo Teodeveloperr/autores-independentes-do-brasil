@@ -49,7 +49,12 @@ export default function ConfiguracoesView({
   const statusAssinatura = author.asaasPixAutoStatus || author.asaasSubscriptionStatus || author.mpSubscriptionStatus;
 
   function onCancelarAssinatura() {
-    if (!confirm("Tem certeza que deseja cancelar sua assinatura? Seu plano voltará para Iniciante.")) return;
+    // Plano parcelado não é assinatura recorrente — não tem nada pra cancelar na Asaas, e
+    // as parcelas já vendidas continuam sendo cobradas no cartão independente disso.
+    const mensagem = author.planoParceladoAte
+      ? "Tem certeza que deseja cancelar? Seu plano voltará para Iniciante agora. Como foi contratado parcelado, isso não interrompe as parcelas que já estão sendo cobradas no seu cartão — só tira o acesso ao plano na plataforma."
+      : "Tem certeza que deseja cancelar sua assinatura? Seu plano voltará para Iniciante.";
+    if (!confirm(mensagem)) return;
     startCancelamento(async () => {
       await cancelarAssinatura();
       router.refresh();
@@ -113,6 +118,15 @@ export default function ConfiguracoesView({
               <div>
                 <div style={{ color: "#666", marginBottom: "4px" }}>Assinatura</div>
                 <div style={{ fontWeight: 600 }}>{STATUS_LABEL[statusAssinatura] ?? statusAssinatura}</div>
+              </div>
+            )}
+            {author.planoParceladoAte && (
+              <div>
+                <div style={{ color: "#666", marginBottom: "4px" }}>Plano parcelado — válido até</div>
+                <div style={{ fontWeight: 600 }}>
+                  {author.planoParceladoAte.toLocaleDateString("pt-BR")}
+                  <span style={{ fontWeight: 400, color: "#666" }}> (renovação manual, não é cobrado de novo sozinho)</span>
+                </div>
               </div>
             )}
             <div>

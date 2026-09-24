@@ -2,7 +2,17 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { verificarWebhookAsaas, buscarCobranca } from "@/lib/asaas";
 import { sendOrderConfirmationEmail, sendNewSaleEmail, sendNovaCobrancaAssinaturaEmail, sendWelcomeEmail } from "@/lib/email";
-import { PREMIUM_PLUS_VALOR_PARCEIRO_CENTAVOS } from "@/lib/plans";
+import { PREMIUM_PLUS_VALOR_PARCEIRO_CENTAVOS, CICLO_MESES, type CicloAssinatura } from "@/lib/plans";
+
+// Validade de um plano comprado parcelado (não tem assinatura recorrente por trás — ver
+// contexto no topo de lib/assinatura.ts) — hoje + a duração do ciclo comprado.
+function calcularPlanoParceladoAte(ciclo: string | null): Date | null {
+  const meses = ciclo ? CICLO_MESES[ciclo as CicloAssinatura] : undefined;
+  if (!meses) return null;
+  const ate = new Date();
+  ate.setMonth(ate.getMonth() + meses);
+  return ate;
+}
 
 const EVENTOS_PAGO = new Set(["PAYMENT_RECEIVED", "PAYMENT_CONFIRMED"]);
 
@@ -179,6 +189,12 @@ export async function POST(request: NextRequest) {
 
   if (evento === "PAYMENT_OVERDUE" && paymentId) {
     const cobranca = await buscarCobranca(paymentId);
+    // Parcela futura de uma compra parcelada atrasar não revoga acesso — a cobrança já foi
+    // "vendida" por inteiro, é assunto entre o autor, o banco e a Asaas, não motivo pra
+    // derrubar o autor pro Iniciante (diferente de uma assinatura recorrente de verdade).
+    if (cobranca?.installment) {
+      return NextResponse.json({ received: true }, { status: 200 });
+    }
     const viaAssinaturaLink = Boolean(cobranca?.subscription);
     let author = viaAssinaturaLink
       ? await prisma.author.findUnique({ where: { asaasSubscriptionId: cobranca!.subscription! } })
@@ -221,9 +237,11 @@ export async function POST(request: NextRequest) {
   }
   let authorAssinatura = cobranca.subscription
     ? await prisma.author.findUnique({ where: { asaasSubscriptionId: cobranca.subscription } })
-    : cobranca.customer
-      ? await prisma.author.findFirst({ where: { asaasPixCustomerId: cobranca.customer, asaasPixAutoStatus: "active" } })
-      : null;
+    : cobranca.installment
+      ? await prisma.author.findUnique({ where: { asaasParceladoInstallmentId: cobranca.installment } })
+      : cobranca.customer
+        ? await prisma.author.findFirst({ where: { asaasPixCustomerId: cobranca.customer, asaasPixAutoStatus: "active" } })
+        : null;
 
   // O formato do payload do evento de ativação do Pix Automático não é documentado pela
   // Asaas — se ele se perder ou não bater com extrairIdAutorizacaoPix, o autor fica com
@@ -289,6 +307,11 @@ export async function POST(request: NextRequest) {
           plano: authorAssinatura.planoPendente,
           planoPendente: null,
           asaasSubscriptionStatus: cobranca.subscription ? "active" : authorAssinatura.asaasSubscriptionStatus,
+          // Só a 1ª parcela chega aqui com planoPendente ainda setado (a ativação já limpa
+          // esse campo) — é o momento certo de gravar até quando o acesso vale.
+          ...(authorAssinatura.asaasParceladoInstallmentId
+            ? { planoParceladoAte: calcularPlanoParceladoAte(authorAssinatura.planoCiclo) }
+            : {}),
           ...agradecimentoGrupoDataNaAtivacao(authorAssinatura.planoPendente),
         },
       });
@@ -338,6 +361,55 @@ export async function POST(request: NextRequest) {
             cpf: pendente.cpf,
             asaasSubscriptionId: pendente.asaasSubscriptionId,
             asaasSubscriptionStatus: "active",
+            ...agradecimentoGrupoDataNaAtivacao(pendente.planoNome),
+          },
+        });
+        await prisma.subscriptionPayment.create({
+          data: {
+            authorId: novoAuthor.id,
+            plano: novoAuthor.plano,
+            valorCentavos: cobranca.valueCentavos,
+            valorLiquidoCentavos: cobranca.netValueCentavos,
+            asaasPaymentId: paymentId,
+            disponivelEm: evento === "PAYMENT_RECEIVED" ? new Date() : null,
+            ...repasseParceiroDataNaCriacao(novoAuthor.plano),
+          },
+        });
+        await sendWelcomeEmail(novoAuthor.email, novoAuthor.nome).catch((err) =>
+          console.error("[email] Falha ao enviar e-mail de boas-vindas:", err)
+        );
+        await prisma.pendingSignup.delete({ where: { id: pendente.id } });
+      }
+      return NextResponse.json({ received: true }, { status: 200 });
+    }
+  } else if (cobranca.installment) {
+    // Cadastro novo pago parcelado no cartão: diferente do checkout hospedado, o pagamento
+    // já foi criado (com asaasParceladoInstallmentId gravado) antes de a pessoa ser
+    // redirecionada — sem depender de nenhum evento pra vincular, não precisa de
+    // autocorreção por customer como os outros dois casos.
+    const pendente = await prisma.pendingSignup.findUnique({ where: { asaasParceladoInstallmentId: cobranca.installment } });
+    if (pendente) {
+      const emailEmUso = await prisma.author.findUnique({ where: { email: pendente.email } });
+      if (emailEmUso) {
+        console.error(`[asaas] PendingSignup ${pendente.id} não pôde virar conta: e-mail ${pendente.email} já está em uso.`);
+      } else {
+        const novoAuthor = await prisma.author.create({
+          data: {
+            nome: pendente.nome,
+            email: pendente.email,
+            senhaHash: pendente.senhaHash,
+            generos: pendente.generos,
+            cidade: pendente.cidade,
+            bio: pendente.bio,
+            anoEntrada: new Date().getFullYear(),
+            plano: pendente.planoNome,
+            planoCiclo: pendente.ciclo,
+            planoValorCentavos: pendente.valorCentavos,
+            planoIniciadoEm: new Date(),
+            cpf: pendente.cpf,
+            asaasCustomerId: pendente.asaasCustomerId,
+            asaasParceladoInstallmentId: pendente.asaasParceladoInstallmentId,
+            planoParceladoAte: calcularPlanoParceladoAte(pendente.ciclo),
             ...agradecimentoGrupoDataNaAtivacao(pendente.planoNome),
           },
         });

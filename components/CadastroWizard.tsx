@@ -16,7 +16,7 @@ import TurnstileWidget from "./TurnstileWidget";
 import PasswordInput from "./PasswordInput";
 import PasswordStrengthChecklist from "./PasswordStrengthChecklist";
 import { GENEROS } from "@/lib/genres";
-import { PLANOS_PAGOS, valorCicloCentavos } from "@/lib/plans";
+import { PLANOS_PAGOS, valorCicloCentavos, CICLO_MESES } from "@/lib/plans";
 import { validarCpf } from "@/lib/cpf";
 import { buscarEnderecoPorCep } from "@/lib/cep";
 
@@ -119,7 +119,7 @@ export default function CadastroWizard() {
   // guarda a última escolha feita pra Essencial/Premium) esteja no momento.
   const cicloEfetivo: Cycle = plan === "premiumPlus" ? "anual" : cycle;
 
-  function finish(metodoPagamento: "cartao" | "pix", dadosCartao?: DadosCartao) {
+  function finish(metodoPagamento: "cartao" | "pix" | "parcelado", dadosCartao?: DadosCartao) {
     if (!step1Data) return;
     if (plan !== "free" && !validarCpf(cpf)) {
       setFinishError("CPF inválido.");
@@ -174,6 +174,11 @@ export default function CadastroWizard() {
 
   const selPlan = PLANS.find((p) => p.id === plan)!;
   const selPrice = priceFor(selPlan.id, cicloEfetivo);
+  // Parcelamento não vale pro ciclo mensal (só semestral/anual) — quando disponível, o
+  // número de parcelas é fixo (uma por mês do ciclo: 6x no semestral, 12x no anual).
+  const installmentCount = CICLO_MESES[cicloEfetivo];
+  const installmentValueCentavos =
+    plan !== "free" && cicloEfetivo !== "mensal" ? Math.round(valorCicloCentavos(PLANOS_PAGOS[plan], cicloEfetivo) / installmentCount) : 0;
 
   return (
     <div className="section-pad-md" style={{ flex: 1, background: "white", color: "#262626", padding: "40px 48px", borderRadius: "12px", maxWidth: "720px", width: "100%" }}>
@@ -499,6 +504,16 @@ export default function CadastroWizard() {
               </>
             )}
           </div>
+
+          {plan !== "free" && metodoEscolhido !== "cartao" && cicloEfetivo !== "mensal" && (
+            <button
+              onClick={() => finish("parcelado")}
+              disabled={pending}
+              style={{ width: "100%", marginTop: "12px", background: "white", border: "2px solid #002776", color: "#002776", padding: "14px", fontWeight: 700, borderRadius: "6px", fontSize: "15px", opacity: pending ? 0.7 : 1 }}
+            >
+              {pending ? "Aguarde..." : `Parcelar no cartão — ${installmentCount}x de ${brl(installmentValueCentavos)}`}
+            </button>
+          )}
 
           <p style={{ textAlign: "center", fontSize: "12px", color: "#999", marginTop: "20px" }}>
             🔒 Pagamento seguro · Sem taxa de adesão

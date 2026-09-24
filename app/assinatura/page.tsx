@@ -31,6 +31,7 @@ export default async function AssinaturaPage() {
           planoAtual={author?.plano ?? "Iniciante"}
           descontoFidelidadePct={author && author.plano !== "Iniciante" ? descontoFidelidade(author.planoIniciadoEm) : 0}
           cta={cta}
+          planoParceladoAte={author?.planoParceladoAte ?? null}
         />
         <p style={{ textAlign: "center", fontSize: "13px", color: "rgba(255,255,255,0.7)", marginTop: "32px" }}>
           Pagamento seguro • Sem taxa de adesão

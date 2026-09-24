@@ -222,6 +222,54 @@ export async function cancelarAutorizacaoPixAutomatico(id: string): Promise<bool
   }
 }
 
+export type CobrancaParceladaCriada = { id: string; invoiceUrl: string; installment: string };
+
+// Cobrança única parcelada no cartão (não é assinatura recorrente — o valor total já é
+// "vendido" de uma vez, só dividido em N parcelas na fatura do cliente). Usa totalValue em
+// vez de installmentValue pra deixar a Asaas calcular o valor de cada parcela (ela joga
+// eventual diferença de arredondamento na última). billingType UNDEFINED: a pessoa escolhe
+// cartão na página de fatura hospedada, a plataforma nunca vê dado de cartão bruto — mesmo
+// padrão já usado em criarCobranca.
+export async function criarCobrancaParcelada(input: {
+  customerId: string;
+  totalValueCentavos: number;
+  installmentCount: number;
+  description: string;
+  externalReference: string;
+}): Promise<CobrancaParceladaCriada | null> {
+  const accessToken = getAccessToken();
+  if (!accessToken) return null;
+
+  try {
+    const res = await fetch(`${getBaseUrl()}/payments`, {
+      method: "POST",
+      headers: { access_token: accessToken, "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify({
+        customer: input.customerId,
+        billingType: "UNDEFINED",
+        dueDate: hoje(),
+        installmentCount: input.installmentCount,
+        totalValue: input.totalValueCentavos / 100,
+        description: input.description,
+        externalReference: input.externalReference,
+      }),
+    });
+    if (!res.ok) {
+      console.error("[asaas] Falha ao criar cobrança parcelada:", res.status, await res.text());
+      return null;
+    }
+    const data = (await res.json()) as { id: string; invoiceUrl: string; installment?: string };
+    if (!data.installment) {
+      console.error("[asaas] Cobrança parcelada criada sem campo installment na resposta:", JSON.stringify(data));
+      return null;
+    }
+    return { id: data.id, invoiceUrl: data.invoiceUrl, installment: data.installment };
+  } catch (err) {
+    console.error("[asaas] Falha ao criar cobrança parcelada:", err);
+    return null;
+  }
+}
+
 export type CicloAssinaturaAsaas = "MONTHLY" | "SEMIANNUALLY" | "YEARLY";
 
 export type AssinaturaAsaasCriada = { id: string; invoiceUrl: string };
@@ -340,6 +388,9 @@ export type CobrancaAsaas = {
   id: string;
   subscription: string | null;
   customer: string | null;
+  // Id do parcelamento (agrupa todas as parcelas de uma cobrança parcelada) — null pra
+  // cobrança avulsa normal ou assinatura recorrente.
+  installment: string | null;
   valueCentavos: number;
   // Valor que efetivamente cai na conta Asaas, já descontada a tarifa da Asaas.
   netValueCentavos: number | null;
@@ -359,11 +410,21 @@ export async function buscarCobranca(id: string): Promise<CobrancaAsaas | null> 
       console.error("[asaas] Falha ao buscar cobrança:", res.status, await res.text());
       return null;
     }
-    const data = (await res.json()) as { id: string; subscription?: string | null; customer?: string | null; value: number; netValue?: number | null; invoiceUrl: string; status: string };
+    const data = (await res.json()) as {
+      id: string;
+      subscription?: string | null;
+      customer?: string | null;
+      installment?: string | null;
+      value: number;
+      netValue?: number | null;
+      invoiceUrl: string;
+      status: string;
+    };
     return {
       id: data.id,
       subscription: data.subscription ?? null,
       customer: data.customer ?? null,
+      installment: data.installment ?? null,
       valueCentavos: Math.round(data.value * 100),
       netValueCentavos: typeof data.netValue === "number" ? Math.round(data.netValue * 100) : null,
       invoiceUrl: data.invoiceUrl,
@@ -390,12 +451,13 @@ export async function listarCobrancasDaAssinatura(subscriptionId: string): Promi
       return null;
     }
     const data = (await res.json()) as {
-      data: { id: string; subscription?: string | null; customer?: string | null; value: number; netValue?: number | null; invoiceUrl: string; status: string }[];
+      data: { id: string; subscription?: string | null; customer?: string | null; installment?: string | null; value: number; netValue?: number | null; invoiceUrl: string; status: string }[];
     };
     return data.data.map((c) => ({
       id: c.id,
       subscription: c.subscription ?? null,
       customer: c.customer ?? null,
+      installment: c.installment ?? null,
       valueCentavos: Math.round(c.value * 100),
       netValueCentavos: typeof c.netValue === "number" ? Math.round(c.netValue * 100) : null,
       invoiceUrl: c.invoiceUrl,

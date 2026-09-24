@@ -5,7 +5,7 @@ import { prisma } from "@/lib/db";
 import { requireAuthor } from "@/lib/auth";
 import { cancelarAssinaturaMp } from "@/lib/mercadoPago";
 import { cancelarAutorizacaoPixAutomatico, cancelarAssinaturaAsaas } from "@/lib/asaas";
-import { criarAssinaturaAsaasParaAutor, criarAssinaturaPixAutomatico } from "@/lib/assinatura";
+import { criarAssinaturaAsaasParaAutor, criarAssinaturaPixAutomatico, criarCobrancaParceladaParaAutor } from "@/lib/assinatura";
 import { validarCpf } from "@/lib/cpf";
 import { PLANOS_PAGOS, CICLO_MESES, valorCicloCentavos, descontoFidelidade, PLANO_RANK, type PlanoPagoSlug, type CicloAssinatura } from "@/lib/plans";
 import { checkRateLimit } from "@/lib/rateLimit";
@@ -59,7 +59,12 @@ export async function iniciarAssinatura(_prev: AssinarState, formData: FormData)
     return { error: "CPF inválido." };
   }
 
-  const metodoPagamento = (formData.get("metodoPagamento") as string) === "pix" ? "pix" : "cartao";
+  const metodoPagamentoBruto = formData.get("metodoPagamento") as string;
+  const metodoPagamento = metodoPagamentoBruto === "pix" ? "pix" : metodoPagamentoBruto === "parcelado" ? "parcelado" : "cartao";
+
+  if (metodoPagamento === "parcelado" && ciclo === "mensal") {
+    return { error: "O parcelamento no cartão está disponível apenas nos ciclos semestral e anual." };
+  }
 
   await cancelarAssinaturaAtiva(author);
 
@@ -78,6 +83,24 @@ export async function iniciarAssinatura(_prev: AssinarState, formData: FormData)
     } catch (err) {
       return { error: err instanceof Error ? err.message : "Não foi possível iniciar a assinatura. Tente novamente em instantes." };
     }
+  }
+
+  if (metodoPagamento === "parcelado") {
+    let checkoutUrlParcelado: string;
+    try {
+      checkoutUrlParcelado = await criarCobrancaParceladaParaAutor({
+        authorId: author.id,
+        authorEmail: author.email,
+        authorNome: author.nome,
+        cpf,
+        planoNome: plano.nome,
+        ciclo,
+        valorCentavos,
+      });
+    } catch (err) {
+      return { error: err instanceof Error ? err.message : "Não foi possível iniciar o pagamento parcelado. Tente novamente em instantes." };
+    }
+    redirect(checkoutUrlParcelado);
   }
 
   const telefone = ((formData.get("telefone") as string) || "").trim();
@@ -121,6 +144,12 @@ export async function cancelarAssinatura() {
       mpSubscriptionStatus: author.mpPreapprovalId ? "cancelled" : author.mpSubscriptionStatus,
       asaasPixAutoStatus: author.asaasPixAutoAuthorizationId ? "cancelled" : author.asaasPixAutoStatus,
       asaasSubscriptionStatus: author.asaasSubscriptionId ? "cancelled" : author.asaasSubscriptionStatus,
+      // Plano parcelado não tem nada pra cancelar na Asaas (não é assinatura recorrente —
+      // as parcelas já vendidas continuam sendo cobradas no cartão independente disso); só
+      // limpa o controle de validade local, que é o que dá acesso à plataforma.
+      asaasParceladoInstallmentId: null,
+      planoParceladoAte: null,
+      planoParceladoLembreteEnviadoEm: null,
     },
   });
 }

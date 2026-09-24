@@ -2,7 +2,7 @@ import "server-only";
 import crypto from "node:crypto";
 import { prisma } from "@/lib/db";
 import { criarAssinatura } from "@/lib/mercadoPago";
-import { criarOuBuscarCliente, criarAutorizacaoPixAutomatico, cancelarAutorizacaoPixAutomatico, criarCheckoutAssinaturaAsaas, cancelarAssinaturaAsaas, type FrequenciaPixAutomatico, type CicloAssinaturaAsaas } from "@/lib/asaas";
+import { criarOuBuscarCliente, criarAutorizacaoPixAutomatico, cancelarAutorizacaoPixAutomatico, criarCheckoutAssinaturaAsaas, cancelarAssinaturaAsaas, criarCobrancaParcelada, type FrequenciaPixAutomatico, type CicloAssinaturaAsaas } from "@/lib/asaas";
 import { CICLO_MESES, type PlanoPagoSlug, type CicloAssinatura } from "@/lib/plans";
 
 const FREQUENCIA_POR_CICLO: Record<CicloAssinatura, FrequenciaPixAutomatico> = {
@@ -243,6 +243,74 @@ export async function criarCadastroPendenteAssinatura(input: {
   return { checkoutUrl: checkout.link };
 }
 
+// Cadastro novo pagando parcelado no cartão (não é assinatura recorrente — ver
+// criarCobrancaParcelada em lib/asaas.ts). Diferente do checkout de assinatura, o
+// pagamento já é criado nessa chamada mesma (sem depender de a pessoa terminar um checkout
+// hospedado depois) — por isso não precisa dos dados extras de telefone/CEP/número que o
+// checkout RECURRENT exige, só nome+CPF+e-mail, igual ao Pix.
+export async function criarCadastroPendenteParcelado(input: {
+  nome: string;
+  email: string;
+  senhaHash: string;
+  generos: string[];
+  cidade: string;
+  bio: string;
+  planoSlug: string;
+  planoNome: string;
+  ciclo: CicloAssinatura;
+  valorCentavos: number;
+  cpf: string;
+}): Promise<{ checkoutUrl: string }> {
+  const pendenteExistente = await prisma.pendingSignup.findUnique({ where: { email: input.email } });
+  if (pendenteExistente) {
+    if (pendenteExistente.asaasSubscriptionId) {
+      await cancelarAssinaturaAsaas(pendenteExistente.asaasSubscriptionId);
+    }
+    if (pendenteExistente.asaasPixAutoAuthorizationId) {
+      await cancelarAutorizacaoPixAutomatico(pendenteExistente.asaasPixAutoAuthorizationId);
+    }
+    await prisma.pendingSignup.delete({ where: { id: pendenteExistente.id } });
+  }
+
+  const customerId = await criarOuBuscarCliente({ nome: input.nome, cpf: input.cpf, email: input.email });
+  if (!customerId) {
+    throw new Error("Não foi possível validar seus dados na Asaas. Confira o CPF e tente novamente.");
+  }
+
+  const externalReference = crypto.randomBytes(16).toString("hex");
+  const cobranca = await criarCobrancaParcelada({
+    customerId,
+    totalValueCentavos: input.valorCentavos,
+    installmentCount: CICLO_MESES[input.ciclo],
+    description: `Assinatura ${input.planoNome}`,
+    externalReference,
+  });
+
+  if (!cobranca) {
+    throw new Error("Não foi possível iniciar o pagamento parcelado. Tente novamente em instantes.");
+  }
+
+  await prisma.pendingSignup.create({
+    data: {
+      nome: input.nome,
+      email: input.email,
+      senhaHash: input.senhaHash,
+      generos: input.generos,
+      cidade: input.cidade,
+      bio: input.bio,
+      planoSlug: input.planoSlug,
+      planoNome: input.planoNome,
+      ciclo: input.ciclo,
+      valorCentavos: input.valorCentavos,
+      cpf: input.cpf,
+      asaasCustomerId: customerId,
+      asaasParceladoInstallmentId: cobranca.installment,
+    },
+  });
+
+  return { checkoutUrl: cobranca.invoiceUrl };
+}
+
 export async function criarAssinaturaAsaasParaAutor(input: {
   authorId: string;
   authorEmail: string;
@@ -302,4 +370,49 @@ export async function criarAssinaturaAsaasParaAutor(input: {
   });
 
   return checkout.link;
+}
+
+// Autor já logado trocando/contratando plano parcelado no cartão (não é assinatura
+// recorrente). Mesma observação de criarCadastroPendenteParcelado: só nome+CPF+e-mail, sem
+// telefone/CEP/número.
+export async function criarCobrancaParceladaParaAutor(input: {
+  authorId: string;
+  authorEmail: string;
+  authorNome: string;
+  cpf: string;
+  planoNome: string;
+  ciclo: CicloAssinatura;
+  valorCentavos: number;
+}): Promise<string> {
+  const customerId = await criarOuBuscarCliente({ nome: input.authorNome, cpf: input.cpf, email: input.authorEmail });
+  if (!customerId) {
+    throw new Error("Não foi possível validar seus dados na Asaas. Confira o CPF e tente novamente.");
+  }
+
+  const externalReference = crypto.randomBytes(16).toString("hex");
+  const cobranca = await criarCobrancaParcelada({
+    customerId,
+    totalValueCentavos: input.valorCentavos,
+    installmentCount: CICLO_MESES[input.ciclo],
+    description: `Assinatura ${input.planoNome}`,
+    externalReference,
+  });
+
+  if (!cobranca) {
+    throw new Error("Não foi possível iniciar o pagamento parcelado. Tente novamente em instantes.");
+  }
+
+  await prisma.author.update({
+    where: { id: input.authorId },
+    data: {
+      cpf: input.cpf,
+      asaasCustomerId: customerId,
+      asaasParceladoInstallmentId: cobranca.installment,
+      planoCiclo: input.ciclo,
+      planoValorCentavos: input.valorCentavos,
+      planoPendente: input.planoNome,
+    },
+  });
+
+  return cobranca.invoiceUrl;
 }

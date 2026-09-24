@@ -62,6 +62,15 @@ model Author {
   asaasSubscriptionStatus     String?
   asaasCheckoutReference      String? @unique
 
+  // Plano comprado parcelado no cartão (cobrança única dividida em N parcelas, não é
+  // assinatura recorrente da Asaas) — a própria presença de asaasParceladoInstallmentId já
+  // indica esse modo. planoParceladoAte é a validade que a plataforma controla sozinha
+  // (sem renovação automática); planoParceladoLembreteEnviadoEm evita reenviar o e-mail de
+  // lembrete de renovação mais de uma vez.
+  asaasParceladoInstallmentId     String?   @unique
+  planoParceladoAte               DateTime?
+  planoParceladoLembreteEnviadoEm DateTime?
+
   portfolioFormacao       String?
   portfolioPremios        String?
   portfolioCitacao        String?
@@ -427,6 +436,8 @@ model PendingSignup {
   asaasCustomerId        String?
   asaasSubscriptionId    String? @unique
   asaasCheckoutReference String? @unique
+
+  asaasParceladoInstallmentId String? @unique
 
   createdAt DateTime @default(now())
 }

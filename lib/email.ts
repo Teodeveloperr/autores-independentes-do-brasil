@@ -265,6 +265,39 @@ export async function sendNovaCobrancaAssinaturaEmail(
   });
 }
 
+export async function sendPlanoParceladoVencendoEmail(
+  to: string,
+  data: { planoNome: string; dataVencimento: string; renovarUrl: string }
+) {
+  await resend.emails.send({
+    from: EMAIL_FROM,
+    to,
+    subject: `Seu plano ${data.planoNome} está vencendo`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 560px; margin: 0 auto; color: #262626;">
+        <h1 style="color: #002776; font-size: 22px;">Seu plano está perto de vencer</h1>
+        <p style="font-size: 15px; line-height: 1.6;">
+          Seu plano <b>${data.planoNome}</b> (contratado parcelado no cartão) vale até <b>${data.dataVencimento}</b>.
+          Como não é uma assinatura recorrente, ele não renova sozinho — pra continuar com acesso ao plano
+          depois dessa data, renove gerando uma nova cobrança parcelada.
+        </p>
+        <p style="margin-top: 32px;">
+          <a href="${data.renovarUrl}"
+             style="background:#009B3A;color:white;padding:12px 24px;border-radius:4px;text-decoration:none;font-weight:bold;">
+            Renovar meu plano
+          </a>
+        </p>
+        <p style="font-size: 13px; color: #666; margin-top: 32px;">
+          Se não renovar até o vencimento, seu plano volta automaticamente para o Iniciante.
+        </p>
+        <p style="font-size: 13px; color: #666; margin-top: 16px;">
+          Coletivo de escritores valorizando histórias, conectando pessoas.
+        </p>
+      </div>
+    `,
+  });
+}
+
 export async function sendContactFormEmail(data: { nome: string; email: string; assunto: string; mensagem: string }) {
   await resend.emails.send({
     from: EMAIL_FROM,

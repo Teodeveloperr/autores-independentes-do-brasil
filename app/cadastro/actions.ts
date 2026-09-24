@@ -8,7 +8,7 @@ import { createAuthorSession } from "@/lib/session";
 import { sendWelcomeEmail } from "@/lib/email";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 import { validarSenha } from "@/lib/password";
-import { criarCadastroPendenteAssinatura, criarCadastroPendente } from "@/lib/assinatura";
+import { criarCadastroPendenteAssinatura, criarCadastroPendente, criarCadastroPendenteParcelado } from "@/lib/assinatura";
 import { cancelarAutorizacaoPixAutomatico, cancelarAssinaturaAsaas } from "@/lib/asaas";
 import { PLANOS_PAGOS, valorCicloCentavos, type PlanoPagoSlug, type CicloAssinatura } from "@/lib/plans";
 import { verificarTurnstile } from "@/lib/turnstile";
@@ -76,7 +76,7 @@ export async function validateStep1(formData: FormData): Promise<Step1Result> {
 
 export type PlanId = "free" | PlanoPagoSlug;
 export type Cycle = CicloAssinatura;
-export type MetodoPagamento = "cartao" | "pix";
+export type MetodoPagamento = "cartao" | "pix" | "parcelado";
 
 export type CreateAccountResult = { error: string } | { pixQrCode: { payload: string; image: string } } | undefined;
 
@@ -105,6 +105,10 @@ export async function createAccount(
 
   if (planId === "premiumPlus" && cycle !== "anual") {
     return { error: "O plano Premium+ está disponível apenas no ciclo anual." };
+  }
+
+  if (metodoPagamento === "parcelado" && cycle === "mensal") {
+    return { error: "O parcelamento no cartão está disponível apenas nos ciclos semestral e anual." };
   }
 
   if (planId !== "free" && metodoPagamento === "cartao") {
@@ -193,6 +197,28 @@ export async function createAccount(
     } catch (err) {
       return { error: err instanceof Error ? err.message : "Não foi possível gerar o Pix. Tente novamente em instantes." };
     }
+  }
+
+  if (metodoPagamento === "parcelado") {
+    let checkoutUrlParcelado: string;
+    try {
+      ({ checkoutUrl: checkoutUrlParcelado } = await criarCadastroPendenteParcelado({
+        nome: step1.nome,
+        email,
+        senhaHash,
+        generos: step1.generos,
+        cidade: step1.cidade,
+        bio: step1.bio || `Autor(a) independente do coletivo Autores Independentes do Brasil, de ${step1.cidade}.`,
+        planoSlug: planId,
+        planoNome: plano.nome,
+        ciclo: cycle,
+        valorCentavos: valorCicloCentavos(plano, cycle),
+        cpf,
+      }));
+    } catch (err) {
+      return { error: err instanceof Error ? err.message : "Não foi possível iniciar o pagamento parcelado. Tente novamente em instantes." };
+    }
+    redirect(checkoutUrlParcelado);
   }
 
   let checkoutUrl: string;

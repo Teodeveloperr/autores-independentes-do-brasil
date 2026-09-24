@@ -17,6 +17,13 @@ const CICLOS: { id: CicloAssinatura; label: string }[] = [
   { id: "anual", label: "Anual (menor preço)" },
 ];
 
+const DIAS_AVISO_RENOVACAO_PARCELADO = 15;
+
+function estaPertoDeVencer(planoParceladoAte: Date | null): boolean {
+  if (!planoParceladoAte) return false;
+  return planoParceladoAte.getTime() - Date.now() < DIAS_AVISO_RENOVACAO_PARCELADO * 24 * 60 * 60 * 1000;
+}
+
 function PlanoPagoCard({
   slug,
   ciclo,
@@ -26,6 +33,7 @@ function PlanoPagoCard({
   isLoggedIn,
   planoAtual,
   descontoFidelidadePct,
+  planoParceladoAte,
 }: {
   slug: "essencial" | "premium" | "premiumPlus";
   ciclo: CicloAssinatura;
@@ -35,6 +43,7 @@ function PlanoPagoCard({
   isLoggedIn: boolean;
   planoAtual: string;
   descontoFidelidadePct: number;
+  planoParceladoAte: Date | null;
 }) {
   const [state, formAction, pending] = useActionState<AssinarState, FormData>(iniciarAssinatura, undefined);
   const [metodoEscolhido, setMetodoEscolhido] = useState<"cartao" | null>(null);
@@ -48,6 +57,9 @@ function PlanoPagoCard({
   const meses = CICLO_MESES[ciclo2];
   const totalCiclo = valorCicloCentavos(plano, ciclo2);
   const jaAssinante = planoAtual === plano.nome;
+  // Plano parcelado (sem renovação automática) perto de vencer: em vez do badge estático
+  // de "plano atual", mostra o formulário de compra de novo, pra renovar.
+  const parceladoPertoDeVencer = jaAssinante && estaPertoDeVencer(planoParceladoAte);
   const ehUpgrade = planoAtual !== "Iniciante" && !jaAssinante && (PLANO_RANK[plano.nome] ?? 0) > (PLANO_RANK[planoAtual] ?? 0);
   const temDesconto = ehUpgrade && descontoFidelidadePct > 0;
   const totalCicloComDesconto = temDesconto ? Math.round(totalCiclo * (1 - descontoFidelidadePct / 100)) : totalCiclo;
@@ -123,7 +135,7 @@ function PlanoPagoCard({
         >
           Assinar {plano.nome.replace("Autor ", "")}
         </Link>
-      ) : jaAssinante ? (
+      ) : jaAssinante && !parceladoPertoDeVencer ? (
         <div style={{ textAlign: "center", background: "#E3F4E9", color: "#009B3A", padding: "12px", fontWeight: 600, borderRadius: "4px", fontSize: "14px" }}>
           ✓ Seu plano atual
         </div>
@@ -147,6 +159,11 @@ function PlanoPagoCard({
         </div>
       ) : (
         <form action={formAction}>
+          {parceladoPertoDeVencer && (
+            <div style={{ background: "#FEF6E7", color: "#8A6116", fontSize: "12px", padding: "10px 12px", borderRadius: "4px", marginBottom: "10px", textAlign: "center" }}>
+              ⏳ Seu plano parcelado vence em breve — renove abaixo pra continuar com acesso.
+            </div>
+          )}
           <input type="hidden" name="planoSlug" value={slug} />
           <input type="hidden" name="ciclo" value={ciclo2} />
           <input
@@ -227,6 +244,17 @@ function PlanoPagoCard({
               </>
             )}
           </div>
+          {metodoEscolhido !== "cartao" && ciclo2 !== "mensal" && (
+            <button
+              type="submit"
+              name="metodoPagamento"
+              value="parcelado"
+              disabled={pending}
+              style={{ width: "100%", marginTop: "8px", background: "white", border: "2px solid #002776", color: "#002776", padding: "10px", fontWeight: 600, borderRadius: "4px", fontSize: "13px", opacity: pending ? 0.7 : 1 }}
+            >
+              {pending ? "..." : `Parcelar no cartão — ${meses}x de ${brl(porMes)}`}
+            </button>
+          )}
         </form>
       )}
     </div>
@@ -238,11 +266,13 @@ export default function AssinaturaPlanos({
   planoAtual,
   descontoFidelidadePct,
   cta,
+  planoParceladoAte,
 }: {
   isLoggedIn: boolean;
   planoAtual: string;
   descontoFidelidadePct: number;
   cta: string;
+  planoParceladoAte?: Date | null;
 }) {
   const [ciclo, setCiclo] = useState<CicloAssinatura>("mensal");
 
@@ -302,6 +332,7 @@ export default function AssinaturaPlanos({
           isLoggedIn={isLoggedIn}
           planoAtual={planoAtual}
           descontoFidelidadePct={descontoFidelidadePct}
+          planoParceladoAte={planoParceladoAte ?? null}
           recursos={[
             "Perfil público completo",
             "Portfólio cultural em PDF completo",
@@ -319,6 +350,7 @@ export default function AssinaturaPlanos({
           isLoggedIn={isLoggedIn}
           planoAtual={planoAtual}
           descontoFidelidadePct={descontoFidelidadePct}
+          planoParceladoAte={planoParceladoAte ?? null}
           recursos={[
             "Tudo do Autor Essencial",
             "Comissão reduzida (10%)",
@@ -339,6 +371,7 @@ export default function AssinaturaPlanos({
           isLoggedIn={isLoggedIn}
           planoAtual={planoAtual}
           descontoFidelidadePct={descontoFidelidadePct}
+          planoParceladoAte={planoParceladoAte ?? null}
           recursos={[
             "Tudo do Autor Premium",
             "Card exclusivo no Instagram do coletivo",
