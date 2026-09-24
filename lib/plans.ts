@@ -112,6 +112,13 @@ export type CicloAssinatura = "mensal" | "semestral" | "anual";
 
 export const CICLO_MESES: Record<CicloAssinatura, number> = { mensal: 1, semestral: 6, anual: 12 };
 
+// Quantidade de parcelas que a pessoa pode escolher ao pagar parcelado no cartão — de 1 até
+// o número de meses do ciclo (6 no semestral, 12 no anual). Usado tanto pra montar o
+// seletor na UI quanto pra validar no servidor o valor que veio do formulário.
+export function parcelasDisponiveis(ciclo: CicloAssinatura): number[] {
+  return Array.from({ length: CICLO_MESES[ciclo] }, (_, i) => i + 1);
+}
+
 // Ciclos aceitos numa concessão manual de plano pelo admin (sem cobrança real por trás) —
 // não inclui "mensal" porque não faz sentido conceder um plano gratuito por só um mês.
 export type CicloConcessaoAdmin = "semestral" | "anual";

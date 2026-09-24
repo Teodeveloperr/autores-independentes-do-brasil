@@ -16,7 +16,7 @@ import TurnstileWidget from "./TurnstileWidget";
 import PasswordInput from "./PasswordInput";
 import PasswordStrengthChecklist from "./PasswordStrengthChecklist";
 import { GENEROS } from "@/lib/genres";
-import { PLANOS_PAGOS, valorCicloCentavos, CICLO_MESES } from "@/lib/plans";
+import { PLANOS_PAGOS, valorCicloCentavos, CICLO_MESES, parcelasDisponiveis } from "@/lib/plans";
 import { validarCpf } from "@/lib/cpf";
 import { buscarEnderecoPorCep } from "@/lib/cep";
 
@@ -76,6 +76,7 @@ export default function CadastroWizard() {
   const [plan, setPlan] = useState<PlanId>(planoInicial);
   const [cpf, setCpf] = useState("");
   const [metodoEscolhido, setMetodoEscolhido] = useState<"cartao" | "pix" | null>(null);
+  const [parcelasEscolhidas, setParcelasEscolhidas] = useState<number | null>(null);
   const [telefone, setTelefone] = useState("");
   const [cep, setCep] = useState("");
   const [numero, setNumero] = useState("");
@@ -119,7 +120,7 @@ export default function CadastroWizard() {
   // guarda a última escolha feita pra Essencial/Premium) esteja no momento.
   const cicloEfetivo: Cycle = plan === "premiumPlus" ? "anual" : cycle;
 
-  function finish(metodoPagamento: "cartao" | "pix" | "parcelado", dadosCartao?: DadosCartao) {
+  function finish(metodoPagamento: "cartao" | "pix" | "parcelado", dadosCartao?: DadosCartao, installmentCountEscolhido?: number) {
     if (!step1Data) return;
     if (plan !== "free" && !validarCpf(cpf)) {
       setFinishError("CPF inválido.");
@@ -128,7 +129,7 @@ export default function CadastroWizard() {
     setFinishError("");
     startTransition(async () => {
       try {
-        const result = await createAccount(step1Data, plan, cicloEfetivo, cpf, metodoPagamento, dadosCartao);
+        const result = await createAccount(step1Data, plan, cicloEfetivo, cpf, metodoPagamento, dadosCartao, installmentCountEscolhido);
         if (result && "error" in result) {
           setFinishError(result.error);
           return;
@@ -174,9 +175,13 @@ export default function CadastroWizard() {
 
   const selPlan = PLANS.find((p) => p.id === plan)!;
   const selPrice = priceFor(selPlan.id, cicloEfetivo);
-  // Parcelamento não vale pro ciclo mensal (só semestral/anual) — quando disponível, o
-  // número de parcelas é fixo (uma por mês do ciclo: 6x no semestral, 12x no anual).
-  const installmentCount = CICLO_MESES[cicloEfetivo];
+  // Parcelamento não vale pro ciclo mensal (só semestral/anual) — a pessoa escolhe entre
+  // 1x e o número de meses do ciclo (6 no semestral, 12 no anual); se a escolha guardada
+  // não existir mais nas opções do ciclo atual (ex.: trocou de anual pra semestral depois
+  // de escolher 10x), o Math.min cai pro máximo válido em vez de sumir a seleção.
+  const installmentCountMax = CICLO_MESES[cicloEfetivo];
+  const parcelasOpcoes = plan !== "free" ? parcelasDisponiveis(cicloEfetivo) : [];
+  const installmentCount = Math.min(parcelasEscolhidas ?? installmentCountMax, installmentCountMax);
   const installmentValueCentavos =
     plan !== "free" && cicloEfetivo !== "mensal" ? Math.round(valorCicloCentavos(PLANOS_PAGOS[plan], cicloEfetivo) / installmentCount) : 0;
 
@@ -506,13 +511,29 @@ export default function CadastroWizard() {
           </div>
 
           {plan !== "free" && metodoEscolhido !== "cartao" && cicloEfetivo !== "mensal" && (
-            <button
-              onClick={() => finish("parcelado")}
-              disabled={pending}
-              style={{ width: "100%", marginTop: "12px", background: "white", border: "2px solid #002776", color: "#002776", padding: "14px", fontWeight: 700, borderRadius: "6px", fontSize: "15px", opacity: pending ? 0.7 : 1 }}
-            >
-              {pending ? "Aguarde..." : `Parcelar no cartão — ${installmentCount}x de ${brl(installmentValueCentavos)}`}
-            </button>
+            <div style={{ marginTop: "12px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
+                <label style={{ fontSize: "13px", color: "#666" }}>Em quantas parcelas?</label>
+                <select
+                  value={installmentCount}
+                  onChange={(e) => setParcelasEscolhidas(Number(e.target.value))}
+                  style={{ padding: "6px 10px", border: "1px solid #DDD", borderRadius: "4px", fontSize: "13px" }}
+                >
+                  {parcelasOpcoes.map((n) => (
+                    <option key={n} value={n}>
+                      {n}x de {brl(Math.round(valorCicloCentavos(PLANOS_PAGOS[plan], cicloEfetivo) / n))}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <button
+                onClick={() => finish("parcelado", undefined, installmentCount)}
+                disabled={pending}
+                style={{ width: "100%", background: "white", border: "2px solid #002776", color: "#002776", padding: "14px", fontWeight: 700, borderRadius: "6px", fontSize: "15px", opacity: pending ? 0.7 : 1 }}
+              >
+                {pending ? "Aguarde..." : `Parcelar no cartão — ${installmentCount}x de ${brl(installmentValueCentavos)}`}
+              </button>
+            </div>
           )}
 
           <p style={{ textAlign: "center", fontSize: "12px", color: "#999", marginTop: "20px" }}>

@@ -3,7 +3,7 @@
 import { useActionState, useState } from "react";
 import Link from "next/link";
 import { iniciarAssinatura, type AssinarState } from "@/app/assinatura/actions";
-import { PLANOS_PAGOS, CICLO_MESES, valorCicloCentavos, PLANO_RANK, type CicloAssinatura } from "@/lib/plans";
+import { PLANOS_PAGOS, CICLO_MESES, valorCicloCentavos, PLANO_RANK, parcelasDisponiveis, type CicloAssinatura } from "@/lib/plans";
 import { buscarEnderecoPorCep } from "@/lib/cep";
 import AssinaturaPremiumPopup from "./AssinaturaPremiumPopup";
 
@@ -47,6 +47,7 @@ function PlanoPagoCard({
 }) {
   const [state, formAction, pending] = useActionState<AssinarState, FormData>(iniciarAssinatura, undefined);
   const [metodoEscolhido, setMetodoEscolhido] = useState<"cartao" | null>(null);
+  const [parcelasEscolhidas, setParcelasEscolhidas] = useState<number | null>(null);
   const [cep, setCep] = useState("");
   const [enderecoResumo, setEnderecoResumo] = useState("");
   const [buscandoCep, setBuscandoCep] = useState(false);
@@ -64,6 +65,12 @@ function PlanoPagoCard({
   const temDesconto = ehUpgrade && descontoFidelidadePct > 0;
   const totalCicloComDesconto = temDesconto ? Math.round(totalCiclo * (1 - descontoFidelidadePct / 100)) : totalCiclo;
   const porMes = Math.round(totalCicloComDesconto / meses);
+  // Parcelas do cartão: a pessoa escolhe de 1 até `meses`; se a seleção guardada não
+  // existir mais nas opções do ciclo atual (trocou de ciclo depois de escolher), o
+  // Math.min cai pro máximo válido em vez de sumir a seleção.
+  const parcelasOpcoes = parcelasDisponiveis(ciclo2);
+  const parcelasSelecionadas = Math.min(parcelasEscolhidas ?? meses, meses);
+  const valorParcelaCentavos = Math.round(totalCicloComDesconto / parcelasSelecionadas);
 
   async function onCepBlur() {
     const digits = cep.replace(/\D/g, "");
@@ -245,15 +252,35 @@ function PlanoPagoCard({
             )}
           </div>
           {metodoEscolhido !== "cartao" && ciclo2 !== "mensal" && (
-            <button
-              type="submit"
-              name="metodoPagamento"
-              value="parcelado"
-              disabled={pending}
-              style={{ width: "100%", marginTop: "8px", background: "white", border: "2px solid #002776", color: "#002776", padding: "10px", fontWeight: 600, borderRadius: "4px", fontSize: "13px", opacity: pending ? 0.7 : 1 }}
-            >
-              {pending ? "..." : `Parcelar no cartão — ${meses}x de ${brl(porMes)}`}
-            </button>
+            <>
+              <div style={{ display: "flex", alignItems: "center", gap: "6px", marginTop: "10px" }}>
+                <label htmlFor={`parcelas-${slug}`} style={{ fontSize: "12px", color: "#666" }}>
+                  Parcelas:
+                </label>
+                <select
+                  id={`parcelas-${slug}`}
+                  name="parcelas"
+                  value={parcelasSelecionadas}
+                  onChange={(e) => setParcelasEscolhidas(Number(e.target.value))}
+                  style={{ flex: 1, padding: "6px 8px", border: "1px solid #DDD", borderRadius: "4px", fontSize: "12px" }}
+                >
+                  {parcelasOpcoes.map((n) => (
+                    <option key={n} value={n}>
+                      {n}x de {brl(Math.round(totalCicloComDesconto / n))}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <button
+                type="submit"
+                name="metodoPagamento"
+                value="parcelado"
+                disabled={pending}
+                style={{ width: "100%", marginTop: "8px", background: "white", border: "2px solid #002776", color: "#002776", padding: "10px", fontWeight: 600, borderRadius: "4px", fontSize: "13px", opacity: pending ? 0.7 : 1 }}
+              >
+                {pending ? "..." : `Parcelar no cartão — ${parcelasSelecionadas}x de ${brl(valorParcelaCentavos)}`}
+              </button>
+            </>
           )}
         </form>
       )}

@@ -7,7 +7,7 @@ import { cancelarAssinaturaMp } from "@/lib/mercadoPago";
 import { cancelarAutorizacaoPixAutomatico, cancelarAssinaturaAsaas } from "@/lib/asaas";
 import { criarAssinaturaAsaasParaAutor, criarAssinaturaPixAutomatico, criarCobrancaParceladaParaAutor } from "@/lib/assinatura";
 import { validarCpf } from "@/lib/cpf";
-import { PLANOS_PAGOS, CICLO_MESES, valorCicloCentavos, descontoFidelidade, PLANO_RANK, type PlanoPagoSlug, type CicloAssinatura } from "@/lib/plans";
+import { PLANOS_PAGOS, CICLO_MESES, valorCicloCentavos, descontoFidelidade, PLANO_RANK, parcelasDisponiveis, type PlanoPagoSlug, type CicloAssinatura } from "@/lib/plans";
 import { checkRateLimit } from "@/lib/rateLimit";
 
 export type AssinarState = { error?: string; pixQrCode?: { payload: string; image: string } } | undefined;
@@ -66,6 +66,9 @@ export async function iniciarAssinatura(_prev: AssinarState, formData: FormData)
     return { error: "O parcelamento no cartão está disponível apenas nos ciclos semestral e anual." };
   }
 
+  const parcelasEscolhidas = Number(formData.get("parcelas"));
+  const installmentCount = parcelasDisponiveis(ciclo).includes(parcelasEscolhidas) ? parcelasEscolhidas : CICLO_MESES[ciclo];
+
   await cancelarAssinaturaAtiva(author);
 
   if (metodoPagamento === "pix") {
@@ -96,6 +99,7 @@ export async function iniciarAssinatura(_prev: AssinarState, formData: FormData)
         planoNome: plano.nome,
         ciclo,
         valorCentavos,
+        installmentCount,
       });
     } catch (err) {
       return { error: err instanceof Error ? err.message : "Não foi possível iniciar o pagamento parcelado. Tente novamente em instantes." };

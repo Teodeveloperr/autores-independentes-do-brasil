@@ -10,7 +10,7 @@ import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 import { validarSenha } from "@/lib/password";
 import { criarCadastroPendenteAssinatura, criarCadastroPendente, criarCadastroPendenteParcelado } from "@/lib/assinatura";
 import { cancelarAutorizacaoPixAutomatico, cancelarAssinaturaAsaas } from "@/lib/asaas";
-import { PLANOS_PAGOS, valorCicloCentavos, type PlanoPagoSlug, type CicloAssinatura } from "@/lib/plans";
+import { PLANOS_PAGOS, valorCicloCentavos, CICLO_MESES, parcelasDisponiveis, type PlanoPagoSlug, type CicloAssinatura } from "@/lib/plans";
 import { verificarTurnstile } from "@/lib/turnstile";
 import { emailSchema, senhaNovaSchema, cpfSchema, textoSchema, primeiroErroZod } from "@/lib/validation";
 
@@ -88,7 +88,8 @@ export async function createAccount(
   cycle: Cycle,
   cpf: string,
   metodoPagamento: MetodoPagamento,
-  dadosCartao?: DadosCartao
+  dadosCartao?: DadosCartao,
+  installmentCountEscolhido?: number
 ): Promise<CreateAccountResult> {
   // Erros lançados com throw numa Server Action são redigidos pelo Next.js em produção
   // (a mensagem some, só sobra um digest genérico) — por isso essa função sempre retorna
@@ -110,6 +111,11 @@ export async function createAccount(
   if (metodoPagamento === "parcelado" && cycle === "mensal") {
     return { error: "O parcelamento no cartão está disponível apenas nos ciclos semestral e anual." };
   }
+
+  const installmentCount =
+    installmentCountEscolhido && parcelasDisponiveis(cycle).includes(installmentCountEscolhido)
+      ? installmentCountEscolhido
+      : CICLO_MESES[cycle];
 
   if (planId !== "free" && metodoPagamento === "cartao") {
     if (!dadosCartao?.telefone || !dadosCartao?.cep || !dadosCartao?.numero) {
@@ -214,6 +220,7 @@ export async function createAccount(
         ciclo: cycle,
         valorCentavos: valorCicloCentavos(plano, cycle),
         cpf,
+        installmentCount,
       }));
     } catch (err) {
       return { error: err instanceof Error ? err.message : "Não foi possível iniciar o pagamento parcelado. Tente novamente em instantes." };

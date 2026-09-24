@@ -260,6 +260,7 @@ export async function criarCadastroPendenteParcelado(input: {
   ciclo: CicloAssinatura;
   valorCentavos: number;
   cpf: string;
+  installmentCount: number;
 }): Promise<{ checkoutUrl: string }> {
   const pendenteExistente = await prisma.pendingSignup.findUnique({ where: { email: input.email } });
   if (pendenteExistente) {
@@ -281,7 +282,7 @@ export async function criarCadastroPendenteParcelado(input: {
   const cobranca = await criarCobrancaParcelada({
     customerId,
     totalValueCentavos: input.valorCentavos,
-    installmentCount: CICLO_MESES[input.ciclo],
+    installmentCount: input.installmentCount,
     description: `Assinatura ${input.planoNome}`,
     externalReference,
   });
@@ -383,6 +384,7 @@ export async function criarCobrancaParceladaParaAutor(input: {
   planoNome: string;
   ciclo: CicloAssinatura;
   valorCentavos: number;
+  installmentCount: number;
 }): Promise<string> {
   const customerId = await criarOuBuscarCliente({ nome: input.authorNome, cpf: input.cpf, email: input.authorEmail });
   if (!customerId) {
@@ -393,7 +395,7 @@ export async function criarCobrancaParceladaParaAutor(input: {
   const cobranca = await criarCobrancaParcelada({
     customerId,
     totalValueCentavos: input.valorCentavos,
-    installmentCount: CICLO_MESES[input.ciclo],
+    installmentCount: input.installmentCount,
     description: `Assinatura ${input.planoNome}`,
     externalReference,
   });
