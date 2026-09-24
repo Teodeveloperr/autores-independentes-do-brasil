@@ -139,30 +139,6 @@ a:hover {
   }
 }
 
-/* Carrossel contínuo de "Autores em destaque" (ver AutoresDestaqueCarousel): a faixa tem
-   a lista de autores duplicada e desliza de 0% até -50% (uma cópia inteira) em looping —
-   como as duas metades são idênticas, o reset do loop é imperceptível. */
-@keyframes autores-destaque-marquee {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(-50%);
-  }
-}
-
-.autores-destaque-marquee {
-  animation-name: autores-destaque-marquee;
-  animation-timing-function: linear;
-  animation-iteration-count: infinite;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .autores-destaque-marquee {
-    animation: none;
-  }
-}
-
 button {
   cursor: pointer;
   border: none;

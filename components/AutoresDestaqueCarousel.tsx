@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { initials } from "@/lib/format";
 
@@ -10,7 +13,9 @@ type AutorDestaque = {
 
 const CARD_WIDTH_PX = 200;
 const GAP_PX = 24;
-const SEGUNDOS_POR_CARD = 3;
+const PASSO_PX = CARD_WIDTH_PX + GAP_PX;
+const INTERVALO_MS = 5000;
+const TRANSICAO_MS = 600;
 
 function Card({ a }: { a: AutorDestaque }) {
   return (
@@ -43,22 +48,51 @@ function Card({ a }: { a: AutorDestaque }) {
   );
 }
 
-// Faixa contínua e infinita (efeito "marquee"): a lista de autores é duplicada uma vez e a
-// faixa desliza via CSS puro até -50% (o tamanho de uma cópia inteira) e reseta pra 0% —
-// como as duas metades são idênticas, o reset é imperceptível e o carrossel parece girar
-// pra sempre, sem espaços vazios (cada card é sempre um autor de verdade, nunca uma célula
-// vaga de grid) e sem pausar no hover, mesmo padrão dos outros carrosséis do site.
+// Faixa infinita que avança 1 autor por vez a cada 5s (pausa entre os passos, não fica
+// girando sem parar) e desliza suavemente até a próxima posição. A lista é duplicada uma
+// vez; ao alcançar a cópia (visualmente idêntica ao início), volta pro índice 0 sem
+// transição — como as duas metades são iguais, esse "salto" é imperceptível e o carrossel
+// parece continuar pra sempre, sem nenhuma célula vazia (cada card é sempre um autor de
+// verdade). Não pausa no hover, mesmo padrão dos outros carrosséis do site.
 export default function AutoresDestaqueCarousel({ autores }: { autores: AutorDestaque[] }) {
-  if (autores.length === 0) return null;
+  const total = autores.length;
+  const [index, setIndex] = useState(0);
+  const [comTransicao, setComTransicao] = useState(true);
+
+  useEffect(() => {
+    if (total <= 1) return;
+    const intervalo = setInterval(() => setIndex((i) => i + 1), INTERVALO_MS);
+    return () => clearInterval(intervalo);
+  }, [total]);
+
+  useEffect(() => {
+    if (index === total) {
+      const t = setTimeout(() => {
+        setComTransicao(false);
+        setIndex(0);
+      }, TRANSICAO_MS);
+      return () => clearTimeout(t);
+    }
+    if (!comTransicao) {
+      const frame = requestAnimationFrame(() => setComTransicao(true));
+      return () => cancelAnimationFrame(frame);
+    }
+  }, [index, total, comTransicao]);
+
+  if (total === 0) return null;
 
   const duplicado = [...autores, ...autores];
-  const duracaoSegundos = autores.length * SEGUNDOS_POR_CARD;
 
   return (
     <div style={{ overflow: "hidden" }}>
       <div
-        className="autores-destaque-marquee"
-        style={{ display: "flex", gap: `${GAP_PX}px`, width: "max-content", animationDuration: `${duracaoSegundos}s` }}
+        style={{
+          display: "flex",
+          gap: `${GAP_PX}px`,
+          width: "max-content",
+          transform: `translateX(-${index * PASSO_PX}px)`,
+          transition: comTransicao ? `transform ${TRANSICAO_MS}ms ease` : "none",
+        }}
       >
         {duplicado.map((a, i) => (
           <Card key={`${a.id}-${i}`} a={a} />
