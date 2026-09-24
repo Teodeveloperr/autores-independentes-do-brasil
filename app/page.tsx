@@ -6,6 +6,7 @@ import BlogCarousel from "@/components/BlogCarousel";
 import HomeBannerCarousel from "@/components/HomeBannerCarousel";
 import HomePremiumToast from "@/components/HomePremiumToast";
 import DepoimentosCarousel from "@/components/DepoimentosCarousel";
+import CounterStats from "@/components/CounterStats";
 import AutoresDestaqueCarousel from "@/components/AutoresDestaqueCarousel";
 import ContactForm from "@/components/ContactForm";
 import PrecoComDesconto from "@/components/PrecoComDesconto";
@@ -120,6 +121,39 @@ export default async function HomePage() {
             fill
             style={{ objectFit: "cover" }}
           />
+        </div>
+      </section>
+
+      <section className="section-pad-lg" style={{ background: "white", padding: "48px 40px", marginTop: "20px" }}>
+        <div className="section-pad-md" style={{ background: "#002776", color: "white", padding: "60px", borderRadius: "8px", textAlign: "center" }}>
+          <CounterStats
+            stats={[
+              { value: 100, suffix: "+", label: "AUTORES" },
+              { value: 300, suffix: "+", label: "LIVROS NO STAND" },
+              { value: 30, label: "PARTICIPAÇÕES EM BIENAIS" },
+            ]}
+          />
+        </div>
+      </section>
+
+      <section className="section-pad-lg" style={{ background: "white", padding: "48px 40px", marginTop: "20px" }}>
+        <h2 style={{ fontSize: "32px", fontWeight: 700, color: "#002776", marginBottom: "32px" }}>O que o coletivo faz</h2>
+        <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "20px" }}>
+          {[
+            { icon: "📢", texto: "Divulgação de editais e oportunidades culturais" },
+            { icon: "🎪", texto: "Presença em feiras, bienais e festivais do livro" },
+            { icon: "🎓", texto: "Formação e capacitação para escritores" },
+            { icon: "🤝", texto: "Networking entre autores e agentes culturais" },
+          ].map((item) => (
+            <div
+              key={item.texto}
+              className="hover-lift"
+              style={{ display: "flex", gap: "16px", alignItems: "center", background: "#F6F6F6", padding: "20px 24px", borderRadius: "8px" }}
+            >
+              <div style={{ fontSize: "28px", flexShrink: 0 }}>{item.icon}</div>
+              <p style={{ fontSize: "15px", color: "#262626", lineHeight: 1.5 }}>{item.texto}</p>
+            </div>
+          ))}
         </div>
       </section>
 
