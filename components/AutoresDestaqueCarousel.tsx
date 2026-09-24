@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { initials } from "@/lib/format";
 
@@ -11,15 +11,14 @@ type AutorDestaque = {
   generos: string[];
 };
 
-const CARD_WIDTH_PX = 200;
+const LARGURA_MIN_CARD_PX = 180;
 const GAP_PX = 24;
-const PASSO_PX = CARD_WIDTH_PX + GAP_PX;
 const INTERVALO_MS = 5000;
 const TRANSICAO_MS = 600;
 
-function Card({ a }: { a: AutorDestaque }) {
+function Card({ a, largura }: { a: AutorDestaque; largura: number }) {
   return (
-    <div style={{ flex: `0 0 ${CARD_WIDTH_PX}px`, background: "#F6F6F6", padding: "24px", borderRadius: "8px", textAlign: "center" }}>
+    <div style={{ flex: `0 0 ${largura}px`, background: "#F6F6F6", padding: "24px", borderRadius: "8px", textAlign: "center" }}>
       <div
         style={{
           width: "100px",
@@ -53,11 +52,31 @@ function Card({ a }: { a: AutorDestaque }) {
 // vez; ao alcançar a cópia (visualmente idêntica ao início), volta pro índice 0 sem
 // transição — como as duas metades são iguais, esse "salto" é imperceptível e o carrossel
 // parece continuar pra sempre, sem nenhuma célula vazia (cada card é sempre um autor de
-// verdade). Não pausa no hover, mesmo padrão dos outros carrosséis do site.
+// verdade). A largura de cada card é recalculada a partir da largura real do container
+// (ResizeObserver) pra sempre caber um número inteiro de cards, sem cortar o próximo card
+// na borda — se ajusta sozinho em qualquer tamanho de tela, sem depender de breakpoints
+// fixos. Não pausa no hover, mesmo padrão dos outros carrosséis do site.
 export default function AutoresDestaqueCarousel({ autores }: { autores: AutorDestaque[] }) {
   const total = autores.length;
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [cardWidth, setCardWidth] = useState(LARGURA_MIN_CARD_PX);
   const [index, setIndex] = useState(0);
   const [comTransicao, setComTransicao] = useState(true);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    function recalcular() {
+      const largura = el!.clientWidth;
+      if (largura <= 0) return;
+      const visiveis = Math.max(1, Math.floor((largura + GAP_PX) / (LARGURA_MIN_CARD_PX + GAP_PX)));
+      setCardWidth((largura - (visiveis - 1) * GAP_PX) / visiveis);
+    }
+    recalcular();
+    const observer = new ResizeObserver(recalcular);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     if (total <= 1) return;
@@ -82,20 +101,21 @@ export default function AutoresDestaqueCarousel({ autores }: { autores: AutorDes
   if (total === 0) return null;
 
   const duplicado = [...autores, ...autores];
+  const passoPx = cardWidth + GAP_PX;
 
   return (
-    <div style={{ overflow: "hidden" }}>
+    <div ref={containerRef} style={{ overflow: "hidden" }}>
       <div
         style={{
           display: "flex",
           gap: `${GAP_PX}px`,
           width: "max-content",
-          transform: `translateX(-${index * PASSO_PX}px)`,
+          transform: `translateX(-${index * passoPx}px)`,
           transition: comTransicao ? `transform ${TRANSICAO_MS}ms ease` : "none",
         }}
       >
         {duplicado.map((a, i) => (
-          <Card key={`${a.id}-${i}`} a={a} />
+          <Card key={`${a.id}-${i}`} a={a} largura={cardWidth} />
         ))}
       </div>
     </div>
