@@ -145,6 +145,24 @@ a:hover {
   }
 }
 
+/* Mockup do painel na demo "como funciona" — sidebar estreita ao lado do conteúdo em
+   telas médias/grandes; empilha (sidebar em cima, em linha) só em telas pequenas. */
+@media (max-width: 600px) {
+  .home-demo-shell {
+    flex-direction: column !important;
+  }
+  .home-demo-sidebar {
+    width: 100% !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 4px !important;
+  }
+  .home-demo-sidebar > div {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+}
+
 /* Toast discreto de reforço do Premium+ na home (ver HomePremiumToast) — desliza
    de baixo à direita, some no fechamento manual, aparece só 1x por sessão. */
 .home-toast {
