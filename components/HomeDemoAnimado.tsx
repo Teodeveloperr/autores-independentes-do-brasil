@@ -77,6 +77,29 @@ function StatCard({ icon, cor, label, valor }: { icon: string; cor: string; labe
   );
 }
 
+// Cursor de mouse animado, ancorado no canto do próprio botão (não depende da posição do
+// mockup na página) — desliza de fora até o botão e faz um "clique" (leve encolhida).
+function CursorClicando() {
+  return (
+    <svg
+      className="home-demo-cursor-svg"
+      width="26"
+      height="26"
+      viewBox="0 0 24 24"
+      style={{
+        position: "absolute",
+        right: "-8px",
+        bottom: "-8px",
+        animation: "home-demo-cursor-mover 1800ms ease forwards",
+        filter: "drop-shadow(0 2px 3px rgba(0,0,0,0.35))",
+        pointerEvents: "none",
+      }}
+    >
+      <path d="M4 2 L4 20 L9 15 L12.5 22 L15 20.5 L11.5 14 L18 14 Z" fill="white" stroke="#262626" strokeWidth="1.3" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 // Demo "como funciona" da home: um mockup do painel real (sidebar + telas), que se
 // preenche sozinho (efeito de digitação em CSS puro via home-demo-digitar), passando por
 // 3 passos — acessar o painel, cadastrar o livro, configurar a chave Pix — trocando de
@@ -91,62 +114,55 @@ export default function HomeDemoAnimado() {
   }, []);
 
   return (
-    <section className="section-pad-lg" style={{ background: "white", padding: "48px 40px", marginTop: "20px" }}>
-      <div style={{ textAlign: "center", maxWidth: "640px", margin: "0 auto 32px" }}>
-        <h2 style={{ fontSize: "32px", fontWeight: 700, color: "#002776", marginBottom: "12px" }}>Veja como é fácil vender seus livros</h2>
-        <p style={{ fontSize: "16px", color: "#262626", lineHeight: 1.6 }}>
+    <section
+      className="responsive-grid section-pad-lg"
+      style={{ background: "white", padding: "48px 40px", marginTop: "20px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "60px", alignItems: "center" }}
+    >
+      <div>
+        <h2 style={{ fontSize: "32px", fontWeight: 700, color: "#002776", marginBottom: "16px" }}>Veja como é fácil vender seus livros</h2>
+        <p style={{ fontSize: "16px", color: "#262626", lineHeight: 1.6, marginBottom: "28px" }}>
           Direto do seu painel: cadastre seu livro, configure sua chave Pix e comece a vender pra quem lê você.
         </p>
-      </div>
-
-      <div style={{ display: "flex", justifyContent: "center", flexWrap: "wrap", gap: "12px", marginBottom: "24px" }}>
-        {PASSOS.map((titulo, i) => (
-          <div
-            key={titulo}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              padding: "8px 16px",
-              borderRadius: "20px",
-              background: i === passo ? "#002776" : "#F6F6F6",
-              transition: "background 300ms ease",
-            }}
-          >
-            <div
-              style={{
-                width: "20px",
-                height: "20px",
-                borderRadius: "50%",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: "11px",
-                fontWeight: 700,
-                background: i === passo ? "white" : "#DDD",
-                color: i === passo ? "#002776" : "#999",
-                flexShrink: 0,
-                transition: "background 300ms ease, color 300ms ease",
-              }}
-            >
-              {i + 1}
+        <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginBottom: "28px" }}>
+          {PASSOS.map((titulo, i) => (
+            <div key={titulo} style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+              <div
+                style={{
+                  width: "28px",
+                  height: "28px",
+                  borderRadius: "50%",
+                  flexShrink: 0,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "13px",
+                  fontWeight: 700,
+                  background: i === passo ? "#002776" : "#F6F6F6",
+                  color: i === passo ? "white" : "#999",
+                  transition: "background 300ms ease, color 300ms ease",
+                }}
+              >
+                {i + 1}
+              </div>
+              <div style={{ fontSize: "15px", fontWeight: i === passo ? 700 : 400, color: i === passo ? "#002776" : "#666", transition: "color 300ms ease" }}>
+                {titulo}
+              </div>
             </div>
-            <div style={{ fontSize: "13px", fontWeight: 600, color: i === passo ? "white" : "#666", whiteSpace: "nowrap", transition: "color 300ms ease" }}>
-              {titulo}
-            </div>
-          </div>
-        ))}
+          ))}
+        </div>
+        <Link href="/cadastro" style={{ display: "inline-block", background: "#009B3A", color: "white", padding: "12px 32px", fontWeight: 600, borderRadius: "4px" }}>
+          CRIAR MINHA CONTA
+        </Link>
       </div>
 
       <div
         style={{
-          maxWidth: "820px",
-          margin: "0 auto",
           background: "white",
           borderRadius: "12px",
           boxShadow: "0 20px 50px rgba(0,39,118,0.15)",
           overflow: "hidden",
           border: "1px solid #EEE",
+          width: "100%",
         }}
       >
         <div style={{ background: "#F6F6F6", padding: "10px 16px", display: "flex", alignItems: "center", gap: "6px", borderBottom: "1px solid #E5E5E5" }}>
@@ -156,7 +172,7 @@ export default function HomeDemoAnimado() {
           <span style={{ marginLeft: "10px", fontSize: "11px", color: "#999" }}>painel.autoresdobrasil.com.br</span>
         </div>
         <div className="home-demo-shell" style={{ display: "flex", minHeight: "400px" }}>
-          <div className="home-demo-sidebar" style={{ width: "170px", flexShrink: 0, background: "#002776", padding: "16px 10px" }}>
+          <div className="home-demo-sidebar" style={{ width: "150px", flexShrink: 0, background: "#002776", padding: "16px 8px" }}>
             {MENU_ITENS.map((item) => {
               const ativo = item.label === ATIVO_POR_PASSO[passo];
               return (
@@ -166,26 +182,26 @@ export default function HomeDemoAnimado() {
                     display: "flex",
                     alignItems: "center",
                     gap: "8px",
-                    padding: "8px 10px",
+                    padding: "8px 8px",
                     borderRadius: "6px",
                     background: ativo ? "#009B3A" : "transparent",
                     color: "white",
-                    fontSize: "12px",
+                    fontSize: "11px",
                     marginBottom: "2px",
                     transition: "background 300ms ease",
                   }}
                 >
-                  <span style={{ fontSize: "13px" }}>{item.icon}</span>
+                  <span style={{ fontSize: "12px" }}>{item.icon}</span>
                   <span>{item.label}</span>
                 </div>
               );
             })}
           </div>
-          <div key={passo} style={{ flex: 1, padding: "24px", minWidth: 0 }}>
+          <div key={passo} style={{ flex: 1, padding: "22px", minWidth: 0 }}>
             {passo === 0 && (
               <>
-                <div style={{ fontSize: "16px", fontWeight: 700, color: "#002776", marginBottom: "4px" }}>Olá, Monyque! 👋</div>
-                <div style={{ fontSize: "12px", color: "#666", marginBottom: "18px" }}>Bem-vinda ao seu painel.</div>
+                <div style={{ fontSize: "16px", fontWeight: 700, color: "#002776", marginBottom: "4px" }}>Olá, Autor! 👋</div>
+                <div style={{ fontSize: "12px", color: "#666", marginBottom: "18px" }}>Bem-vindo(a) ao seu painel.</div>
                 <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "10px", marginBottom: "20px" }}>
                   <StatCard icon="📗" cor="#8FE3AE" label="Vendas (mês)" valor="R$ 0,00" />
                   <StatCard icon="📦" cor="#FFE28A" label="Pedidos" valor="2" />
@@ -193,23 +209,26 @@ export default function HomeDemoAnimado() {
                   <StatCard icon="⭐" cor="#D3B8F5" label="Avaliações" valor="—" />
                 </div>
                 <div style={{ fontSize: "12px", fontWeight: 700, color: "#444", marginBottom: "8px" }}>Ações rápidas</div>
-                <div
-                  className="home-demo-cursor"
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    background: "#FDECEC",
-                    border: "1px solid #F5C6C6",
-                    borderRadius: "6px",
-                    padding: "10px 12px",
-                    fontSize: "13px",
-                    fontWeight: 600,
-                    color: "#C0392B",
-                    width: "fit-content",
-                  }}
-                >
-                  ➕ Adicionar novo livro
+                <div style={{ position: "relative", width: "fit-content" }}>
+                  <div
+                    className="home-demo-click-pulse"
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      background: "#FDECEC",
+                      border: "1px solid #F5C6C6",
+                      borderRadius: "6px",
+                      padding: "10px 12px",
+                      fontSize: "13px",
+                      fontWeight: 600,
+                      color: "#C0392B",
+                      animation: "home-demo-click-pulse 400ms ease 1600ms",
+                    }}
+                  >
+                    ➕ Adicionar novo livro
+                  </div>
+                  <CursorClicando />
                 </div>
               </>
             )}
@@ -253,12 +272,6 @@ export default function HomeDemoAnimado() {
             )}
           </div>
         </div>
-      </div>
-
-      <div style={{ textAlign: "center", marginTop: "28px" }}>
-        <Link href="/cadastro" style={{ display: "inline-block", background: "#009B3A", color: "white", padding: "12px 32px", fontWeight: 600, borderRadius: "4px" }}>
-          CRIAR MINHA CONTA
-        </Link>
       </div>
     </section>
   );
