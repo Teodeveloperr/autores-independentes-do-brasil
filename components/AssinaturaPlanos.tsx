@@ -257,7 +257,7 @@ function PlanoPagoCard({
           {metodoEscolhido !== "cartao" && ciclo2 !== "mensal" && (
             <div style={{ background: "#FFF9E6", border: "2px solid #FFDF00", borderRadius: "6px", padding: "12px", marginTop: "12px" }}>
               <div style={{ fontSize: "13px", fontWeight: 700, color: "#8A6116", marginBottom: "8px" }}>
-                💳 Ou parcele no cartão, sem assinatura recorrente
+                💳 Ou parcele no cartão
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "10px" }}>
                 <label htmlFor={`parcelas-${slug}`} style={{ fontSize: "13px", fontWeight: 600, color: "#262626" }}>

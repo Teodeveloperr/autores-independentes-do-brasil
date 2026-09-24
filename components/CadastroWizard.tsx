@@ -185,15 +185,25 @@ export default function CadastroWizard() {
   const installmentValueCentavos =
     plan !== "free" && cicloEfetivo !== "mensal" ? Math.round(valorCicloCentavos(PLANOS_PAGOS[plan], cicloEfetivo) / installmentCount) : 0;
 
+  function goToStep(n: 1 | 2) {
+    if (n < step) setStep(n);
+  }
+
   return (
     <div className="section-pad-md" style={{ flex: 1, background: "white", color: "#262626", padding: "40px 48px", borderRadius: "12px", maxWidth: "720px", width: "100%" }}>
       <div style={{ display: "flex", alignItems: "center", marginBottom: "32px" }}>
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "6px", flexShrink: 0 }}>
+        <div
+          onClick={() => goToStep(1)}
+          style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "6px", flexShrink: 0, cursor: step > 1 ? "pointer" : "default" }}
+        >
           <div style={circle(step === 1, step > 1)}>1</div>
           <div style={label(step === 1)}>Dados</div>
         </div>
         <div style={bar(step > 1)} />
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "6px", flexShrink: 0 }}>
+        <div
+          onClick={() => goToStep(2)}
+          style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "6px", flexShrink: 0, cursor: step > 2 ? "pointer" : "default" }}
+        >
           <div style={circle(step === 2, step > 2)}>2</div>
           <div style={label(step === 2)}>Plano</div>
         </div>
@@ -305,7 +315,7 @@ export default function CadastroWizard() {
               O Premium+ é cobrado só no ciclo anual (R$ 900,00/ano).
             </p>
           )}
-          {plan !== "free" && plan !== "premiumPlus" && (
+          {plan !== "premiumPlus" && (
             <div style={{ display: "flex", gap: "8px", marginBottom: "20px" }}>
               {CICLOS.map((c) => (
                 <button
@@ -518,7 +528,7 @@ export default function CadastroWizard() {
           {plan !== "free" && metodoEscolhido !== "cartao" && cicloEfetivo !== "mensal" && (
             <div style={{ background: "#FFF9E6", border: "2px solid #FFDF00", borderRadius: "6px", padding: "16px", marginTop: "16px" }}>
               <div style={{ fontSize: "14px", fontWeight: 700, color: "#8A6116", marginBottom: "10px" }}>
-                💳 Ou parcele no cartão, sem assinatura recorrente
+                💳 Ou parcele no cartão
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "10px" }}>
                 <label style={{ fontSize: "13px", fontWeight: 600, color: "#262626" }}>Em quantas parcelas?</label>
