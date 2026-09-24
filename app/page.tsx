@@ -125,7 +125,7 @@ export default async function HomePage() {
       </section>
 
       <section className="section-pad-lg" style={{ background: "white", padding: "48px 40px", marginTop: "20px" }}>
-        <div className="section-pad-md" style={{ background: "#002776", color: "white", padding: "60px", borderRadius: "8px", textAlign: "center" }}>
+        <div className="section-pad-md" style={{ background: "#002776", color: "white", padding: "32px", borderRadius: "8px", textAlign: "center" }}>
           <CounterStats
             stats={[
               { value: 100, suffix: "+", label: "AUTORES" },
