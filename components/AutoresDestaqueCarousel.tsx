@@ -49,19 +49,24 @@ function Card({ a, largura }: { a: AutorDestaque; largura: number }) {
 
 // Faixa infinita que avança 1 autor por vez a cada 5s (pausa entre os passos, não fica
 // girando sem parar) e desliza suavemente até a próxima posição — mais as setas pra
-// navegar manualmente pra frente/trás. Um clone do último autor entra no início da faixa e
-// um clone do primeiro entra no final; ao alcançar qualquer um desses clones (visualmente
-// idênticos ao autor real do outro lado), a faixa salta pro índice real correspondente sem
-// transição — como o clone e o real são iguais, o salto é imperceptível e o carrossel
-// parece continuar pra sempre nos dois sentidos, sem nenhuma célula vazia (cada card é
-// sempre um autor de verdade). A largura de cada card é recalculada a partir da largura
-// real do container (ResizeObserver) pra sempre caber um número inteiro de cards, sem
-// cortar o próximo na borda. Não pausa no hover, mesmo padrão dos outros carrosséis do site.
+// navegar manualmente pra frente/trás. Como vários cards ficam visíveis ao mesmo tempo, o
+// clone no início/fim da faixa precisa cobrir uma janela INTEIRA de cards (não só 1),
+// senão sobra espaço em branco quando o clone da ponta chega na borda com menos autores
+// "de verdade" depois dele do que cabem na tela. Por isso clona os últimos N autores no
+// início e os primeiros N no final (N = quantos cards cabem por vez); ao alcançar qualquer
+// um desses clones, a faixa salta pro trecho real correspondente sem transição — como o
+// clone e o real são iguais, o salto é imperceptível e o carrossel parece continuar pra
+// sempre nos dois sentidos, sem nenhuma célula vazia. A largura/quantidade de cards
+// visíveis é recalculada a partir da largura real do container (ResizeObserver), ajustando
+// o índice pra continuar mostrando o mesmo autor se isso mudar. Não pausa no hover, mesmo
+// padrão dos outros carrosséis do site.
 export default function AutoresDestaqueCarousel({ autores }: { autores: AutorDestaque[] }) {
   const total = autores.length;
   const containerRef = useRef<HTMLDivElement>(null);
   const travadoRef = useRef(false);
+  const visiveisRef = useRef(1);
   const [cardWidth, setCardWidth] = useState(LARGURA_MIN_CARD_PX);
+  const [visiveis, setVisiveis] = useState(1);
   const [index, setIndex] = useState(total > 1 ? 1 : 0);
   const [comTransicao, setComTransicao] = useState(true);
   const [travando, setTravando] = useState(false);
@@ -72,18 +77,25 @@ export default function AutoresDestaqueCarousel({ autores }: { autores: AutorDes
     function recalcular() {
       const largura = el!.clientWidth;
       if (largura <= 0) return;
-      const visiveis = Math.max(1, Math.floor((largura + GAP_PX) / (LARGURA_MIN_CARD_PX + GAP_PX)));
-      setCardWidth((largura - (visiveis - 1) * GAP_PX) / visiveis);
+      const cabemNaTela = Math.floor((largura + GAP_PX) / (LARGURA_MIN_CARD_PX + GAP_PX));
+      const v = Math.max(1, Math.min(total || 1, cabemNaTela));
+      setCardWidth((largura - (v - 1) * GAP_PX) / v);
+      const delta = v - visiveisRef.current;
+      visiveisRef.current = v;
+      setVisiveis(v);
+      if (delta !== 0 && total > 1) {
+        setIndex((i) => i + delta);
+      }
     }
     recalcular();
     const observer = new ResizeObserver(recalcular);
     observer.observe(el);
     return () => observer.disconnect();
-  }, []);
+  }, [total]);
 
   // Avança/retrocede 1 passo, ignorando o pedido se o passo anterior ainda não terminou de
   // deslizar — evita que cliques rápidos ou um clique bem na hora do autoplay empurrem o
-  // índice pra além do único clone de cada ponta (ver comentário da faixa estendida abaixo).
+  // índice pra além dos clones de cada ponta.
   function passo(delta: number) {
     if (travadoRef.current) return;
     travadoRef.current = true;
@@ -102,25 +114,27 @@ export default function AutoresDestaqueCarousel({ autores }: { autores: AutorDes
     return () => clearInterval(intervalo);
   }, [total, index]);
 
+  const offsetInicio = total > 1 ? visiveis : 0;
+
   // Sempre TRANSICAO_MS depois de qualquer passo: se caiu num clone da ponta, salta sem
-  // transição pro índice real correspondente; de qualquer forma, libera o próximo passo.
+  // transição pro trecho real correspondente; de qualquer forma, libera o próximo passo.
   // Não depende do evento "transitionend" (pouco confiável em aba em segundo plano/inativa
   // — o passo tem que liberar de qualquer jeito, nem que a transição não tenha "terminado"
   // de verdade pro navegador).
   useEffect(() => {
     if (total <= 1 || !comTransicao) return;
     const t = setTimeout(() => {
-      if (index === total + 1) {
+      if (index === offsetInicio + total) {
         setComTransicao(false);
-        setIndex(1);
-      } else if (index === 0) {
+        setIndex(offsetInicio);
+      } else if (index === offsetInicio - 1) {
         setComTransicao(false);
-        setIndex(total);
+        setIndex(offsetInicio + total - 1);
       }
       liberar();
     }, TRANSICAO_MS);
     return () => clearTimeout(t);
-  }, [index, total, comTransicao]);
+  }, [index, total, comTransicao, offsetInicio]);
 
   useEffect(() => {
     if (!comTransicao) {
@@ -131,12 +145,9 @@ export default function AutoresDestaqueCarousel({ autores }: { autores: AutorDes
 
   if (total === 0) return null;
 
-  // Um clone do último autor entra no início da faixa e um clone do primeiro entra no
-  // final; ao alcançar qualquer um desses clones (visualmente idêntico ao autor real do
-  // outro lado), a faixa salta pro índice real correspondente sem transição — como o clone
-  // e o real são iguais, o salto é imperceptível e o carrossel parece continuar pra sempre
-  // nos dois sentidos, sem nenhuma célula vazia.
-  const estendido = total > 1 ? [autores[total - 1], ...autores, autores[0]] : autores;
+  const cloneInicio = total > 1 ? autores.slice(total - visiveis) : [];
+  const cloneFim = total > 1 ? autores.slice(0, visiveis) : [];
+  const estendido = total > 1 ? [...cloneInicio, ...autores, ...cloneFim] : autores;
   const passoPx = cardWidth + GAP_PX;
 
   return (
