@@ -36,10 +36,10 @@ export default async function HomePage() {
   ]);
 
   // "Autores em destaque" é benefício exclusivo do plano Premium — Iniciante e Essencial não entram aqui.
+  // Mostra todos (não só os 6 mais recentes) — o carrossel se encarrega de paginar.
   const authors = authorsPool
     .filter((a) => temDestaque(a.plano))
-    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
-    .slice(0, 6);
+    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   const livros = [...livrosPool]
     .sort((a, b) => (PLANO_RANK[b.author.plano] ?? 0) - (PLANO_RANK[a.author.plano] ?? 0) || b.createdAt.getTime() - a.createdAt.getTime())
     .slice(0, 5);
