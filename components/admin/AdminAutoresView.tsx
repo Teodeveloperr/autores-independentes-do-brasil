@@ -29,6 +29,8 @@ export default function AdminAutoresView({ autores }: { autores: AuthorWithCount
   const [busca, setBusca] = useState("");
   const [pagina, setPagina] = useState(1);
   const [erroPlano, setErroPlano] = useState<{ id: string; mensagem: string } | null>(null);
+  const [planoNovoAutor, setPlanoNovoAutor] = useState<string>("Iniciante");
+  const [cicloNovoAutor, setCicloNovoAutor] = useState<"semestral" | "anual">("semestral");
   const router = useRouter();
 
   const autoresFiltrados = useMemo(() => {
@@ -112,7 +114,12 @@ export default function AdminAutoresView({ autores }: { autores: AuthorWithCount
           </div>
           <div>
             <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>Plano</label>
-            <select name="plano" style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px" }}>
+            <select
+              name="plano"
+              value={planoNovoAutor}
+              onChange={(e) => setPlanoNovoAutor(e.target.value)}
+              style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px" }}
+            >
               {TODOS_PLANOS.map((p) => (
                 <option key={p}>{p}</option>
               ))}
@@ -120,12 +127,20 @@ export default function AdminAutoresView({ autores }: { autores: AuthorWithCount
           </div>
           <div>
             <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>Ciclo do plano (se não for Iniciante)</label>
-            <select name="ciclo" defaultValue="semestral" style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px" }}>
-              <option value="semestral">Semestral</option>
+            <select
+              name="ciclo"
+              value={planoNovoAutor === "Autor Premium+" ? "anual" : cicloNovoAutor}
+              onChange={(e) => setCicloNovoAutor(e.target.value as "semestral" | "anual")}
+              disabled={planoNovoAutor === "Autor Premium+"}
+              style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px" }}
+            >
+              {planoNovoAutor !== "Autor Premium+" && <option value="semestral">Semestral</option>}
               <option value="anual">Anual</option>
             </select>
             <p style={{ fontSize: "11px", color: "#999", marginTop: "4px" }}>
-              Sem cobrança real — vence sozinho no prazo e volta pro Iniciante.
+              {planoNovoAutor === "Autor Premium+"
+                ? "O Premium+ só pode ser concedido no ciclo anual."
+                : "Sem cobrança real — vence sozinho no prazo e volta pro Iniciante."}
             </p>
           </div>
           {state?.error && (
