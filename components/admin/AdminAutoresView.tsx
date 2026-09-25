@@ -10,8 +10,13 @@ import type { AuthorWithCount } from "./types";
 
 const PLANOS_COM_CICLO = TODOS_PLANOS.filter((p) => p !== "Iniciante");
 
+// Autor com plano pago de verdade por trás — cartão recorrente, Pix Automático ou
+// parcelado no cartão (esse último não fica "active" em nenhum status, é reconhecido pela
+// presença do id do parcelamento). Esses autores usam o select "seguro"
+// (alterarPlanoAutorComAssinaturaAtiva, que só troca `plano` sem mexer no resto), nunca o
+// select de concessão manual — que sobrescreveria os dados da compra real por engano.
 function temAssinaturaPagaAtiva(a: AuthorWithCount) {
-  return Boolean(a.asaasSubscriptionId) || a.asaasPixAutoStatus === "active";
+  return Boolean(a.asaasSubscriptionId) || a.asaasPixAutoStatus === "active" || Boolean(a.asaasParceladoInstallmentId);
 }
 
 function planoSelectValue(a: AuthorWithCount) {
