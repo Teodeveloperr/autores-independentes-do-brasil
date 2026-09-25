@@ -3,7 +3,7 @@
 import { useActionState, useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { removeAuthor, suspendAuthor, reactivateAuthor, alterarPlanoAutor, adminCreateAuthor, type CreateAuthorState } from "@/app/admin/actions";
+import { removeAuthor, suspendAuthor, reactivateAuthor, alterarPlanoAutor, alterarPlanoAutorComAssinaturaAtiva, adminCreateAuthor, type CreateAuthorState } from "@/app/admin/actions";
 import { initials } from "@/lib/format";
 import { TODOS_PLANOS } from "@/lib/plans";
 import type { AuthorWithCount } from "./types";
@@ -82,6 +82,17 @@ export default function AdminAutoresView({ autores }: { autores: AuthorWithCount
     const [plano, ciclo] = valorSelect.split("|");
     startTransition(async () => {
       const resultado = await alterarPlanoAutor(id, plano, ciclo);
+      if (resultado?.error) {
+        setErroPlano({ id, mensagem: resultado.error });
+      }
+      router.refresh();
+    });
+  }
+
+  function onChangePlanoAssinaturaAtiva(id: string, plano: string) {
+    setErroPlano(null);
+    startTransition(async () => {
+      const resultado = await alterarPlanoAutorComAssinaturaAtiva(id, plano);
       if (resultado?.error) {
         setErroPlano({ id, mensagem: resultado.error });
       }
@@ -208,12 +219,21 @@ export default function AdminAutoresView({ autores }: { autores: AuthorWithCount
               </div>
               <div style={{ fontSize: "12px", color: "#666", textAlign: "center", flexShrink: 0, width: "90px" }}>📚 {a._count.books} livros</div>
               {temAssinaturaPagaAtiva(a) ? (
-                <div
-                  title="Plano vinculado a uma assinatura paga ativa — gerenciado automaticamente pela Asaas, não editável aqui."
-                  style={{ fontSize: "12px", fontWeight: 700, textAlign: "center", flexShrink: 0, width: "150px", color: "#009B3A" }}
-                >
-                  🔄 {a.plano}
-                  <div style={{ fontSize: "10px", fontWeight: 500, color: "#999" }}>assinatura paga ativa</div>
+                <div style={{ flexShrink: 0, width: "150px" }}>
+                  <select
+                    value={a.plano}
+                    onChange={(e) => onChangePlanoAssinaturaAtiva(a.id, e.target.value)}
+                    disabled={pending}
+                    title="Assinatura paga ativa via Asaas — trocar aqui só muda os recursos liberados pro autor, não mexe na cobrança/assinatura real."
+                    style={{ fontSize: "12px", fontWeight: 700, textAlign: "center", width: "100%", color: "#009B3A", border: "1px solid #DDD", borderRadius: "6px", padding: "6px 4px", background: "white" }}
+                  >
+                    {TODOS_PLANOS.map((p) => (
+                      <option key={p} value={p}>{p}</option>
+                    ))}
+                  </select>
+                  <div style={{ fontSize: "10px", fontWeight: 500, color: "#999", textAlign: "center", marginTop: "2px" }}>
+                    🔄 assinatura paga ativa
+                  </div>
                 </div>
               ) : (
                 <select

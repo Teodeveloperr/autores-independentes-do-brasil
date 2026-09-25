@@ -469,6 +469,29 @@ export async function alterarPlanoAutor(id: string, plano: string, ciclo?: strin
   return {};
 }
 
+// Troca manual do plano de um autor que já tem assinatura paga ativa (cartão recorrente ou
+// Pix Automático via Asaas). Diferente de alterarPlanoAutor (que grava uma concessão com
+// prazo, pra quem não paga de verdade), essa função só sobrescreve o campo `plano` — que é
+// o que controla os recursos/comissão liberados — sem tocar em nada da assinatura real
+// (asaasSubscriptionId, ciclo, valor, status): a cobrança continua rodando exatamente como
+// estava, só os recursos exibidos pro autor é que mudam.
+export async function alterarPlanoAutorComAssinaturaAtiva(id: string, plano: string): Promise<{ error?: string }> {
+  await requireAdmin();
+
+  if (!TODOS_PLANOS.includes(plano)) {
+    return { error: "Plano inválido." };
+  }
+
+  await prisma.author.update({ where: { id }, data: { plano } });
+
+  revalidatePath("/admin");
+  revalidatePath("/autores");
+  revalidatePath("/livros");
+  revalidatePath(`/perfil/${id}`);
+  revalidatePath("/");
+  return {};
+}
+
 export async function removeReview(id: string) {
   await requireAdmin();
 
