@@ -16,7 +16,26 @@ export default async function AdminPage() {
     return <AdminLoginGate />;
   }
 
-  const [eventos, oportunidades, fotos, autores, artigos, talkShowVideos, avaliacoes, pedidos, pedidosReceita, assinaturaPagamentos, saldoAsaasCentavos] = await Promise.all([
+  // Mesmo cálculo de data (string ISO em UTC) usado em app/api/track-visit/route.ts —
+  // evita divergência de fuso horário entre quem grava e quem lê o contador.
+  const hojeISO = new Date().toISOString().slice(0, 10);
+  const inicioMesISO = `${hojeISO.slice(0, 7)}-01`;
+
+  const [
+    eventos,
+    oportunidades,
+    fotos,
+    autores,
+    artigos,
+    talkShowVideos,
+    avaliacoes,
+    pedidos,
+    pedidosReceita,
+    assinaturaPagamentos,
+    saldoAsaasCentavos,
+    visitaHoje,
+    visitasMesAgg,
+  ] = await Promise.all([
     prisma.collectiveEvent.findMany({ orderBy: { createdAt: "desc" } }),
     prisma.opportunity.findMany({ orderBy: { prazoFinal: "asc" } }),
     prisma.collectiveGalleryPhoto.findMany({ orderBy: { createdAt: "desc" } }),
@@ -35,6 +54,8 @@ export default async function AdminPage() {
     }),
     prisma.subscriptionPayment.findMany({ orderBy: { createdAt: "desc" }, include: { author: { select: { nome: true } } } }),
     buscarSaldoAsaas(),
+    prisma.siteVisit.findUnique({ where: { data: new Date(hojeISO) } }),
+    prisma.siteVisit.aggregate({ _sum: { contagem: true }, where: { data: { gte: new Date(inicioMesISO) } } }),
   ]);
 
   return (
@@ -53,6 +74,8 @@ export default async function AdminPage() {
       totpEnabled={admin.totpEnabled}
       premiumPlusPixKey={admin.premiumPlusPixKey}
       premiumPlusPixKeyType={admin.premiumPlusPixKeyType}
+      visitasHoje={visitaHoje?.contagem ?? 0}
+      visitasMes={visitasMesAgg._sum.contagem ?? 0}
     />
   );
 }

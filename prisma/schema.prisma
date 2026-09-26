@@ -142,6 +142,17 @@ model AuthorMercadoPagoToken {
   updatedAt DateTime @updatedAt
 }
 
+// Contador simples de visitas à área pública do site (admin/painel não contam) — uma linha
+// por dia, incrementada de forma assíncrona pelo navegador do visitante (fetch com
+// keepalive, sem bloquear o carregamento da página), só pra dar uma noção de tráfego no
+// painel do admin. Não é analytics de verdade (sem origem, sem páginas vistas) — de
+// propósito, pra não pesar no banco que também cuida de pagamentos.
+model SiteVisit {
+  id       String   @id @default(cuid())
+  data     DateTime @unique @db.Date
+  contagem Int      @default(0)
+}
+
 model Book {
   id            String  @id @default(cuid())
   authorId      String

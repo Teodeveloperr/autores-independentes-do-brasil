@@ -47,6 +47,8 @@ export default function AdminApp({
   totpEnabled,
   premiumPlusPixKey,
   premiumPlusPixKeyType,
+  visitasHoje,
+  visitasMes,
 }: {
   eventos: CollectiveEvent[];
   oportunidades: Opportunity[];
@@ -62,6 +64,8 @@ export default function AdminApp({
   totpEnabled: boolean;
   premiumPlusPixKey: string | null;
   premiumPlusPixKeyType: string | null;
+  visitasHoje: number;
+  visitasMes: number;
 }) {
   const [view, setView] = useState<AdminView>("dash");
   const totalLivros = autores.reduce((sum, a) => sum + a._count.books, 0);
@@ -121,7 +125,12 @@ export default function AdminApp({
                   </button>
                 </div>
               )}
-              <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "20px", marginBottom: "28px" }}>
+              <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: "20px", marginBottom: "28px" }}>
+                <div style={{ background: "white", borderRadius: "10px", padding: "20px" }}>
+                  <div style={{ fontSize: "12px", color: "#666", marginBottom: "8px" }}>👀 Visitas hoje</div>
+                  <div style={{ fontSize: "28px", fontWeight: 700, color: "#002776" }}>{visitasHoje}</div>
+                  <div style={{ fontSize: "11px", color: "#999", marginTop: "2px" }}>{visitasMes} este mês</div>
+                </div>
                 <div style={{ background: "white", borderRadius: "10px", padding: "20px" }}>
                   <div style={{ fontSize: "12px", color: "#666", marginBottom: "8px" }}>✍️ Autores cadastrados</div>
                   <div style={{ fontSize: "28px", fontWeight: 700, color: "#002776" }}>{autores.length}</div>
