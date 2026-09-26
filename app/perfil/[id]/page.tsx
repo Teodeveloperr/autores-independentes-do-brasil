@@ -167,6 +167,8 @@ export default async function PerfilPage({ params }: { params: Promise<{ id: str
                 titulo: b.titulo,
                 genero: b.genero,
                 capaUrl: b.capaUrl,
+                capaLargura: b.capaLargura,
+                capaAltura: b.capaAltura,
                 preco: brl(b.precoCentavos),
                 precoCentavos: b.precoCentavos,
                 descricao: b.descricao,

@@ -23,6 +23,15 @@ export function formatEventoDia(diaInicio: number, diaFim: number | null | undef
   return diaFim && diaFim > diaInicio ? `${diaInicio}-${diaFim}` : String(diaInicio);
 }
 
+// Proporção real da capa de um livro (largura/altura), pra exibi-lo no formato como ele é
+// de verdade — retrato, quadrado ou paisagem — em vez de forçar sempre 3:4. Cai no 3:4
+// padrão quando a dimensão não foi salva (capas enviadas antes dessa funcionalidade
+// existir). Limitada a 1:2–2:1 pra uma capa fora do padrão não distorcer demais a grade.
+export function capaAspectRatio(largura: number | null | undefined, altura: number | null | undefined): string {
+  if (!largura || !altura) return "3/4";
+  return String(Math.min(2, Math.max(0.5, largura / altura)));
+}
+
 export function sanitizeExternalUrl(value: string): string | null {
   const trimmed = value.trim();
   if (!trimmed) return null;

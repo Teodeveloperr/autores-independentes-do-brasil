@@ -4,12 +4,15 @@ import { useState } from "react";
 import AddToCartButton from "./AddToCartButton";
 import PrecoComDesconto from "./PrecoComDesconto";
 import { precoComDescontoCentavos } from "@/lib/desconto";
+import { capaAspectRatio } from "@/lib/format";
 
 export type LivroItem = {
   id: string;
   titulo: string;
   genero: string;
   capaUrl: string | null;
+  capaLargura: number | null;
+  capaAltura: number | null;
   preco: string;
   precoCentavos: number;
   descontoPercentual: number | null;
@@ -32,7 +35,7 @@ export default function LivrosGrid({ books, podeVender }: { books: LivroItem[]; 
           <div key={b.id} style={{ background: "#F6F6F6", padding: "12px", borderRadius: "4px", textAlign: "center" }}>
             <div
               style={{
-                aspectRatio: "3/4",
+                aspectRatio: capaAspectRatio(b.capaLargura, b.capaAltura),
                 marginBottom: "8px",
                 borderRadius: "4px",
                 backgroundColor: b.capaUrl ? "#F6F6F6" : "#E0E0E0",

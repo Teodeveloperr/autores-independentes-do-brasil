@@ -162,6 +162,12 @@ model Book {
   precoCentavos Int
   estoque       Int     @default(0)
   capaUrl       String?
+  // Dimensões reais (em pixels) da imagem de capa enviada — lidas no navegador no momento
+  // do upload. Usadas pra exibir a capa na proporção verdadeira dela (quadrada, horizontal,
+  // etc.) em vez de forçar sempre um formato de livro vertical (3:4). Nulo pra capas
+  // enviadas antes dessa funcionalidade existir — nesse caso cai no formato 3:4 padrão.
+  capaLargura   Int?
+  capaAltura    Int?
   descricao     String?
   descontoPercentual Int?
 

@@ -214,9 +214,20 @@ type BookData = {
   precoCentavos: number;
   estoque: number;
   capaUrl: string | null;
+  capaLargura: number | null;
+  capaAltura: number | null;
   descricao: string | null;
   descontoPercentual: number | null;
 };
+
+// Lida via <input type="hidden"> preenchido no cliente (ver LivrosView.tsx) com a
+// largura/altura reais lidas do arquivo no momento do upload — usado só pra exibir a capa
+// na proporção verdadeira depois. Ignora valor ausente/inválido em vez de dar erro: é uma
+// informação de exibição, não obrigatória pro cadastro do livro funcionar.
+function intPositivoOuNull(valor: FormDataEntryValue | null): number | null {
+  const n = Number(valor);
+  return Number.isFinite(n) && n > 0 ? Math.round(n) : null;
+}
 
 function bookDataFromForm(formData: FormData): { error: string } | { data: BookData } {
   const parsed = bookSchema.safeParse({
@@ -241,6 +252,8 @@ function bookDataFromForm(formData: FormData): { error: string } | { data: BookD
 
   const preco = (formData.get("preco") as string) || "0";
   const capaUrl = (formData.get("capaUrl") as string) || null;
+  const capaLargura = intPositivoOuNull(formData.get("capaLargura"));
+  const capaAltura = intPositivoOuNull(formData.get("capaAltura"));
 
   return {
     data: {
@@ -249,6 +262,8 @@ function bookDataFromForm(formData: FormData): { error: string } | { data: BookD
       precoCentavos: Math.max(0, centavosFromInput(preco)),
       estoque: parsed.data.estoque,
       capaUrl,
+      capaLargura,
+      capaAltura,
       descricao: parsed.data.descricao || null,
       descontoPercentual,
     },

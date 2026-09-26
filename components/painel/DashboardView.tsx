@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { brl, formatEventoDia } from "@/lib/format";
+import { brl, formatEventoDia, capaAspectRatio } from "@/lib/format";
 import { calcularPerfilCompleto } from "@/lib/perfilCompleto";
 import { calcularConquistas } from "@/lib/conquistas";
 import type { AuthorWithRelations, PainelView } from "./types";
@@ -173,7 +173,7 @@ export default function DashboardView({
               <div key={b.id}>
                 <div
                   style={{
-                    aspectRatio: "3/4",
+                    aspectRatio: capaAspectRatio(b.capaLargura, b.capaAltura),
                     borderRadius: "6px",
                     marginBottom: "8px",
                     display: "flex",

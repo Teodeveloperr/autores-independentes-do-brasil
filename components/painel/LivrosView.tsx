@@ -23,6 +23,8 @@ export default function LivrosView({ author }: { author: AuthorWithRelations }) 
 
   useEffect(() => {
     capa.setUrl(editing?.capaUrl ?? "");
+    capa.setWidth(editing?.capaLargura ?? null);
+    capa.setHeight(editing?.capaAltura ?? null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editingId]);
 
@@ -59,6 +61,8 @@ export default function LivrosView({ author }: { author: AuthorWithRelations }) 
           key={editingId ?? "new"}
           action={(fd) => {
             fd.set("capaUrl", capa.url);
+            fd.set("capaLargura", capa.width ? String(capa.width) : "");
+            fd.set("capaAltura", capa.height ? String(capa.height) : "");
             onSubmit(fd);
           }}
           style={{ background: "white", borderRadius: "10px", padding: "24px", display: "flex", flexDirection: "column", gap: "14px" }}
@@ -86,14 +90,16 @@ export default function LivrosView({ author }: { author: AuthorWithRelations }) 
                 gap: "4px",
                 minHeight: "90px",
                 justifyContent: "center",
-                background: capa.url ? `center / cover no-repeat url(${capa.url})` : "transparent",
+                background: capa.url ? `center / contain no-repeat url(${capa.url})` : "transparent",
               }}
             >
               {!capa.url && <div>{capa.uploading ? "Enviando..." : "📕 Arraste a capa aqui ou clique para selecionar"}</div>}
             </label>
             <input id="capaInput" type="file" accept="image/*" onChange={capa.onInputChange} style={{ display: "none" }} />
             {capa.error && <p style={{ fontSize: "12px", color: "#C0392B", marginTop: "6px" }}>{capa.error}</p>}
-            <p style={{ fontSize: "11px", color: "#999", marginTop: "6px" }}>📐 Recomendado: proporção 3:4 (ex: 600×800px). JPG ou PNG, até 5MB.</p>
+            <p style={{ fontSize: "11px", color: "#999", marginTop: "6px" }}>
+              📐 Qualquer formato funciona (vertical, quadrado ou horizontal) — a capa é exibida na proporção real. JPG ou PNG, até 5MB.
+            </p>
           </div>
           <div>
             <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>Título do livro</label>

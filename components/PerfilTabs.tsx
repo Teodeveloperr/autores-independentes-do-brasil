@@ -5,7 +5,7 @@ import Link from "next/link";
 import Lightbox from "./Lightbox";
 import AvaliacaoForm from "./AvaliacaoForm";
 import { podeUsarRecursosExtras } from "@/lib/plans";
-import { formatEventoDia } from "@/lib/format";
+import { formatEventoDia, capaAspectRatio } from "@/lib/format";
 
 type Tab = "livros" | "galeria" | "eventos" | "avaliacoes";
 
@@ -16,6 +16,8 @@ type BookItem = {
   titulo: string;
   genero: string;
   capaUrl: string | null;
+  capaLargura: number | null;
+  capaAltura: number | null;
   preco: string;
   precoCentavos: number;
   descricao: string | null;
@@ -72,7 +74,7 @@ export default function PerfilTabs({
                 <div
                   key={b.id}
                   style={{
-                    aspectRatio: "3/4",
+                    aspectRatio: capaAspectRatio(b.capaLargura, b.capaAltura),
                     borderRadius: "4px",
                     backgroundColor: b.capaUrl ? "#F6F6F6" : "#E0E0E0",
                     backgroundImage: b.capaUrl ? `url(${b.capaUrl})` : undefined,

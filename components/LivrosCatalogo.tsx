@@ -6,6 +6,7 @@ import PrecoComDesconto from "@/components/PrecoComDesconto";
 import { podeVenderLivros } from "@/lib/plans";
 import { precoComDescontoCentavos } from "@/lib/desconto";
 import { GENEROS } from "@/lib/genres";
+import { capaAspectRatio } from "@/lib/format";
 
 export type LivroCatalogo = {
   id: string;
@@ -14,6 +15,8 @@ export type LivroCatalogo = {
   precoCentavos: number;
   descontoPercentual: number | null;
   capaUrl: string | null;
+  capaLargura: number | null;
+  capaAltura: number | null;
   descricao: string | null;
   authorId: string;
   author: { nome: string; plano: string };
@@ -171,7 +174,7 @@ export default function LivrosCatalogo({ books }: { books: LivroCatalogo[] }) {
                     backgroundSize: "contain",
                     backgroundPosition: "center",
                     backgroundRepeat: "no-repeat",
-                    aspectRatio: "3/4",
+                    aspectRatio: capaAspectRatio(b.capaLargura, b.capaAltura),
                     borderRadius: "4px",
                     marginBottom: "12px",
                   }}

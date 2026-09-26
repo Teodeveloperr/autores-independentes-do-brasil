@@ -86,6 +86,8 @@ export default async function LojaAutorPage({ params }: { params: Promise<{ id: 
                 titulo: b.titulo,
                 genero: b.genero,
                 capaUrl: b.capaUrl,
+                capaLargura: b.capaLargura,
+                capaAltura: b.capaAltura,
                 preco: brl(b.precoCentavos),
                 precoCentavos: b.precoCentavos,
                 descontoPercentual: b.descontoPercentual,
