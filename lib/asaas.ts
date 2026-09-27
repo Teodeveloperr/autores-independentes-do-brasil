@@ -397,6 +397,10 @@ export type CobrancaAsaas = {
   netValueCentavos: number | null;
   invoiceUrl: string;
   status: string;
+  // Data de vencimento real dessa cobrança (formato "YYYY-MM-DD" devolvido pela Asaas) —
+  // não confundir com a data de hoje: pra assinatura recorrente, a cobrança costuma ser
+  // criada alguns dias antes do vencimento de fato.
+  dueDate: string | null;
 };
 
 export async function buscarCobranca(id: string): Promise<CobrancaAsaas | null> {
@@ -420,6 +424,7 @@ export async function buscarCobranca(id: string): Promise<CobrancaAsaas | null> 
       netValue?: number | null;
       invoiceUrl: string;
       status: string;
+      dueDate?: string | null;
     };
     return {
       id: data.id,
@@ -430,6 +435,7 @@ export async function buscarCobranca(id: string): Promise<CobrancaAsaas | null> 
       netValueCentavos: typeof data.netValue === "number" ? Math.round(data.netValue * 100) : null,
       invoiceUrl: data.invoiceUrl,
       status: data.status,
+      dueDate: data.dueDate ?? null,
     };
   } catch (err) {
     console.error("[asaas] Falha ao buscar cobrança:", err);
@@ -452,7 +458,7 @@ export async function listarCobrancasDaAssinatura(subscriptionId: string): Promi
       return null;
     }
     const data = (await res.json()) as {
-      data: { id: string; subscription?: string | null; customer?: string | null; installment?: string | null; value: number; netValue?: number | null; invoiceUrl: string; status: string }[];
+      data: { id: string; subscription?: string | null; customer?: string | null; installment?: string | null; value: number; netValue?: number | null; invoiceUrl: string; status: string; dueDate?: string | null }[];
     };
     return data.data.map((c) => ({
       id: c.id,
@@ -463,6 +469,7 @@ export async function listarCobrancasDaAssinatura(subscriptionId: string): Promi
       netValueCentavos: typeof c.netValue === "number" ? Math.round(c.netValue * 100) : null,
       invoiceUrl: c.invoiceUrl,
       status: c.status,
+      dueDate: c.dueDate ?? null,
     }));
   } catch (err) {
     console.error("[asaas] Falha ao listar cobranças da assinatura:", err);

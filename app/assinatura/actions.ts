@@ -12,7 +12,13 @@ import { checkRateLimit } from "@/lib/rateLimit";
 
 export type AssinarState = { error?: string; pixQrCode?: { payload: string; image: string } } | undefined;
 
+// Cancela qualquer método de cobrança recorrente ativo (Mercado Pago legado, Pix
+// Automático, cartão recorrente via Asaas) e só marca como "cancelled" no nosso banco os
+// que a cancelação na operadora realmente confirmou — antes disso ficava cancelado só do
+// lado da operadora, e o registro local continuava mostrando "active" pra sempre, mesmo
+// depois do autor trocar de plano.
 export async function cancelarAssinaturaAtiva(author: {
+  id: string;
   mpPreapprovalId: string | null;
   mpSubscriptionStatus: string | null;
   asaasPixAutoAuthorizationId: string | null;
@@ -20,14 +26,26 @@ export async function cancelarAssinaturaAtiva(author: {
   asaasSubscriptionId: string | null;
   asaasSubscriptionStatus: string | null;
 }) {
+  const atualizacoes: { mpSubscriptionStatus?: string; asaasPixAutoStatus?: string; asaasSubscriptionStatus?: string } = {};
+
   if (author.mpPreapprovalId && author.mpSubscriptionStatus === "authorized") {
-    await cancelarAssinaturaMp(author.mpPreapprovalId);
+    if (await cancelarAssinaturaMp(author.mpPreapprovalId)) {
+      atualizacoes.mpSubscriptionStatus = "cancelled";
+    }
   }
   if (author.asaasPixAutoAuthorizationId && author.asaasPixAutoStatus === "active") {
-    await cancelarAutorizacaoPixAutomatico(author.asaasPixAutoAuthorizationId);
+    if (await cancelarAutorizacaoPixAutomatico(author.asaasPixAutoAuthorizationId)) {
+      atualizacoes.asaasPixAutoStatus = "cancelled";
+    }
   }
   if (author.asaasSubscriptionId && author.asaasSubscriptionStatus === "active") {
-    await cancelarAssinaturaAsaas(author.asaasSubscriptionId);
+    if (await cancelarAssinaturaAsaas(author.asaasSubscriptionId)) {
+      atualizacoes.asaasSubscriptionStatus = "cancelled";
+    }
+  }
+
+  if (Object.keys(atualizacoes).length > 0) {
+    await prisma.author.update({ where: { id: author.id }, data: atualizacoes });
   }
 }
 
@@ -137,15 +155,13 @@ export async function iniciarAssinatura(_prev: AssinarState, formData: FormData)
 
 export async function cancelarAssinatura() {
   const author = await requireAuthor();
+  // Cancela o método recorrente ativo (se houver) e já marca "cancelled" no banco.
   await cancelarAssinaturaAtiva(author);
 
   await prisma.author.update({
     where: { id: author.id },
     data: {
       plano: "Iniciante",
-      mpSubscriptionStatus: author.mpPreapprovalId ? "cancelled" : author.mpSubscriptionStatus,
-      asaasPixAutoStatus: author.asaasPixAutoAuthorizationId ? "cancelled" : author.asaasPixAutoStatus,
-      asaasSubscriptionStatus: author.asaasSubscriptionId ? "cancelled" : author.asaasSubscriptionStatus,
       // Plano parcelado não tem nada pra cancelar na Asaas (não é assinatura recorrente —
       // as parcelas já vendidas continuam sendo cobradas no cartão independente disso); só
       // limpa o controle de validade local, que é o que dá acesso à plataforma.

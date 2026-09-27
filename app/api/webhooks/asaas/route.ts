@@ -4,6 +4,14 @@ import { verificarWebhookAsaas, buscarCobranca } from "@/lib/asaas";
 import { sendOrderConfirmationEmail, sendNewSaleEmail, sendNovaCobrancaAssinaturaEmail, sendWelcomeEmail } from "@/lib/email";
 import { PREMIUM_PLUS_VALOR_PARCEIRO_CENTAVOS, CICLO_MESES, type CicloAssinatura } from "@/lib/plans";
 
+// Formata a data de vencimento que a Asaas devolve ("YYYY-MM-DD") pro padrão brasileiro —
+// usado no e-mail de nova cobrança. Cai no formato de hoje só se a Asaas não mandar a data
+// (não deveria acontecer, mas evita um e-mail sem data nenhuma).
+function formatarDataVencimento(dueDate: string | null): string {
+  if (!dueDate) return new Date().toLocaleDateString("pt-BR");
+  return new Date(dueDate).toLocaleDateString("pt-BR");
+}
+
 // Validade de um plano comprado parcelado (não tem assinatura recorrente por trás — ver
 // contexto no topo de lib/assinatura.ts) — hoje + a duração do ciclo comprado.
 function calcularPlanoParceladoAte(ciclo: string | null): Date | null {
@@ -178,7 +186,7 @@ export async function POST(request: NextRequest) {
           planoNome: author.planoPendente ?? author.plano,
           valorCentavos: cobranca.valueCentavos,
           invoiceUrl: cobranca.invoiceUrl,
-          dueDate: new Date().toLocaleDateString("pt-BR"),
+          dueDate: formatarDataVencimento(cobranca.dueDate),
         }).catch((err) => console.error(`[asaas] Falha ao enviar e-mail de nova cobrança para ${author.email}:`, err));
       }
     }
