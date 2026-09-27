@@ -5,7 +5,6 @@ import AssinaturaPlanos from "@/components/AssinaturaPlanos";
 import PremiumPlusPilares from "@/components/PremiumPlusPilares";
 import PremiumPlusBienalDestaque from "@/components/PremiumPlusBienalDestaque";
 import { getCurrentAuthor } from "@/lib/auth";
-import { descontoFidelidade } from "@/lib/plans";
 
 export const dynamic = "force-dynamic";
 
@@ -29,7 +28,6 @@ export default async function AssinaturaPage() {
         <AssinaturaPlanos
           isLoggedIn={!!author}
           planoAtual={author?.plano ?? "Iniciante"}
-          descontoFidelidadePct={author && author.plano !== "Iniciante" ? descontoFidelidade(author.planoIniciadoEm) : 0}
           cta={cta}
           planoParceladoAte={author?.planoParceladoAte ?? null}
         />

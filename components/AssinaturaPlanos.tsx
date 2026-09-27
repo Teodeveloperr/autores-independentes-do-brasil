@@ -3,7 +3,7 @@
 import { useActionState, useState } from "react";
 import Link from "next/link";
 import { iniciarAssinatura, type AssinarState } from "@/app/assinatura/actions";
-import { PLANOS_PAGOS, CICLO_MESES, valorCicloCentavos, PLANO_RANK, parcelasDisponiveis, type CicloAssinatura } from "@/lib/plans";
+import { PLANOS_PAGOS, CICLO_MESES, valorCicloCentavos, parcelasDisponiveis, type CicloAssinatura } from "@/lib/plans";
 import { buscarEnderecoPorCep } from "@/lib/cep";
 import AssinaturaPremiumPopup from "./AssinaturaPremiumPopup";
 
@@ -32,7 +32,6 @@ function PlanoPagoCard({
   recursos,
   isLoggedIn,
   planoAtual,
-  descontoFidelidadePct,
   planoParceladoAte,
 }: {
   slug: "essencial" | "premium" | "premiumPlus";
@@ -42,7 +41,6 @@ function PlanoPagoCard({
   recursos: string[];
   isLoggedIn: boolean;
   planoAtual: string;
-  descontoFidelidadePct: number;
   planoParceladoAte: Date | null;
 }) {
   const [state, formAction, pending] = useActionState<AssinarState, FormData>(iniciarAssinatura, undefined);
@@ -61,16 +59,13 @@ function PlanoPagoCard({
   // Plano parcelado (sem renovação automática) perto de vencer: em vez do badge estático
   // de "plano atual", mostra o formulário de compra de novo, pra renovar.
   const parceladoPertoDeVencer = jaAssinante && estaPertoDeVencer(planoParceladoAte);
-  const ehUpgrade = planoAtual !== "Iniciante" && !jaAssinante && (PLANO_RANK[plano.nome] ?? 0) > (PLANO_RANK[planoAtual] ?? 0);
-  const temDesconto = ehUpgrade && descontoFidelidadePct > 0;
-  const totalCicloComDesconto = temDesconto ? Math.round(totalCiclo * (1 - descontoFidelidadePct / 100)) : totalCiclo;
-  const porMes = Math.round(totalCicloComDesconto / meses);
+  const porMes = Math.round(totalCiclo / meses);
   // Parcelas do cartão: a pessoa escolhe de 1 até `meses`; se a seleção guardada não
   // existir mais nas opções do ciclo atual (trocou de ciclo depois de escolher), o
   // Math.min cai pro máximo válido em vez de sumir a seleção.
   const parcelasOpcoes = parcelasDisponiveis(ciclo2);
   const parcelasSelecionadas = Math.min(parcelasEscolhidas ?? meses, meses);
-  const valorParcelaCentavos = Math.round(totalCicloComDesconto / parcelasSelecionadas);
+  const valorParcelaCentavos = Math.round(totalCiclo / parcelasSelecionadas);
 
   async function onCepBlur() {
     const digits = cep.replace(/\D/g, "");
@@ -107,20 +102,12 @@ function PlanoPagoCard({
       )}
       <div>
         <div style={{ fontWeight: 700, fontSize: "18px", marginBottom: "8px" }}>{plano.nome}</div>
-        {temDesconto && (
-          <div style={{ display: "flex", gap: "8px", alignItems: "center", marginBottom: "4px" }}>
-            <span style={{ fontSize: "14px", color: "#999", textDecoration: "line-through" }}>{brl(Math.round(totalCiclo / meses))}</span>
-            <span style={{ fontSize: "11px", fontWeight: 700, color: "white", background: "#C0392B", padding: "1px 6px", borderRadius: "10px" }}>
-              🎉 Fidelidade: -{descontoFidelidadePct}%
-            </span>
-          </div>
-        )}
         <div style={{ fontSize: "36px", fontWeight: 700, color: "#002776" }}>
           {brl(porMes)}
           <span style={{ fontSize: "14px", fontWeight: 500, color: "#666" }}>/mês</span>
         </div>
         <p style={{ fontSize: "13px", color: "#666", marginTop: "8px" }}>
-          {ciclo2 === "mensal" ? "Cobrado mensalmente" : `Cobrado a cada ${meses} meses: ${brl(totalCicloComDesconto)}`}
+          {ciclo2 === "mensal" ? "Cobrado mensalmente" : `Cobrado a cada ${meses} meses: ${brl(totalCiclo)}`}
         </p>
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: "12px", fontSize: "14px", flex: 1 }}>
@@ -272,7 +259,7 @@ function PlanoPagoCard({
                 >
                   {parcelasOpcoes.map((n) => (
                     <option key={n} value={n}>
-                      {n}x de {brl(Math.round(totalCicloComDesconto / n))}
+                      {n}x de {brl(Math.round(totalCiclo / n))}
                     </option>
                   ))}
                 </select>
@@ -297,13 +284,11 @@ function PlanoPagoCard({
 export default function AssinaturaPlanos({
   isLoggedIn,
   planoAtual,
-  descontoFidelidadePct,
   cta,
   planoParceladoAte,
 }: {
   isLoggedIn: boolean;
   planoAtual: string;
-  descontoFidelidadePct: number;
   cta: string;
   planoParceladoAte?: Date | null;
 }) {
@@ -364,7 +349,6 @@ export default function AssinaturaPlanos({
           ciclo={ciclo}
           isLoggedIn={isLoggedIn}
           planoAtual={planoAtual}
-          descontoFidelidadePct={descontoFidelidadePct}
           planoParceladoAte={planoParceladoAte ?? null}
           recursos={[
             "Perfil público completo",
@@ -382,7 +366,6 @@ export default function AssinaturaPlanos({
           ciclo={ciclo}
           isLoggedIn={isLoggedIn}
           planoAtual={planoAtual}
-          descontoFidelidadePct={descontoFidelidadePct}
           planoParceladoAte={planoParceladoAte ?? null}
           recursos={[
             "Tudo do Autor Essencial",
@@ -403,7 +386,6 @@ export default function AssinaturaPlanos({
           elevado
           isLoggedIn={isLoggedIn}
           planoAtual={planoAtual}
-          descontoFidelidadePct={descontoFidelidadePct}
           planoParceladoAte={planoParceladoAte ?? null}
           recursos={[
             "Tudo do Autor Premium",

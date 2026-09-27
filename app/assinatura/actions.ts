@@ -7,7 +7,7 @@ import { cancelarAssinaturaMp } from "@/lib/mercadoPago";
 import { cancelarAutorizacaoPixAutomatico, cancelarAssinaturaAsaas } from "@/lib/asaas";
 import { criarAssinaturaAsaasParaAutor, criarAssinaturaPixAutomatico, criarCobrancaParceladaParaAutor } from "@/lib/assinatura";
 import { validarCpf } from "@/lib/cpf";
-import { PLANOS_PAGOS, CICLO_MESES, valorCicloCentavos, descontoFidelidade, PLANO_RANK, parcelasDisponiveis, type PlanoPagoSlug, type CicloAssinatura } from "@/lib/plans";
+import { PLANOS_PAGOS, CICLO_MESES, valorCicloCentavos, parcelasDisponiveis, type PlanoPagoSlug, type CicloAssinatura } from "@/lib/plans";
 import { checkRateLimit } from "@/lib/rateLimit";
 
 export type AssinarState = { error?: string; pixQrCode?: { payload: string; image: string } } | undefined;
@@ -50,9 +50,7 @@ export async function iniciarAssinatura(_prev: AssinarState, formData: FormData)
     return { error: "O plano Premium+ está disponível apenas no ciclo anual." };
   }
 
-  const ehUpgrade = author.plano !== "Iniciante" && (PLANO_RANK[plano.nome] ?? 0) > (PLANO_RANK[author.plano] ?? 0);
-  const desconto = ehUpgrade ? descontoFidelidade(author.planoIniciadoEm) : 0;
-  const valorCentavos = Math.round(valorCicloCentavos(plano, ciclo) * (1 - desconto / 100));
+  const valorCentavos = valorCicloCentavos(plano, ciclo);
 
   const cpf = ((formData.get("cpf") as string) || "").trim();
   if (!validarCpf(cpf)) {
