@@ -48,6 +48,65 @@ type EntradaReceita = {
   disponivel: boolean;
 };
 
+// Uma assinatura parcelada no cartão gera uma linha de receita por parcela (até 12, todas
+// com a mesma descrição "autor — plano") — sem agrupar, a lista de entradas do mês fica
+// enorme. Agrupa as entradas de Assinatura que compartilham a mesma descrição numa única
+// linha recolhível; quando só existe uma parcela naquele mês, mostra normal, sem seta.
+type GrupoReceita = { chave: string; descricao: string; parcelas: EntradaReceita[] };
+
+function agruparEntradas(entradas: EntradaReceita[]): (EntradaReceita | GrupoReceita)[] {
+  const indicePorChave = new Map<string, number>();
+  const linhas: (EntradaReceita | GrupoReceita)[] = [];
+  for (const e of entradas) {
+    if (e.tipo !== "Assinatura") {
+      linhas.push(e);
+      continue;
+    }
+    const chave = e.descricao;
+    const indice = indicePorChave.get(chave);
+    if (indice === undefined) {
+      indicePorChave.set(chave, linhas.length);
+      linhas.push({ chave, descricao: chave, parcelas: [e] });
+    } else {
+      (linhas[indice] as GrupoReceita).parcelas.push(e);
+    }
+  }
+  return linhas;
+}
+
+function ehGrupo(linha: EntradaReceita | GrupoReceita): linha is GrupoReceita {
+  return "parcelas" in linha;
+}
+
+function LinhaEntrada({ e }: { e: EntradaReceita }) {
+  return (
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px", fontSize: "13px", padding: "10px 0", borderBottom: "1px solid #F0F0F0" }}>
+      <span style={{ color: "#999", flexShrink: 0, width: "80px" }}>{dataLabel(e.data)}</span>
+      <span
+        style={{
+          fontSize: "11px",
+          fontWeight: 700,
+          padding: "2px 8px",
+          borderRadius: "10px",
+          flexShrink: 0,
+          background: e.tipo === "Assinatura" ? "#E3F4E9" : "#E9EEF9",
+          color: e.tipo === "Assinatura" ? "#009B3A" : "#002776",
+        }}
+      >
+        {e.tipo}
+      </span>
+      <span style={{ flex: 1, color: "#262626", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.descricao}</span>
+      <span
+        title={e.disponivel ? "Já disponível para movimentação na Asaas" : "Confirmado, mas ainda não liberado pra movimentação na Asaas"}
+        style={{ fontSize: "11px", flexShrink: 0, color: e.disponivel ? "#009B3A" : "#A87900" }}
+      >
+        {e.disponivel ? "✅ Disponível" : "⏳ Aguardando"}
+      </span>
+      <span style={{ fontWeight: 700, color: "#002776", flexShrink: 0 }}>{brl(e.valorCentavos)}</span>
+    </div>
+  );
+}
+
 export default function AdminReceitaView({
   pedidos,
   assinaturaPagamentos,
@@ -67,6 +126,16 @@ export default function AdminReceitaView({
   }, [pedidos, assinaturaPagamentos]);
 
   const [mes, setMes] = useState(meses[0]);
+  const [gruposAbertos, setGruposAbertos] = useState<Set<string>>(new Set());
+
+  function toggleGrupo(chave: string) {
+    setGruposAbertos((atual) => {
+      const novo = new Set(atual);
+      if (novo.has(chave)) novo.delete(chave);
+      else novo.add(chave);
+      return novo;
+    });
+  }
   const [reconciliando, startReconciliar] = useTransition();
   const [resultado, setResultado] = useState<{ faltantes: CobrancaFaltante[]; totalConferido: number } | null>(null);
   const [erroReconciliar, setErroReconciliar] = useState("");
@@ -164,6 +233,8 @@ export default function AdminReceitaView({
       entradas,
     };
   }, [pedidos, assinaturaPagamentos, mes]);
+
+  const linhasReceita = useMemo(() => agruparEntradas(dados.entradas), [dados.entradas]);
 
   return (
     <div>
@@ -336,35 +407,46 @@ export default function AdminReceitaView({
           <div style={{ fontSize: "13px", color: "#666" }}>Nenhuma entrada de receita nesse mês.</div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column" }}>
-            {dados.entradas.map((e) => (
-              <div
-                key={`${e.tipo}-${e.id}`}
-                style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px", fontSize: "13px", padding: "10px 0", borderBottom: "1px solid #F0F0F0" }}
-              >
-                <span style={{ color: "#999", flexShrink: 0, width: "80px" }}>{dataLabel(e.data)}</span>
-                <span
-                  style={{
-                    fontSize: "11px",
-                    fontWeight: 700,
-                    padding: "2px 8px",
-                    borderRadius: "10px",
-                    flexShrink: 0,
-                    background: e.tipo === "Assinatura" ? "#E3F4E9" : "#E9EEF9",
-                    color: e.tipo === "Assinatura" ? "#009B3A" : "#002776",
-                  }}
-                >
-                  {e.tipo}
-                </span>
-                <span style={{ flex: 1, color: "#262626", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.descricao}</span>
-                <span
-                  title={e.disponivel ? "Já disponível para movimentação na Asaas" : "Confirmado, mas ainda não liberado pra movimentação na Asaas"}
-                  style={{ fontSize: "11px", flexShrink: 0, color: e.disponivel ? "#009B3A" : "#A87900" }}
-                >
-                  {e.disponivel ? "✅ Disponível" : "⏳ Aguardando"}
-                </span>
-                <span style={{ fontWeight: 700, color: "#002776", flexShrink: 0 }}>{brl(e.valorCentavos)}</span>
-              </div>
-            ))}
+            {linhasReceita.map((linha) => {
+              if (!ehGrupo(linha)) {
+                return <LinhaEntrada key={`${linha.tipo}-${linha.id}`} e={linha} />;
+              }
+              if (linha.parcelas.length === 1) {
+                return <LinhaEntrada key={linha.chave} e={linha.parcelas[0]} />;
+              }
+              const aberto = gruposAbertos.has(linha.chave);
+              const totalCentavos = linha.parcelas.reduce((sum, p) => sum + p.valorCentavos, 0);
+              const disponiveis = linha.parcelas.filter((p) => p.disponivel).length;
+              const maisRecente = linha.parcelas[0].data;
+              return (
+                <div key={linha.chave}>
+                  <div
+                    onClick={() => toggleGrupo(linha.chave)}
+                    style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px", fontSize: "13px", padding: "10px 0", borderBottom: "1px solid #F0F0F0", cursor: "pointer" }}
+                  >
+                    <span style={{ color: "#999", flexShrink: 0, width: "18px" }}>{aberto ? "▾" : "▸"}</span>
+                    <span style={{ color: "#999", flexShrink: 0, width: "80px" }}>{dataLabel(maisRecente)}</span>
+                    <span style={{ fontSize: "11px", fontWeight: 700, padding: "2px 8px", borderRadius: "10px", flexShrink: 0, background: "#E3F4E9", color: "#009B3A" }}>
+                      Assinatura
+                    </span>
+                    <span style={{ flex: 1, color: "#262626", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {linha.descricao} · {linha.parcelas.length}x parcelas
+                    </span>
+                    <span style={{ fontSize: "11px", flexShrink: 0, color: "#666" }}>
+                      {disponiveis}/{linha.parcelas.length} disponíveis
+                    </span>
+                    <span style={{ fontWeight: 700, color: "#002776", flexShrink: 0 }}>{brl(totalCentavos)}</span>
+                  </div>
+                  {aberto && (
+                    <div style={{ paddingLeft: "26px" }}>
+                      {linha.parcelas.map((p) => (
+                        <LinhaEntrada key={p.id} e={p} />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
