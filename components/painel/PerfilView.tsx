@@ -155,7 +155,11 @@ export default function PerfilView({ author }: { author: AuthorWithRelations }) 
                 justifyContent: "center",
                 fontSize: "36px",
                 color: "#999",
-                background: avatar.url ? `center / cover no-repeat url(${avatar.url})` : "#E0E0E0",
+                backgroundColor: avatar.url ? "#F6F6F6" : "#E0E0E0",
+                backgroundImage: avatar.url ? `url(${avatar.url})` : undefined,
+                backgroundSize: "contain",
+                backgroundPosition: "center",
+                backgroundRepeat: "no-repeat",
               }}
             >
               {!avatar.url && (avatar.uploading ? "…" : "👤")}
