@@ -78,6 +78,7 @@ export default function BannerPositioner({
   return (
     <div
       ref={containerRef}
+      className="banner-positioner"
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}

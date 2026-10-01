@@ -287,6 +287,15 @@ img {
   }
 }
 
+/* Banner do perfil (BannerPositioner): a proporção 1200/260 (bem larga e baixa) fica
+   ótima em telas largas, mas no celular vira uma faixa fininha demais pra ver/posicionar
+   a imagem direito — numa tela mais estreita, usa uma proporção mais alta. */
+@media (max-width: 560px) {
+  .banner-positioner {
+    aspect-ratio: 16 / 9 !important;
+  }
+}
+
 /* Linhas flex (grids 2 colunas feitos com display:flex) que devem empilhar */
 @media (max-width: 900px) {
   .responsive-flex-row {
