@@ -3,6 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { brl } from "@/lib/format";
+import { baixarCsv, reais } from "@/lib/csv";
 import { valorRepasseCentavos, valorRepasseCentavosLiquido } from "@/lib/plans";
 import { reconciliarReceita, atualizarValoresLiquidos, type CobrancaFaltante } from "@/app/admin/actions";
 import type { OrderComReceita, SubscriptionPaymentRow } from "./types";
@@ -236,6 +237,14 @@ export default function AdminReceitaView({
 
   const linhasReceita = useMemo(() => agruparEntradas(dados.entradas), [dados.entradas]);
 
+  function onExportar() {
+    baixarCsv(
+      `receita-${mes}.csv`,
+      ["Data", "Tipo", "Descrição", "Valor da plataforma (R$)", "Situação"],
+      dados.entradas.map((e) => [dataLabel(e.data), e.tipo, e.descricao, reais(e.valorCentavos), e.disponivel ? "Disponível" : "Aguardando liquidação"])
+    );
+  }
+
   return (
     <div>
       <h2 style={{ fontSize: "22px", fontWeight: 700, color: "#002776", marginBottom: "8px" }}>Receita</h2>
@@ -284,6 +293,13 @@ export default function AdminReceitaView({
           style={{ background: "white", border: "1px solid #002776", color: "#002776", padding: "8px 16px", borderRadius: "6px", fontSize: "13px", fontWeight: 600, opacity: atualizandoLiquido ? 0.7 : 1 }}
         >
           {atualizandoLiquido ? "Atualizando..." : "💧 Atualizar valores líquidos e disponibilidade"}
+        </button>
+        <button
+          onClick={onExportar}
+          disabled={dados.entradas.length === 0}
+          style={{ background: "white", border: "1px solid #009B3A", color: "#009B3A", padding: "8px 16px", borderRadius: "6px", fontSize: "13px", fontWeight: 600, opacity: dados.entradas.length === 0 ? 0.5 : 1 }}
+        >
+          📥 Exportar mês (CSV)
         </button>
       </div>
 

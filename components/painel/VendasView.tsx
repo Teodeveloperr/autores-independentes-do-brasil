@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { brl } from "@/lib/format";
+import { baixarCsv, reais } from "@/lib/csv";
 import { relatorioVendasNivel, COMISSAO_PERCENTUAL, valorRepasseCentavos } from "@/lib/plans";
 import type { AuthorWithRelations } from "./types";
 
@@ -84,6 +85,26 @@ export default function VendasView({ author }: { author: AuthorWithRelations }) 
     .filter((o) => o.repasseStatus === "transferido")
     .reduce((sum, o) => sum + valorRepasseCentavos(author.plano, o.valorCentavos, o.freteCentavos ?? 0), 0);
 
+  function onExportar() {
+    const detalhado = nivel === "detalhado";
+    baixarCsv(
+      `vendas-${periodo.toLowerCase().replace(/\s+/g, "-")}.csv`,
+      ["Pedido", "Data", "Livro", "Quantidade", "Valor (R$)", "Frete (R$)", "Status", ...(detalhado ? ["Repasse estimado (R$)", "Situação do repasse"] : [])],
+      [...vendas]
+        .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+        .map((o) => [
+          o.id.slice(-6),
+          o.createdAt.toLocaleDateString("pt-BR"),
+          o.livro,
+          o.quantidade,
+          reais(o.valorCentavos),
+          reais(o.freteCentavos ?? 0),
+          o.status,
+          ...(detalhado ? [reais(valorRepasseCentavos(author.plano, o.valorCentavos, o.freteCentavos ?? 0)), REPASSE_LABEL[o.repasseStatus] ?? o.repasseStatus] : []),
+        ])
+    );
+  }
+
   if (nivel === "nenhum") {
     return (
       <div>
@@ -108,15 +129,24 @@ export default function VendasView({ author }: { author: AuthorWithRelations }) 
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px", marginBottom: "20px" }}>
         <h2 style={{ fontSize: "22px", fontWeight: 700, color: "#002776" }}>Vendas e Relatórios</h2>
-        <select
-          value={periodo}
-          onChange={(e) => setPeriodo(e.target.value as (typeof PERIODOS)[number])}
-          style={{ padding: "8px 12px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px" }}
-        >
-          {PERIODOS.map((p) => (
-            <option key={p}>{p}</option>
-          ))}
-        </select>
+        <div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap" }}>
+          <select
+            value={periodo}
+            onChange={(e) => setPeriodo(e.target.value as (typeof PERIODOS)[number])}
+            style={{ padding: "8px 12px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px" }}
+          >
+            {PERIODOS.map((p) => (
+              <option key={p}>{p}</option>
+            ))}
+          </select>
+          <button
+            onClick={onExportar}
+            disabled={vendas.length === 0}
+            style={{ background: "white", border: "1px solid #009B3A", color: "#009B3A", padding: "8px 14px", borderRadius: "6px", fontSize: "13px", fontWeight: 600, opacity: vendas.length === 0 ? 0.5 : 1 }}
+          >
+            📥 Exportar (CSV)
+          </button>
+        </div>
       </div>
 
       <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "20px", marginBottom: "24px" }}>
