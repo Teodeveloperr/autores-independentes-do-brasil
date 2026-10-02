@@ -27,12 +27,12 @@ export type OportunidadeItem = {
   link: string;
 };
 
+// prazoFinal chega como data pura ("YYYY-MM-DD"). Compara dia com dia, sem horário: o último
+// dia de inscrição dá 0, não "encerrado".
 function diasRestantes(prazoFinal: string): number {
+  const [ano, mes, dia] = prazoFinal.split("-").map(Number);
   const hoje = new Date();
-  hoje.setHours(0, 0, 0, 0);
-  const prazo = new Date(prazoFinal);
-  prazo.setHours(0, 0, 0, 0);
-  return Math.ceil((prazo.getTime() - hoje.getTime()) / 86400000);
+  return Math.round((Date.UTC(ano, mes - 1, dia) - Date.UTC(hoje.getFullYear(), hoje.getMonth(), hoje.getDate())) / 86400000);
 }
 
 function urgencia(dias: number): { emoji: string; cor: string } {
@@ -98,7 +98,7 @@ export default function OportunidadesGrid({ oportunidades }: { oportunidades: Op
               <div key={o.id} style={{ background: "#F6F6F6", padding: "20px", borderRadius: "8px", display: "flex", flexDirection: "column", gap: "10px" }}>
                 <div style={{ fontWeight: 700, fontSize: "15px", color: "#262626" }}>{o.nome}</div>
                 <div style={{ fontSize: "13px", color: cor, fontWeight: 600 }}>
-                  {emoji} Prazo final: {dias >= 0 ? `${dias} dia${dias === 1 ? "" : "s"}` : "encerrado"}
+                  {emoji} Prazo final: {dias === 0 ? "hoje (último dia)" : dias > 0 ? `${dias} dia${dias === 1 ? "" : "s"}` : "encerrado"}
                 </div>
                 <div style={{ fontSize: "13px", color: "#666" }}>Categoria: {o.categoria}</div>
                 <div style={{ fontSize: "13px", color: "#666" }}>

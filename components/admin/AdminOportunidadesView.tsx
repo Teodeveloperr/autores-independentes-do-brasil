@@ -109,7 +109,7 @@ export default function AdminOportunidadesView({ oportunidades }: { oportunidade
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontWeight: 700, fontSize: "14px" }}>{o.nome}</div>
                 <div style={{ fontSize: "12px", color: "#666" }}>
-                  {o.categoria} • 📍 {o.regiao}{o.estado ? ` — ${o.estado}` : ""} • até {o.prazoFinal.toLocaleDateString("pt-BR")}
+                  {o.categoria} • 📍 {o.regiao}{o.estado ? ` — ${o.estado}` : ""} • até {o.prazoFinal.toLocaleDateString("pt-BR", { timeZone: "UTC" })}
                   {o.valor ? ` • ${o.valor}` : ""}
                 </div>
               </div>

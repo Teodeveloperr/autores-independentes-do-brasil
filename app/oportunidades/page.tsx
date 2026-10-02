@@ -9,8 +9,10 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Oportunidades" };
 
 export default async function OportunidadesPage() {
-  const hoje = new Date();
-  hoje.setHours(0, 0, 0, 0);
+  // O prazo é guardado como data pura (meia-noite UTC do dia escolhido), e o servidor roda em
+  // UTC — comparar com "agora" mostrava o edital como encerrado já à noite do último dia.
+  // Compara com a data de hoje no horário de Brasília, que é o que vale pro usuário.
+  const hoje = new Date(`${new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" })}T00:00:00Z`);
 
   const oportunidades = await prisma.opportunity.findMany({
     where: { prazoFinal: { gte: hoje } },
@@ -32,7 +34,7 @@ export default async function OportunidadesPage() {
                 id: o.id,
                 nome: o.nome,
                 categoria: o.categoria,
-                prazoFinal: o.prazoFinal.toISOString(),
+                prazoFinal: o.prazoFinal.toISOString().slice(0, 10),
                 regiao: o.regiao,
                 estado: o.estado,
                 valor: o.valor,
