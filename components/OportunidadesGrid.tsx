@@ -46,7 +46,7 @@ function urgencia(dias: number): { emoji: string; cor: string } {
   return { emoji: "🟢", cor: "#009B3A" };
 }
 
-export default function OportunidadesGrid({ oportunidades }: { oportunidades: OportunidadeItem[] }) {
+export default function OportunidadesGrid({ oportunidades, ocultas = 0, logado = false }: { oportunidades: OportunidadeItem[]; ocultas?: number; logado?: boolean }) {
   const [categoriaAtiva, setCategoriaAtiva] = useState<string | null>(null);
   const [regiaoAtiva, setRegiaoAtiva] = useState<string | null>(null);
 
@@ -72,27 +72,32 @@ export default function OportunidadesGrid({ oportunidades }: { oportunidades: Op
 
   return (
     <>
-      <div style={{ display: "flex", gap: "10px", marginBottom: "16px", flexWrap: "wrap" }}>
-        <button onClick={() => setCategoriaAtiva(null)} style={btnStyle(categoriaAtiva === null)}>
-          Todas
-        </button>
-        {CATEGORIAS.map((c) => (
-          <button key={c} onClick={() => setCategoriaAtiva(c)} style={btnStyle(categoriaAtiva === c)}>
-            {c}
+      {/* Com oportunidades ocultas (visitante / plano Iniciante) a lista é só uma amostra, então não faz sentido filtrar. */}
+      {ocultas === 0 && (
+        <>
+        <div style={{ display: "flex", gap: "10px", marginBottom: "16px", flexWrap: "wrap" }}>
+          <button onClick={() => setCategoriaAtiva(null)} style={btnStyle(categoriaAtiva === null)}>
+            Todas
           </button>
-        ))}
-      </div>
-      <div style={{ display: "flex", gap: "10px", marginBottom: "32px", flexWrap: "wrap", alignItems: "center" }}>
-        <span style={{ fontSize: "13px", color: "#666", fontWeight: 600 }}>📍 Região:</span>
-        <button onClick={() => setRegiaoAtiva(null)} style={btnStyle(regiaoAtiva === null)}>
-          Todas
-        </button>
-        {REGIOES_OPORTUNIDADES.map((r) => (
-          <button key={r} onClick={() => setRegiaoAtiva(r)} style={btnStyle(regiaoAtiva === r)}>
-            {r}
+          {CATEGORIAS.map((c) => (
+            <button key={c} onClick={() => setCategoriaAtiva(c)} style={btnStyle(categoriaAtiva === c)}>
+              {c}
+            </button>
+          ))}
+        </div>
+        <div style={{ display: "flex", gap: "10px", marginBottom: "32px", flexWrap: "wrap", alignItems: "center" }}>
+          <span style={{ fontSize: "13px", color: "#666", fontWeight: 600 }}>📍 Região:</span>
+          <button onClick={() => setRegiaoAtiva(null)} style={btnStyle(regiaoAtiva === null)}>
+            Todas
           </button>
-        ))}
-      </div>
+          {REGIOES_OPORTUNIDADES.map((r) => (
+            <button key={r} onClick={() => setRegiaoAtiva(r)} style={btnStyle(regiaoAtiva === r)}>
+              {r}
+            </button>
+          ))}
+        </div>
+        </>
+      )}
 
       {filtradas.length > 0 ? (
         <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "20px" }}>
@@ -131,6 +136,37 @@ export default function OportunidadesGrid({ oportunidades }: { oportunidades: Op
               ? "Nenhuma oportunidade em aberto no momento. Volte em breve!"
               : "Nenhuma oportunidade em aberto no momento com esses filtros."}
           </p>
+        </div>
+      )}
+
+      {ocultas > 0 && (
+        <div style={{ marginTop: "28px", background: "#002776", color: "white", borderRadius: "8px", padding: "32px 28px", textAlign: "center" }}>
+          <div style={{ fontSize: "28px", marginBottom: "8px" }}>🔒</div>
+          <div style={{ fontSize: "18px", fontWeight: 700, marginBottom: "8px" }}>
+            Há mais {ocultas} oportunidade{ocultas === 1 ? "" : "s"} disponíve{ocultas === 1 ? "l" : "is"} só para assinantes
+          </div>
+          <p style={{ fontSize: "14px", lineHeight: 1.6, maxWidth: "520px", margin: "0 auto 20px", color: "#DCE4F5" }}>
+            Você está vendo uma amostra com as 3 oportunidades mais recentes.{" "}
+            {logado
+              ? "Assine um plano (mensal, semestral ou anual) para acessar todos os editais e chamadas."
+              : "Para ver todos os editais e chamadas, entre na sua conta e tenha um plano ativo (mensal, semestral ou anual)."}
+          </p>
+          <div style={{ display: "flex", gap: "12px", justifyContent: "center", flexWrap: "wrap" }}>
+            <a
+              href="/assinatura"
+              style={{ display: "inline-block", background: "#FFDF00", color: "#002776", padding: "12px 28px", fontWeight: 700, borderRadius: "4px", textDecoration: "none", fontSize: "14px" }}
+            >
+              Ver planos e assinar
+            </a>
+            {!logado && (
+              <a
+                href="/login"
+                style={{ display: "inline-block", background: "transparent", color: "white", border: "2px solid white", padding: "10px 28px", fontWeight: 700, borderRadius: "4px", textDecoration: "none", fontSize: "14px" }}
+              >
+                Já sou assinante — entrar
+              </a>
+            )}
+          </div>
         </div>
       )}
     </>

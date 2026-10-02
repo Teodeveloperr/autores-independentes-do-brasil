@@ -3,8 +3,11 @@ import PublicHeader from "@/components/PublicHeader";
 import PublicFooter from "@/components/PublicFooter";
 import OportunidadesGrid from "@/components/OportunidadesGrid";
 import { prisma } from "@/lib/db";
+import { getCurrentAdmin, getCurrentAuthor } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
+
+const LIMITE_GRATUITO = 3;
 
 export const metadata: Metadata = { title: "Oportunidades" };
 
@@ -14,10 +17,27 @@ export default async function OportunidadesPage() {
   // Compara com a data de hoje no horário de Brasília, que é o que vale pro usuário.
   const hoje = new Date(`${new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" })}T00:00:00Z`);
 
-  const oportunidades = await prisma.opportunity.findMany({
-    where: { prazoFinal: { gte: hoje } },
-    orderBy: { prazoFinal: "asc" },
-  });
+  const [author, admin, todas] = await Promise.all([
+    getCurrentAuthor(),
+    getCurrentAdmin(),
+    prisma.opportunity.findMany({
+      where: { prazoFinal: { gte: hoje } },
+      orderBy: { prazoFinal: "asc" },
+    }),
+  ]);
+
+  // Visitante sem conta e autor do plano Iniciante veem só as LIMITE_GRATUITO oportunidades
+  // mais recentes; quem tem plano pago (e o admin) vê tudo. O corte é feito aqui no servidor
+  // de propósito: as demais nem chegam ao navegador, então não dá pra burlar pelo código da página.
+  const acessoCompleto = Boolean(admin) || (author !== null && author.plano !== "Iniciante");
+  let oportunidades = todas;
+  if (!acessoCompleto && todas.length > LIMITE_GRATUITO) {
+    const recentes = new Set(
+      [...todas].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()).slice(0, LIMITE_GRATUITO).map((o) => o.id)
+    );
+    oportunidades = todas.filter((o) => recentes.has(o.id));
+  }
+  const ocultas = todas.length - oportunidades.length;
 
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
@@ -40,6 +60,8 @@ export default async function OportunidadesPage() {
                 valor: o.valor,
                 link: o.link,
               }))}
+              ocultas={ocultas}
+              logado={author !== null}
             />
           </div>
         </div>
