@@ -27,16 +27,11 @@ export default async function OportunidadesPage() {
   ]);
 
   // Visitante sem conta e autor do plano Iniciante veem só as LIMITE_GRATUITO oportunidades
-  // mais recentes; quem tem plano pago (e o admin) vê tudo. O corte é feito aqui no servidor
+  // com prazo mais próximo de encerrar; quem tem plano pago (e o admin) vê tudo. O corte é feito aqui no servidor
   // de propósito: as demais nem chegam ao navegador, então não dá pra burlar pelo código da página.
   const acessoCompleto = Boolean(admin) || (author !== null && author.plano !== "Iniciante");
-  let oportunidades = todas;
-  if (!acessoCompleto && todas.length > LIMITE_GRATUITO) {
-    const recentes = new Set(
-      [...todas].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()).slice(0, LIMITE_GRATUITO).map((o) => o.id)
-    );
-    oportunidades = todas.filter((o) => recentes.has(o.id));
-  }
+  // `todas` já vem ordenada por prazo final crescente, então as primeiras são as que encerram antes.
+  const oportunidades = acessoCompleto ? todas : todas.slice(0, LIMITE_GRATUITO);
   const ocultas = todas.length - oportunidades.length;
 
   return (

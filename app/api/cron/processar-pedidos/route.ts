@@ -10,6 +10,10 @@ const DIAS_LIBERACAO = 7;
 const DIAS_CADASTRO_PENDENTE = 3;
 const DIAS_PEDIDO_ABANDONADO = 3;
 const DIAS_LEMBRETE_PARCELADO = 15;
+// Oportunidade (edital etc.) é apagada 48h depois de encerrado o último dia de inscrição.
+// O prazo é guardado como meia-noite UTC do dia escolhido; o dia termina às 24h de Brasília
+// (+24h +3h de fuso depois dessa meia-noite UTC), e aí soma as 48h.
+const HORAS_OPORTUNIDADE_APOS_PRAZO = 24 + 3 + 48;
 
 export async function GET(request: Request) {
   const authHeader = request.headers.get("authorization");
@@ -121,6 +125,10 @@ export async function GET(request: Request) {
       data: { plano: "Iniciante", planoConcedidoAdminCiclo: null, planoConcedidoAdminAte: null },
     });
   }
+
+  await prisma.opportunity.deleteMany({
+    where: { prazoFinal: { lt: new Date(Date.now() - HORAS_OPORTUNIDADE_APOS_PRAZO * 60 * 60 * 1000) } },
+  });
 
   // Plano comprado parcelado no cartão (sem assinatura recorrente por trás — ver
   // asaasParceladoInstallmentId) não renova sozinho: manda um lembrete uma vez, perto do

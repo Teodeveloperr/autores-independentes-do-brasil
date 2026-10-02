@@ -146,7 +146,7 @@ export default function OportunidadesGrid({ oportunidades, ocultas = 0, logado =
             Há mais {ocultas} oportunidade{ocultas === 1 ? "" : "s"} disponíve{ocultas === 1 ? "l" : "is"} só para assinantes
           </div>
           <p style={{ fontSize: "14px", lineHeight: 1.6, maxWidth: "520px", margin: "0 auto 20px", color: "#DCE4F5" }}>
-            Você está vendo uma amostra com as 3 oportunidades mais recentes.{" "}
+            Você está vendo uma amostra com as 3 oportunidades que encerram primeiro.{" "}
             {logado
               ? "Assine um plano (mensal, semestral ou anual) para acessar todos os editais e chamadas."
               : "Para ver todos os editais e chamadas, entre na sua conta e tenha um plano ativo (mensal, semestral ou anual)."}
