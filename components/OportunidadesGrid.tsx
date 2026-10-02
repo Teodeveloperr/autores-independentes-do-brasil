@@ -35,6 +35,11 @@ function diasRestantes(prazoFinal: string): number {
   return Math.round((Date.UTC(ano, mes - 1, dia) - Date.UTC(hoje.getFullYear(), hoje.getMonth(), hoje.getDate())) / 86400000);
 }
 
+function dataBr(prazoFinal: string): string {
+  const [ano, mes, dia] = prazoFinal.split("-");
+  return `${dia}/${mes}/${ano}`;
+}
+
 function urgencia(dias: number): { emoji: string; cor: string } {
   if (dias <= 7) return { emoji: "🔴", cor: "#C0392B" };
   if (dias <= 30) return { emoji: "🟡", cor: "#A87900" };
@@ -98,7 +103,8 @@ export default function OportunidadesGrid({ oportunidades }: { oportunidades: Op
               <div key={o.id} style={{ background: "#F6F6F6", padding: "20px", borderRadius: "8px", display: "flex", flexDirection: "column", gap: "10px" }}>
                 <div style={{ fontWeight: 700, fontSize: "15px", color: "#262626" }}>{o.nome}</div>
                 <div style={{ fontSize: "13px", color: cor, fontWeight: 600 }}>
-                  {emoji} Prazo final: {dias === 0 ? "hoje (último dia)" : dias > 0 ? `${dias} dia${dias === 1 ? "" : "s"}` : "encerrado"}
+                  {emoji} Prazo final: {dataBr(o.prazoFinal)}
+                  {dias === 0 ? " (último dia de inscrição — hoje)" : " (último dia de inscrição)"}
                 </div>
                 <div style={{ fontSize: "13px", color: "#666" }}>Categoria: {o.categoria}</div>
                 <div style={{ fontSize: "13px", color: "#666" }}>
