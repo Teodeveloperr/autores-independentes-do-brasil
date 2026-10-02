@@ -33,6 +33,7 @@ export default async function OportunidadesPage() {
                 nome: o.nome,
                 categoria: o.categoria,
                 prazoFinal: o.prazoFinal.toISOString(),
+                regiao: o.regiao,
                 estado: o.estado,
                 valor: o.valor,
                 link: o.link,

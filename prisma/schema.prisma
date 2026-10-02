@@ -334,6 +334,9 @@ model Opportunity {
   nome       String
   categoria  String
   prazoFinal DateTime
+  // Região do Brasil (Nacional, Norte, Nordeste, Centro-Oeste, Sudeste, Sul) — usada pra
+  // filtrar na página pública. `estado` continua texto livre, só pra detalhar.
+  regiao     String   @default("Nacional")
   estado     String
   valor      String?
   link       String

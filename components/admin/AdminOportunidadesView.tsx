@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { addOpportunity, updateOpportunity, removeOpportunity } from "@/app/admin/actions";
 import { CATEGORIAS_OPORTUNIDADES as CATEGORIAS } from "@/lib/adminOptions";
+import { REGIOES_OPORTUNIDADES } from "@/lib/regioes";
 import type { Opportunity } from "./types";
 
 function toDateInputValue(date: Date) {
@@ -70,13 +71,21 @@ export default function AdminOportunidadesView({ oportunidades }: { oportunidade
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
             <div>
-              <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>Estado</label>
-              <input name="estado" type="text" required defaultValue={editing?.estado} placeholder="Ex: Nacional ou São Paulo" style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px" }} />
+              <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>Região</label>
+              <select name="regiao" defaultValue={editing?.regiao ?? REGIOES_OPORTUNIDADES[0]} style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px" }}>
+                {REGIOES_OPORTUNIDADES.map((r) => (
+                  <option key={r}>{r}</option>
+                ))}
+              </select>
             </div>
             <div>
-              <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>Valor (opcional)</label>
-              <input name="valor" type="text" defaultValue={editing?.valor ?? ""} placeholder="Ex: R$ 5.000 ou Gratuito" style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px" }} />
+              <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>Estado (opcional)</label>
+              <input name="estado" type="text" defaultValue={editing?.estado} placeholder="Ex: Bahia" style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px" }} />
             </div>
+          </div>
+          <div>
+            <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>Valor (opcional)</label>
+            <input name="valor" type="text" defaultValue={editing?.valor ?? ""} placeholder="Ex: R$ 5.000 ou Gratuito" style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px" }} />
           </div>
           <div>
             <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>Link de inscrição</label>
@@ -100,7 +109,7 @@ export default function AdminOportunidadesView({ oportunidades }: { oportunidade
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontWeight: 700, fontSize: "14px" }}>{o.nome}</div>
                 <div style={{ fontSize: "12px", color: "#666" }}>
-                  {o.categoria} • 📍 {o.estado} • até {o.prazoFinal.toLocaleDateString("pt-BR")}
+                  {o.categoria} • 📍 {o.regiao}{o.estado ? ` — ${o.estado}` : ""} • até {o.prazoFinal.toLocaleDateString("pt-BR")}
                   {o.valor ? ` • ${o.valor}` : ""}
                 </div>
               </div>

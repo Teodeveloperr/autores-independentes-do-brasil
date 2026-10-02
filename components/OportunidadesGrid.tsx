@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { REGIOES_OPORTUNIDADES } from "@/lib/regioes";
 
 const CATEGORIAS = [
   "Editais",
@@ -20,6 +21,7 @@ export type OportunidadeItem = {
   nome: string;
   categoria: string;
   prazoFinal: string;
+  regiao: string;
   estado: string;
   valor: string | null;
   link: string;
@@ -41,8 +43,15 @@ function urgencia(dias: number): { emoji: string; cor: string } {
 
 export default function OportunidadesGrid({ oportunidades }: { oportunidades: OportunidadeItem[] }) {
   const [categoriaAtiva, setCategoriaAtiva] = useState<string | null>(null);
+  const [regiaoAtiva, setRegiaoAtiva] = useState<string | null>(null);
 
-  const filtradas = categoriaAtiva ? oportunidades.filter((o) => o.categoria === categoriaAtiva) : oportunidades;
+  // Uma oportunidade "Nacional" vale pra todo mundo, então aparece também quando a pessoa
+  // filtra por uma região específica — só some se ela escolher só "Nacional" de outra região.
+  const filtradas = oportunidades.filter(
+    (o) =>
+      (!categoriaAtiva || o.categoria === categoriaAtiva) &&
+      (!regiaoAtiva || o.regiao === regiaoAtiva || (o.regiao === "Nacional" && regiaoAtiva !== "Nacional"))
+  );
 
   const btnStyle = (active: boolean): React.CSSProperties => ({
     background: active ? "#002776" : "white",
@@ -58,13 +67,24 @@ export default function OportunidadesGrid({ oportunidades }: { oportunidades: Op
 
   return (
     <>
-      <div style={{ display: "flex", gap: "10px", marginBottom: "32px", flexWrap: "wrap" }}>
+      <div style={{ display: "flex", gap: "10px", marginBottom: "16px", flexWrap: "wrap" }}>
         <button onClick={() => setCategoriaAtiva(null)} style={btnStyle(categoriaAtiva === null)}>
           Todas
         </button>
         {CATEGORIAS.map((c) => (
           <button key={c} onClick={() => setCategoriaAtiva(c)} style={btnStyle(categoriaAtiva === c)}>
             {c}
+          </button>
+        ))}
+      </div>
+      <div style={{ display: "flex", gap: "10px", marginBottom: "32px", flexWrap: "wrap", alignItems: "center" }}>
+        <span style={{ fontSize: "13px", color: "#666", fontWeight: 600 }}>📍 Região:</span>
+        <button onClick={() => setRegiaoAtiva(null)} style={btnStyle(regiaoAtiva === null)}>
+          Todas
+        </button>
+        {REGIOES_OPORTUNIDADES.map((r) => (
+          <button key={r} onClick={() => setRegiaoAtiva(r)} style={btnStyle(regiaoAtiva === r)}>
+            {r}
           </button>
         ))}
       </div>
@@ -81,7 +101,10 @@ export default function OportunidadesGrid({ oportunidades }: { oportunidades: Op
                   {emoji} Prazo final: {dias >= 0 ? `${dias} dia${dias === 1 ? "" : "s"}` : "encerrado"}
                 </div>
                 <div style={{ fontSize: "13px", color: "#666" }}>Categoria: {o.categoria}</div>
-                <div style={{ fontSize: "13px", color: "#666" }}>Estado: {o.estado}</div>
+                <div style={{ fontSize: "13px", color: "#666" }}>
+                  Região: {o.regiao}
+                  {o.estado ? ` — ${o.estado}` : ""}
+                </div>
                 {o.valor && <div style={{ fontSize: "13px", color: "#666" }}>Valor: {o.valor}</div>}
                 <a
                   href={o.link}
@@ -100,7 +123,7 @@ export default function OportunidadesGrid({ oportunidades }: { oportunidades: Op
           <p style={{ fontSize: "16px", color: "#666" }}>
             {oportunidades.length === 0
               ? "Nenhuma oportunidade em aberto no momento. Volte em breve!"
-              : "Nenhuma oportunidade em aberto no momento nesta categoria."}
+              : "Nenhuma oportunidade em aberto no momento com esses filtros."}
           </p>
         </div>
       )}

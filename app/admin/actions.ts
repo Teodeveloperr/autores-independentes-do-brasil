@@ -20,6 +20,7 @@ import { extrairYoutubeId } from "@/lib/youtube";
 import { CHAT_NOME_ADMIN } from "@/lib/chat";
 import { MESES_EVENTO } from "@/lib/painelOptions";
 import { CATEGORIAS_AGENDA_ADMIN, CATEGORIAS_GALERIA_ADMIN, CATEGORIAS_OPORTUNIDADES, CATEGORIAS_BLOG } from "@/lib/adminOptions";
+import { REGIOES_OPORTUNIDADES } from "@/lib/regioes";
 import { emailSchema, textoSchema, intSchema, primeiroErroZod } from "@/lib/validation";
 import { TIPOS_CHAVE_PIX, chavePixValida } from "@/lib/pixKey";
 import type { ChatMensagemRow } from "@/app/painel/actions";
@@ -243,11 +244,12 @@ export async function removeCollectiveEvent(id: string) {
 const opportunitySchema = z.object({
   nome: textoSchema(150),
   categoria: z.enum(CATEGORIAS_OPORTUNIDADES),
+  regiao: z.enum(REGIOES_OPORTUNIDADES),
   estado: textoSchema(60, false),
   valor: textoSchema(60, false),
 });
 
-function opportunityDataFromForm(formData: FormData): { error: string } | { data: { nome: string; categoria: string; prazoFinal: Date; estado: string; valor: string | null; link: string } } {
+function opportunityDataFromForm(formData: FormData): { error: string } | { data: { nome: string; categoria: string; regiao: string; prazoFinal: Date; estado: string; valor: string | null; link: string } } {
   const link = sanitizeExternalUrl((formData.get("link") as string) || "");
   if (!link) {
     return { error: "Informe um link válido para a oportunidade." };
@@ -260,6 +262,7 @@ function opportunityDataFromForm(formData: FormData): { error: string } | { data
   const parsed = opportunitySchema.safeParse({
     nome: (formData.get("nome") as string) || "",
     categoria: (formData.get("categoria") as string) || CATEGORIAS_OPORTUNIDADES[0],
+    regiao: (formData.get("regiao") as string) || REGIOES_OPORTUNIDADES[0],
     estado: (formData.get("estado") as string) || "",
     valor: (formData.get("valor") as string) || "",
   });
@@ -271,6 +274,7 @@ function opportunityDataFromForm(formData: FormData): { error: string } | { data
     data: {
       nome: parsed.data.nome,
       categoria: parsed.data.categoria,
+      regiao: parsed.data.regiao,
       prazoFinal,
       estado: parsed.data.estado,
       valor: parsed.data.valor || null,

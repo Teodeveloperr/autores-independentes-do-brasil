@@ -1,6 +1,9 @@
 export const REGIOES = ["Norte", "Nordeste", "Centro-Oeste", "Sudeste", "Sul"] as const;
 export type Regiao = (typeof REGIOES)[number];
 
+// Oportunidades (editais etc.) podem valer pro país inteiro, além de uma região específica.
+export const REGIOES_OPORTUNIDADES = ["Nacional", ...REGIOES] as const;
+
 export const UF_REGIAO: Record<string, Regiao> = {
   AC: "Norte",
   AP: "Norte",
