@@ -20,7 +20,8 @@ export type OportunidadeItem = {
   id: string;
   nome: string;
   categoria: string;
-  prazoFinal: string;
+  // Nulo = fluxo contínuo (sem data de encerramento).
+  prazoFinal: string | null;
   regiao: string;
   estado: string;
   valor: string | null;
@@ -102,14 +103,20 @@ export default function OportunidadesGrid({ oportunidades, ocultas = 0, logado =
       {filtradas.length > 0 ? (
         <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "20px" }}>
           {filtradas.map((o) => {
-            const dias = diasRestantes(o.prazoFinal);
-            const { emoji, cor } = urgencia(dias);
+            const dias = o.prazoFinal ? diasRestantes(o.prazoFinal) : null;
+            const { emoji, cor } = dias === null ? { emoji: "🟢", cor: "#009B3A" } : urgencia(dias);
             return (
               <div key={o.id} style={{ background: "#F6F6F6", padding: "20px", borderRadius: "8px", display: "flex", flexDirection: "column", gap: "10px" }}>
                 <div style={{ fontWeight: 700, fontSize: "15px", color: "#262626" }}>{o.nome}</div>
                 <div style={{ fontSize: "13px", color: cor, fontWeight: 600 }}>
-                  {emoji} Prazo final: {dataBr(o.prazoFinal)}
-                  {dias === 0 ? " (último dia de inscrição — hoje)" : " (último dia de inscrição)"}
+                  {o.prazoFinal ? (
+                    <>
+                      {emoji} Prazo final: {dataBr(o.prazoFinal)}
+                      {dias === 0 ? " (último dia de inscrição — hoje)" : " (último dia de inscrição)"}
+                    </>
+                  ) : (
+                    <>{emoji} Fluxo contínuo (sem prazo de encerramento)</>
+                  )}
                 </div>
                 <div style={{ fontSize: "13px", color: "#666" }}>Categoria: {o.categoria}</div>
                 <div style={{ fontSize: "13px", color: "#666" }}>

@@ -11,6 +11,28 @@ function toDateInputValue(date: Date) {
   return date.toISOString().slice(0, 10);
 }
 
+// Estado próprio (dentro do <form key=...>) pra desabilitar a data quando marcar fluxo contínuo.
+function CampoPrazo({ prazoInicial }: { prazoInicial: Date | null | undefined }) {
+  const [fluxoContinuo, setFluxoContinuo] = useState(prazoInicial === null);
+  return (
+    <div>
+      <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>Prazo final</label>
+      <input
+        name="prazoFinal"
+        type="date"
+        required={!fluxoContinuo}
+        disabled={fluxoContinuo}
+        defaultValue={prazoInicial ? toDateInputValue(prazoInicial) : undefined}
+        style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px", opacity: fluxoContinuo ? 0.5 : 1 }}
+      />
+      <label style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", color: "#444", marginTop: "6px", fontWeight: 400 }}>
+        <input type="checkbox" name="fluxoContinuo" checked={fluxoContinuo} onChange={(e) => setFluxoContinuo(e.target.checked)} />
+        Fluxo contínuo (sem prazo de encerramento)
+      </label>
+    </div>
+  );
+}
+
 export default function AdminOportunidadesView({ oportunidades }: { oportunidades: Opportunity[] }) {
   const [pending, startTransition] = useTransition();
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -64,10 +86,7 @@ export default function AdminOportunidadesView({ oportunidades }: { oportunidade
                 ))}
               </select>
             </div>
-            <div>
-              <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>Prazo final</label>
-              <input name="prazoFinal" type="date" required defaultValue={editing ? toDateInputValue(editing.prazoFinal) : undefined} style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px" }} />
-            </div>
+            <CampoPrazo prazoInicial={editing?.prazoFinal} />
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
             <div>
@@ -109,7 +128,7 @@ export default function AdminOportunidadesView({ oportunidades }: { oportunidade
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontWeight: 700, fontSize: "14px" }}>{o.nome}</div>
                 <div style={{ fontSize: "12px", color: "#666" }}>
-                  {o.categoria} • 📍 {o.regiao}{o.estado ? ` — ${o.estado}` : ""} • até {o.prazoFinal.toLocaleDateString("pt-BR", { timeZone: "UTC" })}
+                  {o.categoria} • 📍 {o.regiao}{o.estado ? ` — ${o.estado}` : ""} • {o.prazoFinal ? `até ${o.prazoFinal.toLocaleDateString("pt-BR", { timeZone: "UTC" })}` : "fluxo contínuo"}
                   {o.valor ? ` • ${o.valor}` : ""}
                 </div>
               </div>

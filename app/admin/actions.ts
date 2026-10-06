@@ -249,14 +249,16 @@ const opportunitySchema = z.object({
   valor: textoSchema(60, false),
 });
 
-function opportunityDataFromForm(formData: FormData): { error: string } | { data: { nome: string; categoria: string; regiao: string; prazoFinal: Date; estado: string; valor: string | null; link: string } } {
+function opportunityDataFromForm(formData: FormData): { error: string } | { data: { nome: string; categoria: string; regiao: string; prazoFinal: Date | null; estado: string; valor: string | null; link: string } } {
   const link = sanitizeExternalUrl((formData.get("link") as string) || "");
   if (!link) {
     return { error: "Informe um link válido para a oportunidade." };
   }
-  const prazoFinal = new Date(`${(formData.get("prazoFinal") as string) || ""}T00:00:00`);
-  if (Number.isNaN(prazoFinal.getTime())) {
-    return { error: "Informe um prazo final válido." };
+  // Fluxo contínuo = edital sem data de encerramento: prazoFinal fica nulo.
+  const fluxoContinuo = formData.get("fluxoContinuo") === "on";
+  const prazoFinal = fluxoContinuo ? null : new Date(`${(formData.get("prazoFinal") as string) || ""}T00:00:00`);
+  if (prazoFinal && Number.isNaN(prazoFinal.getTime())) {
+    return { error: "Informe um prazo final válido ou marque fluxo contínuo." };
   }
 
   const parsed = opportunitySchema.safeParse({

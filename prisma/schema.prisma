@@ -333,7 +333,8 @@ model Opportunity {
   id         String   @id @default(cuid())
   nome       String
   categoria  String
-  prazoFinal DateTime
+  // Nulo = fluxo contínuo (sem data de encerramento).
+  prazoFinal DateTime?
   // Região do Brasil (Nacional, Norte, Nordeste, Centro-Oeste, Sudeste, Sul) — usada pra
   // filtrar na página pública. `estado` continua texto livre, só pra detalhar.
   regiao     String   @default("Nacional")

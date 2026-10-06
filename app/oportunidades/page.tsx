@@ -21,8 +21,9 @@ export default async function OportunidadesPage() {
     getCurrentAuthor(),
     getCurrentAdmin(),
     prisma.opportunity.findMany({
-      where: { prazoFinal: { gte: hoje } },
-      orderBy: { prazoFinal: "asc" },
+      // prazoFinal nulo = fluxo contínuo (sem data de encerramento): nunca vence e vai pro fim da lista.
+      where: { OR: [{ prazoFinal: { gte: hoje } }, { prazoFinal: null }] },
+      orderBy: { prazoFinal: { sort: "asc", nulls: "last" } },
     }),
   ]);
 
@@ -49,7 +50,7 @@ export default async function OportunidadesPage() {
                 id: o.id,
                 nome: o.nome,
                 categoria: o.categoria,
-                prazoFinal: o.prazoFinal.toISOString().slice(0, 10),
+                prazoFinal: o.prazoFinal ? o.prazoFinal.toISOString().slice(0, 10) : null,
                 regiao: o.regiao,
                 estado: o.estado,
                 valor: o.valor,
