@@ -316,3 +316,102 @@ export async function sendContactFormEmail(data: { nome: string; email: string; 
     `,
   });
 }
+
+function escaparHtml(texto: string): string {
+  return texto.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+// Os envios do contrato conferem o resultado: o Resend devolve { error } em vez de lançar,
+// e quem chama precisa saber se o e-mail realmente saiu (o código de confirmação, por exemplo).
+async function enviarEOuFalhar(args: Parameters<typeof resend.emails.send>[0]) {
+  const { error } = await resend.emails.send(args);
+  if (error) throw new Error(`Resend: ${error.message}`);
+}
+
+export async function sendContratoCodigoEmail(to: string, nome: string, codigo: string) {
+  await enviarEOuFalhar({
+    from: EMAIL_FROM,
+    to,
+    subject: `Seu código de confirmação: ${codigo}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 560px; margin: 0 auto; color: #262626;">
+        <h1 style="color: #002776; font-size: 22px;">Confirme seu e-mail</h1>
+        <p style="font-size: 15px; line-height: 1.6;">
+          Olá, ${escaparHtml(nome)}. Use o código abaixo para continuar a contratação da participação na Bienal do Livro Rio 2027.
+          Ele vale por 15 minutos.
+        </p>
+        <p style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #002776; margin: 24px 0;">${codigo}</p>
+        <p style="font-size: 13px; color: #666;">
+          Se você não pediu este código, pode ignorar este e-mail.
+        </p>
+      </div>
+    `,
+  });
+}
+
+export type ContratoEmailInfo = {
+  numeroTexto: string;
+  nome: string;
+  email: string;
+  pacoteNome: string;
+  formaPagamentoRotulo: string;
+  valorCentavos: number;
+};
+
+export async function sendContratoAssinadoAvisoEmail(info: ContratoEmailInfo) {
+  await enviarEOuFalhar({
+    from: EMAIL_FROM,
+    to: EMAIL_CONTATO,
+    subject: `Novo contrato assinado ${info.numeroTexto}, aguardando pagamento`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 560px; margin: 0 auto; color: #262626;">
+        <h2 style="color: #002776;">Novo contrato assinado</h2>
+        <p><b>Contrato:</b> ${escaparHtml(info.numeroTexto)}</p>
+        <p><b>Contratante:</b> ${escaparHtml(info.nome)} (${escaparHtml(info.email)})</p>
+        <p><b>Pacote:</b> ${escaparHtml(info.pacoteNome)}</p>
+        <p><b>Pagamento:</b> ${escaparHtml(info.formaPagamentoRotulo)}, ${brl(info.valorCentavos)}</p>
+        <p style="font-size: 13px; color: #666;">O contrato está aguardando o pagamento. Você será avisado quando for confirmado.</p>
+      </div>
+    `,
+  });
+}
+
+export async function sendContratoPagoEmail(
+  to: string,
+  info: ContratoEmailInfo,
+  opcoes: { pdf: Buffer; agenda: string[]; paraContratada: boolean }
+) {
+  const agenda = opcoes.agenda.length
+    ? `<p style="font-size: 15px; line-height: 1.6;"><b>Horários escolhidos:</b></p><ul style="font-size: 14px; line-height: 1.7;">${opcoes.agenda
+        .map((l) => `<li>${escaparHtml(l)}</li>`)
+        .join("")}</ul>`
+    : "";
+  await enviarEOuFalhar({
+    from: EMAIL_FROM,
+    to,
+    subject: opcoes.paraContratada
+      ? `Contrato ${info.numeroTexto} pago`
+      : `Seu contrato ${info.numeroTexto} da Bienal do Livro Rio 2027`,
+    attachments: [{ filename: `Contrato ${info.numeroTexto.replace("/", "-")}.pdf`, content: opcoes.pdf }],
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 560px; margin: 0 auto; color: #262626;">
+        <h1 style="color: #002776; font-size: 22px;">${opcoes.paraContratada ? "Contrato pago" : "Pagamento confirmado"}</h1>
+        <p style="font-size: 15px; line-height: 1.6;">
+          ${
+            opcoes.paraContratada
+              ? `O contrato <b>${escaparHtml(info.numeroTexto)}</b> de ${escaparHtml(info.nome)} (${escaparHtml(info.email)}) foi pago.`
+              : `Obrigado, ${escaparHtml(info.nome)}! Recebemos o pagamento do seu contrato <b>${escaparHtml(info.numeroTexto)}</b>, pacote ${escaparHtml(info.pacoteNome)}, no valor de ${brl(info.valorCentavos)}.`
+          }
+          O contrato assinado segue em PDF anexo a este e-mail.
+        </p>
+        ${agenda}
+        <p style="font-size: 13px; color: #666; margin-top: 24px;">
+          Para trocar algum horário, entre em contato com o Autores Independentes do Brasil em ${EMAIL_CONTATO}.
+        </p>
+        <p style="font-size: 13px; color: #666; margin-top: 16px;">
+          Coletivo de escritores valorizando histórias, conectando pessoas.
+        </p>
+      </div>
+    `,
+  });
+}

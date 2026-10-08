@@ -475,3 +475,92 @@ model PasswordResetToken {
 
   @@index([authorId])
 }
+
+// Contrato de participação na Bienal do Livro Rio 2027, contratado pelo site (/contrato-bienal).
+model ContratoBienal {
+  id     String @id @default(cuid())
+  // Token aleatório do link público de acompanhamento (/contrato-bienal/[token]).
+  token  String @unique
+  // Sequencial exibido como "SITE-001/BIENALRJ"; só é atribuído na hora da assinatura.
+  numero Int?   @unique
+  // rascunho (dados preenchidos, ainda não assinou) | assinado (aguardando pagamento) | pago
+  status String @default("rascunho")
+
+  pacote              String // lancamento | single | standard
+  formaPagamento      String // pix | cartao
+  valorTabelaCentavos Int
+  // Soma do desconto do plano de assinatura (Premium 10, Premium+ 20) e do Pix (10).
+  descontoPercentual  Int
+  valorCentavos       Int
+  // Plano do autor logado no momento da contratação (base do desconto de assinante).
+  planoAssinante      String?
+  textoVersao         String
+
+  tipoPessoa        String // fisica | juridica
+  nome              String
+  cpfCnpj           String
+  representanteNome String?
+  representanteCpf  String?
+  email             String
+  telefone          String
+  cep               String
+  endereco          String
+  cidade            String
+  uf                String
+  autorId           String?
+
+  codigoHash        String?
+  codigoExpiraEm    DateTime?
+  codigoTentativas  Int       @default(0)
+  emailVerificadoEm DateTime?
+
+  assinaturaPng       String?   @db.Text
+  assinadoEm          DateTime?
+  assinaturaIp        String?
+  assinaturaUserAgent String?
+  pdf                 Bytes?
+  pdfHash             String?
+
+  asaasCustomerId      String?
+  asaasPaymentId       String?   @unique
+  asaasInvoiceUrl      String?
+  // Valor que realmente entrou, já sem a tarifa da Asaas (usado no resumo do admin).
+  valorLiquidoCentavos Int?
+  pagoEm               DateTime?
+  emailPagoEnviadoEm   DateTime?
+  enviosEmail          Int       @default(0)
+  // Pagou depois de os horários reservados terem sido liberados e ocupados por outra pessoa.
+  agendaConflito       Boolean   @default(false)
+
+  createdAt DateTime @default(now())
+
+  reservas ContratoReserva[]
+
+  @@index([status])
+}
+
+// Horário de balcão ou auditório escolhido num contrato. "reservado" segura o horário por
+// pouco tempo (expiraEm) enquanto a pessoa assina e paga; "confirmado" vale depois do pagamento.
+model ContratoReserva {
+  id           String         @id @default(cuid())
+  contratoId   String
+  contrato     ContratoBienal @relation(fields: [contratoId], references: [id], onDelete: Cascade)
+  tipo         String // balcao | auditorio
+  dia          DateTime       @db.Date
+  horaInicio   Int
+  duracaoHoras Int
+  status       String         @default("reservado") // reservado | confirmado
+  expiraEm     DateTime?
+  createdAt    DateTime       @default(now())
+
+  @@unique([contratoId, tipo, dia, horaInicio])
+  @@index([tipo, dia, horaInicio])
+}
+
+// Configuração única dos contratos (linha "unico"): assinatura da contratada, guardada só no
+// banco e usada no servidor ao montar o PDF — nunca exposta num endereço público.
+model ContratoConfig {
+  id                      String   @id @default("unico")
+  assinaturaContratadaPng String?  @db.Text
+  updatedAt               DateTime @updatedAt
+}

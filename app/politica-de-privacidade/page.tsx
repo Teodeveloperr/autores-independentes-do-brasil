@@ -19,7 +19,7 @@ export default function PoliticaDePrivacidadePage() {
             Como o Autores Independentes do Brasil coleta, usa e protege os seus dados pessoais.
           </p>
           <div className="section-pad-md" style={{ background: "white", color: "#262626", padding: "40px", borderRadius: "8px", maxWidth: "820px", margin: "0 auto" }}>
-            <p style={{ fontSize: "12px", color: "#999", marginBottom: "24px" }}>Última atualização: 20 de setembro de 2026</p>
+            <p style={{ fontSize: "12px", color: "#999", marginBottom: "24px" }}>Última atualização: 8 de outubro de 2026</p>
 
             <p style={pStyle}>
               Esta Política de Privacidade explica quais dados pessoais o Autores Independentes do Brasil coleta ao longo
@@ -31,6 +31,7 @@ export default function PoliticaDePrivacidadePage() {
             <h2 style={h2Style}>1. Quais dados coletamos</h2>
             <p style={pStyle}><strong>Se você compra um livro (checkout):</strong> nome completo, e-mail, telefone (opcional), CPF (necessário para gerar a cobrança) e endereço de entrega (CEP, rua, número, complemento, bairro, cidade e UF).</p>
             <p style={pStyle}><strong>Se você se cadastra como autor(a):</strong> nome, e-mail, senha (armazenada de forma criptografada), biografia, foto de perfil, redes sociais, cidade e — quando você opta por vender livros físicos — o endereço informado no seu perfil. Para assinar um plano pago, também coletamos CPF e, no caso de pagamento com cartão de crédito, telefone e endereço (CEP e número).</p>
+            <p style={pStyle}><strong>Se você contrata a participação na Bienal do Livro Rio (contrato online):</strong> nome ou razão social, CPF ou CNPJ, e-mail, telefone, endereço completo, o nome e o CPF de quem assina pela empresa (no caso de pessoa jurídica), a imagem da sua assinatura e os horários escolhidos. Como prova da assinatura eletrônica, registramos também a data e a hora, o endereço IP e o tipo de dispositivo usado, além da confirmação do seu e-mail por código. O contrato assinado é guardado em PDF.</p>
             <p style={pStyle}><strong>De forma automática:</strong> itens adicionados ao carrinho de compras (armazenados no seu navegador) e dados técnicos básicos de acesso (como data e hora da requisição), necessários para o funcionamento do site.</p>
 
             <h2 style={h2Style}>2. Para que usamos esses dados</h2>
@@ -40,6 +41,7 @@ export default function PoliticaDePrivacidadePage() {
               <li style={liStyle}>Processar pagamentos de compras e assinaturas, via Pix ou cartão de crédito, através da nossa parceira de pagamentos;</li>
               <li style={liStyle}>Exibir o perfil público do autor (nome, bio, foto, livros e redes sociais informadas);</li>
               <li style={liStyle}>Enviar comunicações relacionadas ao seu pedido, assinatura ou cadastro.</li>
+              <li style={liStyle}>Gerar, assinar eletronicamente, cobrar e enviar o contrato de participação na Bienal, e organizar a agenda de horários no estande. Os contratos são guardados enquanto durarem as obrigações entre as partes, e preenchimentos de contrato que não chegam a ser assinados são apagados automaticamente em até 2 dias.</li>
             </ul>
 
             <h2 style={h2Style}>3. Com quem compartilhamos seus dados</h2>

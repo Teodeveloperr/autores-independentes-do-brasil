@@ -4,7 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { adminLogout } from "@/app/admin/actions";
-import type { AdminView, Article, AuthorWithCount, CollectiveEvent, CollectiveGalleryPhoto, Opportunity, ReviewWithAuthor, OrderWithAuthor, OrderComReceita, SubscriptionPaymentRow, TalkShowVideo } from "./types";
+import type { AdminView, Article, AuthorWithCount, CollectiveEvent, CollectiveGalleryPhoto, Opportunity, ReviewWithAuthor, OrderWithAuthor, OrderComReceita, SubscriptionPaymentRow, TalkShowVideo, ContratoAdminRow } from "./types";
 import AdminAgendaView from "./AdminAgendaView";
 import AdminOportunidadesView from "./AdminOportunidadesView";
 import AdminGaleriaView from "./AdminGaleriaView";
@@ -15,6 +15,7 @@ import AdminChatView from "./AdminChatView";
 import AdminAvaliacoesView from "./AdminAvaliacoesView";
 import AdminPedidosView from "./AdminPedidosView";
 import AdminReceitaView from "./AdminReceitaView";
+import AdminContratosView from "./AdminContratosView";
 import AdminSegurancaView from "./AdminSegurancaView";
 import AdminConfiguracoesView from "./AdminConfiguracoesView";
 
@@ -44,6 +45,8 @@ export default function AdminApp({
   pedidosReceita,
   assinaturaPagamentos,
   saldoAsaasCentavos,
+  contratos,
+  assinaturaContratada,
   totpEnabled,
   premiumPlusPixKey,
   premiumPlusPixKeyType,
@@ -61,6 +64,8 @@ export default function AdminApp({
   pedidosReceita: OrderComReceita[];
   assinaturaPagamentos: SubscriptionPaymentRow[];
   saldoAsaasCentavos: number | null;
+  contratos: ContratoAdminRow[];
+  assinaturaContratada: string | null;
   totpEnabled: boolean;
   premiumPlusPixKey: string | null;
   premiumPlusPixKeyType: string | null;
@@ -90,6 +95,7 @@ export default function AdminApp({
         <button onClick={() => setView("avaliacoes")} style={sidebarBtn(view === "avaliacoes")}>⭐ Avaliações</button>
         <button onClick={() => setView("pedidos")} style={sidebarBtn(view === "pedidos")}>📋 Pedidos</button>
         <button onClick={() => setView("receita")} style={sidebarBtn(view === "receita")}>💰 Receita</button>
+        <button onClick={() => setView("contratos")} style={sidebarBtn(view === "contratos")}>📑 Contratos</button>
         <button onClick={() => setView("seguranca")} style={sidebarBtn(view === "seguranca")}>🔐 Segurança</button>
         <button onClick={() => setView("configuracoes")} style={sidebarBtn(view === "configuracoes")}>⚙️ Configurações</button>
         <button
@@ -206,6 +212,7 @@ export default function AdminApp({
           {view === "receita" && (
             <AdminReceitaView pedidos={pedidosReceita} assinaturaPagamentos={assinaturaPagamentos} saldoAsaasCentavos={saldoAsaasCentavos} />
           )}
+          {view === "contratos" && <AdminContratosView contratos={contratos} assinaturaContratada={assinaturaContratada} />}
           {view === "seguranca" && <AdminSegurancaView totpEnabled={totpEnabled} />}
           {view === "configuracoes" && <AdminConfiguracoesView premiumPlusPixKey={premiumPlusPixKey} premiumPlusPixKeyType={premiumPlusPixKeyType} />}
         </div>

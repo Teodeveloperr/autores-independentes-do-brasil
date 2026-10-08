@@ -35,6 +35,8 @@ export default async function AdminPage() {
     saldoAsaasCentavos,
     visitaHoje,
     visitasMesAgg,
+    contratos,
+    contratoConfig,
   ] = await Promise.all([
     prisma.collectiveEvent.findMany({ orderBy: { createdAt: "desc" } }),
     prisma.opportunity.findMany({ orderBy: { prazoFinal: "asc" } }),
@@ -56,6 +58,13 @@ export default async function AdminPage() {
     buscarSaldoAsaas(),
     prisma.siteVisit.findUnique({ where: { data: new Date(hojeISO) } }),
     prisma.siteVisit.aggregate({ _sum: { contagem: true }, where: { data: { gte: new Date(inicioMesISO) } } }),
+    // Sem o PDF e a assinatura (pesados e sensíveis): o PDF abre por uma rota própria só do admin.
+    prisma.contratoBienal.findMany({
+      orderBy: { createdAt: "desc" },
+      omit: { pdf: true, assinaturaPng: true, codigoHash: true, assinaturaUserAgent: true },
+      include: { reservas: true },
+    }),
+    prisma.contratoConfig.findUnique({ where: { id: "unico" } }),
   ]);
 
   return (
@@ -71,6 +80,8 @@ export default async function AdminPage() {
       pedidosReceita={pedidosReceita}
       assinaturaPagamentos={assinaturaPagamentos}
       saldoAsaasCentavos={saldoAsaasCentavos}
+      contratos={contratos}
+      assinaturaContratada={contratoConfig?.assinaturaContratadaPng ?? null}
       totpEnabled={admin.totpEnabled}
       premiumPlusPixKey={admin.premiumPlusPixKey}
       premiumPlusPixKeyType={admin.premiumPlusPixKeyType}

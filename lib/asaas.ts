@@ -114,6 +114,48 @@ export async function criarCobranca(input: {
   }
 }
 
+// Cobrança do contrato da Bienal: Pix ou cartão à vista, escolhido no site (não deixa a
+// página da Asaas oferecer outras formas). Depois do pagamento a Asaas devolve a pessoa pra
+// successUrl, que é a página do contrato no nosso site.
+export async function criarCobrancaContrato(input: {
+  customerId: string;
+  valueCentavos: number;
+  billingType: "PIX" | "CREDIT_CARD";
+  description: string;
+  externalReference: string;
+  successUrl: string;
+}): Promise<CobrancaCriada | null> {
+  const accessToken = getAccessToken();
+  if (!accessToken) return null;
+
+  const vencimento = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+
+  try {
+    const res = await fetch(`${getBaseUrl()}/payments`, {
+      method: "POST",
+      headers: { access_token: accessToken, "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify({
+        customer: input.customerId,
+        billingType: input.billingType,
+        value: input.valueCentavos / 100,
+        dueDate: vencimento,
+        description: input.description,
+        externalReference: input.externalReference,
+        ...(input.successUrl ? { callback: { successUrl: input.successUrl, autoRedirect: true } } : {}),
+      }),
+    });
+    if (!res.ok) {
+      console.error("[asaas] Falha ao criar cobrança do contrato:", res.status, await res.text());
+      return null;
+    }
+    const data = (await res.json()) as { id: string; invoiceUrl: string };
+    return { id: data.id, invoiceUrl: data.invoiceUrl };
+  } catch (err) {
+    console.error("[asaas] Falha ao criar cobrança do contrato:", err);
+    return null;
+  }
+}
+
 export type TransferenciaCriada = { id: string; status: string };
 
 export async function criarTransferenciaPix(input: {

@@ -1,6 +1,6 @@
 import type { Prisma } from "@/app/generated/prisma/client";
 
-export type AdminView = "dash" | "agenda" | "oportunidades" | "galeria" | "autores" | "blog" | "talkshow" | "chat" | "avaliacoes" | "pedidos" | "receita" | "seguranca" | "configuracoes";
+export type AdminView = "dash" | "agenda" | "oportunidades" | "galeria" | "autores" | "blog" | "talkshow" | "chat" | "avaliacoes" | "pedidos" | "receita" | "contratos" | "seguranca" | "configuracoes";
 
 export type CollectiveEvent = Prisma.CollectiveEventGetPayload<Record<string, never>>;
 export type Opportunity = Prisma.OpportunityGetPayload<Record<string, never>>;
@@ -12,3 +12,7 @@ export type ReviewWithAuthor = Prisma.ReviewGetPayload<{ include: { author: { se
 export type OrderWithAuthor = Prisma.OrderGetPayload<{ include: { author: { select: { nome: true } } } }>;
 export type OrderComReceita = Prisma.OrderGetPayload<{ include: { author: { select: { plano: true } } } }>;
 export type SubscriptionPaymentRow = Prisma.SubscriptionPaymentGetPayload<{ include: { author: { select: { nome: true } } } }>;
+export type ContratoAdminRow = Prisma.ContratoBienalGetPayload<{
+  omit: { pdf: true; assinaturaPng: true; codigoHash: true; assinaturaUserAgent: true };
+  include: { reservas: true };
+}>;

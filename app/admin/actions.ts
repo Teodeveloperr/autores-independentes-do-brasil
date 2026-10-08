@@ -22,6 +22,7 @@ import { MESES_EVENTO } from "@/lib/painelOptions";
 import { CATEGORIAS_AGENDA_ADMIN, CATEGORIAS_GALERIA_ADMIN, CATEGORIAS_OPORTUNIDADES, CATEGORIAS_BLOG } from "@/lib/adminOptions";
 import { REGIOES_OPORTUNIDADES } from "@/lib/regioes";
 import { emailSchema, textoSchema, intSchema, primeiroErroZod } from "@/lib/validation";
+import { validarImagemAssinatura } from "@/lib/contrato/assinaturaImagem";
 import { TIPOS_CHAVE_PIX, chavePixValida } from "@/lib/pixKey";
 import type { ChatMensagemRow } from "@/app/painel/actions";
 
@@ -818,5 +819,30 @@ export async function atualizarChavePixParceiro(formData: FormData): Promise<{ e
   });
 
   revalidatePath("/admin");
+  return {};
+}
+
+// Assinatura da contratada nos contratos da Bienal: cadastrada uma vez e aplicada
+// automaticamente em todos os PDFs gerados depois. Fica só no banco, nunca em endereço público.
+export async function salvarAssinaturaContratada(assinaturaPng: string): Promise<{ error?: string }> {
+  await requireAdmin();
+  const imagem = validarImagemAssinatura(assinaturaPng);
+  if (!imagem) return { error: "Assinatura inválida. Assine de novo ou envie outra imagem (PNG ou JPEG, até 400 KB)." };
+
+  await prisma.contratoConfig.upsert({
+    where: { id: "unico" },
+    create: { id: "unico", assinaturaContratadaPng: imagem },
+    update: { assinaturaContratadaPng: imagem },
+  });
+  revalidatePath("/admin");
+  revalidatePath("/contrato-bienal");
+  return {};
+}
+
+export async function removerAssinaturaContratada(): Promise<{ error?: string }> {
+  await requireAdmin();
+  await prisma.contratoConfig.updateMany({ where: { id: "unico" }, data: { assinaturaContratadaPng: null } });
+  revalidatePath("/admin");
+  revalidatePath("/contrato-bienal");
   return {};
 }

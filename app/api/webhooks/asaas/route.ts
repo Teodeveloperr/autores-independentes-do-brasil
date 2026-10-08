@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { verificarWebhookAsaas, buscarCobranca } from "@/lib/asaas";
 import { sendOrderConfirmationEmail, sendNewSaleEmail, sendNovaCobrancaAssinaturaEmail, sendWelcomeEmail } from "@/lib/email";
+import { marcarContratoPago } from "@/lib/contrato/servico";
 import { PREMIUM_PLUS_VALOR_PARCEIRO_CENTAVOS, CICLO_MESES, type CicloAssinatura } from "@/lib/plans";
 
 // Formata a data de vencimento que a Asaas devolve ("YYYY-MM-DD") pro padrão brasileiro —
@@ -197,6 +198,11 @@ export async function POST(request: NextRequest) {
 
   if (evento === "PAYMENT_OVERDUE" && paymentId) {
     const cobranca = await buscarCobranca(paymentId);
+    // Cobrança de contrato da Bienal vencida não tem relação com plano de autor: sem isso, o
+    // customer dela poderia casar com o Pix Automático de um autor e rebaixar o plano dele.
+    if (await prisma.contratoBienal.findUnique({ where: { asaasPaymentId: paymentId }, select: { id: true } })) {
+      return NextResponse.json({ received: true }, { status: 200 });
+    }
     // Parcela futura de uma compra parcelada atrasar não revoga acesso — a cobrança já foi
     // "vendida" por inteiro, é assunto entre o autor, o banco e a Asaas, não motivo pra
     // derrubar o autor pro Iniciante (diferente de uma assinatura recorrente de verdade).
@@ -243,6 +249,16 @@ export async function POST(request: NextRequest) {
   if (!cobranca) {
     return NextResponse.json({ received: true }, { status: 200 });
   }
+
+  // Pagamento de contrato da Bienal (cobrança criada em /contrato-bienal): identificado pelo id
+  // da cobrança, antes de qualquer lógica de autores. Sem isso, o customer dela poderia casar
+  // com o Pix Automático de um autor logo abaixo e ser tratado como mensalidade de plano.
+  const contratoBienal = await prisma.contratoBienal.findUnique({ where: { asaasPaymentId: cobranca.id }, select: { id: true } });
+  if (contratoBienal) {
+    await marcarContratoPago(contratoBienal.id, cobranca.netValueCentavos);
+    return NextResponse.json({ received: true }, { status: 200 });
+  }
+
   let authorAssinatura = cobranca.subscription
     ? await prisma.author.findUnique({ where: { asaasSubscriptionId: cobranca.subscription } })
     : cobranca.installment

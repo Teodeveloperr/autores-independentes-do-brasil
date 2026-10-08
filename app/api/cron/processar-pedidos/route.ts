@@ -130,6 +130,13 @@ export async function GET(request: Request) {
     where: { prazoFinal: { lt: new Date(Date.now() - HORAS_OPORTUNIDADE_APOS_PRAZO * 60 * 60 * 1000) } },
   });
 
+  // Contratos da Bienal: quem preencheu os dados e nunca assinou é apagado depois de 2 dias
+  // (guarda CPF e endereço sem necessidade). As reservas de horário vão junto, em cascata.
+  // Contratos assinados e ainda não pagos ficam: se a pessoa pagar depois, a agenda dela continua lá.
+  await prisma.contratoBienal.deleteMany({
+    where: { status: "rascunho", createdAt: { lt: new Date(Date.now() - 48 * 60 * 60 * 1000) } },
+  });
+
   // Plano comprado parcelado no cartão (sem assinatura recorrente por trás — ver
   // asaasParceladoInstallmentId) não renova sozinho: manda um lembrete uma vez, perto do
   // vencimento, e derruba pro Iniciante quando vencer de fato, se ninguém renovar antes.
