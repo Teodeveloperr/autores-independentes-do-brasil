@@ -376,6 +376,34 @@ export async function sendContratoAssinadoAvisoEmail(info: ContratoEmailInfo) {
   });
 }
 
+export async function sendContratoAguardandoPagamentoEmail(to: string, info: ContratoEmailInfo, acompanharUrl: string) {
+  await enviarEOuFalhar({
+    from: EMAIL_FROM,
+    to,
+    subject: `Seu contrato ${info.numeroTexto} foi assinado: falta o pagamento`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 560px; margin: 0 auto; color: #262626;">
+        <h1 style="color: #002776; font-size: 22px;">Contrato assinado</h1>
+        <p style="font-size: 15px; line-height: 1.6;">
+          Olá, ${escaparHtml(info.nome)}. Você assinou o contrato <b>${escaparHtml(info.numeroTexto)}</b> da Bienal do Livro Rio 2027,
+          pacote ${escaparHtml(info.pacoteNome)}, no valor de ${brl(info.valorCentavos)} (${escaparHtml(info.formaPagamentoRotulo)}).
+          Falta só o pagamento para garantir a sua participação e os horários escolhidos, que ficam reservados por 24 horas.
+        </p>
+        <p style="margin-top: 28px;">
+          <a href="${acompanharUrl}"
+             style="background:#009B3A;color:white;padding:12px 24px;border-radius:4px;text-decoration:none;font-weight:bold;">
+            Ir para o pagamento
+          </a>
+        </p>
+        <p style="font-size: 13px; color: #666; margin-top: 28px;">
+          Guarde este e-mail: o link acima leva ao seu contrato e ao pagamento, mesmo se você fechar a página.
+          Depois de pago, o contrato em PDF chega no seu e-mail.
+        </p>
+      </div>
+    `,
+  });
+}
+
 export async function sendContratoPagoEmail(
   to: string,
   info: ContratoEmailInfo,

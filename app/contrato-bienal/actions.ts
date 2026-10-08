@@ -8,7 +8,12 @@ import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 import { verificarTurnstile } from "@/lib/turnstile";
 import { validarCpf, validarCnpj } from "@/lib/cpf";
 import { buscarCobranca } from "@/lib/asaas";
-import { sendContratoAssinadoAvisoEmail, sendContratoCodigoEmail, sendContratoPagoEmail } from "@/lib/email";
+import {
+  sendContratoAguardandoPagamentoEmail,
+  sendContratoAssinadoAvisoEmail,
+  sendContratoCodigoEmail,
+  sendContratoPagoEmail,
+} from "@/lib/email";
 import { emailSchema } from "@/lib/validation";
 import {
   ESTADOS_BR,
@@ -32,6 +37,7 @@ import {
   marcarContratoPago,
   recriarPagamentoDoContrato,
   registrarAssinatura,
+  urlDoContrato,
 } from "@/lib/contrato/servico";
 
 const STATUS_PAGO_ASAAS = new Set(["RECEIVED", "CONFIRMED", "RECEIVED_IN_CASH"]);
@@ -288,6 +294,12 @@ export async function assinarContrato(token: string, assinaturaPng: string, acei
   await prorrogarReservas(assinado.id, new Date(Date.now() + HORAS_RESERVA_APOS_ASSINAR * 60 * 60 * 1000));
   await sendContratoAssinadoAvisoEmail(infoEmailDoContrato(assinado)).catch((err) =>
     console.error("[contrato] Falha ao avisar a contratada do novo contrato:", err)
+  );
+
+  // O contratante recebe o link do contrato por e-mail: se fechar a página de pagamento antes
+  // de pagar, volta por ele (a página do contrato refaz a cobrança se preciso).
+  await sendContratoAguardandoPagamentoEmail(assinado.email, infoEmailDoContrato(assinado), urlDoContrato(assinado.token)).catch((err) =>
+    console.error("[contrato] Falha ao enviar o link do contrato ao contratante:", err)
   );
 
   const pagamentoUrl = await criarPagamentoDoContrato(assinado);
