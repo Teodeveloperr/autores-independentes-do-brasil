@@ -19,7 +19,7 @@ export const WHATSAPP_NEGOCIADO_URL = `https://wa.me/${WHATSAPP_NEGOCIADO_NUMERO
 
 // Grupo de WhatsApp que aparece em popup depois do pagamento. Enquanto não for informado,
 // o popup não é exibido.
-export const LINK_GRUPO_WHATSAPP_BIENAL = "";
+export const LINK_GRUPO_WHATSAPP_BIENAL = "https://chat.whatsapp.com/Ba4M6STlemvDYEFXGRxyKa?mode=gi_t";
 
 export const CONTRATADA = {
   razaoSocial: "LIGA DOS ILUSTRADORES, ESCRITORES E POETAS DE EUSÉBIO",
