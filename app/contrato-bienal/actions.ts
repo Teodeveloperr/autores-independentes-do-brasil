@@ -214,6 +214,46 @@ export async function reenviarCodigo(token: string): Promise<{ erro?: string }> 
   return {};
 }
 
+/**
+ * Troca o e-mail de um contrato ainda não assinado (quem digitou errado) e envia o código para o
+ * novo endereço. O e-mail só é trocado depois de o código sair, pra nunca ficar um endereço
+ * novo sem código. Respeita o mesmo limite por e-mail do início do contrato.
+ */
+export async function corrigirEmail(token: string, novoEmail: string): Promise<{ erro: string } | { email: string }> {
+  const ip = await getClientIp();
+  if (!(await checkRateLimit(`contrato-corrigir-ip:${ip}`, 15, 60))) {
+    return { erro: "Muitas tentativas. Aguarde alguns minutos e tente de novo." };
+  }
+  if (!(await checkRateLimit(`contrato-corrigir:${token}`, 5, 30))) {
+    return { erro: "Você já trocou o e-mail várias vezes. Aguarde alguns minutos." };
+  }
+  const resultado = emailSchema.safeParse(novoEmail.slice(0, 160));
+  if (!resultado.success) return { erro: "Informe um e-mail válido." };
+  const email = resultado.data as string;
+
+  const contrato = await prisma.contratoBienal.findUnique({ where: { token } });
+  if (!contrato || contrato.status !== "rascunho") return { erro: "Contrato não encontrado." };
+  if (contrato.emailVerificadoEm) return { erro: "O e-mail já foi confirmado." };
+  if (email === contrato.email) return { erro: "Este já é o e-mail informado. Use o botão para enviar o código de novo." };
+
+  if (!(await checkRateLimit(`contrato-iniciar-email:${email}`, 5, 60))) {
+    return { erro: "Muitas tentativas com este e-mail. Aguarde um pouco e tente de novo." };
+  }
+
+  const codigo = gerarCodigo();
+  try {
+    await sendContratoCodigoEmail(email, contrato.nome, codigo);
+  } catch (err) {
+    console.error("[contrato] Falha ao enviar o código para o e-mail corrigido:", err);
+    return { erro: "Não conseguimos enviar o código para esse e-mail. Confira o endereço e tente de novo." };
+  }
+  await prisma.contratoBienal.update({
+    where: { id: contrato.id },
+    data: { email, codigoHash: hashCodigo(codigo, token), codigoExpiraEm: new Date(Date.now() + 15 * 60 * 1000), codigoTentativas: 0 },
+  });
+  return { email };
+}
+
 export type VerificarCodigoResultado = { erro: string } | { contrato: ContratoMontado };
 
 export async function verificarCodigo(token: string, codigoDigitado: string): Promise<VerificarCodigoResultado> {

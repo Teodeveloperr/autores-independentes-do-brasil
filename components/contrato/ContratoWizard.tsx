@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import {
   assinarContrato,
+  corrigirEmail,
   iniciarContrato,
   obterDisponibilidade,
   reenviarCodigo,
@@ -92,6 +93,8 @@ export default function ContratoWizard({
   const [token, setToken] = useState("");
   const [codigo, setCodigo] = useState("");
   const [codigoReenviado, setCodigoReenviado] = useState(false);
+  const [corrigindoEmail, setCorrigindoEmail] = useState(false);
+  const [emailNovo, setEmailNovo] = useState("");
   const [contratoMontado, setContratoMontado] = useState<ContratoMontado | null>(null);
   const [aceitou, setAceitou] = useState(false);
   const [assinaturaPng, setAssinaturaPng] = useState<string | null>(null);
@@ -180,6 +183,20 @@ export default function ContratoWizard({
       const resultado = await reenviarCodigo(token);
       if (resultado.erro) setErro(resultado.erro);
       else setCodigoReenviado(true);
+    });
+  }
+
+  function enviarEmailCorrigido(e: React.FormEvent) {
+    e.preventDefault();
+    setErro("");
+    setCodigoReenviado(false);
+    iniciarTransicao(async () => {
+      const resultado = await corrigirEmail(token, emailNovo);
+      if ("erro" in resultado) return setErro(resultado.erro);
+      atualizar("email", resultado.email);
+      setCorrigindoEmail(false);
+      setCodigo("");
+      setCodigoReenviado(true);
     });
   }
 
@@ -441,6 +458,7 @@ export default function ContratoWizard({
       )}
 
       {passo === 4 && (
+        <>
         <form onSubmit={confirmarCodigo} style={{ display: "flex", flexDirection: "column", gap: "16px", maxWidth: "420px" }}>
           <div>
             <h2 style={{ fontSize: "22px", fontWeight: 700, color: "#002776", marginBottom: "4px" }}>Confirme seu e-mail</h2>
@@ -466,10 +484,42 @@ export default function ContratoWizard({
           <button type="submit" disabled={pendente || codigo.length !== 6} style={botaoPrimario(pendente || codigo.length !== 6)}>
             {pendente ? "Conferindo..." : "Confirmar código"}
           </button>
+          <p style={{ fontSize: "12px", color: "#666", lineHeight: 1.5, margin: 0 }}>
+            Não chegou? Confira a caixa de <strong>spam</strong> ou lixo eletrônico. O e-mail pode levar alguns minutos.
+          </p>
           <button type="button" onClick={pedirNovoCodigo} disabled={pendente} style={{ background: "none", border: "none", color: "#002776", fontWeight: 600, fontSize: "13px", textAlign: "left" }}>
             Não recebi o código. Enviar de novo
           </button>
+          {!corrigindoEmail && (
+            <button
+              type="button"
+              onClick={() => {
+                setErro("");
+                setEmailNovo(dados.email);
+                setCorrigindoEmail(true);
+              }}
+              disabled={pendente}
+              style={{ background: "none", border: "none", color: "#002776", fontWeight: 600, fontSize: "13px", textAlign: "left" }}
+            >
+              Digitei o e-mail errado. Corrigir
+            </button>
+          )}
         </form>
+        {corrigindoEmail && (
+          <form onSubmit={enviarEmailCorrigido} style={{ display: "flex", flexDirection: "column", gap: "10px", maxWidth: "420px", marginTop: "16px", paddingTop: "16px", borderTop: "1px solid #E0E0E0" }}>
+            <label htmlFor="c-email-novo" style={labelStyle}>Seu e-mail correto</label>
+            <input id="c-email-novo" type="email" required value={emailNovo} onChange={(e) => setEmailNovo(e.target.value)} style={inputStyle} autoComplete="email" />
+            <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+              <button type="submit" disabled={pendente} style={botaoPrimario(pendente)}>
+                {pendente ? "Enviando..." : "Enviar código para este e-mail"}
+              </button>
+              <button type="button" onClick={() => setCorrigindoEmail(false)} disabled={pendente} style={botaoSecundario}>
+                Cancelar
+              </button>
+            </div>
+          </form>
+        )}
+        </>
       )}
 
       {passo === 5 && contratoMontado && (
