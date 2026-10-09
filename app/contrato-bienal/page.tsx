@@ -23,7 +23,7 @@ export default async function ContratoBienalPage() {
 
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
-      <PublicHeader />
+      <PublicHeader active="bienal" />
       <section className="section-pad-lg" style={{ background: "#002776", color: "white", padding: "40px", flex: 1 }}>
         <div style={{ maxWidth: "1100px", width: "100%", margin: "0 auto", display: "flex", flexDirection: "column", gap: "24px", alignItems: "center" }}>
           <div style={{ textAlign: "center", maxWidth: "720px" }}>

@@ -75,6 +75,7 @@ export default function PublicFooter({
             <Link href="/eventos" style={{ color: "white" }}>Eventos</Link>
             <Link href="/blog" style={{ color: "white" }}>Blog</Link>
             <Link href="/galeria" style={{ color: "white" }}>Galeria</Link>
+            <Link href="/contrato-bienal" style={{ color: "white" }}>Bienal do Rio 2027</Link>
             <Link href="/#contato" style={{ color: "white" }}>Contato</Link>
           </nav>
         </div>

@@ -16,6 +16,7 @@ type NavKey =
   | "planos"
   | "cadastro"
   | "oportunidades"
+  | "bienal"
   | "talkshow"
   | "contato";
 
@@ -37,6 +38,7 @@ function categorias(showContato: boolean): { label: string; items: NavItem[] }[]
         { key: "planos", label: "Planos", href: "/assinatura" },
         { key: "cadastro", label: "Cadastre-se", href: "/cadastro" },
         { key: "oportunidades", label: "Oportunidades", href: "/oportunidades" },
+        { key: "bienal", label: "Bienal do Rio 2027", href: "/contrato-bienal" },
       ],
     },
     {
