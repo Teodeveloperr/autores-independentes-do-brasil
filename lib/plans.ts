@@ -68,8 +68,11 @@ export const PLANO_RANK: Record<string, number> = {
   Iniciante: 0,
 };
 
+// Planos que dão destaque na home e nas listagens (autores em destaque e seus livros recentes).
+export const PLANOS_COM_DESTAQUE = ["Autor Premium", "Autor Premium+"];
+
 export function temDestaque(plano: string) {
-  return plano === "Autor Premium" || plano === "Autor Premium+";
+  return PLANOS_COM_DESTAQUE.includes(plano);
 }
 
 export function temSeloVerificado(plano: string) {

@@ -9,10 +9,10 @@ import DepoimentosCarousel from "@/components/DepoimentosCarousel";
 import CounterStats from "@/components/CounterStats";
 import HomeDemoAnimado from "@/components/HomeDemoAnimado";
 import AutoresDestaqueCarousel from "@/components/AutoresDestaqueCarousel";
+import LivrosRecentesCarousel from "@/components/LivrosRecentesCarousel";
 import ContactForm from "@/components/ContactForm";
-import PrecoComDesconto from "@/components/PrecoComDesconto";
 import { prisma } from "@/lib/db";
-import { PLANO_RANK, temDestaque } from "@/lib/plans";
+import { PLANO_RANK, PLANOS_COM_DESTAQUE, temDestaque } from "@/lib/plans";
 
 export const dynamic = "force-dynamic";
 
@@ -24,10 +24,11 @@ export default async function HomePage() {
       where: { status: "ativo" },
       orderBy: { createdAt: "desc" },
     }),
+    // Só livros de autores em destaque (Premium e Premium+), os 20 mais recentes.
     prisma.book.findMany({
-      where: { author: { status: "ativo" } },
+      where: { author: { status: "ativo", plano: { in: PLANOS_COM_DESTAQUE } } },
       orderBy: { createdAt: "desc" },
-      take: 30,
+      take: 20,
       include: { author: true },
     }),
     prisma.article.findMany({
@@ -43,8 +44,7 @@ export default async function HomePage() {
     .filter((a) => temDestaque(a.plano))
     .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   const livros = [...livrosPool]
-    .sort((a, b) => (PLANO_RANK[b.author.plano] ?? 0) - (PLANO_RANK[a.author.plano] ?? 0) || b.createdAt.getTime() - a.createdAt.getTime())
-    .slice(0, 5);
+    .sort((a, b) => (PLANO_RANK[b.author.plano] ?? 0) - (PLANO_RANK[a.author.plano] ?? 0) || b.createdAt.getTime() - a.createdAt.getTime());
 
   // Próximos eventos: ordenados pela data real do evento (mais próximo primeiro), não por quando foi cadastrado.
   const hoje = new Date();
@@ -194,34 +194,23 @@ export default async function HomePage() {
           <Link href="/livros" style={{ fontWeight: 600, color: "#002776" }}>VER TODOS OS LIVROS →</Link>
         </div>
         {livros.length > 0 ? (
-          <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "24px" }}>
-            {livros.map((b) => (
-              <Link key={b.id} href="/livros" style={{ display: "block", color: "inherit" }}>
-                <div
-                  style={{
-                    backgroundColor: b.capaUrl ? "#F6F6F6" : "#E0E0E0",
-                    backgroundImage: b.capaUrl ? `url(${b.capaUrl})` : undefined,
-                    backgroundSize: "contain",
-                    backgroundPosition: "center",
-                    backgroundRepeat: "no-repeat",
-                    aspectRatio: "3/4",
-                    borderRadius: "4px",
-                    marginBottom: "10px",
-                  }}
-                />
-                <div style={{ fontWeight: 600, fontSize: "13px", marginBottom: "2px" }}>{b.titulo}</div>
-                <div style={{ fontSize: "12px", color: "#666", marginBottom: "4px" }}>{b.author.nome}</div>
-                <PrecoComDesconto precoCentavos={b.precoCentavos} descontoPercentual={b.descontoPercentual} fontSize="13px" />
-              </Link>
-            ))}
-          </div>
+          <LivrosRecentesCarousel
+            livros={livros.map((b) => ({
+              id: b.id,
+              titulo: b.titulo,
+              autorNome: b.author.nome,
+              capaUrl: b.capaUrl,
+              precoCentavos: b.precoCentavos,
+              descontoPercentual: b.descontoPercentual,
+            }))}
+          />
         ) : (
           <div style={{ background: "#F6F6F6", borderRadius: "8px", padding: "60px 40px", textAlign: "center" }}>
             <p style={{ fontSize: "16px", color: "#666", marginBottom: "20px" }}>
-              Ainda não há livros publicados na plataforma.
+              Nenhum livro de autores em destaque no momento.
             </p>
-            <Link href="/cadastro" style={{ display: "inline-block", background: "#002776", color: "white", padding: "12px 24px", fontWeight: 600, borderRadius: "4px", textDecoration: "none" }}>
-              Seja o primeiro a publicar →
+            <Link href="/livros" style={{ display: "inline-block", background: "#002776", color: "white", padding: "12px 24px", fontWeight: 600, borderRadius: "4px", textDecoration: "none" }}>
+              Veja todos os livros do coletivo →
             </Link>
           </div>
         )}
