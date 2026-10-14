@@ -5,6 +5,10 @@ import Link from "next/link";
 
 const AUTOPLAY_INTERVALO_MS = 6000;
 
+const WHATSAPP_PARTICIPAR_URL = `https://wa.me/5585999566375?text=${encodeURIComponent(
+  "Olá! Quero saber como participar da Bienal do Livro Rio 2027 com o coletivo."
+)}`;
+
 type Banner = {
   id: string;
   emoji: string;
@@ -12,6 +16,8 @@ type Banner = {
   texto: string;
   cta: string;
   href: string;
+  // Link pra fora do site (abre em outra aba).
+  externo?: boolean;
   background: string;
   color: string;
   ctaBackground: string;
@@ -37,7 +43,8 @@ const BANNERS: Banner[] = [
     titulo: "Autores do Brasil na Bienal do Livro do Rio de Janeiro 2027",
     texto: "De 03 a 12 de setembro de 2027 — autores Premium+ garantem presença no nosso estande.",
     cta: "SAIBA COMO PARTICIPAR",
-    href: "/assinatura",
+    href: WHATSAPP_PARTICIPAR_URL,
+    externo: true,
     background: "#002776",
     color: "white",
     ctaBackground: "#FFDF00",
@@ -87,6 +94,7 @@ export default function HomeBannerCarousel() {
         </div>
         <Link
           href={banner.href}
+          {...(banner.externo ? { target: "_blank", rel: "noopener noreferrer" } : {})}
           style={{
             flexShrink: 0,
             background: banner.ctaBackground,
