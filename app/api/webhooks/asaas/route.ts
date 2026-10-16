@@ -222,6 +222,18 @@ export async function POST(request: NextRequest) {
         where: { asaasCustomerId: cobranca.customer, asaasCheckoutReference: { not: null } },
       });
     }
+    // Mensalidade atrasada do Pix Automático: a cobrança vem com "subscription" da Asaas, mas o
+    // autor de Pix não tem asaasSubscriptionId, então as buscas acima não achavam ninguém e ele
+    // continuava com o plano pago sem pagar. Cai pro customer do Pix, só em autor ativo e sem
+    // assinatura de cartão. Esse caso é tratado como Pix Automático (não vira "assinatura via link").
+    let viaPixAutomatico = false;
+    if (!author && viaAssinaturaLink && cobranca?.customer) {
+      author = await prisma.author.findFirst({
+        where: { asaasPixCustomerId: cobranca.customer, asaasPixAutoStatus: "active", asaasSubscriptionId: null },
+      });
+      viaPixAutomatico = author !== null;
+    }
+    const viaLinkDeAssinatura = viaAssinaturaLink && !viaPixAutomatico;
     if (author && author.plano !== "Iniciante") {
       await prisma.author.update({
         where: { id: author.id },
@@ -230,11 +242,11 @@ export async function POST(request: NextRequest) {
           plano: "Iniciante",
           // A assinatura via link avulso passa a "overdue"; o Pix Automático mantém o status da
           // autorização como está — só essa cobrança do ciclo que falhou, a autorização continua ativa.
-          asaasSubscriptionStatus: viaAssinaturaLink ? "overdue" : author.asaasSubscriptionStatus,
+          asaasSubscriptionStatus: viaLinkDeAssinatura ? "overdue" : author.asaasSubscriptionStatus,
           // Se achou pelo caminho alternativo (asaasCustomerId), aproveita e já linka o
           // asaasSubscriptionId de verdade, sem precisar esperar outro evento.
-          asaasSubscriptionId: viaAssinaturaLink && !author.asaasSubscriptionId ? cobranca!.subscription : author.asaasSubscriptionId,
-          asaasCheckoutReference: viaAssinaturaLink && !author.asaasSubscriptionId ? null : author.asaasCheckoutReference,
+          asaasSubscriptionId: viaLinkDeAssinatura && !author.asaasSubscriptionId ? cobranca!.subscription : author.asaasSubscriptionId,
+          asaasCheckoutReference: viaLinkDeAssinatura && !author.asaasSubscriptionId ? null : author.asaasCheckoutReference,
         },
       });
     }
@@ -342,7 +354,9 @@ export async function POST(request: NextRequest) {
         data: {
           plano: authorAssinatura.planoPendente,
           planoPendente: null,
-          asaasSubscriptionStatus: cobranca.subscription ? "active" : authorAssinatura.asaasSubscriptionStatus,
+          // Só marca assinatura de cartão ativa quando o autor tem mesmo o código dela: a mensalidade do
+          // Pix Automático também vem com "subscription", mas o autor de Pix não tem asaasSubscriptionId.
+          asaasSubscriptionStatus: cobranca.subscription && authorAssinatura.asaasSubscriptionId ? "active" : authorAssinatura.asaasSubscriptionStatus,
           // Só a 1ª parcela chega aqui com planoPendente ainda setado (a ativação já limpa
           // esse campo) — é o momento certo de gravar até quando o acesso vale.
           ...(authorAssinatura.asaasParceladoInstallmentId
@@ -351,7 +365,7 @@ export async function POST(request: NextRequest) {
           ...agradecimentoGrupoDataNaAtivacao(authorAssinatura.planoPendente),
         },
       });
-    } else if (cobranca.subscription && authorAssinatura.asaasSubscriptionStatus !== "active") {
+    } else if (cobranca.subscription && authorAssinatura.asaasSubscriptionId && authorAssinatura.asaasSubscriptionStatus !== "active") {
       await prisma.author.update({ where: { id: authorAssinatura.id }, data: { asaasSubscriptionStatus: "active" } });
     }
     return NextResponse.json({ received: true }, { status: 200 });
