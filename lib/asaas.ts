@@ -443,6 +443,8 @@ export type CobrancaAsaas = {
   // não confundir com a data de hoje: pra assinatura recorrente, a cobrança costuma ser
   // criada alguns dias antes do vencimento de fato.
   dueDate: string | null;
+  // Data em que o pagamento foi efetivamente recebido ("YYYY-MM-DD"), quando já pago.
+  paymentDate?: string | null;
 };
 
 export async function buscarCobranca(id: string): Promise<CobrancaAsaas | null> {
@@ -467,6 +469,7 @@ export async function buscarCobranca(id: string): Promise<CobrancaAsaas | null> 
       invoiceUrl: string;
       status: string;
       dueDate?: string | null;
+      paymentDate?: string | null;
     };
     return {
       id: data.id,
@@ -478,6 +481,7 @@ export async function buscarCobranca(id: string): Promise<CobrancaAsaas | null> 
       invoiceUrl: data.invoiceUrl,
       status: data.status,
       dueDate: data.dueDate ?? null,
+      paymentDate: data.paymentDate ?? null,
     };
   } catch (err) {
     console.error("[asaas] Falha ao buscar cobrança:", err);

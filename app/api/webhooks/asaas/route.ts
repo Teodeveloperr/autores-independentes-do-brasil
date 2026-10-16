@@ -507,6 +507,12 @@ export async function POST(request: NextRequest) {
 
   const rows = await prisma.order.findMany({ where: { asaasPaymentId: paymentId } });
   if (rows.length === 0) {
+    // Pagamento confirmado que não casou com nenhum autor, cadastro pendente, contrato nem
+    // pedido: antes passava em silêncio e só aparecia na conferência manual de receita. O log
+    // deixa rastro no servidor pra descobrir por que não casou (e dá pra registrar pelo painel).
+    console.error(
+      `[asaas] Pagamento ${paymentId} (${evento}, ${cobranca.status}) sem registro correspondente: customer=${cobranca.customer ?? "-"} subscription=${cobranca.subscription ?? "-"} valor=${cobranca.valueCentavos}`
+    );
     return NextResponse.json({ received: true }, { status: 200 });
   }
 

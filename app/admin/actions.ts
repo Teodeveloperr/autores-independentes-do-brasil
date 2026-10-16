@@ -654,13 +654,19 @@ export async function reconciliarReceita(
     ate: ate.toISOString().slice(0, 10),
   });
 
-  const [pagamentosAssinatura, pedidos] = await Promise.all([
-    prisma.subscriptionPayment.findMany({ where: { createdAt: { gte: desde, lte: ate } }, select: { asaasPaymentId: true } }),
-    prisma.order.findMany({ where: { createdAt: { gte: desde, lte: ate }, asaasPaymentId: { not: null } }, select: { asaasPaymentId: true } }),
+  // A Asaas devolve as cobranças pela data em que foram RECEBIDAS no mês, e o cartão só é
+  // recebido (liquidado) ~32 dias depois da venda. Por isso a comparação não pode filtrar os
+  // nossos registros pelo mês de criação: uma venda de setembro liquidada em outubro estaria
+  // gravada, mas fora desse filtro, e apareceria como "sem registro". Compara com tudo.
+  const [pagamentosAssinatura, pedidos, contratos] = await Promise.all([
+    prisma.subscriptionPayment.findMany({ select: { asaasPaymentId: true } }),
+    prisma.order.findMany({ where: { asaasPaymentId: { not: null } }, select: { asaasPaymentId: true } }),
+    prisma.contratoBienal.findMany({ where: { asaasPaymentId: { not: null } }, select: { asaasPaymentId: true } }),
   ]);
   const idsConhecidos = new Set([
     ...pagamentosAssinatura.map((r) => r.asaasPaymentId),
     ...pedidos.map((r) => r.asaasPaymentId as string),
+    ...contratos.map((r) => r.asaasPaymentId as string),
   ]);
 
   // Cobrança sem "subscription" não é necessariamente venda de livro — Pix Automático não
@@ -683,6 +689,78 @@ export async function reconciliarReceita(
     }));
 
   return { faltantes, totalConferido: cobrancas.length };
+}
+
+/**
+ * Registra no banco uma assinatura paga na Asaas que o webhook não gravou (aparece na
+ * conferência de receita como "sem registro"). Só aceita cobrança já paga, que ainda não
+ * esteja registrada, e só quando dá pra identificar o autor com segurança. Não mexe no
+ * plano do autor, só grava o pagamento pra receita refletir o que entrou.
+ */
+export async function registrarCobrancaFaltante(paymentId: string): Promise<{ error?: string }> {
+  await requireAdmin();
+
+  if (!/^pay_[A-Za-z0-9]+$/.test(paymentId)) return { error: "Código de cobrança inválido." };
+
+  const cobranca = await buscarCobranca(paymentId);
+  if (!cobranca) return { error: "Não encontrei essa cobrança na Asaas." };
+  if (cobranca.status !== "RECEIVED" && cobranca.status !== "CONFIRMED") {
+    return { error: `A cobrança está com status ${cobranca.status}, ainda não paga.` };
+  }
+
+  const [jaAssinatura, jaPedido, jaContrato] = await Promise.all([
+    prisma.subscriptionPayment.findUnique({ where: { asaasPaymentId: paymentId }, select: { id: true } }),
+    prisma.order.findFirst({ where: { asaasPaymentId: paymentId }, select: { id: true } }),
+    prisma.contratoBienal.findUnique({ where: { asaasPaymentId: paymentId }, select: { id: true } }),
+  ]);
+  if (jaAssinatura || jaPedido || jaContrato) return { error: "Essa cobrança já está registrada." };
+
+  const selecao = { id: true, plano: true, planoPendente: true } as const;
+  let candidatos: { id: string; plano: string; planoPendente: string | null }[] = [];
+  if (cobranca.subscription) {
+    candidatos = await prisma.author.findMany({ where: { asaasSubscriptionId: cobranca.subscription }, select: selecao, take: 2 });
+  } else if (cobranca.installment) {
+    candidatos = await prisma.author.findMany({ where: { asaasParceladoInstallmentId: cobranca.installment }, select: selecao, take: 2 });
+  } else if (cobranca.customer) {
+    candidatos = await prisma.author.findMany({
+      where: { OR: [{ asaasPixCustomerId: cobranca.customer }, { asaasCustomerId: cobranca.customer }] },
+      select: selecao,
+      take: 2,
+    });
+  }
+  if (candidatos.length !== 1) {
+    return {
+      error:
+        candidatos.length === 0
+          ? "Não achei nenhum autor ligado a essa cobrança."
+          : "Mais de um autor ligado a essa cobrança. Registre com cuidado, fora do painel.",
+    };
+  }
+
+  const autor = candidatos[0];
+  const plano = autor.planoPendente ?? autor.plano;
+  if (plano === "Iniciante") return { error: "O autor está no plano Iniciante, então não dá pra saber a que plano esse pagamento se refere." };
+  // Premium+ gera um repasse automático a um parceiro na criação do pagamento; registrar à mão
+  // sem esse repasse deixaria a conta errada. Fica de fora do botão.
+  if (plano === "Autor Premium+") return { error: "Pagamento de Premium+ tem repasse ao parceiro e precisa ser registrado com cuidado, fora do painel." };
+
+  // Usa a data real do recebimento (e não a de hoje) pra receita cair no mês certo.
+  const dataRecebimento = cobranca.paymentDate ? new Date(`${cobranca.paymentDate}T12:00:00-03:00`) : new Date();
+
+  await prisma.subscriptionPayment.create({
+    data: {
+      authorId: autor.id,
+      plano,
+      valorCentavos: cobranca.valueCentavos,
+      valorLiquidoCentavos: cobranca.netValueCentavos,
+      asaasPaymentId: paymentId,
+      createdAt: dataRecebimento,
+      disponivelEm: cobranca.status === "RECEIVED" ? dataRecebimento : null,
+    },
+  });
+
+  revalidatePath("/admin");
+  return {};
 }
 
 /**

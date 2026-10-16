@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { brl } from "@/lib/format";
 import { baixarCsv, reais } from "@/lib/csv";
 import { valorRepasseCentavos, valorRepasseCentavosLiquido } from "@/lib/plans";
-import { reconciliarReceita, atualizarValoresLiquidos, type CobrancaFaltante } from "@/app/admin/actions";
+import { reconciliarReceita, atualizarValoresLiquidos, registrarCobrancaFaltante, type CobrancaFaltante } from "@/app/admin/actions";
 import type { OrderComReceita, SubscriptionPaymentRow } from "./types";
 
 // Repasse real (já transferido) ou, na falta dele, a melhor estimativa disponível: com
@@ -120,8 +120,14 @@ export default function AdminReceitaView({
   const router = useRouter();
   const meses = useMemo(() => {
     const chaves = new Set<string>();
-    pedidos.forEach((p) => chaves.add(mesChave(p.createdAt)));
-    assinaturaPagamentos.forEach((s) => chaves.add(mesChave(s.createdAt)));
+    pedidos.forEach((p) => {
+      chaves.add(mesChave(p.createdAt));
+      if (p.disponivelEm) chaves.add(mesChave(p.disponivelEm));
+    });
+    assinaturaPagamentos.forEach((s) => {
+      chaves.add(mesChave(s.createdAt));
+      if (s.disponivelEm) chaves.add(mesChave(s.disponivelEm));
+    });
     chaves.add(mesChave(new Date()));
     return Array.from(chaves).sort().reverse();
   }, [pedidos, assinaturaPagamentos]);
@@ -143,6 +149,30 @@ export default function AdminReceitaView({
   const [atualizandoLiquido, startAtualizarLiquido] = useTransition();
   const [resultadoLiquido, setResultadoLiquido] = useState<{ atualizados: number; falhas: number } | null>(null);
   const [erroLiquido, setErroLiquido] = useState("");
+  const [registrando, startRegistrar] = useTransition();
+  const [idRegistrando, setIdRegistrando] = useState<string | null>(null);
+  const [errosRegistro, setErrosRegistro] = useState<Record<string, string>>({});
+
+  function onRegistrarFaltante(id: string) {
+    setIdRegistrando(id);
+    setErrosRegistro((e) => ({ ...e, [id]: "" }));
+    startRegistrar(async () => {
+      try {
+        const r = await registrarCobrancaFaltante(id);
+        if (r.error) {
+          setErrosRegistro((e) => ({ ...e, [id]: r.error ?? "" }));
+          return;
+        }
+        // Some da lista de pendências e atualiza os números da tela.
+        setResultado((atual) => (atual ? { ...atual, faltantes: atual.faltantes.filter((f) => f.id !== id) } : atual));
+        router.refresh();
+      } catch (err) {
+        setErrosRegistro((e) => ({ ...e, [id]: err instanceof Error ? err.message : "Não foi possível registrar." }));
+      } finally {
+        setIdRegistrando(null);
+      }
+    });
+  }
 
   function onReconciliar() {
     setResultado(null);
@@ -183,20 +213,29 @@ export default function AdminReceitaView({
     let comissaoLivrosCentavos = 0;
     let repasseLivrosCentavos = 0;
     let vendaLivrosCentavos = 0;
-    let comissaoLivrosDisponivelCentavos = 0;
+    let comissaoLivrosAguardandoCentavos = 0;
     for (const p of pedidosDoMes) {
       const comissao = comissaoDoPedido(p);
       comissaoLivrosCentavos += comissao;
       repasseLivrosCentavos += repasseDoPedido(p);
       vendaLivrosCentavos += p.valorCentavos + (p.freteCentavos ?? 0);
-      if (p.disponivelEm) comissaoLivrosDisponivelCentavos += comissao;
+      if (!p.disponivelEm) comissaoLivrosAguardandoCentavos += comissao;
     }
+
+    // "Liquidada nesse mês" conta pelo mês em que a Asaas LIBEROU o dinheiro, qualquer que seja
+    // o mês da venda: um cartão pago em setembro e liberado em outubro entra aqui em outubro.
+    const comissaoLivrosLiquidadaNoMesCentavos = pedidos
+      .filter((p) => p.disponivelEm && mesChave(p.disponivelEm) === mes)
+      .reduce((sum, p) => sum + comissaoDoPedido(p), 0);
 
     // Usa o valor líquido (já descontada a tarifa da Asaas) quando disponível — pagamentos
     // registrados antes dessa informação existir caem no valor bruto como aproximação.
     const assinaturasCentavos = assinaturasDoMes.reduce((sum, s) => sum + (s.valorLiquidoCentavos ?? s.valorCentavos), 0);
-    const assinaturasDisponivelCentavos = assinaturasDoMes
-      .filter((s) => s.disponivelEm)
+    const assinaturasLiquidadasNoMesCentavos = assinaturaPagamentos
+      .filter((s) => s.disponivelEm && mesChave(s.disponivelEm) === mes)
+      .reduce((sum, s) => sum + (s.valorLiquidoCentavos ?? s.valorCentavos), 0);
+    const assinaturasAguardandoCentavos = assinaturasDoMes
+      .filter((s) => !s.disponivelEm)
       .reduce((sum, s) => sum + (s.valorLiquidoCentavos ?? s.valorCentavos), 0);
 
     const entradas: EntradaReceita[] = [
@@ -219,7 +258,8 @@ export default function AdminReceitaView({
     ].sort((a, b) => b.data.getTime() - a.data.getTime());
 
     const totalConfirmadoCentavos = comissaoLivrosCentavos + assinaturasCentavos;
-    const totalDisponivelCentavos = comissaoLivrosDisponivelCentavos + assinaturasDisponivelCentavos;
+    const totalDisponivelCentavos = comissaoLivrosLiquidadaNoMesCentavos + assinaturasLiquidadasNoMesCentavos;
+    const totalAguardandoCentavos = comissaoLivrosAguardandoCentavos + assinaturasAguardandoCentavos;
 
     return {
       pedidosCount: pedidosDoMes.length,
@@ -230,7 +270,7 @@ export default function AdminReceitaView({
       assinaturasCentavos,
       totalReceitaCentavos: totalConfirmadoCentavos,
       totalDisponivelCentavos,
-      totalAguardandoCentavos: totalConfirmadoCentavos - totalDisponivelCentavos,
+      totalAguardandoCentavos,
       entradas,
     };
   }, [pedidos, assinaturaPagamentos, mes]);
@@ -350,12 +390,25 @@ export default function AdminReceitaView({
                     <span>
                       {TIPO_LABEL[f.tipo] ?? f.tipo} · {f.paymentDate ?? "—"} · {f.status} · <span style={{ fontFamily: "monospace", fontSize: "12px", color: "#666" }}>{f.id}</span>
                     </span>
-                    <span style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+                    <span style={{ display: "flex", gap: "12px", alignItems: "center", flexWrap: "wrap" }}>
                       <span style={{ fontWeight: 700 }}>{brl(f.valorCentavos)}</span>
                       <a href={f.invoiceUrl} target="_blank" rel="noopener noreferrer" style={{ color: "#002776", fontWeight: 600 }}>
                         Ver na Asaas ↗
                       </a>
+                      {f.tipo === "assinatura" && (
+                        <button
+                          type="button"
+                          onClick={() => onRegistrarFaltante(f.id)}
+                          disabled={registrando}
+                          style={{ background: "#009B3A", color: "white", padding: "6px 14px", borderRadius: "6px", fontSize: "12px", fontWeight: 700, opacity: registrando ? 0.6 : 1 }}
+                        >
+                          {idRegistrando === f.id ? "Registrando..." : "Registrar"}
+                        </button>
+                      )}
                     </span>
+                    {errosRegistro[f.id] && (
+                      <span style={{ flexBasis: "100%", color: "#C0392B", fontSize: "12px" }}>{errosRegistro[f.id]}</span>
+                    )}
                   </div>
                 ))}
               </div>
@@ -369,13 +422,13 @@ export default function AdminReceitaView({
           <div style={{ fontSize: "12px", color: "#666", marginBottom: "8px" }}>✅ Receita já liquidada nesse mês</div>
           <div style={{ fontSize: "28px", fontWeight: 700, color: "#009B3A" }}>{brl(dados.totalDisponivelCentavos)}</div>
           <div style={{ fontSize: "11px", color: "#999", marginTop: "4px" }}>
-            Pix: quase na hora. Cartão: só depois de ~32 dias (D+32). Não é o saldo em conta — não desconta repasses já pagos.
+            Dinheiro que a Asaas liberou durante o mês, mesmo de vendas de meses anteriores. Pix: quase na hora. Cartão: só depois de ~32 dias (D+32). Não é o saldo em conta — não desconta repasses já pagos.
           </div>
         </div>
         <div style={{ background: "white", borderRadius: "10px", padding: "20px" }}>
           <div style={{ fontSize: "12px", color: "#666", marginBottom: "8px" }}>⏳ Confirmado, aguardando liquidação</div>
           <div style={{ fontSize: "28px", fontWeight: 700, color: "#A87900" }}>{brl(dados.totalAguardandoCentavos)}</div>
-          <div style={{ fontSize: "11px", color: "#999", marginTop: "4px" }}>Pago pelo cliente, mas a Asaas ainda não liberou pra saque/transferência.</div>
+          <div style={{ fontSize: "11px", color: "#999", marginTop: "4px" }}>Vendas e assinaturas deste mês já pagas pelo cliente, mas que a Asaas ainda não liberou pra saque/transferência.</div>
         </div>
       </div>
 
