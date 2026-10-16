@@ -719,6 +719,15 @@ export async function registrarCobrancaFaltante(paymentId: string): Promise<{ er
   let candidatos: { id: string; plano: string; planoPendente: string | null }[] = [];
   if (cobranca.subscription) {
     candidatos = await prisma.author.findMany({ where: { asaasSubscriptionId: cobranca.subscription }, select: selecao, take: 2 });
+    // Mensalidade do Pix Automático: vem com "subscription" da Asaas, mas o autor de Pix não
+    // tem esse código guardado. Procura pelo customer, só em autor sem assinatura de cartão.
+    if (candidatos.length === 0 && cobranca.customer) {
+      candidatos = await prisma.author.findMany({
+        where: { OR: [{ asaasPixCustomerId: cobranca.customer }, { asaasCustomerId: cobranca.customer }], asaasSubscriptionId: null },
+        select: selecao,
+        take: 2,
+      });
+    }
   } else if (cobranca.installment) {
     candidatos = await prisma.author.findMany({ where: { asaasParceladoInstallmentId: cobranca.installment }, select: selecao, take: 2 });
   } else if (cobranca.customer) {
@@ -732,7 +741,7 @@ export async function registrarCobrancaFaltante(paymentId: string): Promise<{ er
     return {
       error:
         candidatos.length === 0
-          ? "Não achei nenhum autor ligado a essa cobrança."
+          ? `Não achei nenhum autor ligado a essa cobrança (cliente ${cobranca.customer ?? "-"}, assinatura ${cobranca.subscription ?? "-"}).`
           : "Mais de um autor ligado a essa cobrança. Registre com cuidado, fora do painel.",
     };
   }

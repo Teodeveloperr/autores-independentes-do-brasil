@@ -267,6 +267,18 @@ export async function POST(request: NextRequest) {
         ? await prisma.author.findFirst({ where: { asaasPixCustomerId: cobranca.customer, asaasPixAutoStatus: "active" } })
         : null;
 
+  // As mensalidades seguintes do Pix Automático chegam da Asaas com o campo "subscription"
+  // preenchido (a cobrança nasce de uma assinatura interna dela), mas o autor de Pix não tem
+  // asaasSubscriptionId: só a 1ª cobrança (o QR Code imediato) chega sem esse campo. Sem este
+  // fallback, a busca acima só olhava a assinatura, não achava ninguém e a mensalidade passava
+  // em silêncio, sem entrar na receita. Cai pro customer do Pix, só em autor sem assinatura de
+  // cartão pra não confundir com uma cobrança de cartão ainda não vinculada.
+  if (!authorAssinatura && cobranca.subscription && cobranca.customer) {
+    authorAssinatura = await prisma.author.findFirst({
+      where: { asaasPixCustomerId: cobranca.customer, asaasPixAutoStatus: "active", asaasSubscriptionId: null },
+    });
+  }
+
   // O formato do payload do evento de ativação do Pix Automático não é documentado pela
   // Asaas — se ele se perder ou não bater com extrairIdAutorizacaoPix, o autor fica com
   // asaasPixAutoStatus "pending" pra sempre, mesmo pagando certinho. Um pagamento
