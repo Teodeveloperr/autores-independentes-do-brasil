@@ -210,15 +210,25 @@ function PlanoPagoCard({
           </p>
           <div style={{ display: "flex", gap: "8px" }}>
             {metodoEscolhido === "cartao" ? (
-              <button
-                type="submit"
-                name="metodoPagamento"
-                value="cartao"
-                disabled={pending}
-                style={{ flex: 1, background: "#002776", color: "white", padding: "12px", fontWeight: 600, borderRadius: "4px", border: "none", fontSize: "13px", opacity: pending ? 0.7 : 1 }}
-              >
-                {pending ? "..." : "Confirmar pagamento"}
-              </button>
+              <>
+                <button
+                  type="button"
+                  onClick={() => setMetodoEscolhido(null)}
+                  disabled={pending}
+                  style={{ flex: "0 0 auto", background: "white", color: "#262626", padding: "12px 14px", fontWeight: 600, borderRadius: "4px", border: "1px solid #CCC", fontSize: "13px", opacity: pending ? 0.7 : 1 }}
+                >
+                  ← Trocar forma
+                </button>
+                <button
+                  type="submit"
+                  name="metodoPagamento"
+                  value="cartao"
+                  disabled={pending}
+                  style={{ flex: 1, background: "#002776", color: "white", padding: "12px", fontWeight: 600, borderRadius: "4px", border: "none", fontSize: "13px", opacity: pending ? 0.7 : 1 }}
+                >
+                  {pending ? "..." : "Confirmar pagamento"}
+                </button>
+              </>
             ) : (
               <>
                 <button

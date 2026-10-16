@@ -186,7 +186,24 @@ export default function CadastroWizard() {
     plan !== "free" && cicloEfetivo !== "mensal" ? Math.round(valorCicloCentavos(PLANOS_PAGOS[plan], cicloEfetivo) / installmentCount) : 0;
 
   function goToStep(n: 1 | 2) {
-    if (n < step) setStep(n);
+    if (n < step) {
+      // Ao sair da tela de pagamento, esquece o "cartão à vista" já escolhido: senão, ao voltar
+      // pra ela, os botões de Pix e parcelado não aparecem e não dá pra trocar de ideia.
+      setMetodoEscolhido(null);
+      setFinishError("");
+      setStep(n);
+    }
+  }
+
+  // "Voltar" na tela de pagamento: com o cartão à vista aberto, primeiro volta pra escolha da
+  // forma de pagamento (Pix, cartão ou parcelado); só de lá volta pro plano.
+  function voltarDoPagamento() {
+    setFinishError("");
+    if (metodoEscolhido) {
+      setMetodoEscolhido(null);
+    } else {
+      setStep(2);
+    }
   }
 
   return (
@@ -498,8 +515,8 @@ export default function CadastroWizard() {
             </p>
           )}
           <div style={{ display: "flex", gap: "12px" }}>
-            <button onClick={() => setStep(2)} style={{ flex: "0 0 auto", background: "white", border: "1px solid #CCC", color: "#262626", padding: "14px 24px", fontWeight: 600, borderRadius: "6px", fontSize: "15px" }}>
-              ← Voltar
+            <button onClick={voltarDoPagamento} style={{ flex: "0 0 auto", background: "white", border: "1px solid #CCC", color: "#262626", padding: "14px 24px", fontWeight: 600, borderRadius: "6px", fontSize: "15px" }}>
+              {metodoEscolhido ? "← Trocar forma de pagamento" : "← Voltar"}
             </button>
             {plan === "free" ? (
               <button onClick={() => finish("cartao")} disabled={pending} style={{ flex: 1, background: "#009B3A", color: "white", padding: "14px", fontWeight: 700, borderRadius: "6px", fontSize: "15px", opacity: pending ? 0.7 : 1 }}>
