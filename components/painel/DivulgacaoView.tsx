@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import QRCode from "qrcode";
 import type { AuthorWithRelations, PainelView } from "./types";
 
@@ -68,6 +68,37 @@ export default function DivulgacaoView({
   const link = `${siteUrl.replace(/\/$/, "")}/perfil/${author.id}`;
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
 
+  // Texto escrito pelo próprio autor. Fica guardado só neste navegador (rascunho), pra ele não
+  // perder o que escreveu ao trocar de aba do painel ou voltar outro dia.
+  const chaveRascunho = `divulgacao-texto-${author.id}`;
+  const [meuTexto, setMeuTexto] = useState(() => {
+    if (typeof window === "undefined") return "";
+    try {
+      return window.localStorage.getItem(chaveRascunho) ?? "";
+    } catch {
+      return "";
+    }
+  });
+  const [incluirLink, setIncluirLink] = useState(true);
+  const campoMeuTextoRef = useRef<HTMLTextAreaElement>(null);
+
+  function atualizarMeuTexto(valor: string) {
+    setMeuTexto(valor);
+    try {
+      window.localStorage.setItem(chaveRascunho, valor);
+    } catch {
+      // Sem armazenamento disponível (janela privada, por exemplo): o texto só não fica guardado.
+    }
+  }
+
+  // Leva um dos textos prontos pro campo de edição, sem o link (que é colocado no final na hora de copiar).
+  function usarComoBase(texto: string) {
+    atualizarMeuTexto(texto.split(link).join("").trim());
+    setIncluirLink(true);
+    campoMeuTextoRef.current?.focus();
+    campoMeuTextoRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+
   useEffect(() => {
     let ativo = true;
     QRCode.toDataURL(link, { width: 600, margin: 2, color: { dark: "#002776", light: "#FFFFFF" } })
@@ -108,6 +139,21 @@ export default function DivulgacaoView({
     { rotulo: "Facebook", href: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(link)}` },
     { rotulo: "X (Twitter)", href: `https://twitter.com/intent/tweet?text=${encodeURIComponent(textoCurto)}&url=${encodeURIComponent(link)}` },
     { rotulo: "Telegram", href: `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(textoCurto)}` },
+  ];
+
+  const meuTextoLimpo = meuTexto.trim();
+  const textoFinal = incluirLink ? `${meuTextoLimpo}${meuTextoLimpo ? "\n\n" : ""}${link}` : meuTextoLimpo;
+  // Facebook e Telegram só compartilham com um link; o Facebook, aliás, não aceita texto pronto.
+  const compartilharMeuTexto = [
+    { rotulo: "WhatsApp", href: `https://wa.me/?text=${encodeURIComponent(textoFinal)}` },
+    ...(incluirLink ? [{ rotulo: "Facebook (só o link)", href: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(link)}` }] : []),
+    {
+      rotulo: "X (Twitter)",
+      href: `https://twitter.com/intent/tweet?text=${encodeURIComponent(meuTextoLimpo)}${incluirLink ? `&url=${encodeURIComponent(link)}` : ""}`,
+    },
+    ...(incluirLink
+      ? [{ rotulo: "Telegram", href: `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(meuTextoLimpo)}` }]
+      : []),
   ];
 
   const passos: { ok: boolean; texto: string; ir: PainelView; acao: string }[] = [
@@ -173,7 +219,7 @@ export default function DivulgacaoView({
 
       <div style={card}>
         <div style={titulo}>Textos prontos</div>
-        <p style={subtitulo}>Copie, cole e, se quiser, ajuste com as suas palavras.</p>
+        <p style={subtitulo}>Copie e cole, ou clique em &quot;Editar este texto&quot; para ajustar com as suas palavras.</p>
         <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
           {textos.map((t) => (
             <div key={t.rotulo} style={{ border: "1px solid #E8E8E8", borderRadius: "8px", padding: "14px 16px" }}>
@@ -182,12 +228,63 @@ export default function DivulgacaoView({
                   <div style={{ fontWeight: 700, fontSize: "13px" }}>{t.rotulo}</div>
                   <div style={{ fontSize: "11px", color: "#999" }}>{t.dica}</div>
                 </div>
-                <BotaoCopiar texto={t.texto} />
+                <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                  <button type="button" onClick={() => usarComoBase(t.texto)} style={botaoSecundario}>
+                    Editar este texto
+                  </button>
+                  <BotaoCopiar texto={t.texto} />
+                </div>
               </div>
               <div style={{ fontSize: "13px", color: "#444", whiteSpace: "pre-wrap", background: "#F6F6F6", borderRadius: "6px", padding: "10px 12px", lineHeight: 1.5, overflowWrap: "anywhere" }}>{t.texto}</div>
             </div>
           ))}
         </div>
+      </div>
+
+      <div style={card}>
+        <div style={titulo}>Escreva o seu próprio texto</div>
+        <p style={subtitulo}>
+          Use as suas palavras. Você também pode partir de um texto pronto, clicando em &quot;Editar este texto&quot; acima. O que você escrever fica guardado neste navegador.
+        </p>
+        <label htmlFor="meu-texto-divulgacao" style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>
+          Seu texto
+        </label>
+        <textarea
+          id="meu-texto-divulgacao"
+          ref={campoMeuTextoRef}
+          value={meuTexto}
+          onChange={(e) => atualizarMeuTexto(e.target.value)}
+          maxLength={1000}
+          rows={5}
+          placeholder="Escreva aqui a sua mensagem de divulgação..."
+          style={{ width: "100%", padding: "12px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "14px", lineHeight: 1.5, resize: "vertical", fontFamily: "inherit" }}
+        />
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px", flexWrap: "wrap", margin: "8px 0 14px" }}>
+          <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px" }}>
+            <input type="checkbox" checked={incluirLink} onChange={(e) => setIncluirLink(e.target.checked)} />
+            Colocar o link do meu perfil no final
+          </label>
+          <span style={{ fontSize: "12px", color: "#999" }}>{textoFinal.length} caracteres</span>
+        </div>
+        {meuTextoLimpo ? (
+          <>
+            <div style={{ fontSize: "11px", color: "#999", marginBottom: "4px" }}>Como vai ficar:</div>
+            <div style={{ fontSize: "13px", color: "#444", whiteSpace: "pre-wrap", background: "#F6F6F6", borderRadius: "6px", padding: "10px 12px", lineHeight: 1.5, overflowWrap: "anywhere", marginBottom: "14px" }}>
+              {textoFinal}
+            </div>
+            <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", alignItems: "center" }}>
+              <BotaoCopiar texto={textoFinal} rotulo="Copiar meu texto" />
+              <span style={{ fontSize: "12px", color: "#666", margin: "0 4px 0 8px" }}>Compartilhar em:</span>
+              {compartilharMeuTexto.map((c) => (
+                <a key={c.rotulo} href={c.href} target="_blank" rel="noopener noreferrer" style={botaoSecundario}>
+                  {c.rotulo}
+                </a>
+              ))}
+            </div>
+          </>
+        ) : (
+          <p style={{ fontSize: "12px", color: "#999" }}>Escreva o texto acima para copiar ou compartilhar.</p>
+        )}
       </div>
 
       <div style={card}>
