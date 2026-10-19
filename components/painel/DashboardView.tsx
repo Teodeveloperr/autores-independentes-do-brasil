@@ -100,6 +100,16 @@ export default function DashboardView({
         </button>
       </div>
 
+      <div style={{ background: "#FFF9E6", border: "2px solid #FFDF00", borderRadius: "10px", padding: "18px 22px", marginBottom: "24px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "16px", flexWrap: "wrap" }}>
+        <div>
+          <div style={{ fontWeight: 700, color: "#002776", marginBottom: "2px" }}>📣 Divulgue o seu perfil</div>
+          <div style={{ fontSize: "13px", color: "#666" }}>Copie o link, baixe o QR Code e use textos prontos para compartilhar onde os seus leitores estão.</div>
+        </div>
+        <button onClick={() => onNavigate("divulgacao")} style={{ background: "#009B3A", color: "white", padding: "10px 20px", fontWeight: 700, borderRadius: "6px", fontSize: "13px", border: "none", flexShrink: 0 }}>
+          Divulgar agora →
+        </button>
+      </div>
+
       <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "1.8fr 1.2fr 0.9fr", gap: "20px", marginBottom: "24px" }}>
         <div style={{ background: "white", borderRadius: "10px", padding: "24px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>

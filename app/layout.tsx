@@ -23,13 +23,25 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://autoresdobrasil.com.br";
+
 export const metadata: Metadata = {
+  // Endereço base pra montar o link completo das imagens de prévia (WhatsApp, Instagram, Facebook).
+  metadataBase: new URL(SITE_URL),
   title: {
     default: "Autores Independentes do Brasil",
     template: "%s · Autores Independentes do Brasil",
   },
   description:
     "Coletivo de escritores independentes do Brasil — perfis de autores, livros à venda, eventos e blog.",
+  // Prévia padrão ao compartilhar qualquer página sem imagem própria (perfil de autor define a sua).
+  openGraph: {
+    type: "website",
+    siteName: "Autores Independentes do Brasil",
+    locale: "pt_BR",
+    images: [{ url: "/og-default.jpg", width: 1200, height: 630, alt: "Autores do coletivo reunidos no estande da Bienal do Livro" }],
+  },
+  twitter: { card: "summary_large_image", images: ["/og-default.jpg"] },
 };
 
 export default function RootLayout({

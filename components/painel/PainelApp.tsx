@@ -17,6 +17,7 @@ import ChatComunidadeView from "./ChatComunidadeView";
 import AvaliacoesView from "./AvaliacoesView";
 import VendasView from "./VendasView";
 import PortfolioView from "./PortfolioView";
+import DivulgacaoView from "./DivulgacaoView";
 import ConfiguracoesView from "./ConfiguracoesView";
 import AgradecimentoGrupoPopup from "./AgradecimentoGrupoPopup";
 
@@ -38,11 +39,13 @@ export default function PainelApp({
   author,
   temSenha,
   mercadoPagoStatus,
+  siteUrl,
   maxVisualizacoesGlobal,
 }: {
   author: AuthorWithRelations;
   temSenha: boolean;
   mercadoPagoStatus?: string;
+  siteUrl: string;
   maxVisualizacoesGlobal: number;
 }) {
   const [view, setView] = useState<PainelView>("dash");
@@ -59,6 +62,7 @@ export default function PainelApp({
         </Link>
         <button onClick={() => setView("dash")} style={sidebarBtn(view === "dash")}>📊 Dashboard</button>
         <button onClick={() => setView("perfil")} style={sidebarBtn(view === "perfil")}>👤 Meu Perfil</button>
+        <button onClick={() => setView("divulgacao")} style={sidebarBtn(view === "divulgacao")}>📣 Divulgar meu perfil</button>
         <button onClick={() => setView("livros")} style={sidebarBtn(view === "livros")}>📚 Meus Livros</button>
         <button onClick={() => setView("pedidos")} style={sidebarBtn(view === "pedidos")}>📋 Pedidos</button>
         {author.plano !== "Iniciante" && (
@@ -152,6 +156,7 @@ export default function PainelApp({
           {view === "avaliacoes" && <AvaliacoesView author={author} />}
           {view === "vendas" && <VendasView author={author} />}
           {view === "portfolio" && <PortfolioView author={author} />}
+          {view === "divulgacao" && <DivulgacaoView author={author} siteUrl={siteUrl} onNavigate={setView} />}
           {view === "configuracoes" && <ConfiguracoesView author={author} temSenha={temSenha} />}
         </div>
 

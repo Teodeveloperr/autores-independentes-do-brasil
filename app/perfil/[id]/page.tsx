@@ -21,8 +21,47 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  const author = await prisma.author.findUnique({ where: { id } });
-  return { title: author ? author.nome : "Perfil não encontrado" };
+  const author = await prisma.author.findUnique({
+    where: { id },
+    select: {
+      nome: true,
+      bio: true,
+      fotoUrl: true,
+      status: true,
+      books: { select: { capaUrl: true }, where: { capaUrl: { not: null } }, orderBy: { createdAt: "desc" }, take: 1 },
+    },
+  });
+  if (!author || author.status === "suspenso") return { title: "Perfil não encontrado", robots: { index: false } };
+
+  // Prévia ao compartilhar o link (WhatsApp, Instagram, Facebook): foto do autor, senão a capa
+  // do livro mais recente, senão a imagem padrão do site. O "openGraph" da página substitui o do
+  // layout por inteiro, então a imagem padrão precisa ser repetida aqui.
+  const bio = (author.bio ?? "").replace(/\s+/g, " ").trim();
+  const descricao =
+    bio.length > 0
+      ? bio.length > 160
+        ? `${bio.slice(0, 157)}...`
+        : bio
+      : `Conheça ${author.nome}, autor(a) independente do coletivo Autores Independentes do Brasil.`;
+  const imagem = author.fotoUrl || author.books[0]?.capaUrl || null;
+  return {
+    title: author.nome,
+    description: descricao,
+    openGraph: {
+      type: "profile",
+      siteName: "Autores Independentes do Brasil",
+      locale: "pt_BR",
+      title: `${author.nome} · Autores Independentes do Brasil`,
+      description: descricao,
+      images: imagem ? [{ url: imagem, alt: author.nome }] : [{ url: "/og-default.jpg", width: 1200, height: 630, alt: "Autores Independentes do Brasil" }],
+    },
+    twitter: {
+      card: imagem ? "summary" : "summary_large_image",
+      title: author.nome,
+      description: descricao,
+      images: [imagem || "/og-default.jpg"],
+    },
+  };
 }
 
 export default async function PerfilPage({ params }: { params: Promise<{ id: string }> }) {
@@ -145,10 +184,14 @@ export default async function PerfilPage({ params }: { params: Promise<{ id: str
                     <div style={{ fontSize: "24px", fontWeight: 700, color: "#002776" }}>Desde {author.anoEntrada}</div>
                     <div style={{ fontSize: "12px", color: "#666" }}>no coletivo</div>
                   </div>
-                  <div>
-                    <div style={{ fontSize: "24px", fontWeight: 700, color: "#002776" }}>{author.seguidores}</div>
-                    <div style={{ fontSize: "12px", color: "#666" }}>seguidores</div>
-                  </div>
+                  {/* Só aparece quando houver seguidores: ainda não existe como seguir um autor, então o
+                      contador ficaria em zero pra todo mundo. */}
+                  {author.seguidores > 0 && (
+                    <div>
+                      <div style={{ fontSize: "24px", fontWeight: 700, color: "#002776" }}>{author.seguidores}</div>
+                      <div style={{ fontSize: "12px", color: "#666" }}>seguidores</div>
+                    </div>
+                  )}
                 </div>
               </div>
               {author.videoUrl ? (

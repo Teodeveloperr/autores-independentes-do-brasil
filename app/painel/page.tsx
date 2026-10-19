@@ -33,12 +33,14 @@ export default async function PainelPage({ searchParams }: { searchParams: Promi
   ]);
 
   const temSenha = authorSession.senhaHash != null;
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://autoresdobrasil.com.br";
 
   return (
     <PainelApp
       author={author}
       temSenha={temSenha}
       mercadoPagoStatus={mercadopago}
+      siteUrl={siteUrl}
       maxVisualizacoesGlobal={visualizacoesAgg._max.visualizacoes ?? 0}
     />
   );
