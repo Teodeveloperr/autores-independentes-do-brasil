@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { perfilHref } from "@/lib/slug";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import PublicHeader from "@/components/PublicHeader";
@@ -70,7 +71,7 @@ export default async function LojaAutorPage({ params }: { params: Promise<{ id: 
               </p>
             </div>
             <Link
-              href={`/perfil/${author.id}`}
+              href={perfilHref(author)}
               style={{ border: "1px solid #DDD", padding: "10px 18px", borderRadius: "6px", fontSize: "13px", fontWeight: 600, color: "#002776", textDecoration: "none", flexShrink: 0 }}
             >
               Ver perfil completo →

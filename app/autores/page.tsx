@@ -24,6 +24,7 @@ export default async function AutoresPage() {
         <AutoresGrid
           authors={authors.map((a) => ({
             id: a.id,
+            slug: a.slug,
             nome: a.nome,
             generos: a.generos,
             fotoUrl: a.fotoUrl,

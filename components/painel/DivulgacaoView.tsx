@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import QRCode from "qrcode";
+import { perfilHref } from "@/lib/slug";
 import type { AuthorWithRelations, PainelView } from "./types";
 
 const card: React.CSSProperties = { background: "white", borderRadius: "10px", padding: "24px" };
@@ -65,7 +66,7 @@ export default function DivulgacaoView({
   siteUrl: string;
   onNavigate: (view: PainelView) => void;
 }) {
-  const link = `${siteUrl.replace(/\/$/, "")}/perfil/${author.id}`;
+  const link = `${siteUrl.replace(/\/$/, "")}${perfilHref(author)}`;
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
 
   // Texto escrito pelo próprio autor. Fica guardado só neste navegador (rascunho), pra ele não

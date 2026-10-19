@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { logout } from "@/app/painel/actions";
 import { firstName, initials } from "@/lib/format";
+import { perfilHref } from "@/lib/slug";
 import type { AuthorWithRelations, PainelView } from "./types";
 import DashboardView from "./DashboardView";
 import PerfilView from "./PerfilView";
@@ -128,7 +129,7 @@ export default function PainelApp({
               </div>
               <div>
                 <div style={{ fontSize: "13px", fontWeight: 700 }}>{nome}</div>
-                <Link href={`/perfil/${author.id}`} style={{ fontSize: "12px", color: "#666" }}>Ver perfil público ▾</Link>
+                <Link href={perfilHref(author)} style={{ fontSize: "12px", color: "#666" }}>Ver perfil público ▾</Link>
               </div>
             </div>
           </div>

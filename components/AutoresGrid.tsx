@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { perfilHref } from "@/lib/slug";
 import Link from "next/link";
 import { initials } from "@/lib/format";
 import { extrairRegiao, extrairUf, type Regiao } from "@/lib/regioes";
@@ -11,6 +12,7 @@ const REGIOES_ORDEM: Regiao[] = ["Nordeste", "Sudeste", "Norte", "Sul", "Centro-
 
 type AuthorItem = {
   id: string;
+  slug: string | null;
   nome: string;
   generos: string[];
   fotoUrl: string | null;
@@ -240,7 +242,7 @@ export default function AutoresGrid({ authors }: { authors: AuthorItem[] }) {
                 {a.numLivros} livro{a.numLivros === 1 ? "" : "s"}
               </div>
               <Link
-                href={`/perfil/${a.id}`}
+                href={perfilHref(a)}
                 style={{ display: "block", textAlign: "center", background: "#002776", color: "white", padding: "10px 20px", fontWeight: 600, width: "100%", borderRadius: "4px", textDecoration: "none" }}
               >
                 CONHECER AUTOR

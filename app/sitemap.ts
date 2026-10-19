@@ -1,11 +1,12 @@
 import type { MetadataRoute } from "next";
 import { prisma } from "@/lib/db";
+import { perfilHref } from "@/lib/slug";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://autoresdobrasil.com.br";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [authors, artigos] = await Promise.all([
-    prisma.author.findMany({ where: { status: "ativo" }, select: { id: true, updatedAt: true } }),
+    prisma.author.findMany({ where: { status: "ativo" }, select: { id: true, slug: true, updatedAt: true } }),
     prisma.article.findMany({ select: { id: true, createdAt: true } }),
   ]);
 
@@ -23,7 +24,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ];
 
   const paginasAutores: MetadataRoute.Sitemap = authors.map((a) => ({
-    url: `${SITE_URL}/perfil/${a.id}`,
+    url: `${SITE_URL}${perfilHref(a)}`,
     lastModified: a.updatedAt,
     changeFrequency: "weekly",
     priority: 0.7,

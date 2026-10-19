@@ -13,6 +13,9 @@ datasource db {
 model Author {
   id        String   @id @default(cuid())
   nome      String
+  // Endereço fixo do perfil público (/autor/nome-do-autor), gerado do nome na primeira vez e
+  // nunca mais alterado. Nulo só até ser gerado (ver lib/autorSlug.ts).
+  slug      String?  @unique
   email     String   @unique
   senhaHash String?
   googleId  String?  @unique

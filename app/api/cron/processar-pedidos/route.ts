@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { atribuirSlugsFaltantes } from "@/lib/autorSlug";
 import { prisma } from "@/lib/db";
 import { processarRepasse, enviarConfirmacaoRecebimento } from "@/lib/repasse";
 import { processarRepasseParceiro } from "@/lib/repasseParceiro";
@@ -20,6 +21,9 @@ export async function GET(request: Request) {
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return new NextResponse("Unauthorized", { status: 401 });
   }
+
+  // Cadastros novos ainda sem o endereço amigável do perfil (/autor/nome-do-autor).
+  await atribuirSlugsFaltantes().catch((err) => console.error("[cron] Falha ao gerar endereços de perfil:", err));
 
   const limiteLembrete = new Date(Date.now() - DIAS_LEMBRETE * 24 * 60 * 60 * 1000);
   const semConfirmacaoEnviada = await prisma.order.findMany({

@@ -3,9 +3,11 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { initials } from "@/lib/format";
+import { perfilHref } from "@/lib/slug";
 
 type AutorDestaque = {
   id: string;
+  slug?: string | null;
   nome: string;
   fotoUrl: string | null;
   generos: string[];
@@ -38,7 +40,7 @@ function Card({ a, largura }: { a: AutorDestaque; largura: number }) {
       <div style={{ fontWeight: 600, marginBottom: "8px", color: "#262626" }}>{a.nome}</div>
       <div style={{ fontSize: "14px", color: "#666", marginBottom: "16px" }}>{a.generos.join(", ") || "—"}</div>
       <Link
-        href={`/perfil/${a.id}`}
+        href={perfilHref(a)}
         style={{ display: "block", textAlign: "center", background: "#002776", color: "white", padding: "10px 20px", fontWeight: 600, width: "100%", borderRadius: "4px", textDecoration: "none" }}
       >
         VER PERFIL

@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useMemo, useState, useTransition } from "react";
+import { perfilHref } from "@/lib/slug";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { removeAuthor, suspendAuthor, reactivateAuthor, alterarPlanoAutor, alterarPlanoAutorComAssinaturaAtiva, adminCreateAuthor, type CreateAuthorState } from "@/app/admin/actions";
@@ -257,7 +258,7 @@ export default function AdminAutoresView({ autores }: { autores: AuthorWithCount
                   ))}
                 </select>
               )}
-              <Link href={`/perfil/${a.id}`} style={{ background: "white", border: "1px solid #DDD", borderRadius: "6px", padding: "8px 14px", fontSize: "12px", fontWeight: 600, color: "#002776", flexShrink: 0 }}>
+              <Link href={perfilHref(a)} style={{ background: "white", border: "1px solid #DDD", borderRadius: "6px", padding: "8px 14px", fontSize: "12px", fontWeight: 600, color: "#002776", flexShrink: 0 }}>
                 Ver perfil
               </Link>
               {a.status === "suspenso" ? (
