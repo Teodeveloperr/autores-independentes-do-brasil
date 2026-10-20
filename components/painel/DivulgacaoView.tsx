@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import QRCode from "qrcode";
 import { perfilHref } from "@/lib/slug";
+import ArteDivulgacao from "./ArteDivulgacao";
 import type { AuthorWithRelations, PainelView } from "./types";
 
 const card: React.CSSProperties = { background: "white", borderRadius: "10px", padding: "24px" };
@@ -161,7 +162,7 @@ export default function DivulgacaoView({
 
   const passos: { ok: boolean; texto: string; ir: PainelView; acao: string }[] = [
     { ok: Boolean(author.fotoUrl), texto: "Foto de perfil: aparece na prévia quando o link é compartilhado", ir: "perfil", acao: "Adicionar foto" },
-    { ok: author.books.length > 0, texto: "Pelo menos um livro cadastrado", ir: "livros", acao: "Cadastrar livro" },
+    { ok: author.books.some((b) => b.capaUrl), texto: "Pelo menos um livro com capa: aparece na arte e na prévia do link", ir: "livros", acao: author.books.length > 0 ? "Adicionar capa" : "Cadastrar livro" },
     { ok: Boolean(author.bannerUrl), texto: "Banner do perfil: deixa a sua página mais bonita", ir: "perfil", acao: "Adicionar banner" },
   ];
 
@@ -213,6 +214,11 @@ export default function DivulgacaoView({
             </div>
           </div>
         )}
+      </div>
+
+      <div style={card}>
+        <div style={titulo}>Arte para divulgar</div>
+        <ArteDivulgacao author={author} link={link} onNavigate={onNavigate} />
       </div>
 
       <div style={card}>
