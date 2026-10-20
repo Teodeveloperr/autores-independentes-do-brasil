@@ -90,7 +90,6 @@ model Author {
 
   avaliacaoMedia Float?
   avaliacoesQtd  Int     @default(0)
-  seguidores     Int     @default(0)
   verificado     Boolean @default(false)
 
   // Popup único de agradecimento + convite pro grupo do WhatsApp, mostrado no próximo

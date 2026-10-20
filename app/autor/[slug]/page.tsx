@@ -186,14 +186,6 @@ export default async function PerfilPage({ params }: { params: Promise<{ slug: s
                     <div style={{ fontSize: "24px", fontWeight: 700, color: "#002776" }}>Desde {author.anoEntrada}</div>
                     <div style={{ fontSize: "12px", color: "#666" }}>no coletivo</div>
                   </div>
-                  {/* Só aparece quando houver seguidores: ainda não existe como seguir um autor, então o
-                      contador ficaria em zero pra todo mundo. */}
-                  {author.seguidores > 0 && (
-                    <div>
-                      <div style={{ fontSize: "24px", fontWeight: 700, color: "#002776" }}>{author.seguidores}</div>
-                      <div style={{ fontSize: "12px", color: "#666" }}>seguidores</div>
-                    </div>
-                  )}
                 </div>
               </div>
               {author.videoUrl ? (
