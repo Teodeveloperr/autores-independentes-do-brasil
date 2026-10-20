@@ -41,12 +41,14 @@ export default function PainelApp({
   temSenha,
   mercadoPagoStatus,
   siteUrl,
+  previaUrl,
   maxVisualizacoesGlobal,
 }: {
   author: AuthorWithRelations;
   temSenha: boolean;
   mercadoPagoStatus?: string;
   siteUrl: string;
+  previaUrl: string | null;
   maxVisualizacoesGlobal: number;
 }) {
   const [view, setView] = useState<PainelView>("dash");
@@ -157,7 +159,7 @@ export default function PainelApp({
           {view === "avaliacoes" && <AvaliacoesView author={author} />}
           {view === "vendas" && <VendasView author={author} />}
           {view === "portfolio" && <PortfolioView author={author} />}
-          {view === "divulgacao" && <DivulgacaoView author={author} siteUrl={siteUrl} onNavigate={setView} />}
+          {view === "divulgacao" && <DivulgacaoView author={author} siteUrl={siteUrl} previaUrl={previaUrl} onNavigate={setView} />}
           {view === "configuracoes" && <ConfiguracoesView author={author} temSenha={temSenha} />}
         </div>
 

@@ -60,10 +60,12 @@ function BotaoCopiar({ texto, rotulo = "Copiar" }: { texto: string; rotulo?: str
 export default function DivulgacaoView({
   author,
   siteUrl,
+  previaUrl,
   onNavigate,
 }: {
   author: AuthorWithRelations;
   siteUrl: string;
+  previaUrl: string | null;
   onNavigate: (view: PainelView) => void;
 }) {
   const link = `${siteUrl.replace(/\/$/, "")}${perfilHref(author)}`;
@@ -193,6 +195,24 @@ export default function DivulgacaoView({
             </a>
           ))}
         </div>
+        {previaUrl && (
+          <div style={{ marginTop: "18px" }}>
+            <div style={{ fontSize: "12px", color: "#666", marginBottom: "6px" }}>
+              Assim o seu link aparece no WhatsApp, Instagram e Facebook. A imagem é montada com a sua foto e as capas dos seus livros:
+            </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={previaUrl}
+              alt="Prévia do seu link ao ser compartilhado"
+              width={1200}
+              height={630}
+              style={{ width: "100%", maxWidth: "480px", height: "auto", aspectRatio: "1200 / 630", borderRadius: "8px", border: "1px solid #E5E5E5", background: "#F0F0F0", display: "block" }}
+            />
+            <div style={{ fontSize: "11px", color: "#999", marginTop: "6px" }}>
+              Trocou a foto ou uma capa? A prévia se atualiza sozinha. Redes que já guardaram o link antigo podem demorar um pouco para mostrar a nova.
+            </div>
+          </div>
+        )}
       </div>
 
       <div style={card}>

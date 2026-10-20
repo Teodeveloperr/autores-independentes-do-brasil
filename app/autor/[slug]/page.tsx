@@ -12,6 +12,7 @@ import { getCurrentAuthor } from "@/lib/auth";
 import { temSeloVerificado } from "@/lib/plans";
 import { calcularPerfilCompleto } from "@/lib/perfilCompleto";
 import { calcularConquistas } from "@/lib/conquistas";
+import { carregarDadosPrevia, urlPrevia } from "@/lib/previaAutor";
 
 export const dynamic = "force-dynamic";
 
@@ -21,21 +22,15 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const author = await prisma.author.findUnique({
-    where: { slug },
-    select: {
-      nome: true,
-      bio: true,
-      fotoUrl: true,
-      status: true,
-      books: { select: { capaUrl: true }, where: { capaUrl: { not: null } }, orderBy: { createdAt: "desc" }, take: 1 },
-    },
-  });
-  if (!author || author.status === "suspenso") return { title: "Perfil não encontrado", robots: { index: false } };
+  const [author, previa] = await Promise.all([
+    prisma.author.findUnique({ where: { slug }, select: { nome: true, bio: true, status: true } }),
+    carregarDadosPrevia(slug),
+  ]);
+  if (!author || !previa) return { title: "Perfil não encontrado", robots: { index: false } };
 
-  // Prévia ao compartilhar o link (WhatsApp, Instagram, Facebook): foto do autor, senão a capa
-  // do livro mais recente, senão a imagem padrão do site. O "openGraph" da página substitui o do
-  // layout por inteiro, então a imagem padrão precisa ser repetida aqui.
+  // Prévia ao compartilhar o link (WhatsApp, Instagram, Facebook): cartão gerado pela plataforma
+  // com foto, nome e capas do autor (ver ./previa/route.tsx). O "openGraph" da página substitui
+  // o do layout por inteiro, então tudo é repetido aqui.
   const bio = (author.bio ?? "").replace(/\s+/g, " ").trim();
   const descricao =
     bio.length > 0
@@ -43,7 +38,7 @@ export async function generateMetadata({
         ? `${bio.slice(0, 157)}...`
         : bio
       : `Conheça ${author.nome}, autor(a) independente do coletivo Autores Independentes do Brasil.`;
-  const imagem = author.fotoUrl || author.books[0]?.capaUrl || null;
+  const imagem = urlPrevia(previa);
   return {
     title: author.nome,
     description: descricao,
@@ -55,13 +50,13 @@ export async function generateMetadata({
       locale: "pt_BR",
       title: `${author.nome} · Autores Independentes do Brasil`,
       description: descricao,
-      images: imagem ? [{ url: imagem, alt: author.nome }] : [{ url: "/og-default.jpg", width: 1200, height: 630, alt: "Autores Independentes do Brasil" }],
+      images: [{ url: imagem, width: 1200, height: 630, type: "image/jpeg", alt: author.nome }],
     },
     twitter: {
-      card: imagem ? "summary" : "summary_large_image",
+      card: "summary_large_image",
       title: author.nome,
       description: descricao,
-      images: [imagem || "/og-default.jpg"],
+      images: [imagem],
     },
   };
 }

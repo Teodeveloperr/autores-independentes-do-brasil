@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { requireAuthor } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { garantirSlug } from "@/lib/autorSlug";
+import { carregarDadosPrevia, urlPrevia } from "@/lib/previaAutor";
 import PainelApp from "@/components/painel/PainelApp";
 
 export const dynamic = "force-dynamic";
@@ -37,6 +38,9 @@ export default async function PainelPage({ searchParams }: { searchParams: Promi
   ]);
 
   const temSenha = authorSession.senhaHash != null;
+  // Imagem que aparece quando o autor compartilha o link (mostrada na aba "Divulgar meu perfil").
+  const dadosPrevia = author.slug ? await carregarDadosPrevia(author.slug) : null;
+  const previaUrl = dadosPrevia ? urlPrevia(dadosPrevia) : null;
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://autoresdobrasil.com.br";
 
   return (
@@ -45,6 +49,7 @@ export default async function PainelPage({ searchParams }: { searchParams: Promi
       temSenha={temSenha}
       mercadoPagoStatus={mercadopago}
       siteUrl={siteUrl}
+      previaUrl={previaUrl}
       maxVisualizacoesGlobal={visualizacoesAgg._max.visualizacoes ?? 0}
     />
   );
