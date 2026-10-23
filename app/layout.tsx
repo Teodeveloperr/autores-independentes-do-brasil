@@ -4,6 +4,9 @@ import { CartProvider } from "@/components/CartContext";
 import CartDrawer from "@/components/CartDrawer";
 import CartConflictModal from "@/components/CartConflictModal";
 import VisitTracker from "@/components/VisitTracker";
+import TemaHalloween from "@/components/halloween/TemaHalloween";
+import BarraHalloween from "@/components/halloween/BarraHalloween";
+import { scriptInicial } from "@/lib/halloween";
 import "./globals.css";
 
 const cinzel = Cinzel({
@@ -50,8 +53,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR" className={`${cinzel.variable} ${roboto.variable}`}>
+    // suppressHydrationWarning: o script abaixo pode adicionar a classe do tema sazonal no <html> antes do React carregar.
+    <html lang="pt-BR" className={`${cinzel.variable} ${roboto.variable}`} suppressHydrationWarning>
+      <head>
+        {/* Liga o tema sazonal (Halloween) antes da primeira pintura, só no período e nas rotas públicas. */}
+        <script dangerouslySetInnerHTML={{ __html: scriptInicial() }} />
+      </head>
       <body>
+        <BarraHalloween />
+        <TemaHalloween />
         <CartProvider>
           {children}
           <CartDrawer />

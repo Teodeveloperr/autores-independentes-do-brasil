@@ -24,15 +24,15 @@ export type LivroCatalogo = {
 
 const FILTROS_VAZIOS = { busca: "", genero: "", autor: "", precoMin: "", precoMax: "" };
 
-export default function LivrosCatalogo({ books }: { books: LivroCatalogo[] }) {
+export default function LivrosCatalogo({ books, generoInicial = "" }: { books: LivroCatalogo[]; generoInicial?: string }) {
   const autores = Array.from(new Set(books.map((b) => b.author.nome))).sort((a, b) => a.localeCompare(b));
 
   const [busca, setBusca] = useState("");
-  const [genero, setGenero] = useState("");
+  const [genero, setGenero] = useState(generoInicial);
   const [autor, setAutor] = useState("");
   const [precoMin, setPrecoMin] = useState("");
   const [precoMax, setPrecoMax] = useState("");
-  const [filtros, setFiltros] = useState(FILTROS_VAZIOS);
+  const [filtros, setFiltros] = useState({ ...FILTROS_VAZIOS, genero: generoInicial });
   const [sinopseId, setSinopseId] = useState<string | null>(null);
 
   const sinopseBook = books.find((b) => b.id === sinopseId) ?? null;

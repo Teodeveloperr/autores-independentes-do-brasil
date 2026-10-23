@@ -4,12 +4,16 @@ import PublicFooter from "@/components/PublicFooter";
 import LivrosCatalogo from "@/components/LivrosCatalogo";
 import { prisma } from "@/lib/db";
 import { PLANO_RANK } from "@/lib/plans";
+import { GENEROS } from "@/lib/genres";
 
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = { title: "Livros" };
 
-export default async function LivrosPage() {
+export default async function LivrosPage({ searchParams }: { searchParams: Promise<{ genero?: string }> }) {
+  const { genero } = await searchParams;
+  // Aceita /livros?genero=Terror (usado, por exemplo, pela faixa de Halloween da home).
+  const generoInicial = genero && GENEROS.includes(genero) ? genero : "";
   const booksPool = await prisma.book.findMany({
     where: { author: { status: "ativo" } },
     orderBy: { createdAt: "desc" },
@@ -30,7 +34,7 @@ export default async function LivrosPage() {
           Descubra obras incríveis de autores independentes de todos o Brasil.
         </p>
         <div className="section-pad-md" style={{ background: "white", color: "#262626", padding: "32px", borderRadius: "8px" }}>
-          <LivrosCatalogo books={books} />
+          <LivrosCatalogo books={books} generoInicial={generoInicial} />
         </div>
       </div>
       </section>

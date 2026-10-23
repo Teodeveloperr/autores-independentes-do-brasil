@@ -1,0 +1,115 @@
+/* Tema de Halloween. Tudo depende da classe "tema-halloween" no <html>, que é ligada por data (ver
+   lib/halloween.ts). Sem a classe, nada daqui aparece nem muda. */
+
+/* Elementos do tema ficam escondidos até o tema ser ligado */
+.hw-barra,
+.hw-faixa,
+.hw-guirlanda {
+  display: none;
+}
+html.tema-halloween .hw-barra,
+html.tema-halloween .hw-faixa,
+html.tema-halloween .hw-guirlanda {
+  display: block;
+}
+/* !important: a imagem original define display:block inline (next/image), que venceria esta regra */
+html.tema-halloween .hw-bandeirola-normal {
+  display: none !important;
+}
+
+html.tema-halloween {
+  --hw-roxo: #2a1450;
+  --hw-roxo2: #4a1f7a;
+  --hw-escuro: #140a26;
+  --hw-laranja: #ff7a00;
+  --hw-laranja2: #ffa21f;
+  overflow-x: clip;
+}
+html.tema-halloween body {
+  overflow-x: clip;
+}
+
+/* Cores da marca → paleta de Halloween. A marca usa estilos inline, por isso o seletor por atributo.
+   O HTML do servidor traz as cores como "#002776", mas depois que o React renderiza no navegador
+   (navegação entre páginas) o atributo passa a ser "rgb(0, 39, 118)": as regras valem pros dois formatos. */
+html.tema-halloween :is([style*="#002776"], [style*="rgb(0, 39, 118)"]):not([style*="background"]):not([style*="border"]) { color: var(--hw-roxo) !important; }
+html.tema-halloween :is([style*="#002776"], [style*="rgb(0, 39, 118)"])[style*="background"] { background: linear-gradient(135deg, var(--hw-escuro), var(--hw-roxo)) !important; }
+html.tema-halloween :is([style*="#009B3A"], [style*="#009b3a"], [style*="rgb(0, 155, 58)"]):not([style*="background"]):not([style*="border"]) { color: #e86a00 !important; }
+html.tema-halloween :is([style*="#FFDF00"], [style*="#ffdf00"], [style*="rgb(255, 223, 0)"]):not([style*="background"]) { color: var(--hw-laranja2) !important; }
+html.tema-halloween body :is([style*="background:#009B3A"], [style*="background: #009B3A"], [style*="background: rgb(0, 155, 58)"], [style*="background:rgb(0, 155, 58)"])[style] { background: var(--hw-laranja) !important; color: #1b0f2e !important; border-color: var(--hw-laranja) !important; }
+html.tema-halloween body :is([style*="border:2px solid #009B3A"], [style*="border: 2px solid #009B3A"], [style*="border: 2px solid rgb(0, 155, 58)"], [style*="border:2px solid rgb(0, 155, 58)"])[style] { background: #fff !important; border-color: var(--hw-laranja) !important; color: #c94f00 !important; }
+html.tema-halloween body :is([style*="border:2px solid #002776"], [style*="border: 2px solid #002776"], [style*="border: 2px solid rgb(0, 39, 118)"], [style*="border:2px solid rgb(0, 39, 118)"])[style] { background: #fff !important; border-color: var(--hw-roxo) !important; color: var(--hw-roxo) !important; }
+html.tema-halloween footer { background: linear-gradient(180deg, var(--hw-roxo), var(--hw-escuro)) !important; }
+html.tema-halloween header { box-shadow: 0 2px 14px rgba(255, 122, 0, 0.25); }
+html.tema-halloween a:hover { color: var(--hw-laranja); }
+
+/* Faixa do topo */
+.hw-barra {
+  background: linear-gradient(90deg, #140a26, #2a1450 50%, #140a26);
+  color: #ffa21f;
+  text-align: center;
+  font-weight: 700;
+  font-size: 13px;
+  padding: 9px 16px;
+  border-bottom: 2px solid #ff7a00;
+}
+.hw-barra b { color: #fff; }
+
+/* Faixa "Seleção de Halloween" da home */
+.hw-faixa { margin: 28px auto 8px; max-width: 1280px; padding: 0 24px; }
+.hw-faixa-caixa {
+  background: linear-gradient(120deg, #140a26, #2a1450 60%, #4a1f7a);
+  border-radius: 12px;
+  padding: 22px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+  border: 2px solid #ff7a00;
+  box-shadow: 0 8px 24px rgba(42, 20, 80, 0.35);
+}
+.hw-faixa-caixa h3 { color: #fff; font-size: 22px; margin: 0 0 4px; }
+.hw-faixa-caixa p { color: #e9dcff; font-size: 14px; margin: 0; }
+.hw-faixa-caixa a { background: #ff7a00; color: #140a26; font-weight: 800; padding: 12px 22px; border-radius: 6px; font-size: 14px; }
+html.tema-halloween .hw-faixa-caixa a:hover { color: #140a26; background: #ffa21f; }
+
+/* Ícones em camadas (parallax + profundidade com desfoque) */
+.hw-icone {
+  position: absolute;
+  z-index: 35;
+  user-select: none;
+  cursor: pointer;
+  line-height: 1;
+  will-change: transform;
+  filter: drop-shadow(0 6px 6px rgba(0, 0, 0, 0.28));
+  transition: filter 0.35s ease;
+}
+.hw-icone span {
+  display: block;
+  transition: transform 0.25s cubic-bezier(0.3, 1.6, 0.5, 1);
+  animation: hw-boiar var(--dur, 4s) ease-in-out infinite;
+}
+.hw-icone:hover span { transform: scale(1.28) rotate(-8deg); animation: none; }
+.hw-icone:hover { filter: drop-shadow(0 0 14px rgba(255, 122, 0, 0.9)); z-index: 55; }
+.hw-longe { filter: blur(3.5px) drop-shadow(0 4px 4px rgba(0, 0, 0, 0.2)); }
+.hw-perto { filter: blur(5px) drop-shadow(0 8px 8px rgba(0, 0, 0, 0.25)); }
+.hw-longe:hover, .hw-perto:hover { filter: blur(0) drop-shadow(0 0 16px rgba(255, 122, 0, 0.95)); }
+@keyframes hw-boiar { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+
+.hw-bolha {
+  position: absolute; z-index: 60; background: #140a26; color: #ffa21f; font-weight: 800; font-size: 15px;
+  padding: 8px 14px; border-radius: 20px; border: 2px solid #ff7a00; pointer-events: none; white-space: nowrap;
+  animation: hw-subir 1.4s ease-out forwards;
+}
+@keyframes hw-subir {
+  0% { opacity: 0; transform: translateY(8px) scale(0.8); }
+  15% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-40px) scale(1.05); }
+}
+.hw-particula { position: absolute; z-index: 59; pointer-events: none; font-size: 22px; }
+
+/* Quem pede menos movimento nas configurações do sistema não vê o balanço */
+@media (prefers-reduced-motion: reduce) {
+  .hw-icone span { animation: none !important; }
+}
