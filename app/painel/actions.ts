@@ -19,6 +19,7 @@ import { podeUsarRecursosExtras, BIO_MAX_CARACTERES_INICIANTE, PORTFOLIO_EVENTOS
 import { GENEROS } from "@/lib/genres";
 import { MESES_EVENTO, STATUS_EVENTO, STATUS_PEDIDO, CATEGORIAS_FOTO } from "@/lib/painelOptions";
 import { senhaNovaSchema, textoSchema, intSchema, primeiroErroZod } from "@/lib/validation";
+import { validarImagemEnviada, validarImagensEnviadas } from "@/lib/uploadValidation";
 import { TIPOS_CHAVE_PIX, chavePixValida } from "@/lib/pixKey";
 import { enviarConfirmacaoRecebimento } from "@/lib/repasse";
 import { checkRateLimit } from "@/lib/rateLimit";
@@ -117,6 +118,12 @@ export async function saveProfile(formData: FormData): Promise<{ error?: string 
   }
   const bio = ((formData.get("bio") as string) || "").trim().slice(0, author.plano === "Iniciante" ? BIO_MAX_CARACTERES_INICIANTE : undefined);
 
+  // Só confere as imagens que foram trocadas agora, pra não travar quem edita o texto de um perfil antigo.
+  const fotoNova = (formData.get("fotoUrl") as string) || "";
+  const bannerNovo = (formData.get("bannerUrl") as string) || "";
+  const imagensPerfil = await validarImagensEnviadas([fotoNova !== (author.fotoUrl ?? "") ? fotoNova : null, bannerNovo !== (author.bannerUrl ?? "") ? bannerNovo : null]);
+  if (!imagensPerfil.ok) return { error: imagensPerfil.erro };
+
   await prisma.author.update({
     where: { id: author.id },
     data: {
@@ -163,6 +170,12 @@ export async function updatePortfolio(formData: FormData): Promise<{ error?: str
   });
   if (!parsed.success) {
     return { error: primeiroErroZod(parsed.error) };
+  }
+
+  const capaPortfolio = (formData.get("portfolioCapaUrl") as string) || null;
+  if (capaPortfolio && capaPortfolio !== author.portfolioCapaUrl) {
+    const imagem = await validarImagemEnviada(capaPortfolio);
+    if (!imagem.ok) return { error: imagem.erro };
   }
 
   await prisma.author.update({
@@ -276,6 +289,9 @@ export async function addBook(formData: FormData): Promise<{ error?: string }> {
   const parsed = bookDataFromForm(formData);
   if ("error" in parsed) return parsed;
 
+  const capa = await validarImagemEnviada(parsed.data.capaUrl);
+  if (!capa.ok) return { error: capa.erro };
+
   await prisma.book.create({
     data: {
       authorId: author.id,
@@ -292,6 +308,12 @@ export async function updateBook(id: string, formData: FormData): Promise<{ erro
 
   const parsed = bookDataFromForm(formData);
   if ("error" in parsed) return parsed;
+
+  const atual = await prisma.book.findFirst({ where: { id, authorId: author.id }, select: { capaUrl: true } });
+  if (parsed.data.capaUrl && parsed.data.capaUrl !== atual?.capaUrl) {
+    const capa = await validarImagemEnviada(parsed.data.capaUrl);
+    if (!capa.ok) return { error: capa.erro };
+  }
 
   await prisma.book.updateMany({
     where: { id, authorId: author.id },
@@ -418,6 +440,9 @@ export async function addPhoto(formData: FormData): Promise<{ error?: string }> 
     return { error: primeiroErroZod(parsed.error) };
   }
 
+  const imagem = await validarImagemEnviada(url);
+  if (!imagem.ok) return { error: imagem.erro };
+
   await prisma.authorPhoto.create({
     data: {
       authorId: author.id,
@@ -467,6 +492,9 @@ export async function addPortfolioEvento(formData: FormData): Promise<{ error?: 
   if (fotos.length > 6) {
     return { error: "No máximo 6 fotos por evento." };
   }
+
+  const imagensEvento = await validarImagensEnviadas(fotos);
+  if (!imagensEvento.ok) return { error: imagensEvento.erro };
 
   await prisma.portfolioEvento.create({
     data: {

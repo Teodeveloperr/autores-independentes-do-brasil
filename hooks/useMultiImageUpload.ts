@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { uploadImage } from "@/lib/upload-client";
+import { uploadImage, ImagemInvalidaError } from "@/lib/upload-client";
 
 const MAX_BYTES = 5 * 1024 * 1024;
 
@@ -29,8 +29,8 @@ export function useMultiImageUpload(folder: string, max: number) {
       try {
         const novasUrls = await Promise.all(files.map((f) => uploadImage(f, folder)));
         setUrls((prev) => [...prev, ...novasUrls]);
-      } catch {
-        setError("Não foi possível enviar as fotos. Tente novamente.");
+      } catch (err) {
+        setError(err instanceof ImagemInvalidaError ? err.message : "Não foi possível enviar as fotos. Tente novamente.");
       } finally {
         setUploading(false);
       }

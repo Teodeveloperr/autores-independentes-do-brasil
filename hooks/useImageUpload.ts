@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { uploadImage } from "@/lib/upload-client";
+import { uploadImage, ImagemInvalidaError } from "@/lib/upload-client";
 
 // Lê a largura/altura reais do arquivo antes do upload — usado por quem precisa exibir a
 // imagem na proporção verdadeira dela depois (ex.: capa de livro) em vez de forçar um
@@ -43,8 +43,8 @@ export function useImageUpload(folder: string, initialUrl = "") {
         setUrl(uploadedUrl);
         setWidth(dimensoes?.width ?? null);
         setHeight(dimensoes?.height ?? null);
-      } catch {
-        setError("Não foi possível enviar a imagem. Tente novamente.");
+      } catch (err) {
+        setError(err instanceof ImagemInvalidaError ? err.message : "Não foi possível enviar a imagem. Tente novamente.");
       } finally {
         setUploading(false);
       }
