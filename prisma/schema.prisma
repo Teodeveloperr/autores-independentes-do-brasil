@@ -178,10 +178,38 @@ model Book {
   larguraCm     Int?
   comprimentoCm Int?
 
+  // E-book: o autor envia um PDF, o navegador dele converte cada página em imagem e as páginas
+  // ficam num armazenamento PRIVADO (o PDF original não é guardado). Livro físico não usa nada disto.
+  // formato: "fisico" (padrão, com estoque e frete) ou "ebook" (lido só dentro da plataforma).
+  formato           String        @default("fisico")
+  // ebookStatus: "processando" | "pronto" | "erro" (nulo quando formato = "fisico").
+  ebookStatus       String?
+  ebookPaginas      Int?
+  ebookErro         String?
+  // Pasta das páginas no armazenamento privado (ex.: "ebooks/<livro>/<versão>/").
+  ebookPrefixo      String?
+  ebookAtualizadoEm DateTime?
+  paginasEbook      EbookPagina[]
+  acessosEbook      AcessoEbook[]
+
   createdAt DateTime @default(now())
   orders    Order[]
 
   @@index([authorId])
+}
+
+// Uma página convertida de um e-book. Guarda só o caminho no armazenamento privado e o tamanho
+// (pro leitor reservar o espaço certo); a imagem nunca é servida por endereço público.
+model EbookPagina {
+  id      String @id @default(cuid())
+  bookId  String
+  book    Book   @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  numero  Int
+  caminho String
+  largura Int
+  altura  Int
+
+  @@unique([bookId, numero])
 }
 
 model AuthorEvent {
@@ -258,6 +286,8 @@ model Order {
   confirmacaoEnviadaEm DateTime?
   confirmacaoTokenHash String?   @unique
   confirmadoEm         DateTime?
+
+  acessosEbook AcessoEbook[]
 
   createdAt DateTime @default(now())
 
@@ -565,4 +595,71 @@ model ContratoConfig {
   id                      String   @id @default("unico")
   assinaturaContratadaPng String?  @db.Text
   updatedAt               DateTime @updatedAt
+}
+
+
+// ---------------------------------------------------------------------------------------------
+// Conta do leitor (quem compra e-book). Separada da conta de autor: entra com e-mail e senha;
+// o primeiro acesso e a recuperação de senha são por link enviado ao e-mail.
+// ---------------------------------------------------------------------------------------------
+model Leitor {
+  id             String         @id @default(cuid())
+  // Sempre em minúsculas.
+  email          String         @unique
+  nome           String?
+  // Nulo até a pessoa criar a senha pelo link do primeiro acesso.
+  senhaHash      String?
+  createdAt      DateTime       @default(now())
+  ultimoAcessoEm DateTime?
+  links          LeitorLink[]
+  sessoes        LeitorSessao[]
+  acessos        AcessoEbook[]
+}
+
+// Link de uso único enviado por e-mail pra criar (primeiro acesso) ou refazer (recuperação) a senha.
+// Só o hash do código é guardado.
+model LeitorLink {
+  id         String    @id @default(cuid())
+  leitorId   String
+  leitor     Leitor    @relation(fields: [leitorId], references: [id], onDelete: Cascade)
+  tokenHash  String    @unique
+  // "primeiro_acesso" | "recuperacao"
+  finalidade String
+  expiraEm   DateTime
+  usadoEm    DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([leitorId])
+}
+
+// Um aparelho com sessão aberta. O número de sessões ativas por leitor é limitado (ver lib/leitorAuth.ts).
+model LeitorSessao {
+  id          String   @id @default(cuid())
+  leitorId    String
+  leitor      Leitor   @relation(fields: [leitorId], references: [id], onDelete: Cascade)
+  tokenHash   String   @unique
+  // Resumo do navegador/aparelho, só pra o leitor reconhecer onde está logado.
+  aparelho    String?
+  createdAt   DateTime @default(now())
+  ultimoUsoEm DateTime @default(now())
+  expiraEm    DateTime
+
+  @@index([leitorId])
+}
+
+// Direito de um leitor de ler um e-book (concedido quando o pagamento confirma ou pelo admin).
+model AcessoEbook {
+  id              String    @id @default(cuid())
+  leitorId        String
+  leitor          Leitor    @relation(fields: [leitorId], references: [id], onDelete: Cascade)
+  bookId          String
+  book            Book      @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  orderId         String?
+  order           Order?    @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  concedidoEm     DateTime  @default(now())
+  revogadoEm      DateTime?
+  motivoRevogacao String?
+
+  @@unique([leitorId, bookId])
+  @@index([bookId])
 }

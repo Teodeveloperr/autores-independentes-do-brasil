@@ -7,7 +7,7 @@ export const HALLOWEEN = {
   inicio: "2026-10-28",
   fim: "2026-11-03",
   // Rotas onde o tema NÃO entra: áreas logadas, pagamento e fluxos sensíveis.
-  rotasExcluidas: ["/painel", "/admin", "/checkout", "/carrinho", "/login", "/cadastro", "/recuperar-senha", "/redefinir-senha", "/assinatura", "/contrato-bienal", "/api"],
+  rotasExcluidas: ["/painel", "/admin", "/checkout", "/carrinho", "/login", "/cadastro", "/recuperar-senha", "/redefinir-senha", "/assinatura", "/contrato-bienal", "/entrar", "/estante", "/ler", "/api"],
   chaveForcar: "hw-tema",
 } as const;
 

@@ -443,3 +443,73 @@ export async function sendContratoPagoEmail(
     `,
   });
 }
+
+/**
+ * E-mail enviado ao leitor quando um e-book é liberado. No primeiro acesso traz o link para criar
+ * a senha; depois, o endereço para entrar na estante.
+ */
+export async function sendLeitorAcessoEmail(to: string, info: { nome: string | null; livro: string; url: string; primeiroAcesso: boolean }) {
+  const saudacao = info.nome ? `Olá, ${escaparHtml(info.nome.split(" ")[0])}!` : "Olá!";
+  const livro = escaparHtml(info.livro);
+  await resend.emails.send({
+    from: EMAIL_FROM,
+    to,
+    subject: `Seu e-book "${info.livro}" está liberado — Autores Independentes do Brasil`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 560px; margin: 0 auto; color: #262626;">
+        <h1 style="color: #002776; font-size: 22px;">${saudacao} Seu e-book está liberado</h1>
+        <p style="font-size: 15px; line-height: 1.6;">
+          Obrigado pela compra de <strong>${livro}</strong>. Você pode ler o livro direto na plataforma, em
+          <strong>Minha estante</strong>, em até 2 aparelhos ao mesmo tempo.
+        </p>
+        ${
+          info.primeiroAcesso
+            ? `<p style="font-size: 15px; line-height: 1.6;">Para começar, crie a sua senha de acesso. O link vale por 7 dias.</p>`
+            : `<p style="font-size: 15px; line-height: 1.6;">Entre com o seu e-mail e a sua senha.</p>`
+        }
+        <p style="margin-top: 32px;">
+          <a href="${info.url}"
+             style="background:#009B3A;color:white;padding:12px 24px;border-radius:4px;text-decoration:none;font-weight:bold;">
+            ${info.primeiroAcesso ? "Criar minha senha e ler" : "Ir para a minha estante"}
+          </a>
+        </p>
+        <p style="font-size: 13px; color: #666; margin-top: 32px;">
+          Cada página do e-book leva o seu nome e e-mail como identificação. O acesso é pessoal e não pode ser compartilhado.
+        </p>
+        <p style="font-size: 13px; color: #666; margin-top: 16px;">
+          Coletivo de escritores valorizando histórias, conectando pessoas.
+        </p>
+      </div>
+    `,
+  });
+}
+
+/** E-mail com o link para o leitor criar ou refazer a senha (recuperação). */
+export async function sendLeitorSenhaEmail(to: string, url: string) {
+  await resend.emails.send({
+    from: EMAIL_FROM,
+    to,
+    subject: "Sua senha de leitor — Autores Independentes do Brasil",
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 560px; margin: 0 auto; color: #262626;">
+        <h1 style="color: #002776; font-size: 22px;">Criar ou refazer a sua senha</h1>
+        <p style="font-size: 15px; line-height: 1.6;">
+          Recebemos um pedido para criar ou refazer a senha de acesso aos seus e-books no Autores Independentes do Brasil.
+          Clique no botão abaixo para escolher a senha. Este link expira em 1 hora e só pode ser usado uma vez.
+        </p>
+        <p style="margin-top: 32px;">
+          <a href="${url}"
+             style="background:#009B3A;color:white;padding:12px 24px;border-radius:4px;text-decoration:none;font-weight:bold;">
+            Escolher minha senha
+          </a>
+        </p>
+        <p style="font-size: 13px; color: #666; margin-top: 32px;">
+          Se você não pediu isso, pode ignorar este e-mail com segurança: nada será alterado.
+        </p>
+        <p style="font-size: 13px; color: #666; margin-top: 16px;">
+          Coletivo de escritores valorizando histórias, conectando pessoas.
+        </p>
+      </div>
+    `,
+  });
+}
