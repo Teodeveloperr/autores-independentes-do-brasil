@@ -28,6 +28,9 @@ export default function CheckoutClient() {
   const [cidade, setCidade] = useState("");
   const [uf, setUf] = useState("");
 
+  // E-book não tem entrega: sem livro físico no carrinho, não pedimos endereço nem calculamos frete.
+  const temFisico = items.some((i) => i.formato !== "ebook");
+  const temEbook = items.some((i) => i.formato === "ebook");
   const freteTotalCentavos = fretes.reduce((sum, f) => sum + (f.disponivel ? f.precoCentavos : 0), 0);
   const freteIndisponivel = fretes.some((f) => !f.disponivel);
 
@@ -170,6 +173,7 @@ export default function CheckoutClient() {
           </div>
         </div>
 
+        {temFisico && (
         <div>
           <div style={{ fontWeight: 700, marginBottom: "16px" }}>Endereço de entrega</div>
           <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
@@ -178,7 +182,7 @@ export default function CheckoutClient() {
                 <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>CEP</label>
                 <input
                   type="text"
-                  required
+                  required={temFisico}
                   value={cep}
                   onChange={(e) => setCep(e.target.value)}
                   onBlur={onCepBlur}
@@ -191,7 +195,7 @@ export default function CheckoutClient() {
                 <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>Rua</label>
                 <input
                   type="text"
-                  required
+                  required={temFisico}
                   value={rua}
                   onChange={(e) => setRua(e.target.value)}
                   style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "14px" }}
@@ -203,7 +207,7 @@ export default function CheckoutClient() {
                 <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>Número</label>
                 <input
                   type="text"
-                  required
+                  required={temFisico}
                   value={numero}
                   onChange={(e) => setNumero(e.target.value)}
                   style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "14px" }}
@@ -224,7 +228,7 @@ export default function CheckoutClient() {
               <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>Bairro</label>
               <input
                 type="text"
-                required
+                required={temFisico}
                 value={bairro}
                 onChange={(e) => setBairro(e.target.value)}
                 style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "14px" }}
@@ -235,7 +239,7 @@ export default function CheckoutClient() {
                 <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>Cidade</label>
                 <input
                   type="text"
-                  required
+                  required={temFisico}
                   value={cidade}
                   onChange={(e) => setCidade(e.target.value)}
                   style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "14px" }}
@@ -245,7 +249,7 @@ export default function CheckoutClient() {
                 <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>UF</label>
                 <input
                   type="text"
-                  required
+                  required={temFisico}
                   maxLength={2}
                   value={uf}
                   onChange={(e) => setUf(e.target.value.toUpperCase())}
@@ -255,12 +259,18 @@ export default function CheckoutClient() {
             </div>
           </div>
         </div>
+        )}
 
         <div>
           <div style={{ fontWeight: 700, marginBottom: "12px" }}>Forma de pagamento</div>
           <p style={{ fontSize: "13px", color: "#666" }}>
             💳 Na próxima tela, você escolhe entre Pix ou cartão de crédito — o pagamento é processado pela Asaas.
           </p>
+          {temEbook && (
+            <p style={{ fontSize: "13px", color: "#666", marginTop: "8px" }}>
+              📖 O e-book é liberado assim que o pagamento é confirmado: você recebe um e-mail para criar a sua senha e ler em <b>Minha estante</b>, direto no navegador (não é um arquivo para baixar).
+            </p>
+          )}
         </div>
 
         {erro && <p style={{ color: "#C0392B", fontSize: "13px" }}>{erro}</p>}
@@ -280,7 +290,7 @@ export default function CheckoutClient() {
           {items.map((item) => (
             <div key={item.bookId} style={{ display: "flex", justifyContent: "space-between", fontSize: "13px" }}>
               <span>
-                {item.titulo} <span style={{ color: "#999" }}>×{item.quantidade}</span>
+                {item.titulo} <span style={{ color: "#999" }}>{item.formato === "ebook" ? "(e-book)" : `×${item.quantidade}`}</span>
               </span>
               <span style={{ fontWeight: 600 }}>{brl(item.precoCentavos * item.quantidade)}</span>
             </div>
@@ -288,7 +298,12 @@ export default function CheckoutClient() {
         </div>
 
         <div style={{ borderTop: "1px solid #E0E0E0", paddingTop: "12px", marginBottom: "8px" }}>
-          {calculandoFrete ? (
+          {!temFisico ? (
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", color: "#666" }}>
+              <span>Entrega</span>
+              <span>Digital — sem frete</span>
+            </div>
+          ) : calculandoFrete ? (
             <div style={{ fontSize: "13px", color: "#666" }}>Calculando frete...</div>
           ) : fretes.length > 0 ? (
             <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
@@ -317,7 +332,7 @@ export default function CheckoutClient() {
 
         <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 700, fontSize: "16px", borderTop: "1px solid #E0E0E0", paddingTop: "12px" }}>
           <span>Total</span>
-          <span style={{ color: "#002776" }}>{brl(totalCentavos + freteTotalCentavos)}</span>
+          <span style={{ color: "#002776" }}>{brl(totalCentavos + (temFisico ? freteTotalCentavos : 0))}</span>
         </div>
       </div>
     </div>

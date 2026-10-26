@@ -17,6 +17,7 @@ export type LivroItem = {
   precoCentavos: number;
   descontoPercentual: number | null;
   descricao: string | null;
+  formato?: string;
   authorId: string;
   autorNome: string;
 };
@@ -46,7 +47,7 @@ export default function LivrosGrid({ books, podeVender }: { books: LivroItem[]; 
               }}
             />
             <div style={{ fontWeight: 600, fontSize: "13px", marginBottom: "4px" }}>{b.titulo}</div>
-            <div style={{ fontSize: "12px", color: "#666", marginBottom: "8px" }}>{b.genero}</div>
+            <div style={{ fontSize: "12px", color: "#666", marginBottom: "8px" }}>{b.genero}{b.formato === "ebook" ? " · E-book" : ""}</div>
             <div style={{ marginBottom: "10px" }}>
               <PrecoComDesconto precoCentavos={b.precoCentavos} descontoPercentual={b.descontoPercentual} fontSize="14px" />
             </div>
@@ -66,6 +67,7 @@ export default function LivrosGrid({ books, podeVender }: { books: LivroItem[]; 
                     autorNome: b.autorNome,
                     precoCentavos: precoComDescontoCentavos(b.precoCentavos, b.descontoPercentual),
                     capaUrl: b.capaUrl,
+                    formato: b.formato === "ebook" ? "ebook" : "fisico",
                   }}
                   style={{ flex: 1, width: "auto", padding: "8px", fontSize: "12px" }}
                 />

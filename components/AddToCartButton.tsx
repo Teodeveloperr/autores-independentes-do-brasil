@@ -7,7 +7,7 @@ export default function AddToCartButton({
   book,
   style,
 }: {
-  book: { bookId: string; authorId: string; titulo: string; autorNome: string; precoCentavos: number; capaUrl: string | null };
+  book: { bookId: string; authorId: string; titulo: string; autorNome: string; precoCentavos: number; capaUrl: string | null; formato?: "fisico" | "ebook" };
   style?: React.CSSProperties;
 }) {
   const { addItem } = useCart();

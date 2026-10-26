@@ -5,6 +5,7 @@ import LivrosCatalogo from "@/components/LivrosCatalogo";
 import { prisma } from "@/lib/db";
 import { PLANO_RANK } from "@/lib/plans";
 import { GENEROS } from "@/lib/genres";
+import { LIVRO_VENDAVEL_WHERE } from "@/lib/ebook";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +16,7 @@ export default async function LivrosPage({ searchParams }: { searchParams: Promi
   // Aceita /livros?genero=Terror (usado, por exemplo, pela faixa de Halloween da home).
   const generoInicial = genero && GENEROS.includes(genero) ? genero : "";
   const booksPool = await prisma.book.findMany({
-    where: { author: { status: "ativo" } },
+    where: { author: { status: "ativo" }, ...LIVRO_VENDAVEL_WHERE },
     orderBy: { createdAt: "desc" },
     include: { author: true },
   });

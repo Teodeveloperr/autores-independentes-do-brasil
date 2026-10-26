@@ -3,6 +3,7 @@ import { atribuirSlugsFaltantes } from "@/lib/autorSlug";
 import { prisma } from "@/lib/db";
 import { processarRepasse, enviarConfirmacaoRecebimento } from "@/lib/repasse";
 import { processarRepasseParceiro } from "@/lib/repasseParceiro";
+import { repassarEbooksDisponiveis } from "@/lib/pedidoEbook";
 import { cancelarAutorizacaoPixAutomatico, cancelarAssinaturaAsaas, buscarCobranca, cancelarCobranca } from "@/lib/asaas";
 import { sendPlanoParceladoVencendoEmail } from "@/lib/email";
 
@@ -56,6 +57,10 @@ export async function GET(request: Request) {
       liberados++;
     }
   }
+
+  // E-books vendidos: o repasse não espera entrega nem confirmação de recebimento, só o saldo ficar
+  // disponível na Asaas (cartão: D+32). Aqui é a nova tentativa das vendas que ainda não podiam sair.
+  const repassesEbook = await repassarEbooksDisponiveis();
 
   // Fatia do parceiro em cada assinatura Premium+ (ver lib/repasseParceiro.ts) — só depende
   // de disponivelEm já estar preenchido, sem prazo de espera adicional (não tem confirmação
@@ -181,6 +186,8 @@ export async function GET(request: Request) {
     lembretes: semConfirmacaoEnviada.length,
     processados: pendentes.length,
     liberados,
+    repassesEbookTentados: repassesEbook.tentados,
+    repassesEbookLiberados: repassesEbook.repassados,
     repassesParceiroProcessados: pagamentosParceiroPendentes.length,
     repassesParceiroLiberados,
     pedidosCancelados,

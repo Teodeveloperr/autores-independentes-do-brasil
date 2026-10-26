@@ -264,6 +264,9 @@ model Order {
 
   quantidade        Int     @default(1)
   valorCentavos     Int
+  // "fisico" (envio pelos Correios, repasse depois da confirmação de recebimento) ou "ebook"
+  // (acesso liberado ao pagar, sem frete, repasse assim que o dinheiro fica disponível).
+  formato           String  @default("fisico")
   freteCentavos     Int?
   freteServico      String?
   status            String  @default("Aguardando pagamento")

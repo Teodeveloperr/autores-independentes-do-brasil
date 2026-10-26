@@ -18,11 +18,14 @@ export type LivroCatalogo = {
   capaLargura: number | null;
   capaAltura: number | null;
   descricao: string | null;
+  formato?: string;
   authorId: string;
   author: { nome: string; plano: string };
 };
 
 const FILTROS_VAZIOS = { busca: "", genero: "", autor: "", precoMin: "", precoMax: "" };
+
+const FORMATOS_TODOS = { fisico: true, ebook: true };
 
 export default function LivrosCatalogo({ books, generoInicial = "" }: { books: LivroCatalogo[]; generoInicial?: string }) {
   const autores = Array.from(new Set(books.map((b) => b.author.nome))).sort((a, b) => a.localeCompare(b));
@@ -33,12 +36,15 @@ export default function LivrosCatalogo({ books, generoInicial = "" }: { books: L
   const [precoMin, setPrecoMin] = useState("");
   const [precoMax, setPrecoMax] = useState("");
   const [filtros, setFiltros] = useState({ ...FILTROS_VAZIOS, genero: generoInicial });
+  const [formatos, setFormatos] = useState(FORMATOS_TODOS);
+  const [formatosAplicados, setFormatosAplicados] = useState(FORMATOS_TODOS);
   const [sinopseId, setSinopseId] = useState<string | null>(null);
 
   const sinopseBook = books.find((b) => b.id === sinopseId) ?? null;
 
   function aplicarFiltros() {
     setFiltros({ busca, genero, autor, precoMin, precoMax });
+    setFormatosAplicados(formatos);
   }
 
   function limparFiltros() {
@@ -48,6 +54,8 @@ export default function LivrosCatalogo({ books, generoInicial = "" }: { books: L
     setPrecoMin("");
     setPrecoMax("");
     setFiltros(FILTROS_VAZIOS);
+    setFormatos(FORMATOS_TODOS);
+    setFormatosAplicados(FORMATOS_TODOS);
   }
 
   const min = parseFloat(filtros.precoMin);
@@ -55,6 +63,7 @@ export default function LivrosCatalogo({ books, generoInicial = "" }: { books: L
   const termo = filtros.busca.trim().toLowerCase();
 
   const livrosFiltrados = books.filter((b) => {
+    if (!(b.formato === "ebook" ? formatosAplicados.ebook : formatosAplicados.fisico)) return false;
     if (filtros.genero && b.genero !== filtros.genero) return false;
     if (filtros.autor && b.author.nome !== filtros.autor) return false;
     if (!Number.isNaN(min) && b.precoCentavos / 100 < min) return false;
@@ -98,10 +107,10 @@ export default function LivrosCatalogo({ books, generoInicial = "" }: { books: L
         <div style={{ marginBottom: "24px" }}>
           <div style={{ fontWeight: 600, marginBottom: "12px" }}>Formato</div>
           <label style={{ display: "flex", gap: "8px", marginBottom: "8px", fontSize: "14px" }}>
-            <input type="checkbox" defaultChecked disabled /> Físico
+            <input type="checkbox" checked={formatos.fisico} onChange={(e) => setFormatos({ ...formatos, fisico: e.target.checked })} /> Físico
           </label>
           <label style={{ display: "flex", gap: "8px", marginBottom: "8px", fontSize: "14px" }}>
-            <input type="checkbox" disabled /> E-book
+            <input type="checkbox" checked={formatos.ebook} onChange={(e) => setFormatos({ ...formatos, ebook: e.target.checked })} /> E-book
           </label>
           <label style={{ display: "flex", gap: "8px", fontSize: "14px" }}>
             <input type="checkbox" disabled /> Áudio livro
@@ -180,7 +189,7 @@ export default function LivrosCatalogo({ books, generoInicial = "" }: { books: L
                   }}
                 />
                 <div style={{ fontWeight: 600, marginBottom: "4px" }}>{b.titulo}</div>
-                <div style={{ fontSize: "13px", color: "#666", marginBottom: "8px" }}>{b.author.nome}</div>
+                <div style={{ fontSize: "13px", color: "#666", marginBottom: "8px" }}>{b.author.nome}{b.formato === "ebook" ? " · E-book" : ""}</div>
                 <div style={{ marginBottom: "12px" }}>
                   <PrecoComDesconto precoCentavos={b.precoCentavos} descontoPercentual={b.descontoPercentual} />
                 </div>
@@ -200,6 +209,7 @@ export default function LivrosCatalogo({ books, generoInicial = "" }: { books: L
                         autorNome: b.author.nome,
                         precoCentavos: precoComDescontoCentavos(b.precoCentavos, b.descontoPercentual),
                         capaUrl: b.capaUrl,
+                        formato: b.formato === "ebook" ? "ebook" : "fisico",
                       }}
                       style={{ flex: 1, width: "auto" }}
                     />

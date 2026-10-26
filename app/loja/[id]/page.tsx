@@ -8,6 +8,7 @@ import LivrosGrid from "@/components/LivrosGrid";
 import { prisma } from "@/lib/db";
 import { brl } from "@/lib/format";
 import { podeVenderLivros } from "@/lib/plans";
+import { LIVRO_VENDAVEL_WHERE } from "@/lib/ebook";
 
 export const dynamic = "force-dynamic";
 
@@ -25,7 +26,7 @@ export default async function LojaAutorPage({ params }: { params: Promise<{ id: 
   const { id } = await params;
   const author = await prisma.author.findUnique({
     where: { id },
-    include: { books: { orderBy: { createdAt: "desc" } } },
+    include: { books: { where: LIVRO_VENDAVEL_WHERE, orderBy: { createdAt: "desc" } } },
   });
 
   if (!author || author.status === "suspenso") notFound();
@@ -93,6 +94,7 @@ export default async function LojaAutorPage({ params }: { params: Promise<{ id: 
                 precoCentavos: b.precoCentavos,
                 descontoPercentual: b.descontoPercentual,
                 descricao: b.descricao,
+                formato: b.formato,
                 authorId: author.id,
                 autorNome: author.nome,
               }))}

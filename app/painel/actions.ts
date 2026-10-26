@@ -527,6 +527,10 @@ export async function setOrderStatus(id: string, status: string): Promise<{ erro
   const order = await prisma.order.findFirst({ where: { id, authorId: author.id } });
   if (!order) return { error: "Pedido não encontrado." };
 
+  if (order.formato === "ebook") {
+    return { error: "Pedidos de e-book são automáticos: o acesso é liberado ao pagar e não há envio." };
+  }
+
   if (novoStatus === "Entregue") {
     return { error: "Esse status é definido automaticamente quando o comprador confirma o recebimento." };
   }

@@ -3,6 +3,8 @@ import { prisma } from "@/lib/db";
 import { verificarWebhookAsaas, buscarCobranca } from "@/lib/asaas";
 import { sendOrderConfirmationEmail, sendNewSaleEmail, sendNovaCobrancaAssinaturaEmail, sendWelcomeEmail } from "@/lib/email";
 import { marcarContratoPago } from "@/lib/contrato/servico";
+import { ehEbook } from "@/lib/ebook";
+import { entregarEbooksDoPedido, repassarEbooksDisponiveis, revogarEbooksDoPedido } from "@/lib/pedidoEbook";
 import { PREMIUM_PLUS_VALOR_PARCEIRO_CENTAVOS, CICLO_MESES, type CicloAssinatura } from "@/lib/plans";
 
 // Formata a data de vencimento que a Asaas devolve ("YYYY-MM-DD") pro padrão brasileiro —
@@ -24,6 +26,8 @@ function calcularPlanoParceladoAte(ciclo: string | null): Date | null {
 }
 
 const EVENTOS_PAGO = new Set(["PAYMENT_RECEIVED", "PAYMENT_CONFIRMED"]);
+// Dinheiro devolvido ao comprador (estorno) ou contestado no cartão (chargeback).
+const EVENTOS_ESTORNO = new Set(["PAYMENT_REFUNDED", "PAYMENT_CHARGEBACK_REQUESTED"]);
 
 // Marca, já na criação do SubscriptionPayment, quanto desse pagamento cabe ao parceiro do
 // Premium+ (ver lib/repasseParceiro.ts, que efetivamente transfere via cron depois que
@@ -249,6 +253,22 @@ export async function POST(request: NextRequest) {
           asaasCheckoutReference: viaLinkDeAssinatura && !author.asaasSubscriptionId ? null : author.asaasCheckoutReference,
         },
       });
+    }
+    return NextResponse.json({ received: true }, { status: 200 });
+  }
+
+  if (EVENTOS_ESTORNO.has(evento) && paymentId) {
+    // Só pedidos da loja são tratados aqui (assinaturas e contratos têm o seu próprio fluxo).
+    const rowsEstornadas = await prisma.order.findMany({ where: { asaasPaymentId: paymentId } });
+    if (rowsEstornadas.length > 0) {
+      await revogarEbooksDoPedido(rowsEstornadas, evento === "PAYMENT_REFUNDED" ? "Pagamento estornado" : "Pagamento contestado (chargeback)");
+      await prisma.order.updateMany({ where: { asaasPaymentId: paymentId, status: { not: "Cancelado" } }, data: { status: "Cancelado" } });
+      // Repasse que já tinha saído não volta sozinho: deixa um aviso visível para o admin acertar.
+      const jaRepassadas = rowsEstornadas.filter((r) => r.repasseStatus === "transferido");
+      for (const r of jaRepassadas) {
+        await prisma.order.update({ where: { id: r.id }, data: { repasseErro: `Pagamento estornado/contestado depois do repasse (${evento}). Conferir e cobrar do autor se necessário.` } });
+      }
+      console.error(`[asaas] Pedido ${paymentId} ${evento}: ${rowsEstornadas.length} linha(s) canceladas, ${jaRepassadas.length} já repassada(s).`);
     }
     return NextResponse.json({ received: true }, { status: 200 });
   }
@@ -553,6 +573,8 @@ export async function POST(request: NextRequest) {
     // Já tinha sido confirmado antes (PAYMENT_CONFIRMED) — esse evento é só o RECEIVED
     // chegando depois (cartão de crédito: D+32). Só marca disponível, sem reenviar e-mails.
     await prisma.order.updateMany({ where: { asaasPaymentId: paymentId, disponivelEm: null }, data: { disponivelEm: new Date() } });
+    // E-book: o saldo ficou disponível, então o repasse ao autor pode sair agora.
+    await repassarEbooksDisponiveis({ asaasPaymentId: paymentId });
     return NextResponse.json({ received: true }, { status: 200 });
   }
 
@@ -565,7 +587,8 @@ export async function POST(request: NextRequest) {
       prisma.order.update({
         where: { id: r.id },
         data: {
-          status: "Pago",
+          // E-book não tem envio: já nasce entregue (o acesso é liberado logo abaixo).
+          status: ehEbook(r.formato) ? "Entregue" : "Pago",
           valorLiquidoCentavos:
             proporcaoLiquida != null ? Math.round((r.valorCentavos + (r.freteCentavos ?? 0)) * proporcaoLiquida) : null,
           disponivelEm: evento === "PAYMENT_RECEIVED" ? new Date() : null,
@@ -577,12 +600,19 @@ export async function POST(request: NextRequest) {
   const authorIds = [...new Set(rows.map((r) => r.authorId))];
   const authors = await prisma.author.findMany({ where: { id: { in: authorIds } } });
   const primeira = rows[0];
-  const enderecoTexto = `${primeira.compradorRua}, ${primeira.compradorNumero}${
-    primeira.compradorComplemento ? ` - ${primeira.compradorComplemento}` : ""
-  } - ${primeira.compradorBairro}, ${primeira.compradorCidade}/${primeira.compradorUf} - CEP ${primeira.compradorCep}`;
+  // O endereço vem de uma linha de livro físico (as de e-book não guardam endereço).
+  const fisica = rows.find((r) => !ehEbook(r.formato));
+  const enderecoTexto = fisica
+    ? `${fisica.compradorRua}, ${fisica.compradorNumero}${fisica.compradorComplemento ? ` - ${fisica.compradorComplemento}` : ""} - ${fisica.compradorBairro}, ${fisica.compradorCidade}/${fisica.compradorUf} - CEP ${fisica.compradorCep}`
+    : null;
 
   const freteTotalCentavos = rows.reduce((sum, r) => sum + (r.freteCentavos ?? 0), 0);
   const totalCentavos = rows.reduce((sum, r) => sum + r.valorCentavos, 0) + freteTotalCentavos;
+
+  // Libera os e-books primeiro: se o envio dos e-mails falhar, o leitor já tem o que comprou.
+  await entregarEbooksDoPedido(await prisma.order.findMany({ where: { asaasPaymentId: paymentId } })).catch((err) =>
+    console.error("[asaas] Falha ao liberar o acesso ao e-book:", err)
+  );
 
   await Promise.all([
     sendOrderConfirmationEmail(primeira.compradorEmail ?? "", {
@@ -591,6 +621,7 @@ export async function POST(request: NextRequest) {
         autorNome: authors.find((a) => a.id === r.authorId)?.nome ?? "",
         quantidade: r.quantidade,
         precoCentavos: r.valorCentavos / r.quantidade,
+        ebook: ehEbook(r.formato),
       })),
       freteCentavos: freteTotalCentavos,
       totalCentavos,
@@ -600,17 +631,23 @@ export async function POST(request: NextRequest) {
       if (!author) return Promise.resolve();
       const rowsAutor = rows.filter((r) => r.authorId === authorId);
       const rowFrete = rowsAutor.find((r) => r.freteCentavos != null);
+      const temFisicoDoAutor = rowsAutor.some((r) => !ehEbook(r.formato));
       return sendNewSaleEmail(author.email, {
         comprador: primeira.comprador,
         compradorEmail: primeira.compradorEmail ?? "",
         compradorTelefone: primeira.compradorTelefone,
-        endereco: enderecoTexto,
-        itens: rowsAutor.map((r) => ({ titulo: r.livro, quantidade: r.quantidade, precoCentavos: r.valorCentavos / r.quantidade })),
+        endereco: temFisicoDoAutor ? enderecoTexto : null,
+        itens: rowsAutor.map((r) => ({ titulo: r.livro, quantidade: r.quantidade, precoCentavos: r.valorCentavos / r.quantidade, ebook: ehEbook(r.formato) })),
         freteCentavos: rowFrete?.freteCentavos ?? null,
         freteServico: rowFrete?.freteServico ?? null,
       }).catch((err) => console.error(`[asaas] Falha ao enviar e-mail de nova venda para ${author.email}:`, err));
     }),
   ]);
+
+  // Repasse do e-book: só sai se a Asaas já mostra o saldo disponível (Pix: na hora; cartão: D+32).
+  if (rows.some((r) => ehEbook(r.formato))) {
+    await repassarEbooksDisponiveis({ asaasPaymentId: paymentId });
+  }
 
   return NextResponse.json({ received: true }, { status: 200 });
 }

@@ -75,7 +75,7 @@ export default function PedidosView({ author }: { author: AuthorWithRelations })
             />
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontWeight: 700, fontSize: "14px" }}>
-                {p.livro} {p.quantidade > 1 ? `(x${p.quantidade})` : ""}
+                {p.livro} {p.formato === "ebook" ? "(e-book)" : p.quantidade > 1 ? `(x${p.quantidade})` : ""}
               </div>
               <div style={{ fontSize: "12px", color: "#666" }}>
                 Pedido #{p.id.slice(-6)} • {p.createdAt.toLocaleDateString("pt-BR")} • Comprador: {p.comprador}
@@ -117,7 +117,12 @@ export default function PedidosView({ author }: { author: AuthorWithRelations })
               </select>
               {p.status === "Cancelado" && (
                 <div style={{ fontSize: "11px", color: "#999", marginTop: "4px", maxWidth: "180px" }}>
-                  Pedido cancelado automaticamente — o pagamento não foi concluído a tempo.
+                  Pedido cancelado — o pagamento não foi concluído a tempo ou foi estornado.
+                </div>
+              )}
+              {p.formato === "ebook" && p.status === "Entregue" && p.repasseStatus !== "transferido" && p.repasseStatus !== "erro" && (
+                <div style={{ fontSize: "11px", color: "#A87900", marginTop: "4px", maxWidth: "180px" }}>
+                  📖 E-book liberado ao leitor. {p.disponivelEm ? "Repasse em processamento." : "O repasse sai quando o valor ficar disponível (Pix: na hora; cartão: cerca de 32 dias)."}
                 </div>
               )}
               {p.confirmacaoEnviadaEm && p.repasseStatus !== "transferido" && p.repasseStatus !== "erro" && (
@@ -132,7 +137,7 @@ export default function PedidosView({ author }: { author: AuthorWithRelations })
               )}
               {p.repasseStatus === "transferido" && (
                 <div style={{ fontSize: "11px", color: "#009B3A", marginTop: "4px", maxWidth: "180px" }}>
-                  ✅ Repasse enviado — {p.confirmadoEm ? "confirmado pelo comprador" : "liberado automaticamente"}
+                  ✅ Repasse enviado — {p.formato === "ebook" ? "e-book, sem espera de entrega" : p.confirmadoEm ? "confirmado pelo comprador" : "liberado automaticamente"}
                 </div>
               )}
               {p.repasseStatus === "erro" && (

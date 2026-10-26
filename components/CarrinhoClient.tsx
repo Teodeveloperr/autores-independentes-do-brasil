@@ -37,10 +37,13 @@ export default function CarrinhoClient() {
               }}
             />
             <div style={{ flex: 1, minWidth: "160px" }}>
-              <div style={{ fontWeight: 700, fontSize: "14px" }}>{item.titulo}</div>
+              <div style={{ fontWeight: 700, fontSize: "14px" }}>{item.titulo}{item.formato === "ebook" ? <span style={{ color: "#002776", fontSize: "11px", fontWeight: 700, marginLeft: "8px" }}>E-BOOK</span> : null}</div>
               <div style={{ fontSize: "12px", color: "#666" }}>{item.autorNome}</div>
               <div style={{ color: "#009B3A", fontWeight: 700, marginTop: "4px" }}>{brl(item.precoCentavos)}</div>
             </div>
+            {item.formato === "ebook" ? (
+              <div style={{ fontSize: "12px", color: "#666", flexShrink: 0, width: "84px", textAlign: "center" }}>Leitura online</div>
+            ) : (
             <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
               <button
                 onClick={() => updateQuantidade(item.bookId, item.quantidade - 1)}
@@ -56,6 +59,7 @@ export default function CarrinhoClient() {
                 +
               </button>
             </div>
+            )}
             <div style={{ fontWeight: 700, color: "#002776", flexShrink: 0, width: "90px", textAlign: "right" }}>
               {brl(item.precoCentavos * item.quantidade)}
             </div>

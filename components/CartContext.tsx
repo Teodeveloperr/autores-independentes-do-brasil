@@ -10,6 +10,8 @@ export type CartItem = {
   precoCentavos: number;
   capaUrl: string | null;
   quantidade: number;
+  // Ausente nos carrinhos antigos guardados no navegador (= físico). O servidor sempre confere no banco.
+  formato?: "fisico" | "ebook";
 };
 
 type CartContextValue = {
@@ -68,6 +70,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     setItems((prev) => {
       const existing = prev.find((i) => i.bookId === item.bookId);
       if (existing) {
+        // E-book é um só por pedido: clicar de novo não aumenta a quantidade.
+        if (existing.formato === "ebook") return prev;
         return prev.map((i) => (i.bookId === item.bookId ? { ...i, quantidade: i.quantidade + 1 } : i));
       }
       return [...prev, { ...item, quantidade: 1 }];
@@ -98,7 +102,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     setItems((prev) =>
       quantidade <= 0
         ? prev.filter((i) => i.bookId !== bookId)
-        : prev.map((i) => (i.bookId === bookId ? { ...i, quantidade } : i))
+        : prev.map((i) => (i.bookId === bookId && i.formato !== "ebook" ? { ...i, quantidade } : i))
     );
   }, []);
 

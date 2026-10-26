@@ -13,6 +13,7 @@ import { temSeloVerificado } from "@/lib/plans";
 import { calcularPerfilCompleto } from "@/lib/perfilCompleto";
 import { calcularConquistas } from "@/lib/conquistas";
 import { carregarDadosPrevia, urlPrevia } from "@/lib/previaAutor";
+import { LIVRO_VENDAVEL_WHERE } from "@/lib/ebook";
 
 export const dynamic = "force-dynamic";
 
@@ -67,7 +68,7 @@ export default async function PerfilPage({ params }: { params: Promise<{ slug: s
     prisma.author.findUnique({
       where: { slug },
       include: {
-        books: { orderBy: { createdAt: "desc" } },
+        books: { where: LIVRO_VENDAVEL_WHERE, orderBy: { createdAt: "desc" } },
         eventos: { orderBy: { createdAt: "desc" } },
         fotos: { orderBy: { createdAt: "desc" } },
         avaliacoes: { orderBy: { createdAt: "desc" } },
@@ -204,6 +205,7 @@ export default async function PerfilPage({ params }: { params: Promise<{ slug: s
                 preco: brl(b.precoCentavos),
                 precoCentavos: b.precoCentavos,
                 descricao: b.descricao,
+                formato: b.formato,
                 authorId: author.id,
                 autorNome: author.nome,
               }))}

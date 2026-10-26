@@ -15,6 +15,7 @@ import BandeirolaTopo from "@/components/halloween/BandeirolaTopo";
 import FaixaHalloween from "@/components/halloween/FaixaHalloween";
 import { prisma } from "@/lib/db";
 import { PLANO_RANK, PLANOS_COM_DESTAQUE, temDestaque } from "@/lib/plans";
+import { LIVRO_VENDAVEL_WHERE } from "@/lib/ebook";
 
 export const dynamic = "force-dynamic";
 
@@ -28,7 +29,7 @@ export default async function HomePage() {
     }),
     // Só livros de autores em destaque (Premium e Premium+), os 20 mais recentes.
     prisma.book.findMany({
-      where: { author: { status: "ativo", plano: { in: PLANOS_COM_DESTAQUE } } },
+      where: { author: { status: "ativo", plano: { in: PLANOS_COM_DESTAQUE } }, ...LIVRO_VENDAVEL_WHERE },
       orderBy: { createdAt: "desc" },
       take: 20,
       include: { author: true },

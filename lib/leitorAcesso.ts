@@ -41,9 +41,9 @@ export async function revogarAcessoEbook(params: { leitorId: string; bookId: str
  * Avisa o leitor por e-mail que o e-book foi liberado. Quem ainda não tem senha recebe um link para
  * criá-la; quem já tem recebe o endereço da estante.
  */
-export async function enviarEmailAcessoLiberado(leitor: { id: string; email: string; nome: string | null; senhaHash: string | null }, livroTitulo: string) {
+export async function enviarEmailAcessoLiberado(leitor: { id: string; email: string; nome: string | null; senhaHash: string | null }, livrosTitulos: string[]) {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
   const primeiroAcesso = !leitor.senhaHash;
   const url = primeiroAcesso ? await criarLinkLeitor(leitor.id, "primeiro_acesso") : `${siteUrl}/entrar`;
-  await sendLeitorAcessoEmail(leitor.email, { nome: leitor.nome, livro: livroTitulo, url, primeiroAcesso });
+  await sendLeitorAcessoEmail(leitor.email, { nome: leitor.nome, livros: livrosTitulos, url, primeiroAcesso });
 }

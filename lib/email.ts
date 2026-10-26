@@ -97,19 +97,21 @@ export async function sendWelcomeEmail(to: string, nome: string) {
   });
 }
 
-export type OrderConfirmationItem = { titulo: string; autorNome: string; quantidade: number; precoCentavos: number };
+export type OrderConfirmationItem = { titulo: string; autorNome: string; quantidade: number; precoCentavos: number; ebook?: boolean };
 
 export async function sendOrderConfirmationEmail(
   to: string,
   data: { itens: OrderConfirmationItem[]; freteCentavos: number; totalCentavos: number }
 ) {
+  const temEbook = data.itens.some((i) => i.ebook);
+  const temFisico = data.itens.some((i) => !i.ebook);
   const linhasItens = data.itens
     .map(
       (i) => `
         <tr>
           <td style="padding:8px 0;border-bottom:1px solid #F0F0F0;">
-            ${i.titulo} <span style="color:#999;">×${i.quantidade}</span>
-            <br/><span style="font-size:12px;color:#999;">${i.autorNome}</span>
+            ${escaparHtml(i.titulo)} ${i.ebook ? `<span style="color:#999;">(e-book)</span>` : `<span style="color:#999;">×${i.quantidade}</span>`}
+            <br/><span style="font-size:12px;color:#999;">${escaparHtml(i.autorNome)}</span>
           </td>
           <td style="padding:8px 0;border-bottom:1px solid #F0F0F0;text-align:right;white-space:nowrap;">${brl(i.precoCentavos * i.quantidade)}</td>
         </tr>`
@@ -119,14 +121,14 @@ export async function sendOrderConfirmationEmail(
   await resend.emails.send({
     from: EMAIL_FROM,
     to,
-    subject: "Pedido recebido — Autores Independentes do Brasil",
+    subject: "Pagamento confirmado — Autores Independentes do Brasil",
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 560px; margin: 0 auto; color: #262626;">
-        <h1 style="color: #002776; font-size: 22px;">Pedido recebido!</h1>
+        <h1 style="color: #002776; font-size: 22px;">Pagamento confirmado!</h1>
         <p style="font-size: 15px; line-height: 1.6;">
-          Recebemos seu pedido, registrado como <b>Aguardando pagamento</b>. Como o pagamento online ainda
-          não está disponível na plataforma, o(s) autor(es) foram notificados e vão entrar em contato para
-          combinar a forma de pagamento e o envio.
+          Recebemos o pagamento do seu pedido. Obrigado por apoiar autores independentes!
+          ${temFisico ? "O(s) autor(es) foram avisados e vão providenciar o envio do(s) livro(s) físico(s) — você receberá um e-mail quando for enviado." : ""}
+          ${temEbook ? "Os e-books já estão liberados: você recebe, em outro e-mail, o acesso à sua estante." : ""}
         </p>
         <table style="width:100%;border-collapse:collapse;margin-top:24px;font-size:14px;">
           ${linhasItens}
@@ -148,7 +150,7 @@ export async function sendOrderConfirmationEmail(
   });
 }
 
-export type NewSaleItem = { titulo: string; quantidade: number; precoCentavos: number };
+export type NewSaleItem = { titulo: string; quantidade: number; precoCentavos: number; ebook?: boolean };
 
 export async function sendNewSaleEmail(
   to: string,
@@ -156,13 +158,16 @@ export async function sendNewSaleEmail(
     comprador: string;
     compradorEmail: string;
     compradorTelefone: string | null;
-    endereco: string;
+    // null quando a venda do autor é só de e-book (nada a enviar).
+    endereco: string | null;
     itens: NewSaleItem[];
     freteCentavos: number | null;
     freteServico: string | null;
   }
 ) {
-  const linhasItens = data.itens.map((i) => `<li>${i.titulo} ×${i.quantidade} — ${brl(i.precoCentavos * i.quantidade)}</li>`).join("");
+  const linhasItens = data.itens
+    .map((i) => `<li>${escaparHtml(i.titulo)}${i.ebook ? " (e-book)" : ` ×${i.quantidade}`} — ${brl(i.precoCentavos * i.quantidade)}</li>`)
+    .join("");
 
   await resend.emails.send({
     from: EMAIL_FROM,
@@ -171,7 +176,7 @@ export async function sendNewSaleEmail(
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 560px; margin: 0 auto; color: #262626;">
         <h1 style="color: #002776; font-size: 22px;">Você tem uma nova venda! 🎉</h1>
-        <p style="font-size: 15px; line-height: 1.6;"><b>${data.comprador}</b> acabou de comprar:</p>
+        <p style="font-size: 15px; line-height: 1.6;"><b>${escaparHtml(data.comprador)}</b> acabou de comprar:</p>
         <ul style="font-size: 15px; line-height: 1.8; padding-left: 20px;">${linhasItens}</ul>
         ${
           data.freteCentavos
@@ -182,10 +187,14 @@ export async function sendNewSaleEmail(
           <b>Contato do comprador:</b><br/>
           E-mail: ${data.compradorEmail}${data.compradorTelefone ? `<br/>Telefone: ${data.compradorTelefone}` : ""}
         </p>
-        <p style="font-size: 15px; line-height: 1.6;">
+        ${
+          data.endereco
+            ? `<p style="font-size: 15px; line-height: 1.6;">
           <b>Endereço de entrega:</b><br/>
-          ${data.endereco}
-        </p>
+          ${escaparHtml(data.endereco)}
+        </p>`
+            : `<p style="font-size: 15px; line-height: 1.6;">O e-book já foi liberado ao leitor automaticamente — não há nada a enviar.</p>`
+        }
         <p style="margin-top: 32px;">
           <a href="${SITE_URL}/painel"
              style="background:#009B3A;color:white;padding:12px 24px;border-radius:4px;text-decoration:none;font-weight:bold;">
@@ -193,7 +202,7 @@ export async function sendNewSaleEmail(
           </a>
         </p>
         <p style="font-size: 13px; color: #666; margin-top: 32px;">
-          Entre em contato com o comprador para combinar o pagamento e o envio.
+          ${data.endereco ? "O pagamento já foi confirmado. Envie o(s) livro(s) físico(s) para o endereço acima e atualize o pedido no painel." : "O repasse do e-book é feito assim que o valor fica disponível na Asaas."}
         </p>
       </div>
     `,
@@ -448,18 +457,19 @@ export async function sendContratoPagoEmail(
  * E-mail enviado ao leitor quando um e-book é liberado. No primeiro acesso traz o link para criar
  * a senha; depois, o endereço para entrar na estante.
  */
-export async function sendLeitorAcessoEmail(to: string, info: { nome: string | null; livro: string; url: string; primeiroAcesso: boolean }) {
+export async function sendLeitorAcessoEmail(to: string, info: { nome: string | null; livros: string[]; url: string; primeiroAcesso: boolean }) {
   const saudacao = info.nome ? `Olá, ${escaparHtml(info.nome.split(" ")[0])}!` : "Olá!";
-  const livro = escaparHtml(info.livro);
+  const varios = info.livros.length > 1;
+  const livros = info.livros.map((l) => `<strong>${escaparHtml(l)}</strong>`).join(", ");
   await resend.emails.send({
     from: EMAIL_FROM,
     to,
-    subject: `Seu e-book "${info.livro}" está liberado — Autores Independentes do Brasil`,
+    subject: `${varios ? "Seus e-books estão liberados" : `Seu e-book "${info.livros[0]}" está liberado`} — Autores Independentes do Brasil`,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 560px; margin: 0 auto; color: #262626;">
-        <h1 style="color: #002776; font-size: 22px;">${saudacao} Seu e-book está liberado</h1>
+        <h1 style="color: #002776; font-size: 22px;">${saudacao} ${varios ? "Seus e-books estão liberados" : "Seu e-book está liberado"}</h1>
         <p style="font-size: 15px; line-height: 1.6;">
-          Obrigado pela compra de <strong>${livro}</strong>. Você pode ler o livro direto na plataforma, em
+          Obrigado pela compra de ${livros}. Você pode ler ${varios ? "os livros direto" : "o livro direto"} na plataforma, em
           <strong>Minha estante</strong>, em até 2 aparelhos ao mesmo tempo.
         </p>
         ${
