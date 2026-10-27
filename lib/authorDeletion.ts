@@ -1,6 +1,7 @@
 import "server-only";
 import { del } from "@vercel/blob";
 import { prisma } from "@/lib/db";
+import { apagarEbookDoArmazenamento } from "@/lib/ebookStorage";
 
 export async function excluirAutorCompletamente(id: string): Promise<void> {
   const author = await prisma.author.findUnique({
@@ -16,6 +17,9 @@ export async function excluirAutorCompletamente(id: string): Promise<void> {
   ].filter((url): url is string => !!url && url.includes(".blob.vercel-storage.com"));
 
   await prisma.author.delete({ where: { id } });
+  for (const b of author?.books ?? []) {
+    if (b.formato === "ebook") await apagarEbookDoArmazenamento(b.id);
+  }
 
   if (blobUrls.length > 0) {
     try {
@@ -133,6 +137,9 @@ export async function excluirOuEncerrarAutor(id: string): Promise<"excluido" | "
     }),
   ]);
 
+  for (const b of author.books) {
+    if (b.formato === "ebook" && !idsRetidos.includes(b.id)) await apagarEbookDoArmazenamento(b.id);
+  }
   await apagarArquivos([
     author.fotoUrl,
     author.bannerUrl,

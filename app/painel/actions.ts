@@ -15,7 +15,7 @@ import { prisma } from "@/lib/db";
 import { requireAuthor } from "@/lib/auth";
 import { deleteAuthorSession } from "@/lib/session";
 import { centavosFromInput, sanitizeExternalUrl } from "@/lib/format";
-import { podeUsarRecursosExtras, BIO_MAX_CARACTERES_INICIANTE, PORTFOLIO_EVENTOS_MAX_INICIANTE } from "@/lib/plans";
+import { podeVenderLivros, podeUsarRecursosExtras, BIO_MAX_CARACTERES_INICIANTE, PORTFOLIO_EVENTOS_MAX_INICIANTE } from "@/lib/plans";
 import { GENEROS } from "@/lib/genres";
 import { MESES_EVENTO, STATUS_EVENTO, STATUS_PEDIDO, CATEGORIAS_FOTO } from "@/lib/painelOptions";
 import { senhaNovaSchema, textoSchema, intSchema, primeiroErroZod } from "@/lib/validation";
@@ -27,6 +27,7 @@ import { CHAT_NOME_ADMIN } from "@/lib/chat";
 import { desconectarMercadoPago as desconectarMercadoPagoLib } from "@/lib/mercadoPagoMarketplace";
 import { excluirOuEncerrarAutor } from "@/lib/authorDeletion";
 import { ehEbook } from "@/lib/ebook";
+import { apagarEbookDoArmazenamento } from "@/lib/ebookStorage";
 import { ebookTemLeitoresAtivos, autorTemRepasseEbookPendente } from "@/lib/pedidoEbook";
 import { cancelarAssinaturaAtiva } from "@/app/assinatura/actions";
 import {
@@ -285,24 +286,32 @@ function bookDataFromForm(formData: FormData): { error: string } | { data: BookD
   };
 }
 
-export async function addBook(formData: FormData): Promise<{ error?: string }> {
+export async function addBook(formData: FormData): Promise<{ error?: string; id?: string }> {
   const author = await requireAuthor();
 
   const parsed = bookDataFromForm(formData);
   if ("error" in parsed) return parsed;
 
+  const ebook = formData.get("formato") === "ebook";
+  if (ebook && !podeVenderLivros(author.plano)) {
+    return { error: "Para vender e-books você precisa de um plano Essencial ou superior." };
+  }
+
   const capa = await validarImagemEnviada(parsed.data.capaUrl);
   if (!capa.ok) return { error: capa.erro };
 
-  await prisma.book.create({
+  // E-book nasce "processando": só aparece na vitrine quando o PDF termina de ser convertido.
+  const livro = await prisma.book.create({
     data: {
       authorId: author.id,
       ...parsed.data,
+      ...(ebook ? { formato: "ebook", estoque: 0, ebookStatus: "processando" } : {}),
     },
+    select: { id: true },
   });
 
   revalidatePath("/painel");
-  return {};
+  return { id: livro.id };
 }
 
 export async function updateBook(id: string, formData: FormData): Promise<{ error?: string }> {
@@ -336,6 +345,7 @@ export async function removeBook(id: string) {
     await prisma.book.update({ where: { id }, data: { ebookStatus: "retirado", ebookAtualizadoEm: new Date() } });
   } else {
     await prisma.book.delete({ where: { id } });
+    if (ehEbook(livro.formato)) await apagarEbookDoArmazenamento(id);
   }
   revalidatePath("/painel");
   revalidatePath("/livros");

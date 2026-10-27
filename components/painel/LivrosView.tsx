@@ -1,12 +1,14 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useImageUpload } from "@/hooks/useImageUpload";
 import { addBook, updateBook, removeBook } from "@/app/painel/actions";
 import { GENEROS } from "@/lib/genres";
 import { DESCONTOS_DISPONIVEIS } from "@/lib/desconto";
 import PrecoComDesconto from "@/components/PrecoComDesconto";
+import EnvioEbook from "./EnvioEbook";
+import { EBOOK_MAX_PDF_BYTES } from "@/lib/ebook";
 import type { AuthorWithRelations } from "./types";
 
 export default function LivrosView({ author }: { author: AuthorWithRelations }) {
@@ -16,10 +18,51 @@ export default function LivrosView({ author }: { author: AuthorWithRelations }) 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [sinopseId, setSinopseId] = useState<string | null>(null);
   const router = useRouter();
+  const [formatoNovo, setFormatoNovo] = useState<"fisico" | "ebook">("fisico");
+  const [pdf, setPdf] = useState<File | null>(null);
+  const [envio, setEnvio] = useState<{ bookId: string; arquivo: File } | null>(null);
+  const inputPdfRef = useRef<HTMLInputElement>(null);
+  const alvoPdfRef = useRef<string | null>(null);
 
   const sinopseBook = author.books.find((b) => b.id === sinopseId) ?? null;
 
   const editing = author.books.find((b) => b.id === editingId) ?? null;
+
+  const ehEbookForm = editing ? editing.formato === "ebook" : formatoNovo === "ebook";
+
+  function validarPdf(arquivo: File): string {
+    if (arquivo.type !== "application/pdf" && !arquivo.name.toLowerCase().endsWith(".pdf")) return "Escolha um arquivo PDF.";
+    if (arquivo.size > EBOOK_MAX_PDF_BYTES) return `O PDF tem mais de ${Math.round(EBOOK_MAX_PDF_BYTES / 1024 / 1024)} MB.`;
+    return "";
+  }
+
+  function escolherPdfDoForm(arquivo: File | null) {
+    setErro("");
+    if (!arquivo) {
+      setPdf(null);
+      return;
+    }
+    const problema = validarPdf(arquivo);
+    if (problema) {
+      setErro(problema);
+      setPdf(null);
+      return;
+    }
+    setPdf(arquivo);
+  }
+
+  function escolherPdfParaLivro(arquivo: File | undefined) {
+    const bookId = alvoPdfRef.current;
+    if (inputPdfRef.current) inputPdfRef.current.value = "";
+    if (!arquivo || !bookId) return;
+    const problema = validarPdf(arquivo);
+    if (problema) {
+      setErro(problema);
+      return;
+    }
+    setErro("");
+    setEnvio({ bookId, arquivo });
+  }
 
   useEffect(() => {
     capa.setUrl(editing?.capaUrl ?? "");
@@ -30,8 +73,15 @@ export default function LivrosView({ author }: { author: AuthorWithRelations }) 
 
   function onSubmit(formData: FormData) {
     setErro("");
+    if (!editingId && formatoNovo === "ebook") {
+      if (!pdf) {
+        setErro("Escolha o PDF do e-book.");
+        return;
+      }
+      formData.set("formato", "ebook");
+    }
     startTransition(async () => {
-      const resultado = editingId ? await updateBook(editingId, formData) : await addBook(formData);
+      const resultado: { error?: string; id?: string } = editingId ? await updateBook(editingId, formData) : await addBook(formData);
       if (resultado?.error) {
         setErro(resultado.error);
         return;
@@ -40,6 +90,11 @@ export default function LivrosView({ author }: { author: AuthorWithRelations }) 
         setEditingId(null);
       } else {
         capa.setUrl("");
+        if (formatoNovo === "ebook" && pdf && resultado.id) {
+          setEnvio({ bookId: resultado.id, arquivo: pdf });
+          setPdf(null);
+          setFormatoNovo("fisico");
+        }
       }
       router.refresh();
     });
@@ -56,6 +111,20 @@ export default function LivrosView({ author }: { author: AuthorWithRelations }) 
   return (
     <div>
       <h2 style={{ fontSize: "22px", fontWeight: 700, color: "#002776", marginBottom: "20px" }}>Meus Livros</h2>
+      <input ref={inputPdfRef} type="file" accept="application/pdf,.pdf" onChange={(e) => escolherPdfParaLivro(e.target.files?.[0])} style={{ display: "none" }} />
+      {envio && (
+        <div style={{ marginBottom: "20px" }}>
+          <EnvioEbook
+            key={envio.bookId + envio.arquivo.name + envio.arquivo.lastModified}
+            bookId={envio.bookId}
+            arquivo={envio.arquivo}
+            onFim={() => {
+              setEnvio(null);
+              router.refresh();
+            }}
+          />
+        </div>
+      )}
       <div className="responsive-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1.4fr", gap: "20px", alignItems: "start" }}>
         <form
           key={editingId ?? "new"}
@@ -70,6 +139,34 @@ export default function LivrosView({ author }: { author: AuthorWithRelations }) 
           <div style={{ fontWeight: 700, color: "#002776", marginBottom: "4px" }}>
             {editing ? "✏️ Editar livro" : "📕 Colocar livro à venda"}
           </div>
+          {!editing && (
+            <div role="radiogroup" aria-label="Formato do livro" style={{ display: "flex", gap: "8px" }}>
+              {([["fisico", "📦 Livro físico"], ["ebook", "📱 E-book (leitura online)"]] as const).map(([valor, rotulo]) => (
+                <button
+                  key={valor}
+                  type="button"
+                  role="radio"
+                  aria-checked={formatoNovo === valor}
+                  onClick={() => {
+                    setFormatoNovo(valor);
+                    setErro("");
+                  }}
+                  style={{
+                    flex: 1,
+                    padding: "10px",
+                    borderRadius: "6px",
+                    fontSize: "13px",
+                    fontWeight: 600,
+                    border: formatoNovo === valor ? "2px solid #002776" : "1px solid #DDD",
+                    background: formatoNovo === valor ? "#E9EEF9" : "white",
+                    color: formatoNovo === valor ? "#002776" : "#262626",
+                  }}
+                >
+                  {rotulo}
+                </button>
+              ))}
+            </div>
+          )}
           <div>
             <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>Capa do livro</label>
             <label
@@ -128,10 +225,22 @@ export default function LivrosView({ author }: { author: AuthorWithRelations }) 
               ))}
             </select>
           </div>
-          <div>
-            <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>Estoque (unidades)</label>
-            <input name="estoque" type="number" required defaultValue={editing?.estoque} placeholder="20" style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px" }} />
-          </div>
+          {ehEbookForm ? (
+            !editing && (
+              <div>
+                <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>PDF do e-book</label>
+                <input type="file" accept="application/pdf,.pdf" onChange={(e) => escolherPdfDoForm(e.target.files?.[0] ?? null)} style={{ width: "100%", fontSize: "13px" }} />
+                <p style={{ fontSize: "11px", color: "#999", marginTop: "6px" }}>
+                  {pdf ? `${pdf.name} (${(pdf.size / 1024 / 1024).toFixed(1)} MB)` : "Até 200 MB e 600 páginas, sem senha."} O PDF é convertido no seu computador em imagens de página; o leitor só lê online, com a marca d&apos;água dele em cada página, e não consegue baixar o arquivo. Guarde o seu PDF original: a plataforma não o guarda.
+                </p>
+              </div>
+            )
+          ) : (
+            <div>
+              <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>Estoque (unidades)</label>
+              <input name="estoque" type="number" required defaultValue={editing?.estoque} placeholder="20" style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px" }} />
+            </div>
+          )}
           <div>
             <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>Sinopse</label>
             <textarea name="descricao" defaultValue={editing?.descricao ?? undefined} placeholder="Escreva uma breve sinopse da obra..." style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "13px", minHeight: "80px", resize: "vertical" }} />
@@ -144,7 +253,7 @@ export default function LivrosView({ author }: { author: AuthorWithRelations }) 
               </button>
             )}
             <button type="submit" disabled={pending} style={{ flex: 1, background: "#009B3A", color: "white", padding: "12px", fontWeight: 700, borderRadius: "6px", fontSize: "14px", opacity: pending ? 0.7 : 1 }}>
-              {pending ? "Salvando..." : editing ? "Salvar alterações" : "Publicar livro à venda"}
+              {pending ? "Salvando..." : editing ? "Salvar alterações" : formatoNovo === "ebook" ? "Publicar e-book" : "Publicar livro à venda"}
             </button>
           </div>
         </form>
@@ -173,8 +282,31 @@ export default function LivrosView({ author }: { author: AuthorWithRelations }) 
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontWeight: 700, fontSize: "14px" }}>{b.titulo}</div>
                 <div style={{ fontSize: "12px", color: "#666" }}>{b.genero}</div>
-                <div style={{ fontSize: "12px", color: "#666" }}>Estoque: {b.estoque} unidades</div>
+                {b.formato === "ebook" ? (
+                  <div style={{ fontSize: "12px", color: b.ebookStatus === "pronto" ? "#009B3A" : b.ebookStatus === "erro" ? "#C0392B" : "#A87900" }}>
+                    📱 E-book •{" "}
+                    {b.ebookStatus === "pronto"
+                      ? `Pronto${b.ebookPaginas ? ` (${b.ebookPaginas} páginas)` : ""}`
+                      : b.ebookStatus === "erro"
+                        ? `Erro no envio${b.ebookErro ? `: ${b.ebookErro}` : ""}`
+                        : "Aguardando o envio do PDF (não aparece na vitrine ainda)"}
+                  </div>
+                ) : (
+                  <div style={{ fontSize: "12px", color: "#666" }}>Estoque: {b.estoque} unidades</div>
+                )}
               </div>
+              {b.formato === "ebook" && (
+                <button
+                  onClick={() => {
+                    alvoPdfRef.current = b.id;
+                    inputPdfRef.current?.click();
+                  }}
+                  disabled={Boolean(envio)}
+                  style={{ background: "white", border: "1px solid #009B3A", color: "#009B3A", padding: "0 12px", height: "32px", fontSize: "12px", fontWeight: 600, borderRadius: "6px", flexShrink: 0, opacity: envio ? 0.5 : 1 }}
+                >
+                  {b.ebookStatus === "pronto" ? "Substituir PDF" : "Enviar PDF"}
+                </button>
+              )}
               <PrecoComDesconto precoCentavos={b.precoCentavos} descontoPercentual={b.descontoPercentual} fontSize="15px" />
               <button
                 onClick={() => setSinopseId(b.id)}

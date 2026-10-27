@@ -1,5 +1,5 @@
 import "server-only";
-import { get, put, del } from "@vercel/blob";
+import { get, put, del, list } from "@vercel/blob";
 
 // Armazenamento PRIVADO dos e-books (Vercel Blob, store "ebooks"). Nada aqui tem endereço público:
 // toda leitura passa pelo servidor, que antes confere se a pessoa tem acesso ao livro.
@@ -34,4 +34,36 @@ export async function salvarArquivoPrivado(pathname: string, conteudo: Buffer | 
 
 export async function apagarArquivoPrivado(pathname: string): Promise<void> {
   await del(pathname, { token: tokenEbooks() });
+}
+
+/** Caminhos (pathname) de todos os arquivos sob um prefixo do armazenamento privado. */
+export async function listarArquivosPrivados(prefixo: string): Promise<string[]> {
+  const caminhos: string[] = [];
+  let cursor: string | undefined;
+  do {
+    const pagina = await list({ prefix: prefixo, limit: 1000, cursor, token: tokenEbooks() });
+    caminhos.push(...pagina.blobs.map((b) => b.pathname));
+    cursor = pagina.hasMore ? pagina.cursor : undefined;
+  } while (cursor);
+  return caminhos;
+}
+
+export async function apagarArquivosPrivados(caminhos: string[]): Promise<void> {
+  for (let i = 0; i < caminhos.length; i += 100) {
+    await del(caminhos.slice(i, i + 100), { token: tokenEbooks() });
+  }
+}
+
+/** Pasta de um e-book no armazenamento: uma subpasta por versão enviada. */
+export function prefixoEbook(bookId: string, versao?: string): string {
+  return versao ? `ebooks/${bookId}/${versao}/` : `ebooks/${bookId}/`;
+}
+
+/** Apaga todas as páginas guardadas de um e-book. Falha ao limpar não deve impedir quem chamou. */
+export async function apagarEbookDoArmazenamento(bookId: string): Promise<void> {
+  try {
+    await apagarArquivosPrivados(await listarArquivosPrivados(prefixoEbook(bookId)));
+  } catch (err) {
+    console.error("[ebook] Falha ao apagar as páginas do e-book:", bookId, err);
+  }
 }
