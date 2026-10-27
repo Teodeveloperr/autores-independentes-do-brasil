@@ -31,7 +31,11 @@ export async function processarRepasseParceiro(pagamento: SubscriptionPayment): 
     return { ok: false, erro };
   }
 
-  const valorRepasse = pagamento.repasseParceiroValorCentavos ?? valorParceiroPremiumPlusCentavos(pagamento.valorCentavos);
+  // Teto de segurança: a fatia do parceiro nunca passa da proporção do que foi realmente pago. Pagamentos
+  // antigos do parcelado foram gravados com o valor cheio (R$ 421,20) em CADA parcela; sem este teto, cada
+  // parcela de R$ 75,00 repassaria R$ 421,20.
+  const proporcional = valorParceiroPremiumPlusCentavos(pagamento.valorCentavos);
+  const valorRepasse = Math.min(pagamento.repasseParceiroValorCentavos ?? proporcional, proporcional);
 
   const transferencia = await criarTransferenciaPix({
     valueCentavos: valorRepasse,

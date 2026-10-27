@@ -7,6 +7,7 @@ import { baixarCsv, reais } from "@/lib/csv";
 import { valorRepasseCentavos, valorRepasseCentavosLiquido } from "@/lib/plans";
 import { ehEbook } from "@/lib/ebook";
 import { reconciliarReceita, atualizarValoresLiquidos, registrarCobrancaFaltante, type CobrancaFaltante } from "@/app/admin/actions";
+import AdminParceiroPremiumPlus from "./AdminParceiroPremiumPlus";
 import type { OrderComReceita, SubscriptionPaymentRow } from "./types";
 
 // Repasse real (já transferido) ou, na falta dele, a melhor estimativa disponível: com
@@ -113,10 +114,12 @@ export default function AdminReceitaView({
   pedidos,
   assinaturaPagamentos,
   saldoAsaasCentavos,
+  chaveParceiroConfigurada,
 }: {
   pedidos: OrderComReceita[];
   assinaturaPagamentos: SubscriptionPaymentRow[];
   saldoAsaasCentavos: number | null;
+  chaveParceiroConfigurada: boolean;
 }) {
   const router = useRouter();
   const meses = useMemo(() => {
@@ -491,6 +494,13 @@ export default function AdminReceitaView({
           </div>
         </div>
       </div>
+
+      <AdminParceiroPremiumPlus
+        pagamentos={assinaturaPagamentos}
+        doMes={assinaturaPagamentos.filter((p) => p.plano === "Autor Premium+" && mesChave(p.createdAt) === mes)}
+        rotuloMes={mesLabel(mes)}
+        chaveConfigurada={chaveParceiroConfigurada}
+      />
 
       <div style={{ background: "white", borderRadius: "10px", padding: "24px", marginTop: "24px" }}>
         <div style={{ fontWeight: 700, color: "#002776", marginBottom: "16px" }}>Entradas de receita do mês</div>

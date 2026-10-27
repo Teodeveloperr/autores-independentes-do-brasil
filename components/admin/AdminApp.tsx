@@ -216,7 +216,12 @@ export default function AdminApp({
           {view === "avaliacoes" && <AdminAvaliacoesView avaliacoes={avaliacoes} />}
           {view === "pedidos" && <AdminPedidosView pedidos={pedidos} />}
           {view === "receita" && (
-            <AdminReceitaView pedidos={pedidosReceita} assinaturaPagamentos={assinaturaPagamentos} saldoAsaasCentavos={saldoAsaasCentavos} />
+            <AdminReceitaView
+              pedidos={pedidosReceita}
+              assinaturaPagamentos={assinaturaPagamentos}
+              saldoAsaasCentavos={saldoAsaasCentavos}
+              chaveParceiroConfigurada={Boolean(premiumPlusPixKey && premiumPlusPixKeyType)}
+            />
           )}
           {view === "contratos" && <AdminContratosView contratos={contratos} assinaturaContratada={assinaturaContratada} />}
           {view === "ebooks" && <AdminEbooksView acessos={acessosEbook} ebooks={ebooks} />}
