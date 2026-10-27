@@ -113,6 +113,37 @@ export const PREMIUM_PLUS_VALOR_PARCEIRO_CENTAVOS = 42120;
 
 export type CicloAssinatura = "mensal" | "semestral" | "anual";
 
+// OFERTA (Black Friday): desconto no Premium+ para quem paga por Pix ou cartão à vista (as duas formas que renovam
+// sozinhas). O parcelado no cartão fica sem desconto. O valor com desconto vale para a assinatura
+// enquanto ela estiver ativa. PARA ENCERRAR A OFERTA: troque o número abaixo por 0 e faça o deploy; quem
+// já assinou com desconto continua pagando o valor que contratou.
+export const PREMIUM_PLUS_DESCONTO_PERCENTUAL = 10;
+// Nome da oferta mostrado nas telas junto do desconto (só aparece enquanto o percentual for maior que 0).
+export const PREMIUM_PLUS_OFERTA_NOME = "Black Friday";
+
+export type MetodoPagamentoPlano = "pix" | "cartao" | "parcelado";
+
+/** Desconto (%) que vale para esse plano, ciclo e forma de pagamento. */
+export function descontoPlanoPercentual(slug: PlanoPagoSlug, ciclo: CicloAssinatura, metodo: MetodoPagamentoPlano): number {
+  return slug === "premiumPlus" && ciclo === "anual" && (metodo === "pix" || metodo === "cartao") ? PREMIUM_PLUS_DESCONTO_PERCENTUAL : 0;
+}
+
+/** Valor total cobrado no ciclo para a forma de pagamento escolhida (já com o desconto, se houver). */
+export function valorPlanoPorMetodoCentavos(slug: PlanoPagoSlug, ciclo: CicloAssinatura, metodo: MetodoPagamentoPlano): number {
+  const cheio = valorCicloCentavos(PLANOS_PAGOS[slug], ciclo);
+  const desconto = descontoPlanoPercentual(slug, ciclo, metodo);
+  return desconto > 0 ? Math.round((cheio * (100 - desconto)) / 100) : cheio;
+}
+
+/**
+ * Parte de um pagamento do Premium+ que vai para o parceiro: a mesma proporção do valor cheio
+ * (R$ 421,20 de R$ 900,00 = 46,8%) aplicada ao valor que foi de fato pago. Vale para o pagamento à vista
+ * com desconto, para cada parcela do cartão e para as renovações.
+ */
+export function valorParceiroPremiumPlusCentavos(valorPagoCentavos: number): number {
+  return Math.round((valorPagoCentavos * PREMIUM_PLUS_VALOR_PARCEIRO_CENTAVOS) / (PREMIUM_PLUS_VALOR_BASE_CENTAVOS + PREMIUM_PLUS_VALOR_PARCEIRO_CENTAVOS));
+}
+
 export const CICLO_MESES: Record<CicloAssinatura, number> = { mensal: 1, semestral: 6, anual: 12 };
 
 // Quantidade de parcelas que a pessoa pode escolher ao pagar parcelado no cartão — de 1 até

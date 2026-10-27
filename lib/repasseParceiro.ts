@@ -2,7 +2,7 @@ import "server-only";
 import type { SubscriptionPayment } from "@/app/generated/prisma/client";
 import { prisma } from "@/lib/db";
 import { criarTransferenciaPix } from "@/lib/asaas";
-import { PREMIUM_PLUS_VALOR_PARCEIRO_CENTAVOS } from "@/lib/plans";
+import { valorParceiroPremiumPlusCentavos } from "@/lib/plans";
 
 /**
  * Repassa automaticamente, via Pix, a fatia do parceiro de cada assinatura Premium+ —
@@ -31,7 +31,7 @@ export async function processarRepasseParceiro(pagamento: SubscriptionPayment): 
     return { ok: false, erro };
   }
 
-  const valorRepasse = pagamento.repasseParceiroValorCentavos ?? PREMIUM_PLUS_VALOR_PARCEIRO_CENTAVOS;
+  const valorRepasse = pagamento.repasseParceiroValorCentavos ?? valorParceiroPremiumPlusCentavos(pagamento.valorCentavos);
 
   const transferencia = await criarTransferenciaPix({
     valueCentavos: valorRepasse,

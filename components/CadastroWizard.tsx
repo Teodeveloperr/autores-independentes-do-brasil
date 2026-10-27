@@ -16,7 +16,8 @@ import TurnstileWidget from "./TurnstileWidget";
 import PasswordInput from "./PasswordInput";
 import PasswordStrengthChecklist from "./PasswordStrengthChecklist";
 import { GENEROS } from "@/lib/genres";
-import { PLANOS_PAGOS, valorCicloCentavos, CICLO_MESES, parcelasDisponiveis } from "@/lib/plans";
+import { PLANOS_PAGOS, valorCicloCentavos, CICLO_MESES, parcelasDisponiveis, descontoPlanoPercentual, valorPlanoPorMetodoCentavos, PREMIUM_PLUS_OFERTA_NOME } from "@/lib/plans";
+import OpcoesPagamentoPremiumPlus, { rotuloConfirmarPremiumPlus } from "./OpcoesPagamentoPremiumPlus";
 import { validarCpf } from "@/lib/cpf";
 import { buscarEnderecoPorCep } from "@/lib/cep";
 
@@ -38,13 +39,18 @@ function brl(centavos: number) {
 }
 
 function priceFor(id: PlanId, cycle: Cycle) {
-  if (id === "free") return { preco: brl(0), suffix: "/mês" };
+  if (id === "free") return { preco: brl(0), suffix: "/mês", precoCheio: undefined, oferta: 0 };
   // Premium+ só existe no ciclo anual — ignora o ciclo passado (o seletor nem aparece
   // quando esse plano está selecionado) e sempre mostra o preço anual fixo.
   const cicloEfetivo = id === "premiumPlus" ? "anual" : cycle;
-  const total = valorCicloCentavos(PLANOS_PAGOS[id], cicloEfetivo);
+  const totalCheio = valorCicloCentavos(PLANOS_PAGOS[id], cicloEfetivo);
   const suffix = cicloEfetivo === "anual" ? "/ano" : cicloEfetivo === "semestral" ? "/semestre" : "/mês";
-  return { preco: brl(total), suffix };
+  // Oferta do Premium+: Pix e cartão à vista com desconto (o parcelado continua no valor cheio).
+  const oferta = id === "premiumPlus" ? descontoPlanoPercentual("premiumPlus", "anual", "pix") : 0;
+  if (oferta > 0) {
+    return { preco: brl(valorPlanoPorMetodoCentavos("premiumPlus", "anual", "pix")), suffix, precoCheio: brl(totalCheio), oferta };
+  }
+  return { preco: brl(totalCheio), suffix, precoCheio: undefined, oferta: 0 };
 }
 
 function cycleLabel(cycle: Cycle) {
@@ -75,7 +81,7 @@ export default function CadastroWizard() {
   const [cycle, setCycle] = useState<Cycle>(cicloInicial);
   const [plan, setPlan] = useState<PlanId>(planoInicial);
   const [cpf, setCpf] = useState("");
-  const [metodoEscolhido, setMetodoEscolhido] = useState<"cartao" | "pix" | null>(null);
+  const [metodoEscolhido, setMetodoEscolhido] = useState<"cartao" | "pix" | "parcelado" | null>(null);
   const [parcelasEscolhidas, setParcelasEscolhidas] = useState<number | null>(null);
   const [telefone, setTelefone] = useState("");
   const [cep, setCep] = useState("");
@@ -199,7 +205,8 @@ export default function CadastroWizard() {
   // forma de pagamento (Pix, cartão ou parcelado); só de lá volta pro plano.
   function voltarDoPagamento() {
     setFinishError("");
-    if (metodoEscolhido) {
+    // No Premium+ a forma de pagamento é uma escolha na própria tela: "Voltar" sempre volta pro plano.
+    if (metodoEscolhido && plan !== "premiumPlus") {
       setMetodoEscolhido(null);
     } else {
       setStep(2);
@@ -329,7 +336,11 @@ export default function CadastroWizard() {
           </p>
           {plan === "premiumPlus" && (
             <p style={{ fontSize: "12px", color: "#666", background: "#F6F6F6", padding: "10px 14px", borderRadius: "6px", marginBottom: "20px" }}>
-              O Premium+ é cobrado só no ciclo anual (R$ 900,00/ano).
+              O Premium+ é cobrado só no ciclo anual (R$ 900,00/ano
+              {descontoPlanoPercentual("premiumPlus", "anual", "pix") > 0
+                ? `; oferta ${PREMIUM_PLUS_OFERTA_NOME}: ${descontoPlanoPercentual("premiumPlus", "anual", "pix")}% de desconto no Pix ou cartão à vista, ${brl(valorPlanoPorMetodoCentavos("premiumPlus", "anual", "pix"))}`
+                : ""}
+              ).
             </p>
           )}
           {plan !== "premiumPlus" && (
@@ -392,8 +403,14 @@ export default function CadastroWizard() {
                     <div style={{ fontSize: "12px", color: "#666", marginTop: "4px" }}>{p.desc}</div>
                   </div>
                   <div style={{ textAlign: "right", flexShrink: 0 }}>
+                    {pr.precoCheio && <div style={{ fontSize: "12px", color: "#999", textDecoration: "line-through" }}>{pr.precoCheio}</div>}
                     <div style={{ fontSize: "22px", fontWeight: 700, color: "#002776" }}>{pr.preco}</div>
                     <div style={{ fontSize: "12px", color: "#666" }}>{pr.suffix}</div>
+                    {pr.oferta > 0 && (
+                      <div style={{ display: "inline-block", marginTop: "4px", background: "#111", color: "#FFDF00", fontSize: "10px", fontWeight: 700, padding: "2px 7px", borderRadius: "10px" }}>
+                        🖤 {PREMIUM_PLUS_OFERTA_NOME}: {pr.oferta}% OFF no Pix ou cartão à vista
+                      </div>
+                    )}
                   </div>
                 </button>
               );
@@ -452,8 +469,23 @@ export default function CadastroWizard() {
               </div>
             </div>
             <div style={{ textAlign: "right" }}>
-              <div style={{ fontSize: "24px", fontWeight: 700, color: "#002776" }}>{selPrice.preco}</div>
-              <div style={{ fontSize: "12px", color: "#666" }}>{selPrice.suffix}</div>
+              {plan === "premiumPlus" && metodoEscolhido ? (
+                <>
+                  <div style={{ fontSize: "24px", fontWeight: 700, color: "#002776" }}>
+                    {brl(valorPlanoPorMetodoCentavos("premiumPlus", "anual", metodoEscolhido))}
+                  </div>
+                  <div style={{ fontSize: "12px", color: "#666" }}>
+                    {metodoEscolhido === "parcelado" ? `/ano · ${installmentCount}x de ${brl(installmentValueCentavos)}` : "/ano"}
+                  </div>
+                </>
+              ) : (
+                <>
+                  {selPrice.precoCheio && <div style={{ fontSize: "12px", color: "#999", textDecoration: "line-through" }}>{selPrice.precoCheio}</div>}
+                  <div style={{ fontSize: "24px", fontWeight: 700, color: "#002776" }}>{selPrice.preco}</div>
+                  <div style={{ fontSize: "12px", color: "#666" }}>{selPrice.suffix}</div>
+                  {selPrice.oferta > 0 && <div style={{ fontSize: "11px", color: "#111", fontWeight: 700 }}>🖤 {PREMIUM_PLUS_OFERTA_NOME}: {selPrice.oferta}% OFF no Pix ou cartão à vista</div>}
+                </>
+              )}
             </div>
           </div>
 
@@ -464,6 +496,10 @@ export default function CadastroWizard() {
               <>🔒 Escolha como pagar: no cartão, você é redirecionado(a) para uma página segura da Asaas; no Pix, autoriza direto pelo app do seu banco. Sua conta só é criada de fato depois que o pagamento for confirmado.</>
             )}
           </div>
+
+          {plan === "premiumPlus" && (
+            <OpcoesPagamentoPremiumPlus metodo={metodoEscolhido} onEscolher={setMetodoEscolhido} parcelas={installmentCount} onParcelas={setParcelasEscolhidas} desabilitado={pending} />
+          )}
 
           {plan !== "free" && (
             <div style={{ marginBottom: "24px" }}>
@@ -509,18 +545,26 @@ export default function CadastroWizard() {
               {finishError}
             </div>
           )}
-          {plan !== "free" && (
+          {plan !== "free" && plan !== "premiumPlus" && (
             <p style={{ fontSize: "12px", color: "#999", marginBottom: "8px" }}>
               Cartão e Pix renovam automaticamente a cada ciclo, cobrando o valor cheio.
             </p>
           )}
           <div style={{ display: "flex", gap: "12px" }}>
             <button onClick={voltarDoPagamento} style={{ flex: "0 0 auto", background: "white", border: "1px solid #CCC", color: "#262626", padding: "14px 24px", fontWeight: 600, borderRadius: "6px", fontSize: "15px" }}>
-              {metodoEscolhido ? "← Trocar forma de pagamento" : "← Voltar"}
+              {metodoEscolhido && plan !== "premiumPlus" ? "← Trocar forma de pagamento" : "← Voltar"}
             </button>
             {plan === "free" ? (
               <button onClick={() => finish("cartao")} disabled={pending} style={{ flex: 1, background: "#009B3A", color: "white", padding: "14px", fontWeight: 700, borderRadius: "6px", fontSize: "15px", opacity: pending ? 0.7 : 1 }}>
                 {pending ? "Finalizando..." : "Concluir cadastro"}
+              </button>
+            ) : plan === "premiumPlus" ? (
+              <button
+                onClick={() => finish(metodoEscolhido!, metodoEscolhido === "cartao" ? { telefone, cep, numero, complemento } : undefined, metodoEscolhido === "parcelado" ? installmentCount : undefined)}
+                disabled={pending || !metodoEscolhido}
+                style={{ flex: 1, background: metodoEscolhido ? "#009B3A" : "#BBB", color: "white", padding: "14px", fontWeight: 700, borderRadius: "6px", fontSize: "15px", opacity: pending ? 0.7 : 1 }}
+              >
+                {pending ? "Aguarde..." : rotuloConfirmarPremiumPlus(metodoEscolhido, installmentCount)}
               </button>
             ) : metodoEscolhido === "cartao" ? (
               <button
@@ -542,7 +586,7 @@ export default function CadastroWizard() {
             )}
           </div>
 
-          {plan !== "free" && metodoEscolhido !== "cartao" && cicloEfetivo !== "mensal" && (
+          {plan !== "free" && plan !== "premiumPlus" && metodoEscolhido !== "cartao" && cicloEfetivo !== "mensal" && (
             <div style={{ background: "#FFF9E6", border: "2px solid #FFDF00", borderRadius: "6px", padding: "16px", marginTop: "16px" }}>
               <div style={{ fontSize: "14px", fontWeight: 700, color: "#8A6116", marginBottom: "10px" }}>
                 💳 Ou parcele no cartão

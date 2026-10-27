@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { PLANOS_PAGOS, valorCicloCentavos } from "@/lib/plans";
+import { PLANOS_PAGOS, valorCicloCentavos, descontoPlanoPercentual, valorPlanoPorMetodoCentavos, PREMIUM_PLUS_OFERTA_NOME } from "@/lib/plans";
 
 function brl(centavos: number) {
   return "R$ " + (centavos / 100).toFixed(2).replace(".", ",");
@@ -34,7 +34,9 @@ export default function AssinaturaPremiumPopup({
 
   const plano = PLANOS_PAGOS.premiumPlus;
   const anualTotal = valorCicloCentavos(plano, "anual");
-  const anualPorMes = Math.round(anualTotal / 12);
+  const oferta = descontoPlanoPercentual("premiumPlus", "anual", "pix");
+  const anualComOferta = valorPlanoPorMetodoCentavos("premiumPlus", "anual", "pix");
+  const anualPorMes = Math.round((oferta > 0 ? anualComOferta : anualTotal) / 12);
 
   return (
     <div
@@ -85,7 +87,13 @@ export default function AssinaturaPremiumPopup({
             {brl(anualPorMes)}
             <span style={{ fontSize: "13px", fontWeight: 500, color: "#666" }}>/mês</span>
           </div>
-          <div style={{ fontSize: "12px", color: "#999" }}>{brl(anualTotal)} por ano · só no ciclo anual</div>
+          {oferta > 0 ? (
+            <div style={{ fontSize: "12px", color: "#009B3A", fontWeight: 700 }}>
+              🖤 {PREMIUM_PLUS_OFERTA_NOME}: {oferta}% OFF no Pix ou cartão à vista: {brl(anualComOferta)} por ano (de {brl(anualTotal)}) · só no ciclo anual
+            </div>
+          ) : (
+            <div style={{ fontSize: "12px", color: "#999" }}>{brl(anualTotal)} por ano · só no ciclo anual</div>
+          )}
         </div>
         {isLoggedIn ? (
           <button

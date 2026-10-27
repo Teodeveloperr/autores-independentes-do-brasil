@@ -51,8 +51,9 @@ export default function AdminConfiguracoesView({
       <div style={{ background: "white", borderRadius: "10px", padding: "24px", maxWidth: "620px" }}>
         <div style={{ fontWeight: 700, color: "#002776", marginBottom: "4px" }}>Repasse do parceiro — Premium+</div>
         <p style={{ fontSize: "12px", color: "#666", marginBottom: "16px" }}>
-          Chave Pix pra onde vai automaticamente a fatia de R$ 421,20 de cada assinatura Premium+ (R$ 900,00/ano),
-          assim que o pagamento estiver disponível para movimentação na Asaas. Uma chave única, usada em todas as
+          Chave Pix pra onde vai automaticamente a fatia do parceiro em cada pagamento Premium+: 46,8% do valor pago
+          (R$ 421,20 de R$ 900,00; R$ 379,08 de R$ 810,00 com o desconto do Pix ou cartão à vista; cada parcela do
+          parcelado também leva 46,8%), assim que o pagamento estiver disponível para movimentação na Asaas. Uma chave única, usada em todas as
           assinaturas Premium+.
         </p>
 

@@ -7,7 +7,7 @@ import { cancelarAssinaturaMp } from "@/lib/mercadoPago";
 import { cancelarAutorizacaoPixAutomatico, cancelarAssinaturaAsaas } from "@/lib/asaas";
 import { criarAssinaturaAsaasParaAutor, criarAssinaturaPixAutomatico, criarCobrancaParceladaParaAutor } from "@/lib/assinatura";
 import { validarCpf } from "@/lib/cpf";
-import { PLANOS_PAGOS, CICLO_MESES, valorCicloCentavos, parcelasDisponiveis, type PlanoPagoSlug, type CicloAssinatura } from "@/lib/plans";
+import { PLANOS_PAGOS, CICLO_MESES, valorPlanoPorMetodoCentavos, parcelasDisponiveis, type PlanoPagoSlug, type CicloAssinatura } from "@/lib/plans";
 import { checkRateLimit } from "@/lib/rateLimit";
 
 export type AssinarState = { error?: string; pixQrCode?: { payload: string; image: string } } | undefined;
@@ -68,8 +68,6 @@ export async function iniciarAssinatura(_prev: AssinarState, formData: FormData)
     return { error: "O plano Premium+ está disponível apenas no ciclo anual." };
   }
 
-  const valorCentavos = valorCicloCentavos(plano, ciclo);
-
   const cpf = ((formData.get("cpf") as string) || "").trim();
   if (!validarCpf(cpf)) {
     return { error: "CPF inválido." };
@@ -77,6 +75,8 @@ export async function iniciarAssinatura(_prev: AssinarState, formData: FormData)
 
   const metodoPagamentoBruto = formData.get("metodoPagamento") as string;
   const metodoPagamento = metodoPagamentoBruto === "pix" ? "pix" : metodoPagamentoBruto === "parcelado" ? "parcelado" : "cartao";
+  // O valor é sempre calculado aqui, a partir da forma de pagamento: nada do que vem do navegador define preço.
+  const valorCentavos = valorPlanoPorMetodoCentavos(planoSlug, ciclo, metodoPagamento);
 
   if (metodoPagamento === "parcelado" && ciclo === "mensal") {
     return { error: "O parcelamento no cartão está disponível apenas nos ciclos semestral e anual." };

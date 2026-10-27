@@ -5,7 +5,7 @@ import { sendOrderConfirmationEmail, sendNewSaleEmail, sendNovaCobrancaAssinatur
 import { marcarContratoPago } from "@/lib/contrato/servico";
 import { ehEbook } from "@/lib/ebook";
 import { entregarEbooksDoPedido, repassarEbooksDisponiveis, revogarEbooksDoPedido } from "@/lib/pedidoEbook";
-import { PREMIUM_PLUS_VALOR_PARCEIRO_CENTAVOS, CICLO_MESES, type CicloAssinatura } from "@/lib/plans";
+import { valorParceiroPremiumPlusCentavos, CICLO_MESES, type CicloAssinatura } from "@/lib/plans";
 
 // Formata a data de vencimento que a Asaas devolve ("YYYY-MM-DD") pro padrão brasileiro —
 // usado no e-mail de nova cobrança. Cai no formato de hoje só se a Asaas não mandar a data
@@ -32,8 +32,8 @@ const EVENTOS_ESTORNO = new Set(["PAYMENT_REFUNDED", "PAYMENT_CHARGEBACK_REQUEST
 // Marca, já na criação do SubscriptionPayment, quanto desse pagamento cabe ao parceiro do
 // Premium+ (ver lib/repasseParceiro.ts, que efetivamente transfere via cron depois que
 // disponivelEm for preenchido) — pros outros planos não grava nada.
-function repasseParceiroDataNaCriacao(plano: string) {
-  return plano === "Autor Premium+" ? { repasseParceiroValorCentavos: PREMIUM_PLUS_VALOR_PARCEIRO_CENTAVOS } : {};
+function repasseParceiroDataNaCriacao(plano: string, valorPagoCentavos: number) {
+  return plano === "Autor Premium+" ? { repasseParceiroValorCentavos: valorParceiroPremiumPlusCentavos(valorPagoCentavos) } : {};
 }
 
 // Autor que vira Premium ou Premium+ (cadastro novo ou upgrade) vê, na próxima vez que
@@ -359,7 +359,7 @@ export async function POST(request: NextRequest) {
           // Pix cai direto em RECEIVED (disponível na hora); cartão passa por CONFIRMED
           // primeiro e só fica disponível bem depois (D+32) — marcado abaixo quando chegar.
           disponivelEm: evento === "PAYMENT_RECEIVED" ? new Date() : null,
-          ...repasseParceiroDataNaCriacao(authorAssinatura.planoPendente ?? authorAssinatura.plano),
+          ...repasseParceiroDataNaCriacao(authorAssinatura.planoPendente ?? authorAssinatura.plano, cobranca.valueCentavos),
         },
       });
     } else if (evento === "PAYMENT_RECEIVED" && !jaRegistrado.disponivelEm) {
@@ -442,7 +442,7 @@ export async function POST(request: NextRequest) {
             valorLiquidoCentavos: cobranca.netValueCentavos,
             asaasPaymentId: paymentId,
             disponivelEm: evento === "PAYMENT_RECEIVED" ? new Date() : null,
-            ...repasseParceiroDataNaCriacao(novoAuthor.plano),
+            ...repasseParceiroDataNaCriacao(novoAuthor.plano, cobranca.valueCentavos),
           },
         });
         await sendWelcomeEmail(novoAuthor.email, novoAuthor.nome).catch((err) =>
@@ -491,7 +491,7 @@ export async function POST(request: NextRequest) {
             valorLiquidoCentavos: cobranca.netValueCentavos,
             asaasPaymentId: paymentId,
             disponivelEm: evento === "PAYMENT_RECEIVED" ? new Date() : null,
-            ...repasseParceiroDataNaCriacao(novoAuthor.plano),
+            ...repasseParceiroDataNaCriacao(novoAuthor.plano, cobranca.valueCentavos),
           },
         });
         await sendWelcomeEmail(novoAuthor.email, novoAuthor.nome).catch((err) =>
@@ -539,7 +539,7 @@ export async function POST(request: NextRequest) {
             valorLiquidoCentavos: cobranca.netValueCentavos,
             asaasPaymentId: paymentId,
             disponivelEm: evento === "PAYMENT_RECEIVED" ? new Date() : null,
-            ...repasseParceiroDataNaCriacao(novoAuthor.plano),
+            ...repasseParceiroDataNaCriacao(novoAuthor.plano, cobranca.valueCentavos),
           },
         });
         await sendWelcomeEmail(novoAuthor.email, novoAuthor.nome).catch((err) =>

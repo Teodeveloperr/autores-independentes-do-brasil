@@ -3,7 +3,8 @@
 import { useActionState, useState } from "react";
 import Link from "next/link";
 import { iniciarAssinatura, type AssinarState } from "@/app/assinatura/actions";
-import { PLANOS_PAGOS, CICLO_MESES, valorCicloCentavos, parcelasDisponiveis, type CicloAssinatura } from "@/lib/plans";
+import { PLANOS_PAGOS, CICLO_MESES, valorCicloCentavos, parcelasDisponiveis, descontoPlanoPercentual, valorPlanoPorMetodoCentavos, PREMIUM_PLUS_OFERTA_NOME, type CicloAssinatura, type MetodoPagamentoPlano } from "@/lib/plans";
+import OpcoesPagamentoPremiumPlus, { rotuloConfirmarPremiumPlus } from "./OpcoesPagamentoPremiumPlus";
 import { buscarEnderecoPorCep } from "@/lib/cep";
 import AssinaturaPremiumPopup from "./AssinaturaPremiumPopup";
 
@@ -45,6 +46,7 @@ function PlanoPagoCard({
 }) {
   const [state, formAction, pending] = useActionState<AssinarState, FormData>(iniciarAssinatura, undefined);
   const [metodoEscolhido, setMetodoEscolhido] = useState<"cartao" | null>(null);
+  const [metodoPP, setMetodoPP] = useState<MetodoPagamentoPlano | null>(null);
   const [parcelasEscolhidas, setParcelasEscolhidas] = useState<number | null>(null);
   const [cep, setCep] = useState("");
   const [enderecoResumo, setEnderecoResumo] = useState("");
@@ -66,6 +68,10 @@ function PlanoPagoCard({
   const parcelasOpcoes = parcelasDisponiveis(ciclo2);
   const parcelasSelecionadas = Math.min(parcelasEscolhidas ?? meses, meses);
   const valorParcelaCentavos = Math.round(totalCiclo / parcelasSelecionadas);
+  // Oferta do Premium+ (Pix e cartão à vista): o cabeçalho do card já mostra o preço com desconto.
+  const ofertaPP = slug === "premiumPlus" ? descontoPlanoPercentual("premiumPlus", "anual", "pix") : 0;
+  const totalComOferta = ofertaPP > 0 ? valorPlanoPorMetodoCentavos("premiumPlus", "anual", "pix") : totalCiclo;
+  const porMesComOferta = Math.round(totalComOferta / meses);
 
   async function onCepBlur() {
     const digits = cep.replace(/\D/g, "");
@@ -102,13 +108,31 @@ function PlanoPagoCard({
       )}
       <div>
         <div style={{ fontWeight: 700, fontSize: "18px", marginBottom: "8px" }}>{plano.nome}</div>
-        <div style={{ fontSize: "36px", fontWeight: 700, color: "#002776" }}>
-          {brl(porMes)}
-          <span style={{ fontSize: "14px", fontWeight: 500, color: "#666" }}>/mês</span>
-        </div>
-        <p style={{ fontSize: "13px", color: "#666", marginTop: "8px" }}>
-          {ciclo2 === "mensal" ? "Cobrado mensalmente" : `Cobrado a cada ${meses} meses: ${brl(totalCiclo)}`}
-        </p>
+        {ofertaPP > 0 ? (
+          <>
+            <div style={{ display: "inline-block", background: "#111", color: "#FFDF00", fontSize: "12px", fontWeight: 700, padding: "4px 10px", borderRadius: "12px", marginBottom: "6px" }}>
+              🖤 {PREMIUM_PLUS_OFERTA_NOME}: {ofertaPP}% OFF no Pix ou cartão à vista
+            </div>
+            <div style={{ fontSize: "36px", fontWeight: 700, color: "#002776" }}>
+              {brl(porMesComOferta)}
+              <span style={{ fontSize: "14px", fontWeight: 500, color: "#666" }}>/mês</span>
+              <span style={{ fontSize: "15px", fontWeight: 500, color: "#999", textDecoration: "line-through", marginLeft: "10px" }}>{brl(porMes)}</span>
+            </div>
+            <p style={{ fontSize: "13px", color: "#666", marginTop: "8px" }}>
+              Cobrado uma vez por ano: <strong>{brl(totalComOferta)}</strong> no Pix ou cartão à vista (de {brl(totalCiclo)}). No parcelado: {brl(totalCiclo)}.
+            </p>
+          </>
+        ) : (
+          <>
+            <div style={{ fontSize: "36px", fontWeight: 700, color: "#002776" }}>
+              {brl(porMes)}
+              <span style={{ fontSize: "14px", fontWeight: 500, color: "#666" }}>/mês</span>
+            </div>
+            <p style={{ fontSize: "13px", color: "#666", marginTop: "8px" }}>
+              {ciclo2 === "mensal" ? "Cobrado mensalmente" : `Cobrado a cada ${meses} meses: ${brl(totalCiclo)}`}
+            </p>
+          </>
+        )}
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: "12px", fontSize: "14px", flex: 1 }}>
         {recursos.map((r) => (
@@ -160,6 +184,9 @@ function PlanoPagoCard({
           )}
           <input type="hidden" name="planoSlug" value={slug} />
           <input type="hidden" name="ciclo" value={ciclo2} />
+          {slug === "premiumPlus" && (
+            <OpcoesPagamentoPremiumPlus metodo={metodoPP} onEscolher={setMetodoPP} parcelas={parcelasSelecionadas} onParcelas={setParcelasEscolhidas} desabilitado={pending} />
+          )}
           <input
             name="cpf"
             type="text"
@@ -167,7 +194,7 @@ function PlanoPagoCard({
             required
             style={{ width: "100%", padding: "10px", border: "1px solid #DDD", borderRadius: "4px", fontSize: "13px", marginBottom: "10px" }}
           />
-          {metodoEscolhido === "cartao" && (
+          {(slug === "premiumPlus" ? metodoPP === "cartao" : metodoEscolhido === "cartao") && (
             <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "10px" }}>
               <input
                 name="telefone"
@@ -205,6 +232,20 @@ function PlanoPagoCard({
               />
             </div>
           )}
+          {slug === "premiumPlus" ? (
+            <>
+              <input type="hidden" name="metodoPagamento" value={metodoPP ?? ""} />
+              <input type="hidden" name="parcelas" value={parcelasSelecionadas} />
+              <button
+                type="submit"
+                disabled={pending || !metodoPP}
+                style={{ width: "100%", background: metodoPP ? "#009B3A" : "#BBB", color: "white", padding: "14px", fontWeight: 700, borderRadius: "6px", border: "none", fontSize: "14px", opacity: pending ? 0.7 : 1 }}
+              >
+                {pending ? "..." : rotuloConfirmarPremiumPlus(metodoPP, parcelasSelecionadas)}
+              </button>
+            </>
+          ) : (
+          <>
           <p style={{ fontSize: "11px", color: "#999", marginBottom: "6px" }}>
             Cartão e Pix renovam automaticamente a cada ciclo, cobrando o valor cheio.
           </p>
@@ -284,6 +325,8 @@ function PlanoPagoCard({
                 {pending ? "..." : `Parcelar no cartão — ${parcelasSelecionadas}x de ${brl(valorParcelaCentavos)}`}
               </button>
             </div>
+          )}
+          </>
           )}
         </form>
       )}

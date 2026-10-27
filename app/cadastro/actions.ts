@@ -10,7 +10,7 @@ import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 import { validarSenha } from "@/lib/password";
 import { criarCadastroPendenteAssinatura, criarCadastroPendente, criarCadastroPendenteParcelado } from "@/lib/assinatura";
 import { cancelarAutorizacaoPixAutomatico, cancelarAssinaturaAsaas } from "@/lib/asaas";
-import { PLANOS_PAGOS, valorCicloCentavos, CICLO_MESES, parcelasDisponiveis, type PlanoPagoSlug, type CicloAssinatura } from "@/lib/plans";
+import { PLANOS_PAGOS, valorPlanoPorMetodoCentavos, CICLO_MESES, parcelasDisponiveis, type PlanoPagoSlug, type CicloAssinatura } from "@/lib/plans";
 import { verificarTurnstile } from "@/lib/turnstile";
 import { emailSchema, senhaNovaSchema, cpfSchema, textoSchema, primeiroErroZod } from "@/lib/validation";
 
@@ -196,7 +196,7 @@ export async function createAccount(
         planoSlug: planId,
         planoNome: plano.nome,
         ciclo: cycle,
-        valorCentavos: valorCicloCentavos(plano, cycle),
+        valorCentavos: valorPlanoPorMetodoCentavos(planId, cycle, "pix"),
         cpf,
       });
       return { pixQrCode: { payload: qrCodePayload, image: qrCodeImage } };
@@ -218,7 +218,7 @@ export async function createAccount(
         planoSlug: planId,
         planoNome: plano.nome,
         ciclo: cycle,
-        valorCentavos: valorCicloCentavos(plano, cycle),
+        valorCentavos: valorPlanoPorMetodoCentavos(planId, cycle, "parcelado"),
         cpf,
         installmentCount,
       }));
@@ -240,7 +240,7 @@ export async function createAccount(
       planoSlug: planId,
       planoNome: plano.nome,
       ciclo: cycle,
-      valorCentavos: valorCicloCentavos(plano, cycle),
+      valorCentavos: valorPlanoPorMetodoCentavos(planId, cycle, "cartao"),
       cpf,
       telefone: dadosCartao!.telefone,
       cep: dadosCartao!.cep,
