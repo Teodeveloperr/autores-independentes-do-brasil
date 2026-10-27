@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { brl } from "@/lib/format";
 import { baixarCsv, reais } from "@/lib/csv";
 import { valorRepasseCentavos, valorRepasseCentavosLiquido } from "@/lib/plans";
+import { ehEbook } from "@/lib/ebook";
 import { reconciliarReceita, atualizarValoresLiquidos, registrarCobrancaFaltante, type CobrancaFaltante } from "@/app/admin/actions";
 import type { OrderComReceita, SubscriptionPaymentRow } from "./types";
 
@@ -43,7 +44,7 @@ function dataLabel(data: Date) {
 type EntradaReceita = {
   id: string;
   data: Date;
-  tipo: "Assinatura" | "Venda de livro";
+  tipo: "Assinatura" | "Venda de livro" | "Venda de e-book";
   descricao: string;
   valorCentavos: number;
   disponivel: boolean;
@@ -90,8 +91,8 @@ function LinhaEntrada({ e }: { e: EntradaReceita }) {
           padding: "2px 8px",
           borderRadius: "10px",
           flexShrink: 0,
-          background: e.tipo === "Assinatura" ? "#E3F4E9" : "#E9EEF9",
-          color: e.tipo === "Assinatura" ? "#009B3A" : "#002776",
+          background: e.tipo === "Assinatura" ? "#E3F4E9" : e.tipo === "Venda de e-book" ? "#F1EBFA" : "#E9EEF9",
+          color: e.tipo === "Assinatura" ? "#009B3A" : e.tipo === "Venda de e-book" ? "#6B4EAF" : "#002776",
         }}
       >
         {e.tipo}
@@ -214,8 +215,16 @@ export default function AdminReceitaView({
     let repasseLivrosCentavos = 0;
     let vendaLivrosCentavos = 0;
     let comissaoLivrosAguardandoCentavos = 0;
+    let ebookCount = 0;
+    let ebookVendaCentavos = 0;
+    let ebookComissaoCentavos = 0;
     for (const p of pedidosDoMes) {
       const comissao = comissaoDoPedido(p);
+      if (ehEbook(p.formato)) {
+        ebookCount++;
+        ebookVendaCentavos += p.valorCentavos;
+        ebookComissaoCentavos += comissao;
+      }
       comissaoLivrosCentavos += comissao;
       repasseLivrosCentavos += repasseDoPedido(p);
       vendaLivrosCentavos += p.valorCentavos + (p.freteCentavos ?? 0);
@@ -242,7 +251,7 @@ export default function AdminReceitaView({
       ...pedidosDoMes.map((p) => ({
         id: p.id,
         data: p.createdAt,
-        tipo: "Venda de livro" as const,
+        tipo: ehEbook(p.formato) ? ("Venda de e-book" as const) : ("Venda de livro" as const),
         descricao: `${p.livro} — ${p.comprador}`,
         valorCentavos: comissaoDoPedido(p),
         disponivel: Boolean(p.disponivelEm),
@@ -263,6 +272,9 @@ export default function AdminReceitaView({
 
     return {
       pedidosCount: pedidosDoMes.length,
+      ebookCount,
+      ebookVendaCentavos,
+      ebookComissaoCentavos,
       assinaturasCount: assinaturasDoMes.length,
       vendaLivrosCentavos,
       comissaoLivrosCentavos,
@@ -466,6 +478,16 @@ export default function AdminReceitaView({
           </div>
           <div style={{ fontSize: "11px", color: "#999" }}>
             Já descontada a tarifa da Asaas na cobrança — pode ser um pouco menor que o percentual nominal do plano do autor.
+          </div>
+          <div style={{ borderTop: "1px solid #F0F0F0", paddingTop: "10px", display: "flex", flexDirection: "column", gap: "6px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <span style={{ color: "#666" }}>Dos quais e-books ({dados.ebookCount} pedido{dados.ebookCount === 1 ? "" : "s"}, sem frete)</span>
+              <span style={{ fontWeight: 600 }}>{brl(dados.ebookVendaCentavos)}</span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <span style={{ color: "#666" }}>Comissão da plataforma sobre e-books</span>
+              <span style={{ fontWeight: 700, color: "#6B4EAF" }}>{brl(dados.ebookComissaoCentavos)}</span>
+            </div>
           </div>
         </div>
       </div>

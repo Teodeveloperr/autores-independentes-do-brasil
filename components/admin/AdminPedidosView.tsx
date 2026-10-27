@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { ehEbook } from "@/lib/ebook";
 import type { OrderWithAuthor } from "./types";
 
 const FILTERS = ["Todos", "Aguardando pagamento", "Pago", "Aguardando envio", "Enviado", "Entregue", "Cancelado"];
@@ -13,6 +14,7 @@ const STATUS_COLOR: Record<string, string> = {
   Cancelado: "#999999",
 };
 const AGUARDANDO_ENVIO = new Set(["Pago", "Aguardando envio"]);
+// E-book não tem envio: o pedido fica "Entregue" assim que o pagamento confirma.
 
 function diasDesde(data: Date): number {
   return Math.floor((Date.now() - data.getTime()) / (1000 * 60 * 60 * 24));
@@ -54,11 +56,12 @@ export default function AdminPedidosView({ pedidos }: { pedidos: OrderWithAuthor
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontWeight: 700, fontSize: "14px" }}>
                 {p.livro} {p.quantidade > 1 ? `(x${p.quantidade})` : ""}
+                {ehEbook(p.formato) && <span style={{ marginLeft: "8px", fontSize: "11px", fontWeight: 700, padding: "2px 8px", borderRadius: "10px", background: "#F1EBFA", color: "#6B4EAF" }}>E-BOOK</span>}
               </div>
               <div style={{ fontSize: "12px", color: "#666" }}>
                 Pedido #{p.id.slice(-6)} • {p.createdAt.toLocaleDateString("pt-BR")} • Autor: {p.author.nome} • Comprador: {p.comprador}
               </div>
-              {AGUARDANDO_ENVIO.has(p.status) && (
+              {AGUARDANDO_ENVIO.has(p.status) && !ehEbook(p.formato) && (
                 <div style={{ fontSize: "12px", color: "#A87900", marginTop: "2px" }}>
                   ⏳ há {diasDesde(p.createdAt)} dia{diasDesde(p.createdAt) === 1 ? "" : "s"} aguardando envio
                 </div>

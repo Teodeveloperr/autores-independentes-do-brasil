@@ -10,6 +10,12 @@ export function ehEbook(formato: string | null | undefined): boolean {
 }
 
 /**
+ * Estados do e-book em que quem já comprou consegue ler. "retirado" = o autor tirou o livro da venda,
+ * mas quem comprou mantém o acesso à leitura online.
+ */
+export const EBOOK_STATUS_LEITURA = ["pronto", "retirado"];
+
+/**
  * Livros que podem aparecer na vitrine e ser comprados: os físicos sempre; os e-books só depois que a
  * conversão do PDF terminou ("pronto"). Evita vender um e-book que o leitor ainda não consegue abrir.
  */

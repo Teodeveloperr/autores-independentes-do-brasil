@@ -37,11 +37,14 @@ export default async function AdminPage() {
     visitasMesAgg,
     contratos,
     contratoConfig,
+    acessosEbook,
+    ebooks,
   ] = await Promise.all([
     prisma.collectiveEvent.findMany({ orderBy: { createdAt: "desc" } }),
     prisma.opportunity.findMany({ orderBy: { prazoFinal: "asc" } }),
     prisma.collectiveGalleryPhoto.findMany({ orderBy: { createdAt: "desc" } }),
     prisma.author.findMany({
+      where: { status: { not: "encerrado" } },
       orderBy: { createdAt: "desc" },
       include: { _count: { select: { books: true } } },
     }),
@@ -65,6 +68,19 @@ export default async function AdminPage() {
       include: { reservas: true },
     }),
     prisma.contratoConfig.findUnique({ where: { id: "unico" } }),
+    prisma.acessoEbook.findMany({
+      orderBy: { concedidoEm: "desc" },
+      include: {
+        leitor: { select: { id: true, email: true, nome: true, ultimoAcessoEm: true, _count: { select: { sessoes: { where: { expiraEm: { gt: new Date() } } } } } } },
+        book: { select: { titulo: true, author: { select: { nome: true } } } },
+        order: { select: { id: true, status: true } },
+      },
+    }),
+    prisma.book.findMany({
+      where: { formato: "ebook" },
+      orderBy: { createdAt: "desc" },
+      select: { id: true, titulo: true, ebookStatus: true, ebookPaginas: true, ebookErro: true, ebookAtualizadoEm: true, author: { select: { nome: true } }, _count: { select: { acessosEbook: true } } },
+    }),
   ]);
 
   return (
@@ -82,6 +98,8 @@ export default async function AdminPage() {
       saldoAsaasCentavos={saldoAsaasCentavos}
       contratos={contratos}
       assinaturaContratada={contratoConfig?.assinaturaContratadaPng ?? null}
+      acessosEbook={acessosEbook}
+      ebooks={ebooks}
       totpEnabled={admin.totpEnabled}
       premiumPlusPixKey={admin.premiumPlusPixKey}
       premiumPlusPixKeyType={admin.premiumPlusPixKeyType}

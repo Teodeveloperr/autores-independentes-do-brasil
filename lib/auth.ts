@@ -8,7 +8,7 @@ export const getCurrentAuthor = cache(async () => {
   const session = await getAuthorSession();
   if (!session?.authorId) return null;
   const author = await prisma.author.findUnique({ where: { id: session.authorId } });
-  if (author?.status === "suspenso") return null;
+  if (author && author.status !== "ativo") return null;
   return author;
 });
 

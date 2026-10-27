@@ -7,13 +7,15 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { createAdminSession, deleteAdminSession, createAdminPending2FA, getAdminPending2FA, deleteAdminPending2FA } from "@/lib/session";
 import { requireAdmin } from "@/lib/auth";
-import { excluirAutorCompletamente } from "@/lib/authorDeletion";
+import { excluirOuEncerrarAutor } from "@/lib/authorDeletion";
 import { listarCobrancasRecebidas, buscarCobranca } from "@/lib/asaas";
 import { recalcularAvaliacaoAutor } from "@/lib/reviews";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 import { gerarSegredoTotp, gerarOtpauthUri, verificarCodigoTotp, gerarCodigosBackup } from "@/lib/totp";
 import { criarLinkRedefinicaoSenha } from "@/lib/passwordReset";
 import { sendAccountCreatedEmail } from "@/lib/email";
+import { liberarAcessoEbook, revogarAcessoEbook, enviarEmailAcessoLiberado } from "@/lib/leitorAcesso";
+import { autorTemRepasseEbookPendente } from "@/lib/pedidoEbook";
 import { TODOS_PLANOS, planoAdminExpiraEm, type CicloConcessaoAdmin } from "@/lib/plans";
 import { sanitizeExternalUrl } from "@/lib/format";
 import { extrairYoutubeId } from "@/lib/youtube";
@@ -410,18 +412,25 @@ export async function adminCreateAuthor(_prev: CreateAuthorState, formData: Form
   return { success: true };
 }
 
-export async function removeAuthor(id: string) {
+export async function removeAuthor(id: string): Promise<{ error?: string }> {
   await requireAdmin();
-  await excluirAutorCompletamente(id);
+  if (await autorTemRepasseEbookPendente(id)) {
+    return { error: "Este autor tem vendas de e-book com repasse em andamento (cartão leva ~32 dias). Aguarde o repasse sair, ou suspenda a conta em vez de excluir." };
+  }
+  // Com leitores ativos, a conta é encerrada (dados pessoais apagados) e os e-books vendidos continuam disponíveis a eles.
+  await excluirOuEncerrarAutor(id);
 
   revalidatePath("/admin");
   revalidatePath("/autores");
   revalidatePath("/livros");
   revalidatePath("/");
+  return {};
 }
 
 async function setAuthorStatus(id: string, status: "ativo" | "suspenso") {
   await requireAdmin();
+  // Conta encerrada não volta: os dados pessoais já foram apagados.
+  if ((await prisma.author.findUnique({ where: { id }, select: { status: true } }))?.status === "encerrado") return;
   await prisma.author.update({ where: { id }, data: { status } });
   revalidatePath("/admin");
   revalidatePath("/autores");
@@ -931,5 +940,70 @@ export async function removerAssinaturaContratada(): Promise<{ error?: string }>
   await prisma.contratoConfig.updateMany({ where: { id: "unico" }, data: { assinaturaContratadaPng: null } });
   revalidatePath("/admin");
   revalidatePath("/contrato-bienal");
+  return {};
+}
+
+// ---------------------------------------------------------------------------------------------
+// E-books: acessos dos leitores (suporte). Tudo passa pelas mesmas funções da venda automática.
+// ---------------------------------------------------------------------------------------------
+export async function revogarAcessoEbookAdmin(acessoId: string, motivo: string): Promise<{ error?: string }> {
+  await requireAdmin();
+  const acesso = await prisma.acessoEbook.findUnique({ where: { id: acessoId } });
+  if (!acesso) return { error: "Acesso não encontrado." };
+  const texto = motivo.trim();
+  if (!texto) return { error: "Informe o motivo da revogação." };
+  await revogarAcessoEbook({ leitorId: acesso.leitorId, bookId: acesso.bookId, motivo: `Admin: ${texto}` });
+  revalidatePath("/admin");
+  return {};
+}
+
+export async function reativarAcessoEbookAdmin(acessoId: string): Promise<{ error?: string }> {
+  await requireAdmin();
+  const acesso = await prisma.acessoEbook.findUnique({ where: { id: acessoId } });
+  if (!acesso) return { error: "Acesso não encontrado." };
+  await prisma.acessoEbook.update({ where: { id: acessoId }, data: { revogadoEm: null, motivoRevogacao: null } });
+  revalidatePath("/admin");
+  return {};
+}
+
+/** Manda de novo o e-mail de acesso (com link novo, se o leitor ainda não criou a senha). */
+export async function reenviarAcessoEbookAdmin(acessoId: string): Promise<{ error?: string }> {
+  await requireAdmin();
+  const acesso = await prisma.acessoEbook.findUnique({ where: { id: acessoId }, include: { leitor: true, book: { select: { titulo: true } } } });
+  if (!acesso) return { error: "Acesso não encontrado." };
+  if (acesso.revogadoEm) return { error: "Este acesso está revogado. Reative-o antes de reenviar o e-mail." };
+  try {
+    await enviarEmailAcessoLiberado(acesso.leitor, [acesso.book.titulo]);
+  } catch (err) {
+    console.error("[admin] Falha ao reenviar o e-mail de acesso ao e-book:", err);
+    return { error: "Não foi possível enviar o e-mail agora. Tente de novo em instantes." };
+  }
+  return {};
+}
+
+/** Sai de todos os aparelhos do leitor (conta compartilhada ou aparelho perdido). */
+export async function encerrarSessoesLeitorAdmin(leitorId: string): Promise<{ error?: string }> {
+  await requireAdmin();
+  await prisma.leitorSessao.deleteMany({ where: { leitorId } });
+  revalidatePath("/admin");
+  return {};
+}
+
+/** Libera um e-book a alguém sem passar por pagamento (cortesia, correção de suporte). */
+export async function liberarAcessoEbookManual(email: string, bookId: string): Promise<{ error?: string }> {
+  await requireAdmin();
+  const emailValido = emailSchema.safeParse(email);
+  if (!emailValido.success) return { error: primeiroErroZod(emailValido.error) };
+  const livro = await prisma.book.findUnique({ where: { id: bookId }, select: { titulo: true, formato: true, ebookStatus: true } });
+  if (!livro || livro.formato !== "ebook") return { error: "Livro não encontrado." };
+  if (livro.ebookStatus !== "pronto") return { error: "Este e-book ainda não está pronto para leitura." };
+  try {
+    const { leitor } = await liberarAcessoEbook({ email: emailValido.data, bookId });
+    await enviarEmailAcessoLiberado(leitor, [livro.titulo]);
+  } catch (err) {
+    console.error("[admin] Falha ao liberar o acesso ao e-book:", err);
+    return { error: "Não foi possível concluir agora. Confira se o acesso foi criado na lista." };
+  }
+  revalidatePath("/admin");
   return {};
 }

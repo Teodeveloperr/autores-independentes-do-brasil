@@ -25,7 +25,9 @@ import { enviarConfirmacaoRecebimento } from "@/lib/repasse";
 import { checkRateLimit } from "@/lib/rateLimit";
 import { CHAT_NOME_ADMIN } from "@/lib/chat";
 import { desconectarMercadoPago as desconectarMercadoPagoLib } from "@/lib/mercadoPagoMarketplace";
-import { excluirAutorCompletamente } from "@/lib/authorDeletion";
+import { excluirOuEncerrarAutor } from "@/lib/authorDeletion";
+import { ehEbook } from "@/lib/ebook";
+import { ebookTemLeitoresAtivos, autorTemRepasseEbookPendente } from "@/lib/pedidoEbook";
 import { cancelarAssinaturaAtiva } from "@/app/assinatura/actions";
 import {
   RP_NAME,
@@ -326,8 +328,18 @@ export async function updateBook(id: string, formData: FormData): Promise<{ erro
 
 export async function removeBook(id: string) {
   const author = await requireAuthor();
-  await prisma.book.deleteMany({ where: { id, authorId: author.id } });
+  const livro = await prisma.book.findFirst({ where: { id, authorId: author.id }, select: { formato: true } });
+  if (!livro) return;
+
+  // E-book com leitor ativo não é apagado: sai da venda, mas quem comprou continua lendo.
+  if (ehEbook(livro.formato) && (await ebookTemLeitoresAtivos(id))) {
+    await prisma.book.update({ where: { id }, data: { ebookStatus: "retirado", ebookAtualizadoEm: new Date() } });
+  } else {
+    await prisma.book.delete({ where: { id } });
+  }
   revalidatePath("/painel");
+  revalidatePath("/livros");
+  revalidatePath("/");
 }
 
 const anoAtual = new Date().getFullYear();
@@ -701,11 +713,17 @@ export async function excluirMinhaConta(): Promise<{ error?: string }> {
     };
   }
 
+  if (await autorTemRepasseEbookPendente(author.id)) {
+    return {
+      error: "Você tem vendas de e-book com repasse em andamento (no cartão, o valor leva cerca de 32 dias para ser liberado). Assim que o repasse for concluído, você poderá excluir sua conta.",
+    };
+  }
+
   // Cancela qualquer assinatura/autorização ativa antes de apagar a conta, pra não deixar
   // nada pendurado do lado da Asaas/Mercado Pago.
   await cancelarAssinaturaAtiva(author);
 
-  await excluirAutorCompletamente(author.id);
+  await excluirOuEncerrarAutor(author.id);
   await deleteAuthorSession();
   redirect("/");
 }

@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 export default async function PerfilAntigoPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const autor = await prisma.author.findUnique({ where: { id }, select: { status: true } });
-  if (!autor || autor.status === "suspenso") notFound();
+  if (!autor || autor.status !== "ativo") notFound();
 
   const slug = await garantirSlug(id);
   if (!slug) notFound();

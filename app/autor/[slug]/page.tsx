@@ -78,7 +78,7 @@ export default async function PerfilPage({ params }: { params: Promise<{ slug: s
     prisma.author.aggregate({ where: { status: "ativo" }, _max: { visualizacoes: true } }),
   ]);
 
-  if (!author || author.status === "suspenso") notFound();
+  if (!author || author.status !== "ativo") notFound();
 
   const isOwner = currentAuthor?.id === author.id;
 

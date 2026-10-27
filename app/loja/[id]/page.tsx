@@ -29,7 +29,7 @@ export default async function LojaAutorPage({ params }: { params: Promise<{ id: 
     include: { books: { where: LIVRO_VENDAVEL_WHERE, orderBy: { createdAt: "desc" } } },
   });
 
-  if (!author || author.status === "suspenso") notFound();
+  if (!author || author.status !== "ativo") notFound();
 
   const podeVender = podeVenderLivros(author.plano);
 

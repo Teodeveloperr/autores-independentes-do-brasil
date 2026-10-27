@@ -60,7 +60,8 @@ export default function AdminAutoresView({ autores }: { autores: AuthorWithCount
     );
     if (!ok) return;
     startTransition(async () => {
-      await removeAuthor(id);
+      const resultado = await removeAuthor(id);
+      if (resultado?.error) window.alert(resultado.error);
       router.refresh();
     });
   }

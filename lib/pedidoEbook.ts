@@ -47,6 +47,16 @@ export async function repassarEbooksDisponiveis(where: { asaasPaymentId?: string
   return { tentados: pendentes.length, repassados };
 }
 
+/** Algum leitor ainda tem acesso ativo a este e-book? */
+export async function ebookTemLeitoresAtivos(bookId: string): Promise<boolean> {
+  return (await prisma.acessoEbook.count({ where: { bookId, revogadoEm: null } })) > 0;
+}
+
+/** Vendas de e-book do autor cujo repasse ainda não saiu (cartão leva ~32 dias): ele precisa da chave Pix até lá. */
+export async function autorTemRepasseEbookPendente(authorId: string): Promise<boolean> {
+  return (await prisma.order.count({ where: { authorId, formato: "ebook", status: "Entregue", repasseStatus: { not: "transferido" } } })) > 0;
+}
+
 /** Pagamento estornado ou contestado: tira o acesso ao e-book. */
 export async function revogarEbooksDoPedido(rows: Order[], motivo: string): Promise<void> {
   const acessos = await prisma.acessoEbook.findMany({ where: { orderId: { in: rows.filter((r) => ehEbook(r.formato)).map((r) => r.id) } } });

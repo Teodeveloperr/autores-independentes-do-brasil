@@ -1,5 +1,6 @@
 import sharp from "sharp";
 import { prisma } from "@/lib/db";
+import { EBOOK_STATUS_LEITURA } from "@/lib/ebook";
 import { getLeitorAtual } from "@/lib/leitorAuth";
 import { checkRateLimit } from "@/lib/rateLimit";
 import { lerArquivoPrivado } from "@/lib/ebookStorage";
@@ -34,7 +35,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ bookId:
 
   // Sem acesso, o livro "não existe" para a pessoa: mesma resposta de uma página inexistente.
   const acesso = await prisma.acessoEbook.findFirst({
-    where: { leitorId: leitor.id, bookId, revogadoEm: null, book: { formato: "ebook", ebookStatus: "pronto" } },
+    where: { leitorId: leitor.id, bookId, revogadoEm: null, book: { formato: "ebook", ebookStatus: { in: EBOOK_STATUS_LEITURA } } },
     select: { id: true },
   });
   if (!acesso) return resposta(404, "Página não encontrada.");

@@ -21,7 +21,7 @@ export default async function PainelPage({ searchParams }: { searchParams: Promi
       where: { id: authorSession.id },
       omit: { senhaHash: true },
       include: {
-        books: { orderBy: { createdAt: "desc" } },
+        books: { where: { OR: [{ ebookStatus: null }, { ebookStatus: { not: "retirado" } }] }, orderBy: { createdAt: "desc" } },
         eventos: { orderBy: { createdAt: "desc" } },
         fotos: { orderBy: { createdAt: "desc" } },
         portfolioEventos: { orderBy: { createdAt: "desc" } },

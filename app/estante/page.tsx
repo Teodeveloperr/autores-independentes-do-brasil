@@ -3,6 +3,7 @@ import PublicHeader from "@/components/PublicHeader";
 import PublicFooter from "@/components/PublicFooter";
 import { SairLeitorButton } from "@/components/leitor/LeitorForms";
 import { prisma } from "@/lib/db";
+import { EBOOK_STATUS_LEITURA } from "@/lib/ebook";
 import { requireLeitor, MAX_APARELHOS } from "@/lib/leitorAuth";
 
 export const dynamic = "force-dynamic";
@@ -63,7 +64,7 @@ export default async function EstantePage() {
                     <div style={{ fontWeight: 700, color: "#262626", lineHeight: 1.3 }}>{a.book.titulo}</div>
                     <div style={{ fontSize: "13px", color: "#666" }}>{a.book.author.nome}</div>
                     {a.book.ebookPaginas ? <div style={{ fontSize: "12px", color: "#999" }}>{a.book.ebookPaginas} páginas</div> : null}
-                    {a.book.ebookStatus === "pronto" ? (
+                    {a.book.ebookStatus && EBOOK_STATUS_LEITURA.includes(a.book.ebookStatus) ? (
                       <a
                         href={`/ler/${a.book.id}`}
                         style={{ marginTop: "auto", background: "#009B3A", color: "white", textAlign: "center", padding: "10px", fontWeight: 700, borderRadius: "4px", fontSize: "14px" }}
