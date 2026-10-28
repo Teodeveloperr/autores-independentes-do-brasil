@@ -1,95 +1,102 @@
 # Autores Independentes do Brasil — plataforma
 
-Implementação em produção (Next.js) da plataforma do coletivo Autores Independentes do
-Brasil, a partir do handoff de design em `design_handoff_full_platform/` (14 telas em
-`.dc.html` + `aib-data.js` como especificação de dados/comportamento).
+Site e plataforma do coletivo **Autores Independentes do Brasil** (https://autoresdobrasil.com.br):
+vitrine de autores e livros, venda de livros físicos e **e-books**, planos de assinatura para autores,
+contrato online da Bienal do Livro, agenda, galeria, blog e chat da comunidade.
+
+## O que a plataforma faz
+
+| Área | Quem usa | O que tem |
+|---|---|---|
+| **Site público** | visitantes e leitores | home, autores, livros, perfil de autor, loja do autor, blog, agenda, galeria, oportunidades, talk show |
+| **Compra** | leitores | carrinho e checkout (Pix ou cartão) de livro físico e/ou e-book, e-mail de confirmação |
+| **Estante e leitura** | quem comprou e-book | conta de leitor (senha + link por e-mail), estante, leitor online com marca d'água |
+| **Painel do autor** (`/painel`) | autores | perfil, livros (físicos e e-books), pedidos, vendas, eventos, galeria, planos, chave Pix |
+| **Planos** (`/assinatura`) | autores | Iniciante (grátis), Essencial, Premium e Premium+ (anual) |
+| **Contrato da Bienal** (`/contrato-bienal`) | autores | contrato eletrônico com assinatura, cobrança e agenda de horários no estande |
+| **Administração** (`/admin`) | equipe | autores, pedidos, receita, e-books, contratos, conteúdo, segurança (2FA) |
 
 ## Stack
 
-- **Next.js 16** (App Router, Server Actions, TypeScript)
-- **Prisma 7** + **PostgreSQL** (pensado para Vercel Postgres/Neon; qualquer Postgres serve)
-- **Vercel Blob** para upload de imagens (avatar, banner, capas de livro, galeria)
-- **bcryptjs** para hash de senha, **jose** (JWT) + cookies httpOnly para sessão
-- E-mail transacional e gateway de pagamento: **ainda não integrados** (ver "Próximos passos")
+- **Next.js 16** (App Router, Server Actions, TypeScript) e **React 19**
+- **Prisma 7** + **PostgreSQL** (Neon), via driver adapter `@prisma/adapter-pg`
+- **Vercel** (hospedagem, cron, Blob público e Blob **privado** para e-books)
+- **Asaas** — pagamentos (Pix, cartão, assinaturas, parcelado) e repasses por Pix
+- **Resend** — e-mails transacionais · **Cloudflare Turnstile** — anti-robô nos cadastros
+- **sharp** (imagens), **pdfjs-dist** (conversão do PDF do e-book no navegador), **zod** (validação),
+  **jose** + cookies httpOnly (sessão), **bcryptjs** (senhas), **@react-pdf/renderer** (contrato em PDF)
+- **Mercado Pago** — caminho legado (assinaturas antigas e vínculo de conta de autor); o fluxo atual
+  de pagamentos é o da Asaas
 
 ## Rodando localmente
 
+Pré-requisitos: Node 20+ e um Postgres acessível.
+
 ```bash
-npm install
-npx prisma dev --detach     # sobe um Postgres local de desenvolvimento (sem Docker/conta)
-# copie a URL impressa por "prisma dev ls" para DATABASE_URL no .env, ou use .env.example como base
-npx prisma db push          # cria as tabelas a partir do schema
-npx prisma db seed          # popula com autores/livros/eventos/galeria de exemplo (imagens reais)
-npm run dev                 # inicia o Next.js em http://localhost:3000
+npm install                      # também roda "prisma generate"
+cp .env.example .env.local       # preencha pelo menos DATABASE_URL e AUTH_SECRET
+npx prisma migrate deploy        # aplica as migrações no banco
+npx prisma db seed               # (só desenvolvimento) autores, livros e eventos de exemplo
+npm run dev                      # http://localhost:3000
 ```
 
-> **Windows + drive exFAT**: o Turbopack e o Webpack do Next.js precisam criar
-> symlinks/junctions em `node_modules`/`.next`, algo que o filesystem **exFAT não suporta**.
-> Se o projeto estiver num drive exFAT, `next dev`/`next build` falham com erros de
-> "junction point" ou "EISDIR". O script `dev` já usa `next dev --webpack` (mais tolerante),
-> mas para rodar `next build` localmente é preciso que o projeto esteja num drive **NTFS**.
-> Isso **não afeta o deploy na Vercel** (build roda em Linux).
+- **Cuidado com o banco:** nunca aponte o ambiente local para o banco de **produção** sem necessidade.
+  Qualquer teste que grave dados deve usar registros de teste e apagá-los depois.
+- O seed cria contas de exemplo com senha conhecida (ver `prisma/seed.ts`) e a conta de administrador
+  com a senha de `ADMIN_SEED_PASSWORD`. **Não rode o seed em produção.**
+- **Windows + drive exFAT:** o Next precisa criar *junction points*, que a exFAT não suporta. O script
+  `dev` já usa `next dev --webpack`, mas `next build` local só funciona num drive **NTFS**. Isso não
+  afeta o deploy (o build da Vercel roda em Linux).
+- `npm run build` executa `prisma generate && prisma migrate deploy && next build`: **o build aplica as
+  migrações pendentes no banco apontado por `DATABASE_URL`.**
 
-Contas criadas pelo seed (senha de todos os autores de exemplo: `coletivo2026`):
-`kelly.cortez@exemplo.com`, `denilson.vieira@exemplo.com`, `romulo.moraes@exemplo.com`,
-`gerailson.oliveira@exemplo.com`, `arusha.oliveira@exemplo.com`. A senha do admin é
-gerada aleatoriamente e impressa uma única vez no terminal ao rodar o seed.
+## Variáveis de ambiente
 
-## Deploy na Vercel
+Todas estão listadas, com a função de cada uma e o que acontece sem ela, em [`.env.example`](.env.example).
+Onde obter cada chave e como trocá-la: [`docs/operacao.md`](docs/operacao.md).
 
-1. **Repositório**: `git init`, commit, crie um repositório no GitHub e dê `git push`.
-   Depois, em vercel.com → **Add New → Project**, importe esse repositório
-   (o Root Directory do projeto é `app-autores-independentes/`, caso o repo inclua a pasta
-   `design_handoff_full_platform/` também).
-2. **Banco de dados**: na aba **Storage** do projeto na Vercel, crie um **Postgres**
-   (Vercel Postgres/Neon). Isso preenche `DATABASE_URL` automaticamente nas env vars do
-   projeto.
-3. **Storage de imagens**: na mesma aba **Storage**, crie um **Blob Store**. Isso preenche
-   `BLOB_READ_WRITE_TOKEN` automaticamente.
-4. **Variáveis de ambiente** (Project Settings → Environment Variables), para Production
-   *e* Preview — ver `.env.example` para a lista completa:
-   - `DATABASE_URL` (preenchida pela integração de Storage)
-   - `BLOB_READ_WRITE_TOKEN` (preenchida pela integração de Storage)
-   - `AUTH_SECRET` — gerar com `openssl rand -base64 32`
-   - `NEXT_PUBLIC_SITE_URL` — a URL final do site (ex: `https://autoresindependentes.com.br`)
-   - `ADMIN_SEED_EMAIL` / `ADMIN_SEED_PASSWORD` — só usadas pelo seed (passo 6)
-   - `RESEND_API_KEY`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` — deixar em branco por
-     enquanto (e-mail e pagamento ainda não estão integrados, ver "Próximos passos")
-5. **Migrations**: depois do primeiro deploy (ou localmente apontando `DATABASE_URL` para o
-   banco de produção), rodar:
-   ```bash
-   npx prisma migrate deploy
-   ```
-6. **Seed inicial** (opcional, mas recomendado para não ir ao ar com o site vazio): rodar
-   `npx prisma db seed` apontando para `DATABASE_URL` de produção. Isso cria a conta de
-   admin (senha impressa no terminal — guarde) e os 5 autores/livros de exemplo com
-   imagens reais.
-7. **Domínio**: configurar em Project Settings → Domains.
+## Estrutura do projeto
 
-Nenhum desses passos (criar conta na Vercel/GitHub, gerar tokens, configurar domínio) pode
-ser feito por mim — são ações que só o dono da conta consegue autorizar.
+```
+app/                  rotas (App Router); cada pasta é uma página ou grupo de páginas
+  api/                rotas de API: webhooks (Asaas, Mercado Pago), cron, leitor, upload...
+  painel/  admin/     áreas autenticadas; cada uma com seu actions.ts (Server Actions)
+  checkout/ assinatura/ cadastro/ entrar/ estante/ ler/    fluxos de compra, planos e leitura
+components/           interface (painel/, admin/, leitor/, halloween/ e componentes públicos)
+lib/                  regras de negócio e integrações (ver tabela abaixo)
+prisma/               schema.prisma, migrations/ (58) e seed.ts
+public/               imagens estáticas (inclui halloween/ do tema sazonal)
+middleware.ts         renova as sessões de autor e admin a cada requisição
+vercel.json           agenda dos crons
+docs/                 documentação (começar por docs/README.md)
+```
 
-## Estrutura
+Módulos principais de `lib/`:
 
-- `app/` — rotas (App Router). Cada página pública corresponde a um `.dc.html` do handoff.
-- `app/painel/`, `app/admin/` — áreas autenticadas (autor e administrador), cada uma com seu
-  `actions.ts` (Server Actions) e a UI principal em `components/painel/` / `components/admin/`.
-- `lib/db.ts` — cliente Prisma (via driver adapter `@prisma/adapter-pg`, exigido pelo Prisma 7).
-- `lib/session.ts`, `lib/auth.ts` — sessão (JWT em cookie httpOnly) e checagens de autenticação.
-- `lib/email.ts` — stub de e-mail transacional (loga no console; trocar pela chamada real do
-  Resend quando a chave estiver configurada).
-- `app/api/upload/route.ts` + `lib/upload-client.ts` + `hooks/useImageUpload.ts` — upload
-  direto do navegador para o Vercel Blob.
-- `prisma/schema.prisma` — modelo de dados completo (authors, books, eventos, fotos, pedidos,
-  conversas/mensagens, avaliações, agenda/galeria institucional, admin, tokens de redefinição
-  de senha).
-- `prisma/seed.ts` — popula o banco com autores/livros/eventos/galeria reais (imagens em
-  `public/seed/`, copiadas da pasta original do usuário).
+| Módulo | Para que serve |
+|---|---|
+| `plans.ts` | planos, preços, comissões, oferta Black Friday, repasse proporcional ao parceiro |
+| `asaas.ts` | cliente da API da Asaas (cobranças, assinaturas, Pix Automático, transferências) |
+| `assinatura.ts` | criação de assinaturas de plano (Pix Automático, cartão recorrente, parcelado) |
+| `repasse.ts` · `repasseParceiro.ts` · `pedidoEbook.ts` | repasses ao autor, ao parceiro do Premium+ e de e-books |
+| `ebook*.ts` · `marcaDagua.tsx` · `leitor*.ts` | e-books: armazenamento privado, conversão, acesso e sessão do leitor |
+| `auth.ts` · `session*.ts` · `totp.ts` · `webauthn.ts` | sessões de autor/admin, 2FA e passkeys |
+| `email.ts` | todos os e-mails enviados pela plataforma |
+| `authorDeletion.ts` | exclusão e encerramento de conta de autor |
+| `halloween*.ts` | tema sazonal (liga e desliga por data) |
 
-## Próximos passos (fora do escopo desta etapa, por pedido do usuário)
+## Documentação
 
-- **E-mail transacional**: integrar Resend em `lib/email.ts` (a assinatura da função já é a
-  definitiva usada pelo fluxo de recuperação de senha).
-- **Pagamentos**: nenhum gateway está integrado — os CTAs de plano em `/cadastro` (passo 3) e
-  `/assinatura` não cobram nada de verdade. Definir com o usuário Stripe vs. Mercado Pago vs.
-  Pagar.me antes de integrar.
+Comece por **[`docs/README.md`](docs/README.md)**:
+
+- [`docs/arquitetura.md`](docs/arquitetura.md) — como as peças se encaixam, autenticação, armazenamento, crons
+- [`docs/fluxos-de-dinheiro.md`](docs/fluxos-de-dinheiro.md) — compra, assinaturas, repasses, estornos, Premium+
+- [`docs/ebooks.md`](docs/ebooks.md) — e-books do envio do PDF à leitura online
+- [`docs/operacao.md`](docs/operacao.md) — guia de operação: deploy, migrações, chaves, ofertas, o que fazer quando algo dá erro
+
+## Convenções
+
+- Código e comentários em **português**; os comentários explicam o *porquê* das decisões.
+- Valores em dinheiro são sempre **inteiros em centavos** (`...Centavos`).
+- Regras de preço e repasse ficam em `lib/plans.ts`; o servidor sempre recalcula, nunca confia no que vem do navegador.
+- Mudanças no banco só por **migração aditiva** (`prisma/migrations/`); aplicar em produção exige conferência.
