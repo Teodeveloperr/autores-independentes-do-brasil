@@ -52,6 +52,9 @@ const MODELOS: Modelo[] = [
   { e: "🎃", img: IMG("abobora-2"), p: "longe", s: 80, d: 0.42, tipo: "abobora" },
   { e: "🕸️", img: IMG("teia-1"), p: "meio", s: 90, d: 0.2, tipo: "teia" },
 ];
+// Quanto os ícones se mexem com a rolagem da página (1 = intensidade original de cada ícone; 0 = ficam parados
+// junto do conteúdo). Valor baixo deixa o efeito de profundidade só como um leve toque.
+const FATOR_SCROLL = 0.3;
 const OPACIDADE: Record<Camada, number> = { longe: 0.6, meio: 1, perto: 0.78 };
 
 // Só na home: ícones que ficam junto de elementos reais da página.
@@ -251,7 +254,7 @@ export function ligarIcones(opcoes: { home: boolean }): () => void {
     const vh = innerHeight;
     const sy = scrollY;
     for (const it of itens) {
-      const py = reduzido ? 0 : (it.y + it.s / 2 - (sy + vh / 2)) * -it.d;
+      const py = reduzido ? 0 : (it.y + it.s / 2 - (sy + vh / 2)) * -it.d * FATOR_SCROLL;
       const px = reduzido || estreita ? 0 : mx * it.d * 36;
       const pm = reduzido || estreita ? 0 : my * it.d * 24;
       it.el.style.transform = `translate3d(${px + it.extraX}px, ${py + pm + it.extraY}px, 0) rotate(${it.rot}deg)`;
