@@ -2,7 +2,7 @@
 export default function BarraHalloween() {
   return (
     <div className="hw-barra" role="note">
-      🎃 <b>Semana do Halloween</b> · de 28/10 a 03/11 · leituras que dão arrepios 👻🦇
+      <span className="hw-mini" aria-hidden="true" /> <b>Semana do Halloween</b> · de 27/10 a 03/11 · leituras que dão arrepios 👻🦇
     </div>
   );
 }

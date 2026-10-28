@@ -1,10 +1,10 @@
 // Tema sazonal de Halloween. Liga e desliga sozinho por data, no navegador do visitante: assim
-// as páginas continuam em cache e não precisam de novo deploy pra "virar" no dia 28/10 nem pra
+// as páginas continuam em cache e não precisam de novo deploy pra "virar" no primeiro dia nem pra
 // voltar ao normal depois. Fora do período (e fora das rotas públicas) nada do tema aparece.
 
 export const HALLOWEEN = {
   // Datas no formato AAAA-MM-DD, comparadas com a data local do visitante (inclusive nas pontas).
-  inicio: "2026-10-28",
+  inicio: "2026-10-27",
   fim: "2026-11-03",
   // Rotas onde o tema NÃO entra: áreas logadas, pagamento e fluxos sensíveis.
   rotasExcluidas: ["/painel", "/admin", "/checkout", "/carrinho", "/login", "/cadastro", "/recuperar-senha", "/redefinir-senha", "/assinatura", "/contrato-bienal", "/entrar", "/estante", "/ler", "/api"],

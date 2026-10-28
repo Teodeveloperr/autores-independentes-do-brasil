@@ -5,12 +5,13 @@
 type Camada = "longe" | "meio" | "perto";
 type Tipo = "abobora" | "fantasma" | "morcego" | "aranha" | "doce" | "teia";
 
-type Modelo = { e: string; p: Camada; s: number; d: number; tipo: Tipo };
-type Ancora = { alvo: "logoHero" | "faixaNumeros" | "fotoSobre" | ["cartoes", string, number]; canto: "t" | "tl" | "tr" | "b" | "bl" | "br"; dx: number; dy: number; e: string; s: number; tipo: Tipo };
+type Modelo = { e: string; img: string; p: Camada; s: number; d: number; tipo: Tipo };
+type Ancora = { alvo: "logoHero" | "faixaNumeros" | "fotoSobre" | ["cartoes", string, number]; canto: "t" | "tl" | "tr" | "b" | "bl" | "br"; dx: number; dy: number; e: string; img: string; s: number; tipo: Tipo };
 
 type Item = {
   el: HTMLDivElement;
   e: string;
+  img: string;
   s: number;
   d: number;
   tipo: Tipo;
@@ -28,36 +29,44 @@ type Item = {
   p?: Camada;
 };
 
+// Arte do tema (public/halloween/*.webp). O emoji "e" só aparece nos doces que saem ao clicar.
+const IMG = (nome: string) => `/halloween/${nome}.webp`;
+
 // d = intensidade do parallax: positivo = ao fundo (mais lento que o conteúdo), negativo = em primeiro plano (mais rápido).
+// s = lado da caixa (px) onde a imagem é encaixada sem distorcer; imagens largas (morcegos) usam caixas maiores.
 const MODELOS: Modelo[] = [
-  { e: "🎃", p: "meio", s: 88, d: 0.18, tipo: "abobora" },
-  { e: "🦇", p: "longe", s: 56, d: 0.44, tipo: "morcego" },
-  { e: "👻", p: "meio", s: 80, d: 0.2, tipo: "fantasma" },
-  { e: "🕷️", p: "longe", s: 46, d: 0.46, tipo: "aranha" },
-  { e: "🎃", p: "perto", s: 170, d: -0.28, tipo: "abobora" },
-  { e: "🍬", p: "meio", s: 60, d: 0.21, tipo: "doce" },
-  { e: "🦇", p: "meio", s: 84, d: 0.19, tipo: "morcego" },
-  { e: "👻", p: "longe", s: 62, d: 0.45, tipo: "fantasma" },
-  { e: "🕸️", p: "meio", s: 72, d: 0.2, tipo: "teia" },
-  { e: "🦇", p: "perto", s: 150, d: -0.3, tipo: "morcego" },
-  { e: "🎃", p: "longe", s: 60, d: 0.43, tipo: "abobora" },
-  { e: "🍭", p: "meio", s: 58, d: 0.21, tipo: "doce" },
+  { e: "🎃", img: IMG("abobora-2"), p: "meio", s: 96, d: 0.18, tipo: "abobora" },
+  { e: "🦇", img: IMG("morcego-2"), p: "longe", s: 100, d: 0.44, tipo: "morcego" },
+  { e: "👻", img: IMG("fantasma-1"), p: "meio", s: 92, d: 0.2, tipo: "fantasma" },
+  { e: "🕷️", img: IMG("aranha-1"), p: "longe", s: 66, d: 0.46, tipo: "aranha" },
+  { e: "🎃", img: IMG("abobora-3"), p: "perto", s: 190, d: -0.28, tipo: "abobora" },
+  { e: "🍬", img: IMG("doce-1"), p: "meio", s: 84, d: 0.21, tipo: "doce" },
+  { e: "🦇", img: IMG("morcego-3"), p: "meio", s: 100, d: 0.19, tipo: "morcego" },
+  { e: "👻", img: IMG("fantasma-2"), p: "longe", s: 100, d: 0.45, tipo: "fantasma" },
+  { e: "🕸️", img: IMG("teia-2"), p: "meio", s: 104, d: 0.2, tipo: "teia" },
+  { e: "🦇", img: IMG("morcegos"), p: "perto", s: 210, d: -0.3, tipo: "morcego" },
+  { e: "🎃", img: IMG("abobora-3"), p: "longe", s: 84, d: 0.43, tipo: "abobora" },
+  { e: "🍭", img: IMG("doce-1"), p: "meio", s: 76, d: 0.21, tipo: "doce" },
+  { e: "👻", img: IMG("fantasma-3"), p: "meio", s: 88, d: 0.2, tipo: "fantasma" },
+  { e: "🕸️", img: IMG("teia-3"), p: "longe", s: 110, d: 0.44, tipo: "teia" },
+  { e: "🎃", img: IMG("abobora-2"), p: "longe", s: 80, d: 0.42, tipo: "abobora" },
+  { e: "🕸️", img: IMG("teia-1"), p: "meio", s: 90, d: 0.2, tipo: "teia" },
 ];
 const OPACIDADE: Record<Camada, number> = { longe: 0.6, meio: 1, perto: 0.78 };
 
 // Só na home: ícones que ficam junto de elementos reais da página.
 const ANCORAS: Ancora[] = [
-  { alvo: "logoHero", canto: "tr", dx: 6, dy: 20, e: "🎃", s: 96, tipo: "abobora" },
-  { alvo: "faixaNumeros", canto: "t", dx: -260, dy: 6, e: "👻", s: 96, tipo: "fantasma" },
-  { alvo: "faixaNumeros", canto: "br", dx: -20, dy: 8, e: "🦇", s: 84, tipo: "morcego" },
-  { alvo: "fotoSobre", canto: "bl", dx: 10, dy: -4, e: "🎃", s: 90, tipo: "abobora" },
-  { alvo: ["cartoes", "O que o coletivo faz", 0], canto: "tl", dx: 8, dy: 4, e: "🍬", s: 64, tipo: "doce" },
-  { alvo: ["cartoes", "O que o coletivo faz", 3], canto: "br", dx: -8, dy: 6, e: "🕷️", s: 58, tipo: "aranha" },
-  { alvo: ["cartoes", "Autores em destaque", 0], canto: "t", dx: 0, dy: 4, e: "👻", s: 84, tipo: "fantasma" },
-  { alvo: ["cartoes", "Autores em destaque", 2], canto: "tr", dx: -16, dy: 4, e: "🎃", s: 78, tipo: "abobora" },
-  { alvo: ["cartoes", "Livros recentes", 1], canto: "t", dx: 10, dy: 2, e: "🦇", s: 72, tipo: "morcego" },
-  { alvo: ["cartoes", "Blog do Coletivo", 0], canto: "tl", dx: 16, dy: 2, e: "🎃", s: 80, tipo: "abobora" },
-  { alvo: ["cartoes", "Próximos eventos", 0], canto: "tr", dx: -14, dy: 2, e: "👻", s: 78, tipo: "fantasma" },
+  { alvo: "logoHero", canto: "tr", dx: 6, dy: 20, e: "🎃", img: IMG("abobora-2"), s: 100, tipo: "abobora" },
+  { alvo: "faixaNumeros", canto: "t", dx: -260, dy: 6, e: "👻", img: IMG("fantasma-1"), s: 100, tipo: "fantasma" },
+  { alvo: "faixaNumeros", canto: "br", dx: -20, dy: 8, e: "🦇", img: IMG("morcego-3"), s: 110, tipo: "morcego" },
+  { alvo: "fotoSobre", canto: "bl", dx: 10, dy: -4, e: "🎃", img: IMG("abobora-3"), s: 100, tipo: "abobora" },
+  { alvo: ["cartoes", "O que o coletivo faz", 0], canto: "tl", dx: 8, dy: 4, e: "🍬", img: IMG("doce-1"), s: 78, tipo: "doce" },
+  { alvo: ["cartoes", "O que o coletivo faz", 3], canto: "br", dx: -8, dy: 6, e: "🕷️", img: IMG("aranha-1"), s: 66, tipo: "aranha" },
+  { alvo: ["cartoes", "Autores em destaque", 0], canto: "t", dx: 0, dy: 4, e: "👻", img: IMG("fantasma-2"), s: 96, tipo: "fantasma" },
+  { alvo: ["cartoes", "Autores em destaque", 2], canto: "tr", dx: -16, dy: 4, e: "🎃", img: IMG("abobora-2"), s: 90, tipo: "abobora" },
+  { alvo: ["cartoes", "Livros recentes", 1], canto: "t", dx: 10, dy: 2, e: "🦇", img: IMG("morcego-2"), s: 110, tipo: "morcego" },
+  { alvo: ["cartoes", "Blog do Coletivo", 0], canto: "tl", dx: 16, dy: 2, e: "🎃", img: IMG("abobora-3"), s: 90, tipo: "abobora" },
+  { alvo: ["cartoes", "Próximos eventos", 0], canto: "tr", dx: -14, dy: 2, e: "👻", img: IMG("fantasma-3"), s: 86, tipo: "fantasma" },
 ];
 
 const FRASES: Record<Tipo, string[]> = {
@@ -112,6 +121,19 @@ function acharAlvo(alvo: Ancora["alvo"]): Element | null {
   return lista[alvo[2]] || lista[lista.length - 1];
 }
 
+// Retângulos (coordenadas da página) dos trechos de texto, para os ícones não ficarem em cima deles.
+function retangulosDeTexto(): Array<{ l: number; r: number; t: number; b: number }> {
+  const sx = scrollX;
+  const sy = scrollY;
+  return [...document.querySelectorAll<HTMLElement>("h1,h2,h3,p,li,label,button,a,span")]
+    .filter((e) => !e.closest(".hw-icone, .hw-barra") && [...e.childNodes].some((n) => n.nodeType === 3 && (n.textContent || "").trim().length > 2))
+    .map((e) => {
+      const r = e.getBoundingClientRect();
+      return { l: r.left + sx, r: r.right + sx, t: r.top + sy, b: r.bottom + sy };
+    })
+    .filter((r) => r.r - r.l > 10 && r.b - r.t > 8);
+}
+
 function pontoDoCanto(r: { left: number; right: number; top: number; bottom: number }, canto: Ancora["canto"]): [number, number] {
   const x = canto.includes("l") ? r.left : canto.includes("r") ? r.right : (r.left + r.right) / 2;
   const y = canto.startsWith("t") ? r.top : canto.startsWith("b") ? r.bottom : (r.top + r.bottom) / 2;
@@ -130,10 +152,18 @@ export function ligarIcones(opcoes: { home: boolean }): () => void {
     el.className = "hw-icone hw-" + camada;
     el.setAttribute("aria-hidden", "true");
     if (estreita) el.style.pointerEvents = "none"; // no celular os ícones não atrapalham o toque no conteúdo
+    el.classList.add("hw-t-" + base.tipo);
     const span = document.createElement("span");
-    span.style.fontSize = Math.round(base.s * escala) + "px";
+    const lado = Math.round(base.s * escala);
+    span.style.width = lado + "px";
+    span.style.height = lado + "px";
     span.style.setProperty("--dur", 3.2 + (i % 4) * 0.7 + "s");
-    span.textContent = base.e;
+    const imagem = document.createElement("img");
+    imagem.src = base.img;
+    imagem.alt = "";
+    imagem.draggable = false;
+    imagem.decoding = "async";
+    span.appendChild(imagem);
     el.appendChild(span);
     document.body.appendChild(el);
     limpezas.push(() => el.remove());
@@ -150,27 +180,49 @@ export function ligarIcones(opcoes: { home: boolean }): () => void {
   for (let i = 0; i < nMargem; i++) {
     const m = MODELOS[i % MODELOS.length];
     if (estreita && m.p === "perto") continue;
-    margem.push(criar({ e: m.e, s: m.s, d: m.d, tipo: m.tipo, base: OPACIDADE[m.p] * (estreita ? 0.7 : 1), p: m.p, idx: i, lado: i % 2 === 0 ? "E" : "D" }, m.p, i));
+    margem.push(criar({ e: m.e, img: m.img, s: m.s, d: m.d, tipo: m.tipo, base: OPACIDADE[m.p] * (estreita ? 0.7 : 1), p: m.p, idx: i, lado: i % 2 === 0 ? "E" : "D" }, m.p, i));
   }
   const ancoradas =
     opcoes.home && !estreita
-      ? ANCORAS.map((a, i) => criar({ e: a.e, s: a.s, d: 0.07, tipo: a.tipo, base: 1, ancora: a }, "atras", i))
+      ? ANCORAS.map((a, i) => criar({ e: a.e, img: a.img, s: a.s, d: 0.07, tipo: a.tipo, base: 1, ancora: a }, "atras", i))
       : [];
 
   function posicionar() {
     const docW = document.documentElement.clientWidth;
     const H = alturaPagina();
     const passo = (H - 520) / Math.max(1, nMargem - 1);
+    const textos = retangulosDeTexto();
     for (const it of margem) {
       const i = it.idx ?? 0;
       const jitter = (((i * 37) % 5) - 2) * 32;
-      const esquerda = it.lado === "E";
-      const fracs = esquerda ? [0.012, 0.035, 0.02] : [0.935, 0.915, 0.93];
-      let fx = fracs[Math.floor(i / 2) % 3];
-      if (it.p === "perto") fx = esquerda ? -0.012 : 0.965;
-      if (estreita) fx = esquerda ? -0.02 : 0.9;
-      it.x = fx * docW;
-      it.y = 260 + i * passo + jitter;
+      const ladoOriginal = it.lado === "E";
+      const posX = (esquerda: boolean) => {
+        const fracs = esquerda ? [0.012, 0.035, 0.02] : [0.935, 0.915, 0.93];
+        let fx = fracs[Math.floor(i / 2) % 3];
+        if (it.p === "perto") fx = esquerda ? -0.012 : 0.965;
+        if (estreita) fx = esquerda ? -0.02 : 0.9;
+        return fx * docW;
+      };
+      const yBase = 260 + i * passo + jitter;
+      const lado = it.s * escala;
+      const livre = (x: number, y: number) => !textos.some((t) => Math.min(x + lado, t.r) - Math.max(x, t.l) > 8 && Math.min(y + lado, t.b) - Math.max(y, t.t) > 8);
+      let x = posX(ladoOriginal);
+      let y = yBase;
+      // Ícone em cima de texto: tenta a margem do outro lado e, depois, um pouco acima ou abaixo. Os grandes e
+      // desfocados ("perto") ficam como estão: são de propósito pela borda da tela.
+      if (it.p !== "perto" && !livre(x, y)) {
+        const tentativas: Array<[boolean, number]> = [[!ladoOriginal, 0], [ladoOriginal, 110], [!ladoOriginal, 110], [ladoOriginal, -110], [!ladoOriginal, -110]];
+        for (const [esquerda, dy] of tentativas) {
+          const nx = posX(esquerda);
+          if (livre(nx, yBase + dy)) {
+            x = nx;
+            y = yBase + dy;
+            break;
+          }
+        }
+      }
+      it.x = x;
+      it.y = y;
       it.el.style.left = it.x + "px";
       it.el.style.top = it.y + "px";
     }

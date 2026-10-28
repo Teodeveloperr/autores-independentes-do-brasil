@@ -55,6 +55,10 @@ html.tema-halloween a:hover { color: var(--hw-laranja); }
 }
 .hw-barra b { color: #fff; }
 
+/* Abóbora pequena no lugar do emoji, nos textos do tema */
+/* Imagens de fundo (e não <img>) para só serem baixadas quando o tema aparece: elemento escondido não busca o arquivo. */
+.hw-mini { display: inline-block; height: 1.2em; width: 1.4em; vertical-align: -0.25em; margin-right: 4px; background: url("/halloween/abobora-2.webp") center / contain no-repeat; }
+
 /* Faixa "Seleção de Halloween" da home */
 .hw-faixa { margin: 28px auto 8px; max-width: 1280px; padding: 0 24px; }
 .hw-faixa-caixa {
@@ -69,6 +73,8 @@ html.tema-halloween a:hover { color: var(--hw-laranja); }
   border: 2px solid #ff7a00;
   box-shadow: 0 8px 24px rgba(42, 20, 80, 0.35);
 }
+.hw-faixa-esq { display: flex; align-items: center; gap: 18px; flex: 1 1 320px; min-width: 0; }
+.hw-faixa-abobora { height: 112px; width: 101px; flex-shrink: 0; margin: -16px 0; background: url("/halloween/abobora-1.webp") center / contain no-repeat; filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.45)); }
 .hw-faixa-caixa h3 { color: #fff; font-size: 22px; margin: 0 0 4px; }
 .hw-faixa-caixa p { color: #e9dcff; font-size: 14px; margin: 0; }
 .hw-faixa-caixa a { background: #ff7a00; color: #140a26; font-weight: 800; padding: 12px 22px; border-radius: 6px; font-size: 14px; }
@@ -90,6 +96,9 @@ html.tema-halloween .hw-faixa-caixa a:hover { color: #140a26; background: #ffa21
   transition: transform 0.25s cubic-bezier(0.3, 1.6, 0.5, 1);
   animation: hw-boiar var(--dur, 4s) ease-in-out infinite;
 }
+.hw-icone span img { display: block; width: 100%; height: 100%; object-fit: contain; pointer-events: none; -webkit-user-drag: none; }
+/* Silhuetas pretas (morcego, aranha, teia) ganham um brilho claro para aparecerem também nos trechos azul-escuros */
+.hw-t-morcego span img, .hw-t-aranha span img, .hw-t-teia span img { filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.9)) drop-shadow(0 0 7px rgba(255, 255, 255, 0.45)); }
 .hw-icone:hover span { transform: scale(1.28) rotate(-8deg); animation: none; }
 .hw-icone:hover { filter: drop-shadow(0 0 14px rgba(255, 122, 0, 0.9)); z-index: 55; }
 .hw-longe { filter: blur(3.5px) drop-shadow(0 4px 4px rgba(0, 0, 0, 0.2)); }
