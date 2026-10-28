@@ -33,7 +33,9 @@ html.tema-halloween body {
    O HTML do servidor traz as cores como "#002776", mas depois que o React renderiza no navegador
    (navegação entre páginas) o atributo passa a ser "rgb(0, 39, 118)": as regras valem pros dois formatos. */
 html.tema-halloween :is([style*="#002776"], [style*="rgb(0, 39, 118)"]):not([style*="background"]):not([style*="border"]) { color: var(--hw-roxo) !important; }
-html.tema-halloween :is([style*="#002776"], [style*="rgb(0, 39, 118)"])[style*="background"] { background: linear-gradient(135deg, var(--hw-escuro), var(--hw-roxo)) !important; }
+/* Só quando o FUNDO do elemento é o azul da marca. (Antes valia para qualquer elemento com "background" e azul em
+   qualquer propriedade: trocava fotos de perfil, que têm texto azul, e botões brancos por este gradiente.) */
+html.tema-halloween :is([style*="background:#002776"], [style*="background: #002776"], [style*="background:rgb(0, 39, 118)"], [style*="background: rgb(0, 39, 118)"]) { background: linear-gradient(135deg, var(--hw-escuro), var(--hw-roxo)) !important; }
 html.tema-halloween :is([style*="#009B3A"], [style*="#009b3a"], [style*="rgb(0, 155, 58)"]):not([style*="background"]):not([style*="border"]) { color: #e86a00 !important; }
 html.tema-halloween :is([style*="#FFDF00"], [style*="#ffdf00"], [style*="rgb(255, 223, 0)"]):not([style*="background"]) { color: var(--hw-laranja2) !important; }
 html.tema-halloween body :is([style*="background:#009B3A"], [style*="background: #009B3A"], [style*="background: rgb(0, 155, 58)"], [style*="background:rgb(0, 155, 58)"])[style] { background: var(--hw-laranja) !important; color: #1b0f2e !important; border-color: var(--hw-laranja) !important; }
