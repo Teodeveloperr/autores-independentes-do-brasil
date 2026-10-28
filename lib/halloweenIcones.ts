@@ -24,6 +24,8 @@ type Item = {
   x: number;
   y: number;
   ancora?: Ancora;
+  // Posição horizontal já decidida de um ícone preso a um cartão de carrossel (ver posicionar).
+  xFixo?: number;
   idx?: number;
   lado?: "E" | "D";
   p?: Camada;
@@ -128,8 +130,19 @@ function acharAlvo(alvo: Ancora["alvo"]): Element | null {
 function retangulosDeTexto(): Array<{ l: number; r: number; t: number; b: number }> {
   const sx = scrollX;
   const sy = scrollY;
+  // Menu, avisos e outros elementos "fixos" acompanham a tela, não a página: contá-los faria a decisão mudar a cada rolagem.
+  const memo = new Map<HTMLElement, boolean>();
+  const fixo = (e: HTMLElement | null): boolean => {
+    if (!e || e === document.body) return false;
+    const guardado = memo.get(e);
+    if (guardado !== undefined) return guardado;
+    const p = getComputedStyle(e).position;
+    const r = p === "fixed" || p === "sticky" || fixo(e.parentElement);
+    memo.set(e, r);
+    return r;
+  };
   return [...document.querySelectorAll<HTMLElement>("h1,h2,h3,p,li,label,button,a,span")]
-    .filter((e) => !e.closest(".hw-icone, .hw-barra") && [...e.childNodes].some((n) => n.nodeType === 3 && (n.textContent || "").trim().length > 2))
+    .filter((e) => !e.closest(".hw-icone, .hw-barra") && !fixo(e) && [...e.childNodes].some((n) => n.nodeType === 3 && (n.textContent || "").trim().length > 2))
     .map((e) => {
       const r = e.getBoundingClientRect();
       return { l: r.left + sx, r: r.right + sx, t: r.top + sy, b: r.bottom + sy };
@@ -190,11 +203,19 @@ export function ligarIcones(opcoes: { home: boolean }): () => void {
       ? ANCORAS.map((a, i) => criar({ e: a.e, img: a.img, s: a.s, d: 0.07, tipo: a.tipo, base: 1, ancora: a }, "atras", i))
       : [];
 
+  let assentando = true; // nos primeiros segundos a página ainda está carregando: as decisões podem ser refeitas
+  let larguraDecidida = 0;
+  const decisoes = new Map<Item, { esquerda: boolean; dy: number }>();
+
   function posicionar() {
     const docW = document.documentElement.clientWidth;
     const H = alturaPagina();
     const passo = (H - 520) / Math.max(1, nMargem - 1);
-    const textos = retangulosDeTexto();
+    // O lado (esquerda/direita) de cada ícone é decidido enquanto a página termina de carregar e depois fica
+    // congelado: refazer a conta a cada mudança de altura (imagens que carregam ao rolar) fazia os ícones
+    // pularem de um lado para o outro. Só muda se a largura da janela mudar.
+    const congelado = !assentando && Math.abs(docW - larguraDecidida) < 40;
+    const textos = congelado ? [] : retangulosDeTexto();
     for (const it of margem) {
       const i = it.idx ?? 0;
       const jitter = (((i * 37) % 5) - 2) * 32;
@@ -209,26 +230,31 @@ export function ligarIcones(opcoes: { home: boolean }): () => void {
       const yBase = 260 + i * passo + jitter;
       const lado = it.s * escala;
       const livre = (x: number, y: number) => !textos.some((t) => Math.min(x + lado, t.r) - Math.max(x, t.l) > 8 && Math.min(y + lado, t.b) - Math.max(y, t.t) > 8);
-      let x = posX(ladoOriginal);
-      let y = yBase;
-      // Ícone em cima de texto: tenta a margem do outro lado e, depois, um pouco acima ou abaixo. Os grandes e
-      // desfocados ("perto") ficam como estão: são de propósito pela borda da tela.
-      if (it.p !== "perto" && !livre(x, y)) {
+      let esquerda = ladoOriginal;
+      let dy = 0;
+      const salvo = congelado ? decisoes.get(it) : undefined;
+      if (salvo) {
+        esquerda = salvo.esquerda;
+        dy = salvo.dy;
+      } else if (it.p !== "perto" && !livre(posX(ladoOriginal), yBase)) {
+        // Ícone em cima de texto: tenta a margem do outro lado e, depois, um pouco acima ou abaixo. Os grandes e
+        // desfocados ("perto") ficam como estão: são de propósito pela borda da tela.
         const tentativas: Array<[boolean, number]> = [[!ladoOriginal, 0], [ladoOriginal, 110], [!ladoOriginal, 110], [ladoOriginal, -110], [!ladoOriginal, -110]];
-        for (const [esquerda, dy] of tentativas) {
-          const nx = posX(esquerda);
-          if (livre(nx, yBase + dy)) {
-            x = nx;
-            y = yBase + dy;
+        for (const [e, d] of tentativas) {
+          if (livre(posX(e), yBase + d)) {
+            esquerda = e;
+            dy = d;
             break;
           }
         }
       }
-      it.x = x;
-      it.y = y;
+      if (!congelado) decisoes.set(it, { esquerda, dy });
+      it.x = posX(esquerda);
+      it.y = yBase + dy;
       it.el.style.left = it.x + "px";
       it.el.style.top = it.y + "px";
     }
+    if (!congelado) larguraDecidida = docW;
     for (const it of ancoradas) {
       const a = it.ancora as Ancora;
       const alvo = acharAlvo(a.alvo);
@@ -239,7 +265,15 @@ export function ligarIcones(opcoes: { home: boolean }): () => void {
       it.el.style.display = "";
       const r = alvo.getBoundingClientRect();
       const [px, py] = pontoDoCanto({ left: r.left + scrollX, right: r.right + scrollX, top: r.top + scrollY, bottom: r.bottom + scrollY }, a.canto);
-      it.x = px + a.dx - a.s / 2;
+      const nx = px + a.dx - a.s / 2;
+      // Cartões de carrossel deslizam sozinhos: acompanhar o cartão fazia o ícone pular de lado. A posição
+      // horizontal é decidida quando a página assenta e depois fica; a vertical continua seguindo o cartão.
+      if (Array.isArray(a.alvo)) {
+        if (!congelado || it.xFixo === undefined) it.xFixo = nx;
+        it.x = it.xFixo;
+      } else {
+        it.x = nx;
+      }
       it.y = py + a.dy - a.s / 2;
       it.el.style.left = it.x + "px";
       it.el.style.top = it.y + "px";
@@ -296,6 +330,7 @@ export function ligarIcones(opcoes: { home: boolean }): () => void {
   });
   observador.observe(document.body);
   const tempos = [600, 1800, 4000].map((ms) => setTimeout(reposicionar, ms));
+  tempos.push(setTimeout(() => (assentando = false), 4300));
   limpezas.push(() => {
     removeEventListener("scroll", onScroll);
     removeEventListener("mousemove", onMouse);
