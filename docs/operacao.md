@@ -86,10 +86,8 @@ Cadastre **um** webhook em Asaas → Integrações → Webhooks:
 Selos, preço riscado e banner somem juntos; quem já assinou com desconto não muda.
 **Nova oferta**: troque o percentual e o nome (`PREMIUM_PLUS_OFERTA_NOME`).
 
-**Tema de Halloween**: período em `lib/halloween.ts` (`inicio`/`fim`, datas inclusive, comparadas com a data do navegador do
-visitante); texto da barra em `components/halloween/BarraHalloween.tsx`. Passado o período, volta ao normal sozinho. Para uma
-próxima data comemorativa, reaproveite a estrutura (`components/halloween/`, `lib/halloween*.ts`) trocando período, arte
-(`public/…`) e textos; ou remova o tema por completo.
+**Temas sazonais**: não há tema ativo. O de Halloween foi removido em 02/11/2026; o código está no histórico do Git
+(commit `5fdb11e`) caso uma próxima data comemorativa queira reaproveitá-lo. Ver [arquitetura.md](arquitetura.md#temas-sazonais).
 
 ## Corrigindo dados em produção
 

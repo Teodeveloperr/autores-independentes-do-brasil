@@ -13,7 +13,7 @@ export const metadata: Metadata = { title: "Livros" };
 
 export default async function LivrosPage({ searchParams }: { searchParams: Promise<{ genero?: string }> }) {
   const { genero } = await searchParams;
-  // Aceita /livros?genero=Terror (usado, por exemplo, pela faixa de Halloween da home).
+  // Aceita /livros?genero=Terror: abre o catálogo já filtrado por esse gênero.
   const generoInicial = genero && GENEROS.includes(genero) ? genero : "";
   const booksPool = await prisma.book.findMany({
     where: { author: { status: "ativo" }, ...LIVRO_VENDAVEL_WHERE },

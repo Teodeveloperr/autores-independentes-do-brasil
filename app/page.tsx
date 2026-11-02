@@ -11,8 +11,6 @@ import HomeDemoAnimado from "@/components/HomeDemoAnimado";
 import AutoresDestaqueCarousel from "@/components/AutoresDestaqueCarousel";
 import LivrosRecentesCarousel from "@/components/LivrosRecentesCarousel";
 import ContactForm from "@/components/ContactForm";
-import BandeirolaTopo from "@/components/halloween/BandeirolaTopo";
-import FaixaHalloween from "@/components/halloween/FaixaHalloween";
 import { prisma } from "@/lib/db";
 import { PLANO_RANK, PLANOS_COM_DESTAQUE, temDestaque } from "@/lib/plans";
 import { LIVRO_VENDAVEL_WHERE } from "@/lib/ebook";
@@ -63,7 +61,15 @@ export default async function HomePage() {
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
       <PublicHeader active="home" showContato={false} />
 
-      <BandeirolaTopo />
+      <div style={{ width: "100%", lineHeight: 0 }}>
+        <Image
+          src="/bandeirola.webp"
+          alt=""
+          width={2000}
+          height={175}
+          style={{ width: "100%", height: "auto", display: "block", transform: "rotate(180deg)" }}
+        />
+      </div>
 
       <div style={{ maxWidth: "1280px", width: "100%", margin: "0 auto" }}>
 
@@ -97,8 +103,6 @@ export default async function HomePage() {
           />
         </div>
       </section>
-
-      <FaixaHalloween />
 
       <HomeBannerCarousel />
 

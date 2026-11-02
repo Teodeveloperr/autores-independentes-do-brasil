@@ -30,7 +30,6 @@ sistema acompanha.
 | Horário do cron | 04:00 UTC (01:00 em Brasília) | `vercel.json` |
 | Limites do PDF do e-book | 200 MB, 600 páginas, 4 MB por página convertida | `lib/ebook.ts` |
 | Aparelhos simultâneos e duração da sessão do leitor | 2 aparelhos · 30 dias | `MAX_APARELHOS` e `SESSAO_DIAS` em `lib/leitorAuth.ts` |
-| Período do tema sazonal | 27/10 a 03/11/2026 | `lib/halloween.ts` |
 
 ## Glossário
 

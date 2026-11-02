@@ -96,9 +96,9 @@ então **toda migração commitada é aplicada no banco no próximo deploy**. Pr
 
 Cada repasse é tentado de novo na rodada seguinte se ainda não puder sair (saldo não liberado) ou se falhou.
 
-## Tema sazonal
+## Temas sazonais
 
-O tema de Halloween (`components/halloween/`, `lib/halloween*.ts`, `public/halloween/`) liga e desliga **no navegador**,
-comparando a data do visitante com o período em `lib/halloween.ts`. Assim as páginas continuam em cache e não precisam
-de deploy para "virar". Fica fora de `/painel`, `/admin`, `/checkout`, login e fluxos sensíveis. Para ver fora do período:
-acrescente `?tema=halloween` ao endereço (vale só para a aba); `?tema=normal` desliga.
+**Hoje não há tema ativo.** O tema de Halloween (27/10 a 02/11/2026) foi removido do código em 02/11/2026. Ele ligava e
+desligava **no navegador**, comparando a data do visitante com um período, para as páginas continuarem em cache. Se uma
+próxima data comemorativa pedir algo parecido, o código completo está no histórico do Git: commit `5fdb11e` (estado final) e
+`f001a03` (versão inicial), pastas `components/halloween/`, `lib/halloween*.ts` e `public/halloween/`.

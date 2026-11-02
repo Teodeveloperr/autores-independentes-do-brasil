@@ -62,10 +62,10 @@ app/                  rotas (App Router); cada pasta é uma página ou grupo de 
   api/                rotas de API: webhooks (Asaas, Mercado Pago), cron, leitor, upload...
   painel/  admin/     áreas autenticadas; cada uma com seu actions.ts (Server Actions)
   checkout/ assinatura/ cadastro/ entrar/ estante/ ler/    fluxos de compra, planos e leitura
-components/           interface (painel/, admin/, leitor/, halloween/ e componentes públicos)
+components/           interface (painel/, admin/, leitor/ e componentes públicos)
 lib/                  regras de negócio e integrações (ver tabela abaixo)
 prisma/               schema.prisma, migrations/ (58) e seed.ts
-public/               imagens estáticas (inclui halloween/ do tema sazonal)
+public/               imagens estáticas
 middleware.ts         renova as sessões de autor e admin a cada requisição
 vercel.json           agenda dos crons
 docs/                 documentação (começar por docs/README.md)
@@ -83,7 +83,6 @@ Módulos principais de `lib/`:
 | `auth.ts` · `session*.ts` · `totp.ts` · `webauthn.ts` | sessões de autor/admin, 2FA e passkeys |
 | `email.ts` | todos os e-mails enviados pela plataforma |
 | `authorDeletion.ts` | exclusão e encerramento de conta de autor |
-| `halloween*.ts` | tema sazonal (liga e desliga por data) |
 
 ## Documentação
 
