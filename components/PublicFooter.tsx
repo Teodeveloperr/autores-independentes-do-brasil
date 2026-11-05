@@ -1,12 +1,17 @@
 import Link from "next/link";
 import Image from "next/image";
 
+// Contato de quem desenvolveu o site (WhatsApp): mostrado no rodapé quando a página pede (hoje, só a home).
+const CREDITO_URL = "https://wa.me/5579991821546";
+
 export default function PublicFooter({
   variant = "full",
   showAdminLink = false,
+  mostrarCredito = false,
 }: {
   variant?: "full" | "minimal";
   showAdminLink?: boolean;
+  mostrarCredito?: boolean;
 }) {
   if (variant === "minimal") {
     return (
@@ -109,6 +114,20 @@ export default function PublicFooter({
             </>
           )}
         </p>
+        {mostrarCredito && (
+          <p style={{ marginTop: "6px" }}>
+            Desenvolvido por{" "}
+            <a
+              href={CREDITO_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Falar com Teodoro Web Designer pelo WhatsApp"
+              style={{ color: "rgba(255,255,255,0.7)", textDecoration: "underline" }}
+            >
+              Teodoro Web Designer
+            </a>
+          </p>
+        )}
       </div>
     </footer>
   );

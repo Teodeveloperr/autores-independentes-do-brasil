@@ -279,7 +279,7 @@ export default async function HomePage() {
       </div>
 
       <HomePremiumToast />
-      <PublicFooter showAdminLink />
+      <PublicFooter showAdminLink mostrarCredito />
     </div>
   );
 }
