@@ -6,7 +6,8 @@ import Link from "next/link";
 import { logout } from "@/app/painel/actions";
 import { firstName, initials } from "@/lib/format";
 import { perfilHref } from "@/lib/slug";
-import type { AuthorWithRelations, PainelView } from "./types";
+import type { AuthorWithRelations, DadosBienalPainel, PainelView } from "./types";
+import BienalView from "./BienalView";
 import DashboardView from "./DashboardView";
 import PerfilView from "./PerfilView";
 import LivrosView from "./LivrosView";
@@ -43,7 +44,9 @@ export default function PainelApp({
   siteUrl,
   previaUrl,
   maxVisualizacoesGlobal,
+  bienal,
 }: {
+  bienal: DadosBienalPainel | null;
   author: AuthorWithRelations;
   temSenha: boolean;
   mercadoPagoStatus?: string;
@@ -70,6 +73,14 @@ export default function PainelApp({
         <button onClick={() => setView("pedidos")} style={sidebarBtn(view === "pedidos")}>📋 Pedidos</button>
         {author.plano !== "Iniciante" && (
           <button onClick={() => setView("vendas")} style={sidebarBtn(view === "vendas")}>💰 Vendas e Relatórios</button>
+        )}
+        {bienal && (
+          <button onClick={() => setView("bienal")} style={sidebarBtn(view === "bienal")}>
+            🎟️ Bienal Rio 2027
+            {!bienal.reserva && (
+              <span style={{ background: "#FFDF00", color: "#002776", padding: "2px 8px", borderRadius: "12px", fontSize: "11px", fontWeight: 700, marginLeft: "auto" }}>escolher</span>
+            )}
+          </button>
         )}
         <button onClick={() => setView("galeria")} style={sidebarBtn(view === "galeria")}>🖼️ Galeria de Fotos</button>
         <button onClick={() => setView("eventos")} style={sidebarBtn(view === "eventos")}>📅 Eventos</button>
@@ -153,6 +164,7 @@ export default function PainelApp({
           {view === "livros" && <LivrosView author={author} />}
           {view === "pedidos" && <PedidosView author={author} />}
           {view === "eventos" && <EventosView author={author} />}
+          {view === "bienal" && <BienalView plano={author.plano} bienal={bienal} />}
           {view === "galeria" && <GaleriaView author={author} />}
           {view === "mensagens" && <MensagensView author={author} />}
           {view === "chat" && <ChatComunidadeView authorId={author.id} />}

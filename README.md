@@ -64,7 +64,7 @@ app/                  rotas (App Router); cada pasta é uma página ou grupo de 
   checkout/ assinatura/ cadastro/ entrar/ estante/ ler/    fluxos de compra, planos e leitura
 components/           interface (painel/, admin/, leitor/ e componentes públicos)
 lib/                  regras de negócio e integrações (ver tabela abaixo)
-prisma/               schema.prisma, migrations/ (58) e seed.ts
+prisma/               schema.prisma, migrations/ (59) e seed.ts
 public/               imagens estáticas
 middleware.ts         renova as sessões de autor e admin a cada requisição
 vercel.json           agenda dos crons

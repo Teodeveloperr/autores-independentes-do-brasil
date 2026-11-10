@@ -25,6 +25,7 @@ sistema acompanha.
 | Quais planos podem vender livros e e-books | Essencial, Premium e Premium+ | `PLANOS_COM_VENDA` em `lib/plans.ts` |
 | Oferta de desconto no Premium+ (Pix / cartão à vista) | 10% (Black Friday) | `PREMIUM_PLUS_DESCONTO_PERCENTUAL` e `PREMIUM_PLUS_OFERTA_NOME` em `lib/plans.ts` (`0` encerra a oferta) |
 | Parte do Premium+ que vai para o parceiro | 46,8% do valor pago (R$ 421,20 de R$ 900) | `PREMIUM_PLUS_VALOR_BASE_CENTAVOS` e `PREMIUM_PLUS_VALOR_PARCEIRO_CENTAVOS` em `lib/plans.ts` |
+| Horário do Premium+ na Bienal (balcão, 2h) | autor escolhe no painel e troca sozinho até 03/08/2027; depois só o admin | `PREMIUM_PLUS_TROCA_ATE` em `lib/contrato/config.ts`; agenda em `lib/contrato/agenda.ts` |
 | Frete dos livros físicos | R$ 12,00 o 1º livro + R$ 6,00 por livro adicional do mesmo autor | `app/checkout/actions.ts` |
 | Prazos do cron (lembrete, liberação, abandono) | 3 dias · 7 dias · 3 dias | constantes no topo de `app/api/cron/processar-pedidos/route.ts` |
 | Horário do cron | 04:00 UTC (01:00 em Brasília) | `vercel.json` |

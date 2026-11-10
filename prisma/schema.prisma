@@ -11,21 +11,21 @@ datasource db {
 }
 
 model Author {
-  id        String   @id @default(cuid())
-  nome      String
+  id              String   @id @default(cuid())
+  nome            String
   // Endereço fixo do perfil público (/autor/nome-do-autor), gerado do nome na primeira vez e
   // nunca mais alterado. Nulo só até ser gerado (ver lib/autorSlug.ts).
-  slug      String?  @unique
-  email     String   @unique
-  senhaHash String?
-  googleId  String?  @unique
-  generos   String[] @default(["Romance"])
-  cidade    String?
-  bio       String?
-  fotoUrl   String?
-  bannerUrl String?
-  bannerPositionX Int @default(50)
-  bannerPositionY Int @default(50)
+  slug            String?  @unique
+  email           String   @unique
+  senhaHash       String?
+  googleId        String?  @unique
+  generos         String[] @default(["Romance"])
+  cidade          String?
+  bio             String?
+  fotoUrl         String?
+  bannerUrl       String?
+  bannerPositionX Int      @default(50)
+  bannerPositionY Int      @default(50)
 
   instagramUrl String?
   twitterUrl   String?
@@ -39,16 +39,16 @@ model Author {
   enderecoCidade      String?
   enderecoUf          String?
 
-  anoEntrada         Int
-  plano              String    @default("Iniciante")
-  planoCiclo         String?
-  planoValorCentavos Int?
-  planoIniciadoEm    DateTime?
+  anoEntrada               Int
+  plano                    String    @default("Iniciante")
+  planoCiclo               String?
+  planoValorCentavos       Int?
+  planoIniciadoEm          DateTime?
   // Plano concedido manualmente pelo admin (sem cobrança/assinatura real por trás) — tem
   // prazo (semestral ou anual) e expira sozinho via cron, voltando pro Iniciante.
   planoConcedidoAdminCiclo String?
   planoConcedidoAdminAte   DateTime?
-  status             String    @default("ativo")
+  status                   String    @default("ativo")
 
   mpPreapprovalId      String?
   mpSubscriptionStatus String?
@@ -110,6 +110,7 @@ model Author {
   resetTokens          PasswordResetToken[]
   mercadoPagoToken     AuthorMercadoPagoToken?
   passkeys             AuthorPasskey[]
+  reservaBienal        ReservaBienalPremiumPlus?
   assinaturaPagamentos SubscriptionPayment[]
   portfolioEventos     PortfolioEvento[]
   chatMensagens        ChatMensagem[]
@@ -156,21 +157,21 @@ model SiteVisit {
 }
 
 model Book {
-  id            String  @id @default(cuid())
-  authorId      String
-  author        Author  @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  titulo        String
-  genero        String
-  precoCentavos Int
-  estoque       Int     @default(0)
-  capaUrl       String?
+  id                 String  @id @default(cuid())
+  authorId           String
+  author             Author  @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  titulo             String
+  genero             String
+  precoCentavos      Int
+  estoque            Int     @default(0)
+  capaUrl            String?
   // Dimensões reais (em pixels) da imagem de capa enviada — lidas no navegador no momento
   // do upload. Usadas pra exibir a capa na proporção verdadeira dela (quadrada, horizontal,
   // etc.) em vez de forçar sempre um formato de livro vertical (3:4). Nulo pra capas
   // enviadas antes dessa funcionalidade existir — nesse caso cai no formato 3:4 padrão.
-  capaLargura   Int?
-  capaAltura    Int?
-  descricao     String?
+  capaLargura        Int?
+  capaAltura         Int?
+  descricao          String?
   descontoPercentual Int?
 
   pesoGramas    Int?
@@ -213,16 +214,16 @@ model EbookPagina {
 }
 
 model AuthorEvent {
-  id        String  @id @default(cuid())
+  id        String @id @default(cuid())
   authorId  String
-  author    Author  @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  author    Author @relation(fields: [authorId], references: [id], onDelete: Cascade)
   nome      String
   diaInicio Int
   diaFim    Int?
   mes       String
   ano       Int
   local     String
-  status    String  @default("Pendente")
+  status    String @default("Pendente")
 
   createdAt DateTime @default(now())
 
@@ -262,15 +263,15 @@ model Order {
   compradorUf          String?
   compradorCpf         String?
 
-  quantidade        Int     @default(1)
-  valorCentavos     Int
+  quantidade    Int     @default(1)
+  valorCentavos Int
   // "fisico" (envio pelos Correios, repasse depois da confirmação de recebimento) ou "ebook"
   // (acesso liberado ao pagar, sem frete, repasse assim que o dinheiro fica disponível).
-  formato           String  @default("fisico")
-  freteCentavos     Int?
-  freteServico      String?
-  status            String  @default("Aguardando pagamento")
-  grupoPedidoId     String?
+  formato       String  @default("fisico")
+  freteCentavos Int?
+  freteServico  String?
+  status        String  @default("Aguardando pagamento")
+  grupoPedidoId String?
 
   asaasCustomerId        String?
   asaasPaymentId         String?
@@ -314,9 +315,9 @@ model ChatMensagem {
 }
 
 model Conversation {
-  id       String @id @default(cuid())
+  id       String  @id @default(cuid())
   authorId String
-  author   Author @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  author   Author  @relation(fields: [authorId], references: [id], onDelete: Cascade)
   nome     String
   unread   Boolean @default(true)
 
@@ -365,14 +366,14 @@ model CollectiveEvent {
 }
 
 model Opportunity {
-  id         String   @id @default(cuid())
+  id         String    @id @default(cuid())
   nome       String
   categoria  String
   // Nulo = fluxo contínuo (sem data de encerramento).
   prazoFinal DateTime?
   // Região do Brasil (Nacional, Norte, Nordeste, Centro-Oeste, Sudeste, Sul) — usada pra
   // filtrar na página pública. `estado` continua texto livre, só pra detalhar.
-  regiao     String   @default("Nacional")
+  regiao     String    @default("Nacional")
   estado     String
   valor      String?
   link       String
@@ -436,17 +437,17 @@ model RateLimitAttempt {
 }
 
 model SubscriptionPayment {
-  id                  String   @id @default(cuid())
-  authorId            String
-  author              Author   @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  plano               String
-  valorCentavos       Int
+  id                   String    @id @default(cuid())
+  authorId             String
+  author               Author    @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  plano                String
+  valorCentavos        Int
   valorLiquidoCentavos Int?
   // Só preenchido quando a Asaas confirma que o saldo já está disponível pra
   // movimentação (PAYMENT_RECEIVED) — pode vir bem depois do pagamento em si (cartão: D+32).
-  disponivelEm        DateTime?
-  asaasPaymentId      String   @unique
-  createdAt           DateTime @default(now())
+  disponivelEm         DateTime?
+  asaasPaymentId       String    @unique
+  createdAt            DateTime  @default(now())
 
   // Fatia desse pagamento (só relevante quando plano === "Autor Premium+") repassada
   // automaticamente via Pix pra conta de terceiro configurada em Admin.premiumPlusPixKey —
@@ -592,6 +593,21 @@ model ContratoReserva {
   @@index([tipo, dia, horaInicio])
 }
 
+// Horário de balcão (2h) que o plano Premium+ dá direito na Bienal do Livro Rio 2027. Sai do mesmo
+// estoque dos contratos (ver lib/contrato/agenda.ts). Um por autor; só vale enquanto o autor
+// continua Premium+ (a agenda ignora e o cron apaga a reserva de quem deixou o plano).
+model ReservaBienalPremiumPlus {
+  id         String   @id @default(cuid())
+  authorId   String   @unique
+  author     Author   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  dia        DateTime @db.Date
+  horaInicio Int
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([dia, horaInicio])
+}
+
 // Configuração única dos contratos (linha "unico"): assinatura da contratada, guardada só no
 // banco e usada no servidor ao montar o PDF — nunca exposta num endereço público.
 model ContratoConfig {
@@ -599,7 +615,6 @@ model ContratoConfig {
   assinaturaContratadaPng String?  @db.Text
   updatedAt               DateTime @updatedAt
 }
-
 
 // ---------------------------------------------------------------------------------------------
 // Conta do leitor (quem compra e-book). Separada da conta de autor: entra com e-mail e senha;

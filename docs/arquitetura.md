@@ -59,17 +59,17 @@ Os dois stores do Blob são **separados**: toda chamada ao store de e-books pass
 
 ## Banco de dados
 
-`prisma/schema.prisma` tem 31 modelos, comentados. Os grupos principais:
+`prisma/schema.prisma` tem 32 modelos, comentados. Os grupos principais:
 
 - **Autores**: `Author`, `AuthorEvent`, `AuthorPhoto`, `AuthorPasskey`, `PasswordResetToken`, `PortfolioEvento`, `Review`, `Conversation`/`Message`
 - **Livros e pedidos**: `Book` (físico ou e-book), `Order` (uma linha por livro), `EbookPagina`
 - **Leitores**: `Leitor`, `LeitorSessao`, `LeitorLink`, `AcessoEbook`
 - **Assinaturas**: campos de plano e Asaas em `Author`, `SubscriptionPayment`, `PendingSignup` (cadastro que espera o pagamento)
-- **Contrato da Bienal**: `ContratoBienal`, `ContratoReserva`, `ContratoConfig`
+- **Contrato da Bienal**: `ContratoBienal`, `ContratoReserva`, `ContratoConfig`, `ReservaBienalPremiumPlus` (horário do plano Premium+, mesmo estoque do balcão)
 - **Institucional**: `CollectiveEvent`, `CollectiveGalleryPhoto`, `Article`, `Opportunity`, `TalkShowVideo`, `ChatMensagem`, `SiteVisit`
 - **Administração**: `Admin`, `RateLimitAttempt`
 
-**Migrações**: pasta `prisma/migrations/` (58). São **aditivas**. O `npm run build` roda `prisma migrate deploy`,
+**Migrações**: pasta `prisma/migrations/` (59). São **aditivas**. O `npm run build` roda `prisma migrate deploy`,
 então **toda migração commitada é aplicada no banco no próximo deploy**. Procedimento seguro em [operacao.md](operacao.md#migrações-do-banco).
 
 ## Tarefas agendadas (`vercel.json`)
@@ -92,7 +92,8 @@ então **toda migração commitada é aplicada no banco no próximo deploy**. Pr
 9. apaga oportunidades (editais) 48 h depois do último dia de inscrição;
 10. apaga rascunhos de **contrato da Bienal** nunca assinados, com mais de 48 h (guardam CPF e endereço sem necessidade);
 11. avisa quem comprou plano **parcelado** que o acesso vence em breve (15 dias antes, uma única vez);
-12. devolve ao plano Iniciante quem comprou **parcelado** e não renovou até o vencimento.
+12. devolve ao plano Iniciante quem comprou **parcelado** e não renovou até o vencimento;
+13. apaga o horário da Bienal (`ReservaBienalPremiumPlus`) de quem deixou o Premium+.
 
 Cada repasse é tentado de novo na rodada seguinte se ainda não puder sair (saldo não liberado) ou se falhou.
 

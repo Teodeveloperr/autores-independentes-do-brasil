@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { removerAssinaturaContratada, salvarAssinaturaContratada } from "@/app/admin/actions";
+import { definirHorarioBienalPremiumPlus, removerAssinaturaContratada, removerHorarioBienalPremiumPlus, salvarAssinaturaContratada } from "@/app/admin/actions";
 import SignaturePad from "@/components/contrato/SignaturePad";
 import { baixarCsv, reais } from "@/lib/csv";
 import { brl } from "@/lib/format";
@@ -12,10 +12,11 @@ import {
   PACOTES,
   PACOTES_CONTRATO,
   formatarNumeroContrato,
+  horasInicioDoEspaco,
   type PacoteContrato,
   type TipoEspaco,
 } from "@/lib/contrato/config";
-import type { ContratoAdminRow } from "./types";
+import type { ContratoAdminRow, PremiumPlusBienalRow } from "./types";
 
 const card: React.CSSProperties = { background: "white", borderRadius: "10px", padding: "22px" };
 const titulo: React.CSSProperties = { fontWeight: 700, color: "#002776", marginBottom: "12px" };
@@ -44,9 +45,11 @@ function numeroDe(c: ContratoAdminRow): string {
 export default function AdminContratosView({
   contratos,
   assinaturaContratada,
+  premiumPlusBienal,
 }: {
   contratos: ContratoAdminRow[];
   assinaturaContratada: string | null;
+  premiumPlusBienal: PremiumPlusBienalRow[];
 }) {
   const router = useRouter();
   const [pendente, iniciarTransicao] = useTransition();
@@ -57,6 +60,9 @@ export default function AdminContratosView({
   const [novaAssinatura, setNovaAssinatura] = useState<string | null>(null);
   const [erro, setErro] = useState("");
   const [salvou, setSalvou] = useState(false);
+  // Troca de horário do Premium+: o que o admin escolheu em cada linha, antes de salvar.
+  const [trocas, setTrocas] = useState<Record<string, { dia: string; hora: number }>>({});
+  const [erroBienal, setErroBienal] = useState("");
 
   // Rascunhos (quem ainda não assinou) não são contratos de verdade: ficam fora da lista e dos totais.
   const assinados = useMemo(() => contratos.filter((c) => c.status !== "rascunho"), [contratos]);
@@ -119,8 +125,37 @@ export default function AdminContratosView({
         mapa.set(dia, itens);
       }
     }
+    // Autores Premium+ ocupam o balcão como os contratos pagos (nome do autor no lugar do número).
+    for (const a of premiumPlusBienal) {
+      if (!a.reservaBienal) continue;
+      const dia = a.reservaBienal.dia.toISOString().slice(0, 10);
+      const itens = mapa.get(dia) ?? [];
+      itens.push({ tipo: "balcao", hora: a.reservaBienal.horaInicio, nome: a.nome, numero: "Premium+", confirmado: true });
+      mapa.set(dia, itens);
+    }
     return mapa;
-  }, [assinados]);
+  }, [assinados, premiumPlusBienal]);
+
+  function salvarTroca(a: PremiumPlusBienalRow) {
+    const t = trocas[a.id];
+    if (!t) return;
+    setErroBienal("");
+    iniciarTransicao(async () => {
+      const r = await definirHorarioBienalPremiumPlus(a.id, t.dia, t.hora);
+      if (r.error) return setErroBienal(r.error);
+      setTrocas((x) => Object.fromEntries(Object.entries(x).filter(([id]) => id !== a.id)));
+      router.refresh();
+    });
+  }
+
+  function liberarHorario(a: PremiumPlusBienalRow) {
+    setErroBienal("");
+    iniciarTransicao(async () => {
+      const r = await removerHorarioBienalPremiumPlus(a.id);
+      if (r.error) return setErroBienal(r.error);
+      router.refresh();
+    });
+  }
 
   function salvarAssinatura() {
     if (!novaAssinatura) return setErro("Faça a assinatura no quadro antes de salvar.");
@@ -347,6 +382,49 @@ export default function AdminContratosView({
             </tbody>
           </table>
         </div>
+      </div>
+
+      <div style={card}>
+        <div style={titulo}>Autores Premium+ na Bienal ({premiumPlusBienal.filter((a) => a.reservaBienal).length} de {premiumPlusBienal.length} escolheram)</div>
+        <p style={{ fontSize: "12px", color: "#666", marginBottom: "12px" }}>
+          Cada Premium+ tem direito a 2 horas no balcão e escolhe o horário no próprio painel, até 03/08/2027. Aqui você acompanha e pode trocar ou liberar a qualquer momento.
+        </p>
+        {erroBienal && <div role="alert" style={{ fontSize: "13px", color: "#C0392B", marginBottom: "10px" }}>{erroBienal}</div>}
+        {premiumPlusBienal.length === 0 ? (
+          <p style={{ fontSize: "13px", color: "#666" }}>Nenhum autor Premium+ ativo.</p>
+        ) : (
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "640px" }}>
+              <thead><tr><th style={th}>Autor</th><th style={th}>Horário atual</th><th style={th}>Trocar para</th><th style={th}></th></tr></thead>
+              <tbody>
+                {premiumPlusBienal.map((a) => {
+                  const atual = a.reservaBienal ? { dia: a.reservaBienal.dia.toISOString().slice(0, 10), hora: a.reservaBienal.horaInicio } : null;
+                  const t = trocas[a.id] ?? atual ?? { dia: DIAS_BIENAL[0] as string, hora: horasInicioDoEspaco("balcao")[0] };
+                  return (
+                    <tr key={a.id}>
+                      <td style={td}><div style={{ fontWeight: 600 }}>{a.nome}</div><div style={{ fontSize: "12px", color: "#666" }}>{a.email}</div></td>
+                      <td style={td}>{atual ? `${atual.dia.split("-").reverse().join("/")}, ${String(atual.hora).padStart(2, "0")}h às ${String(atual.hora + ESPACOS.balcao.duracaoHoras).padStart(2, "0")}h` : <span style={{ color: "#6b5400" }}>Ainda não escolheu</span>}</td>
+                      <td style={td}>
+                        <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+                          <select value={t.dia} aria-label={`Dia de ${a.nome}`} onChange={(e) => setTrocas((x) => ({ ...x, [a.id]: { ...t, dia: e.target.value } }))} style={campo}>
+                            {DIAS_BIENAL.map((d) => <option key={d} value={d}>{d.split("-").reverse().join("/")}</option>)}
+                          </select>
+                          <select value={t.hora} aria-label={`Horário de ${a.nome}`} onChange={(e) => setTrocas((x) => ({ ...x, [a.id]: { ...t, hora: Number(e.target.value) } }))} style={campo}>
+                            {horasInicioDoEspaco("balcao").map((h) => <option key={h} value={h}>{String(h).padStart(2, "0")}h às {String(h + ESPACOS.balcao.duracaoHoras).padStart(2, "0")}h</option>)}
+                          </select>
+                        </div>
+                      </td>
+                      <td style={{ ...td, whiteSpace: "nowrap" }}>
+                        <button type="button" disabled={pendente || !trocas[a.id]} onClick={() => salvarTroca(a)} style={{ ...campo, background: "#009B3A", color: "white", fontWeight: 700, border: "none", opacity: pendente || !trocas[a.id] ? 0.5 : 1 }}>Salvar</button>{" "}
+                        {atual && <button type="button" disabled={pendente} onClick={() => liberarHorario(a)} style={{ ...campo, background: "white", color: "#C0392B", fontWeight: 600 }}>Liberar</button>}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       <div style={card}>

@@ -4,7 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { adminLogout } from "@/app/admin/actions";
-import type { AdminView, Article, AuthorWithCount, CollectiveEvent, CollectiveGalleryPhoto, Opportunity, ReviewWithAuthor, OrderWithAuthor, OrderComReceita, SubscriptionPaymentRow, TalkShowVideo, ContratoAdminRow, AcessoEbookAdminRow, EbookAdminRow } from "./types";
+import type { AdminView, Article, AuthorWithCount, CollectiveEvent, CollectiveGalleryPhoto, Opportunity, ReviewWithAuthor, OrderWithAuthor, OrderComReceita, SubscriptionPaymentRow, TalkShowVideo, ContratoAdminRow, PremiumPlusBienalRow, AcessoEbookAdminRow, EbookAdminRow } from "./types";
 import AdminAgendaView from "./AdminAgendaView";
 import AdminOportunidadesView from "./AdminOportunidadesView";
 import AdminGaleriaView from "./AdminGaleriaView";
@@ -48,6 +48,7 @@ export default function AdminApp({
   saldoAsaasCentavos,
   contratos,
   assinaturaContratada,
+  premiumPlusBienal,
   acessosEbook,
   ebooks,
   totpEnabled,
@@ -69,6 +70,7 @@ export default function AdminApp({
   saldoAsaasCentavos: number | null;
   contratos: ContratoAdminRow[];
   assinaturaContratada: string | null;
+  premiumPlusBienal: PremiumPlusBienalRow[];
   acessosEbook: AcessoEbookAdminRow[];
   ebooks: EbookAdminRow[];
   totpEnabled: boolean;
@@ -223,7 +225,7 @@ export default function AdminApp({
               chaveParceiroConfigurada={Boolean(premiumPlusPixKey && premiumPlusPixKeyType)}
             />
           )}
-          {view === "contratos" && <AdminContratosView contratos={contratos} assinaturaContratada={assinaturaContratada} />}
+          {view === "contratos" && <AdminContratosView contratos={contratos} assinaturaContratada={assinaturaContratada} premiumPlusBienal={premiumPlusBienal} />}
           {view === "ebooks" && <AdminEbooksView acessos={acessosEbook} ebooks={ebooks} />}
           {view === "seguranca" && <AdminSegurancaView totpEnabled={totpEnabled} />}
           {view === "configuracoes" && <AdminConfiguracoesView premiumPlusPixKey={premiumPlusPixKey} premiumPlusPixKeyType={premiumPlusPixKeyType} />}

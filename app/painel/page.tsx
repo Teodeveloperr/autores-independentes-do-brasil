@@ -4,6 +4,9 @@ import { prisma } from "@/lib/db";
 import { garantirSlug } from "@/lib/autorSlug";
 import { carregarDadosPrevia, urlPrevia } from "@/lib/previaAutor";
 import PainelApp from "@/components/painel/PainelApp";
+import type { DadosBienalPainel } from "@/components/painel/types";
+import { PLANO_PREMIUM_PLUS, premiumPlusPodeEscolher } from "@/lib/contrato/config";
+import { carregarOcupacao, horariosDasReservas } from "@/lib/contrato/agenda";
 
 export const dynamic = "force-dynamic";
 
@@ -43,8 +46,23 @@ export default async function PainelPage({ searchParams }: { searchParams: Promi
   const previaUrl = dadosPrevia ? urlPrevia(dadosPrevia) : null;
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://autoresdobrasil.com.br";
 
+  // Agenda da Bienal Rio 2027: só o Premium+ tem essa aba.
+  let bienal: DadosBienalPainel | null = null;
+  if (author.plano === PLANO_PREMIUM_PLUS) {
+    const [ocupacao, reserva] = await Promise.all([
+      carregarOcupacao({ ignorarAutorId: author.id }),
+      prisma.reservaBienalPremiumPlus.findUnique({ where: { authorId: author.id } }),
+    ]);
+    bienal = {
+      ocupacao,
+      reserva: reserva ? horariosDasReservas([{ tipo: "balcao", dia: reserva.dia, horaInicio: reserva.horaInicio }])[0] : null,
+      podeEscolher: premiumPlusPodeEscolher(),
+    };
+  }
+
   return (
     <PainelApp
+      bienal={bienal}
       author={author}
       temSenha={temSenha}
       mercadoPagoStatus={mercadopago}

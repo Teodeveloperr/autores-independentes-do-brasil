@@ -37,6 +37,7 @@ export default async function AdminPage() {
     visitasMesAgg,
     contratos,
     contratoConfig,
+    premiumPlusBienal,
     acessosEbook,
     ebooks,
   ] = await Promise.all([
@@ -68,6 +69,11 @@ export default async function AdminPage() {
       include: { reservas: true },
     }),
     prisma.contratoConfig.findUnique({ where: { id: "unico" } }),
+    prisma.author.findMany({
+      where: { plano: "Autor Premium+", status: "ativo" },
+      orderBy: { nome: "asc" },
+      select: { id: true, nome: true, email: true, reservaBienal: true },
+    }),
     prisma.acessoEbook.findMany({
       orderBy: { concedidoEm: "desc" },
       include: {
@@ -98,6 +104,7 @@ export default async function AdminPage() {
       saldoAsaasCentavos={saldoAsaasCentavos}
       contratos={contratos}
       assinaturaContratada={contratoConfig?.assinaturaContratadaPng ?? null}
+      premiumPlusBienal={premiumPlusBienal}
       acessosEbook={acessosEbook}
       ebooks={ebooks}
       totpEnabled={admin.totpEnabled}

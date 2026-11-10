@@ -144,6 +144,18 @@ export function horasInicioDoEspaco(tipo: TipoEspaco): number[] {
   return horas;
 }
 
+// Plano Premium+: direito a 1 período de balcão (2h) na Bienal Rio 2027, escolhido pelo próprio
+// autor no painel, no mesmo calendário e estoque dos contratos. O autor troca sozinho até o fim
+// desta data (horário de Brasília); depois, só o admin troca.
+export const PLANO_PREMIUM_PLUS = "Autor Premium+";
+export const PREMIUM_PLUS_TROCA_ATE = "2027-08-03";
+
+/** O autor ainda pode escolher/trocar o horário sozinho? */
+export function premiumPlusPodeEscolher(agora: Date = new Date()): boolean {
+  const hoje = agora.toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
+  return hoje <= PREMIUM_PLUS_TROCA_ATE;
+}
+
 export const MINUTOS_RESERVA_ANTES_ASSINAR = 30;
 export const HORAS_RESERVA_APOS_ASSINAR = 24;
 

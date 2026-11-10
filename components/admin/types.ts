@@ -16,6 +16,7 @@ export type ContratoAdminRow = Prisma.ContratoBienalGetPayload<{
   omit: { pdf: true; assinaturaPng: true; codigoHash: true; assinaturaUserAgent: true };
   include: { reservas: true };
 }>;
+export type PremiumPlusBienalRow = Prisma.AuthorGetPayload<{ select: { id: true; nome: true; email: true; reservaBienal: true } }>;
 export type AcessoEbookAdminRow = Prisma.AcessoEbookGetPayload<{
   include: {
     leitor: { select: { id: true; email: true; nome: true; ultimoAcessoEm: true; _count: { select: { sessoes: true } } } };

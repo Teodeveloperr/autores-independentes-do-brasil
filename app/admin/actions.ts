@@ -25,6 +25,8 @@ import { CATEGORIAS_AGENDA_ADMIN, CATEGORIAS_GALERIA_ADMIN, CATEGORIAS_OPORTUNID
 import { REGIOES_OPORTUNIDADES } from "@/lib/regioes";
 import { emailSchema, textoSchema, intSchema, primeiroErroZod } from "@/lib/validation";
 import { validarImagemAssinatura } from "@/lib/contrato/assinaturaImagem";
+import { PLANO_PREMIUM_PLUS } from "@/lib/contrato/config";
+import { removerHorarioPremiumPlus, reservarHorarioPremiumPlus, validarHorarioPremiumPlus } from "@/lib/contrato/agenda";
 import { TIPOS_CHAVE_PIX, chavePixValida } from "@/lib/pixKey";
 import type { ChatMensagemRow } from "@/app/painel/actions";
 
@@ -932,6 +934,26 @@ export async function salvarAssinaturaContratada(assinaturaPng: string): Promise
   });
   revalidatePath("/admin");
   revalidatePath("/contrato-bienal");
+  return {};
+}
+
+// Horário do Premium+ na Bienal: o admin troca ou libera a qualquer momento (o autor só até o prazo).
+export async function definirHorarioBienalPremiumPlus(authorId: string, dia: string, horaInicio: number): Promise<{ error?: string }> {
+  await requireAdmin();
+  const autor = await prisma.author.findUnique({ where: { id: authorId }, select: { plano: true } });
+  if (!autor || autor.plano !== PLANO_PREMIUM_PLUS) return { error: "Este autor não está no plano Premium+." };
+  const erro = validarHorarioPremiumPlus(dia, horaInicio);
+  if (erro) return { error: erro };
+  const resultado = await reservarHorarioPremiumPlus(authorId, dia, horaInicio);
+  if (!resultado.ok) return { error: resultado.erro };
+  revalidatePath("/admin");
+  return {};
+}
+
+export async function removerHorarioBienalPremiumPlus(authorId: string): Promise<{ error?: string }> {
+  await requireAdmin();
+  await removerHorarioPremiumPlus(authorId);
+  revalidatePath("/admin");
   return {};
 }
 

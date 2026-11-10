@@ -182,7 +182,13 @@ export async function GET(request: Request) {
     });
   }
 
+  // Quem deixou o Premium+ perde o horário da Bienal (a agenda já ignorava; aqui a linha é apagada).
+  const reservasBienalLiberadas = await prisma.reservaBienalPremiumPlus.deleteMany({
+    where: { author: { OR: [{ plano: { not: "Autor Premium+" } }, { status: { not: "ativo" } }] } },
+  });
+
   return NextResponse.json({
+    reservasBienalLiberadas: reservasBienalLiberadas.count,
     lembretes: semConfirmacaoEnviada.length,
     processados: pendentes.length,
     liberados,

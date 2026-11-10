@@ -4,6 +4,7 @@ import {
   DIAS_BIENAL,
   ESPACOS,
   PACOTES,
+  PLANO_PREMIUM_PLUS,
   chaveHorario,
   horasInicioDoEspaco,
   type HorarioEscolhido,
@@ -17,28 +18,75 @@ import {
 
 const LOCK_AGENDA = 7305001;
 
-type Cliente = Pick<typeof prisma, "contratoReserva" | "$queryRawUnsafe">;
+type Cliente = Pick<typeof prisma, "contratoReserva" | "reservaBienalPremiumPlus" | "$queryRawUnsafe">;
 
 function diaIso(d: Date): string {
   return d.toISOString().slice(0, 10);
 }
 
-/** Quantas reservas válidas (confirmadas ou ainda dentro do prazo) existem em cada horário. */
-export async function carregarOcupacao(opcoes: { ignorarContratoId?: string; cliente?: Cliente } = {}): Promise<Record<string, number>> {
+/**
+ * Quantas reservas válidas existem em cada horário: contratos (confirmados ou ainda dentro do
+ * prazo) e autores Premium+. A reserva de quem deixou o Premium+ não conta (o cron a apaga depois).
+ */
+export async function carregarOcupacao(
+  opcoes: { ignorarContratoId?: string; ignorarAutorId?: string; cliente?: Cliente } = {}
+): Promise<Record<string, number>> {
   const db = opcoes.cliente ?? prisma;
-  const reservas = await db.contratoReserva.findMany({
-    where: {
-      OR: [{ status: "confirmado" }, { status: "reservado", expiraEm: { gt: new Date() } }],
-      ...(opcoes.ignorarContratoId ? { contratoId: { not: opcoes.ignorarContratoId } } : {}),
-    },
-    select: { tipo: true, dia: true, horaInicio: true },
-  });
+  const [reservas, doPlano] = await Promise.all([
+    db.contratoReserva.findMany({
+      where: {
+        OR: [{ status: "confirmado" }, { status: "reservado", expiraEm: { gt: new Date() } }],
+        ...(opcoes.ignorarContratoId ? { contratoId: { not: opcoes.ignorarContratoId } } : {}),
+      },
+      select: { tipo: true, dia: true, horaInicio: true },
+    }),
+    db.reservaBienalPremiumPlus.findMany({
+      where: {
+        author: { plano: PLANO_PREMIUM_PLUS, status: "ativo" },
+        ...(opcoes.ignorarAutorId ? { authorId: { not: opcoes.ignorarAutorId } } : {}),
+      },
+      select: { dia: true, horaInicio: true },
+    }),
+  ]);
   const ocupacao: Record<string, number> = {};
   for (const r of reservas) {
     const chave = chaveHorario({ tipo: r.tipo as TipoEspaco, dia: diaIso(r.dia), horaInicio: r.horaInicio });
     ocupacao[chave] = (ocupacao[chave] ?? 0) + 1;
   }
+  for (const r of doPlano) {
+    const chave = chaveHorario({ tipo: "balcao", dia: diaIso(r.dia), horaInicio: r.horaInicio });
+    ocupacao[chave] = (ocupacao[chave] ?? 0) + 1;
+  }
   return ocupacao;
+}
+
+/** Confere dia e hora do balcão. Devolve a mensagem de erro, ou null. */
+export function validarHorarioPremiumPlus(dia: string, horaInicio: number): string | null {
+  if (!(DIAS_BIENAL as readonly string[]).includes(dia)) return "Escolha um dia entre 3 e 12 de setembro de 2027.";
+  if (!horasInicioDoEspaco("balcao").includes(horaInicio)) return "Escolha um horário entre 10h e 20h.";
+  return null;
+}
+
+/** Grava (ou troca) o horário do autor Premium+, se ainda houver vaga. Mesma trava das demais reservas. */
+export async function reservarHorarioPremiumPlus(authorId: string, dia: string, horaInicio: number): Promise<ResultadoReserva> {
+  return prisma.$transaction(async (tx) => {
+    await tx.$executeRawUnsafe(`SELECT pg_advisory_xact_lock(${LOCK_AGENDA})`);
+    const ocupacao = await carregarOcupacao({ ignorarAutorId: authorId, cliente: tx as unknown as Cliente });
+    if ((ocupacao[chaveHorario({ tipo: "balcao", dia, horaInicio })] ?? 0) >= ESPACOS.balcao.capacidade) {
+      return { ok: false as const, erro: "Esse horário acabou de ser ocupado. Escolha outro horário." };
+    }
+    const data = new Date(`${dia}T00:00:00Z`);
+    await tx.reservaBienalPremiumPlus.upsert({
+      where: { authorId },
+      create: { authorId, dia: data, horaInicio },
+      update: { dia: data, horaInicio },
+    });
+    return { ok: true as const };
+  });
+}
+
+export async function removerHorarioPremiumPlus(authorId: string) {
+  await prisma.reservaBienalPremiumPlus.deleteMany({ where: { authorId } });
 }
 
 /** Confere se a escolha respeita o que o pacote dá direito. Devolve a mensagem de erro, ou null. */
