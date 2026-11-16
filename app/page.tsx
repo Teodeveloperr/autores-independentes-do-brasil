@@ -4,6 +4,7 @@ import PublicHeader from "@/components/PublicHeader";
 import PublicFooter from "@/components/PublicFooter";
 import BlogCarousel from "@/components/BlogCarousel";
 import HomeBannerCarousel from "@/components/HomeBannerCarousel";
+import KitsBienalHome from "@/components/KitsBienalHome";
 import HomePremiumToast from "@/components/HomePremiumToast";
 import DepoimentosCarousel from "@/components/DepoimentosCarousel";
 import CounterStats from "@/components/CounterStats";
@@ -105,6 +106,8 @@ export default async function HomePage() {
       </section>
 
       <HomeBannerCarousel />
+
+      <KitsBienalHome />
 
       <section className="responsive-grid section-pad-lg" style={{ background: "white", padding: "48px 40px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "60px", alignItems: "center", marginTop: "20px" }}>
         <div>

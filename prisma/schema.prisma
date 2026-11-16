@@ -730,3 +730,42 @@ model PedidoImpressao {
 
   @@index([authorId])
 }
+
+// Compra de um kit "Impressão de livros + Lançamento" na Bienal Rio 2027 (botões da home), paga
+// pelo checkout em /checkout/kit/[kit]. O comprador não precisa ter conta. O valor e as parcelas
+// (1x, ou 2x sem juros no cartão) são definidos no servidor (lib/kits.ts), nunca pelo navegador.
+// O webhook da Asaas marca o pedido como pago.
+model PedidoKit {
+  id     String @id @default(cuid())
+  numero Int    @unique @default(autoincrement())
+  // Código aleatório do link da página de agradecimento.
+  token String @unique
+
+  // "prata" | "ouro"
+  kit           String
+  valorCentavos Int
+  parcelas      Int
+
+  nome     String
+  email    String
+  telefone String
+  cpf      String
+
+  // "aguardando_pagamento" | "pago" | "cancelado"
+  status String @default("aguardando_pagamento")
+
+  asaasCustomerId String?
+  // Cobrança única, ou a 1ª parcela quando parcelado.
+  asaasPaymentId String? @unique
+  // Agrupa as parcelas de uma cobrança parcelada.
+  asaasInstallmentId   String?
+  asaasInvoiceUrl      String?
+  valorLiquidoCentavos Int?
+  pagoEm               DateTime?
+  emailPagoEnviadoEm   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([asaasInstallmentId])
+}

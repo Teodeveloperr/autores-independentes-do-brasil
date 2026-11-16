@@ -640,3 +640,66 @@ export async function sendOrcamentoImpressaoAutorEmail(to: string, info: Pick<Or
     `,
   });
 }
+
+export type PedidoKitEmailInfo = {
+  numero: number;
+  kitNome: string;
+  resumo: string;
+  valorCentavos: number;
+  parcelas: number;
+  nome: string;
+  email: string;
+  telefone: string;
+};
+
+function formaDoKit(info: Pick<PedidoKitEmailInfo, "valorCentavos" | "parcelas">): string {
+  const brl = (c: number) => "R$ " + (c / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return info.parcelas > 1 ? `${info.parcelas}x de ${brl(info.valorCentavos / info.parcelas)} no cartão, sem juros (total ${brl(info.valorCentavos)})` : `À vista, ${brl(info.valorCentavos)}`;
+}
+
+/** Aviso à equipe (contato@) de que um kit da Bienal foi pago. */
+export async function sendPedidoKitEquipeEmail(info: PedidoKitEmailInfo) {
+  await enviarEOuFalhar({
+    from: EMAIL_FROM,
+    to: EMAIL_CONTATO,
+    replyTo: info.email,
+    subject: `[Kit Bienal] Pagamento confirmado: ${info.kitNome} (pedido ${info.numero})`.slice(0, 200),
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 620px; margin: 0 auto; color: #262626;">
+        <h2 style="color: #002776;">Kit contratado e pago: ${escaparHtml(info.kitNome)}</h2>
+        ${tabelaEspecificacoes([
+          ["Pedido", String(info.numero)],
+          ["Kit", info.resumo],
+          ["Pagamento", formaDoKit(info)],
+          ["Nome", info.nome],
+          ["E-mail", info.email],
+          ["Telefone", info.telefone],
+        ])}
+        <p style="font-size: 13px; color: #666;">Falta combinar com o cliente o envio dos arquivos do livro e o horário do lançamento. Responder a este e-mail fala direto com ele.</p>
+      </div>
+    `,
+  });
+}
+
+/** Confirmação para quem pagou um kit da Bienal. */
+export async function sendPedidoKitCompradorEmail(info: PedidoKitEmailInfo) {
+  await resend.emails.send({
+    from: EMAIL_FROM,
+    to: info.email,
+    subject: `Recebemos o seu pagamento: ${info.kitNome} - Bienal do Livro Rio 2027`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 620px; margin: 0 auto; color: #262626;">
+        <h1 style="color: #002776; font-size: 22px;">Pagamento confirmado!</h1>
+        <p style="font-size: 15px; line-height: 1.6;">
+          Olá, ${escaparHtml(info.nome)}. Recebemos o pagamento do seu <b>${escaparHtml(info.kitNome)}</b> para a Bienal do Livro Rio 2027.
+          Nossa equipe vai entrar em contato por este e-mail e pelo telefone informado para combinar o envio dos arquivos do seu livro e o seu lançamento.
+        </p>
+        ${tabelaEspecificacoes([
+          ["Pedido", String(info.numero)],
+          ["Kit", info.resumo],
+          ["Pagamento", formaDoKit(info)],
+        ])}
+      </div>
+    `,
+  });
+}

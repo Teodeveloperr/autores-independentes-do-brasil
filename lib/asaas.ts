@@ -282,6 +282,8 @@ export async function criarCobrancaParcelada(input: {
   installmentCount: number;
   description: string;
   externalReference: string;
+  /** Página do nosso site para onde a Asaas devolve o comprador depois do pagamento (opcional). */
+  successUrl?: string;
 }): Promise<CobrancaParceladaCriada | null> {
   const accessToken = getAccessToken();
   if (!accessToken) return null;
@@ -298,6 +300,7 @@ export async function criarCobrancaParcelada(input: {
         totalValue: input.totalValueCentavos / 100,
         description: input.description,
         externalReference: input.externalReference,
+        ...(input.successUrl ? { callback: { successUrl: input.successUrl, autoRedirect: true } } : {}),
       }),
     });
     if (!res.ok) {

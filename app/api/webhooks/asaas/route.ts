@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { verificarWebhookAsaas, buscarCobranca } from "@/lib/asaas";
 import { sendOrderConfirmationEmail, sendNewSaleEmail, sendNovaCobrancaAssinaturaEmail, sendWelcomeEmail } from "@/lib/email";
 import { marcarContratoPago } from "@/lib/contrato/servico";
+import { marcarPedidoKitPago } from "@/lib/kitsServico";
 import { ehEbook } from "@/lib/ebook";
 import { entregarEbooksDoPedido, repassarEbooksDisponiveis, revogarEbooksDoPedido } from "@/lib/pedidoEbook";
 import { valorParceiroPremiumPlusCentavos, CICLO_MESES, type CicloAssinatura } from "@/lib/plans";
@@ -207,6 +208,11 @@ export async function POST(request: NextRequest) {
     if (await prisma.contratoBienal.findUnique({ where: { asaasPaymentId: paymentId }, select: { id: true } })) {
       return NextResponse.json({ received: true }, { status: 200 });
     }
+    // Mesma proteção para kits da Bienal (checkout /checkout/kit): o customer da Asaas é o do CPF
+    // de quem comprou, que pode ser um autor com Pix Automático.
+    if (await prisma.pedidoKit.findUnique({ where: { asaasPaymentId: paymentId }, select: { id: true } })) {
+      return NextResponse.json({ received: true }, { status: 200 });
+    }
     // Parcela futura de uma compra parcelada atrasar não revoga acesso — a cobrança já foi
     // "vendida" por inteiro, é assunto entre o autor, o banco e a Asaas, não motivo pra
     // derrubar o autor pro Iniciante (diferente de uma assinatura recorrente de verdade).
@@ -258,6 +264,17 @@ export async function POST(request: NextRequest) {
   }
 
   if (EVENTOS_ESTORNO.has(evento) && paymentId) {
+    // Kit da Bienal estornado/contestado: o pedido deixa de constar como pago (a equipe acerta o resto).
+    const cobrancaEstornada = await buscarCobranca(paymentId);
+    const kitEstornado = await prisma.pedidoKit.findFirst({
+      where: { OR: [{ asaasPaymentId: paymentId }, ...(cobrancaEstornada?.installment ? [{ asaasInstallmentId: cobrancaEstornada.installment }] : [])] },
+      select: { id: true, numero: true },
+    });
+    if (kitEstornado) {
+      await prisma.pedidoKit.update({ where: { id: kitEstornado.id }, data: { status: "cancelado" } });
+      console.error(`[asaas] Kit da Bienal (pedido ${kitEstornado.numero}) ${evento}: marcado como cancelado. Conferir com o cliente.`);
+      return NextResponse.json({ received: true }, { status: 200 });
+    }
     // Só pedidos da loja são tratados aqui (assinaturas e contratos têm o seu próprio fluxo).
     const rowsEstornadas = await prisma.order.findMany({ where: { asaasPaymentId: paymentId } });
     if (rowsEstornadas.length > 0) {
@@ -288,6 +305,17 @@ export async function POST(request: NextRequest) {
   const contratoBienal = await prisma.contratoBienal.findUnique({ where: { asaasPaymentId: cobranca.id }, select: { id: true } });
   if (contratoBienal) {
     await marcarContratoPago(contratoBienal.id, cobranca.netValueCentavos);
+    return NextResponse.json({ received: true }, { status: 200 });
+  }
+
+  // Kit da Bienal (checkout /checkout/kit): identificado pelo id da cobrança ou pelo id do
+  // parcelamento, também antes da lógica de autores (mesmo motivo do contrato acima).
+  const pedidoKit = await prisma.pedidoKit.findFirst({
+    where: { OR: [{ asaasPaymentId: cobranca.id }, ...(cobranca.installment ? [{ asaasInstallmentId: cobranca.installment }] : [])] },
+    select: { id: true },
+  });
+  if (pedidoKit) {
+    await marcarPedidoKitPago(pedidoKit.id, cobranca.netValueCentavos);
     return NextResponse.json({ received: true }, { status: 200 });
   }
 
