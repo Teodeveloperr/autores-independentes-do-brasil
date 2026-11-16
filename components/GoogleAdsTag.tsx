@@ -1,6 +1,6 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import Link from "next/link";
 import Script from "next/script";
 import { usePathname } from "next/navigation";
@@ -124,6 +124,49 @@ gtag('config', '${GOOGLE_ADS_ID}');`}
       </div>
     </div>
   );
+}
+
+// Ação de conversão "Compra" criada no Google Ads.
+const CONVERSAO_COMPRA = `${GOOGLE_ADS_ID}/vcjfCIHX17cdEIflhvRC`;
+
+/**
+ * Registra a conversão "Compra" no Google Ads, na página de agradecimento do pedido pago.
+ * Só envia se o visitante aceitou os cookies de publicidade, e uma única vez por pedido
+ * neste navegador (recarregar a página não conta de novo).
+ */
+export function ConversaoCompra({ pedidoId, valor }: { pedidoId: string; valor: number }) {
+  const escolha = useEscolha();
+
+  useEffect(() => {
+    if (escolha !== "aceito") return;
+    const marca = `aib_conversao_${pedidoId}`;
+    try {
+      if (localStorage.getItem(marca)) return;
+    } catch {
+      return;
+    }
+
+    // A tag é carregada depois da página; espera ela ficar pronta (até ~10 s).
+    let tentativas = 0;
+    const timer = setInterval(() => {
+      tentativas += 1;
+      const gtag = (window as unknown as { gtag?: (...args: unknown[]) => void }).gtag;
+      if (typeof gtag === "function") {
+        clearInterval(timer);
+        gtag("event", "conversion", { send_to: CONVERSAO_COMPRA, value: valor, currency: "BRL", transaction_id: pedidoId });
+        try {
+          localStorage.setItem(marca, "1");
+        } catch {
+          // Sem a marca, o Google ainda descarta a repetição pelo transaction_id.
+        }
+      } else if (tentativas >= 40) {
+        clearInterval(timer);
+      }
+    }, 250);
+    return () => clearInterval(timer);
+  }, [escolha, pedidoId, valor]);
+
+  return null;
 }
 
 /** Botão da Política de Privacidade para o visitante rever a escolha (o aviso volta a aparecer). */

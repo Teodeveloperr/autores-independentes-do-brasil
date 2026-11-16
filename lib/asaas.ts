@@ -85,6 +85,8 @@ export async function criarCobranca(input: {
   valueCentavos: number;
   description: string;
   externalReference: string;
+  /** Página do nosso site para onde a Asaas devolve o comprador depois do pagamento (opcional). */
+  successUrl?: string;
 }): Promise<CobrancaCriada | null> {
   const accessToken = getAccessToken();
   if (!accessToken) return null;
@@ -100,6 +102,7 @@ export async function criarCobranca(input: {
         dueDate: hoje(),
         description: input.description,
         externalReference: input.externalReference,
+        ...(input.successUrl ? { callback: { successUrl: input.successUrl, autoRedirect: true } } : {}),
       }),
     });
     if (!res.ok) {

@@ -227,14 +227,20 @@ export async function criarPedido(
     complemento: temFisico ? endereco.complemento.trim() : "",
   });
 
-  const cobranca = customerId
-    ? await criarCobranca({
-        customerId,
-        valueCentavos: totalCentavos,
-        description: `Compra de livro(s) — Autores Independentes do Brasil (${rows.map((r) => r.livro).join(", ")})`.slice(0, 500),
-        externalReference: grupoPedidoId,
-      })
-    : null;
+  // Depois do pagamento a Asaas devolve o comprador para a página de agradecimento (é nela que a
+  // conversão do Google Ads é registrada). Se a Asaas recusar o endereço de retorno, cria sem ele.
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://autoresdobrasil.com.br";
+  const dadosCobranca = {
+    customerId: customerId ?? "",
+    valueCentavos: totalCentavos,
+    description: `Compra de livro(s) — Autores Independentes do Brasil (${rows.map((r) => r.livro).join(", ")})`.slice(0, 500),
+    externalReference: grupoPedidoId,
+  };
+  let cobranca = customerId ? await criarCobranca({ ...dadosCobranca, successUrl: `${siteUrl}/pedido/obrigado?pedido=${grupoPedidoId}` }) : null;
+  if (customerId && !cobranca) {
+    console.error(`[checkout] Cobrança do pedido ${grupoPedidoId} falhou com o endereço de retorno; tentando sem ele.`);
+    cobranca = await criarCobranca(dadosCobranca);
+  }
 
   if (!cobranca) {
     // Rollback: sem cobrança real, não faz sentido manter o pedido registrado.
