@@ -10,7 +10,10 @@ export type DadosBienalPainel = {
   podeEscolher: boolean;
 };
 
-export type PainelView = "bienal" | "dash" | "perfil" | "livros" | "pedidos" | "eventos" | "galeria" | "mensagens" | "chat" | "avaliacoes" | "vendas" | "portfolio" | "divulgacao" | "configuracoes";
+/** Pedido de impressão, como aparece na lista do painel. */
+export type PedidoImpressaoResumo = { id: string; numero: number; titulo: string; tiragem: number; status: string; enviadoEm: string };
+
+export type PainelView = "imprimir" | "bienal" | "dash" | "perfil" | "livros" | "pedidos" | "eventos" | "galeria" | "mensagens" | "chat" | "avaliacoes" | "vendas" | "portfolio" | "divulgacao" | "configuracoes";
 
 export type AuthorWithRelations = Prisma.AuthorGetPayload<{
   omit: { senhaHash: true };

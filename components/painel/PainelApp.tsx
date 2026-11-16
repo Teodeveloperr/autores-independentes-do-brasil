@@ -6,8 +6,9 @@ import Link from "next/link";
 import { logout } from "@/app/painel/actions";
 import { firstName, initials } from "@/lib/format";
 import { perfilHref } from "@/lib/slug";
-import type { AuthorWithRelations, DadosBienalPainel, PainelView } from "./types";
+import type { AuthorWithRelations, DadosBienalPainel, PainelView, PedidoImpressaoResumo } from "./types";
 import BienalView from "./BienalView";
+import ImprimirView from "./ImprimirView";
 import DashboardView from "./DashboardView";
 import PerfilView from "./PerfilView";
 import LivrosView from "./LivrosView";
@@ -45,8 +46,10 @@ export default function PainelApp({
   previaUrl,
   maxVisualizacoesGlobal,
   bienal,
+  pedidosImpressao,
 }: {
   bienal: DadosBienalPainel | null;
+  pedidosImpressao: PedidoImpressaoResumo[];
   author: AuthorWithRelations;
   temSenha: boolean;
   mercadoPagoStatus?: string;
@@ -70,6 +73,12 @@ export default function PainelApp({
         <button onClick={() => setView("perfil")} style={sidebarBtn(view === "perfil")}>👤 Meu Perfil</button>
         <button onClick={() => setView("divulgacao")} style={sidebarBtn(view === "divulgacao")}>📣 Divulgar meu perfil</button>
         <button onClick={() => setView("livros")} style={sidebarBtn(view === "livros")}>📚 Meus Livros</button>
+        {author.status === "ativo" && (
+          <button onClick={() => setView("imprimir")} style={sidebarBtn(view === "imprimir")}>
+            🖨️ Imprimir meu livro
+            <span style={{ background: "#FFDF00", color: "#002776", padding: "2px 8px", borderRadius: "12px", fontSize: "11px", fontWeight: 700, marginLeft: "auto" }}>novo</span>
+          </button>
+        )}
         <button onClick={() => setView("pedidos")} style={sidebarBtn(view === "pedidos")}>📋 Pedidos</button>
         {author.plano !== "Iniciante" && (
           <button onClick={() => setView("vendas")} style={sidebarBtn(view === "vendas")}>💰 Vendas e Relatórios</button>
@@ -162,6 +171,7 @@ export default function PainelApp({
           {view === "dash" && <DashboardView author={author} onNavigate={setView} maxVisualizacoesGlobal={maxVisualizacoesGlobal} />}
           {view === "perfil" && <PerfilView author={author} />}
           {view === "livros" && <LivrosView author={author} />}
+          {view === "imprimir" && <ImprimirView authorId={author.id} pedidos={pedidosImpressao} />}
           {view === "pedidos" && <PedidosView author={author} />}
           {view === "eventos" && <EventosView author={author} />}
           {view === "bienal" && <BienalView plano={author.plano} bienal={bienal} />}

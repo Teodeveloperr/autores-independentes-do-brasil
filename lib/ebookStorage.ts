@@ -67,3 +67,45 @@ export async function apagarEbookDoArmazenamento(bookId: string): Promise<void> 
     console.error("[ebook] Falha ao apagar as páginas do e-book:", bookId, err);
   }
 }
+
+// ── Pedidos de impressão (PDFs de capa e miolo, pasta impressao/) ───────────────────────────────
+
+/** Credencial do armazenamento privado, para a rota que autoriza o envio direto do navegador. */
+export function tokenArmazenamentoPrivado(): string {
+  return tokenEbooks();
+}
+
+/** Tamanho (bytes) de um arquivo do armazenamento privado, ou null se ele não existir. */
+export async function tamanhoArquivoPrivado(pathname: string): Promise<number | null> {
+  const pagina = await list({ prefix: pathname, limit: 10, token: tokenEbooks() });
+  return pagina.blobs.find((b) => b.pathname === pathname)?.size ?? null;
+}
+
+/** Abre um arquivo do armazenamento privado para leitura em fluxo (sem carregar tudo na memória). */
+export async function abrirArquivoPrivado(pathname: string): Promise<ReadableStream<Uint8Array> | null> {
+  const resultado = await get(pathname, { access: "private", token: tokenEbooks() });
+  if (!resultado || resultado.statusCode !== 200) return null;
+  return resultado.stream as ReadableStream<Uint8Array>;
+}
+
+/** Confere se o arquivo começa com a assinatura de um PDF ("%PDF"). */
+export async function arquivoPrivadoEhPdf(pathname: string): Promise<boolean> {
+  const fluxo = await abrirArquivoPrivado(pathname);
+  if (!fluxo) return false;
+  const leitor = fluxo.getReader();
+  try {
+    const { value } = await leitor.read();
+    return !!value && value.length >= 4 && value[0] === 0x25 && value[1] === 0x50 && value[2] === 0x44 && value[3] === 0x46;
+  } finally {
+    await leitor.cancel().catch(() => undefined);
+  }
+}
+
+/** Apaga os PDFs de todos os pedidos de impressão de um autor. Falha ao limpar não impede quem chamou. */
+export async function apagarImpressaoDoArmazenamento(authorId: string): Promise<void> {
+  try {
+    await apagarArquivosPrivados(await listarArquivosPrivados(`impressao/${authorId}/`));
+  } catch (err) {
+    console.error("[impressao] Falha ao apagar os arquivos de impressão do autor:", authorId, err);
+  }
+}

@@ -19,7 +19,7 @@ export default async function PainelPage({ searchParams }: { searchParams: Promi
   // Quem entra no painel já precisa ter o endereço amigável do perfil (aba "Divulgar meu perfil").
   await garantirSlug(authorSession.id);
 
-  const [author, visualizacoesAgg] = await Promise.all([
+  const [author, visualizacoesAgg, pedidosImpressao] = await Promise.all([
     prisma.author.findUniqueOrThrow({
       where: { id: authorSession.id },
       omit: { senhaHash: true },
@@ -38,6 +38,11 @@ export default async function PainelPage({ searchParams }: { searchParams: Promi
       },
     }),
     prisma.author.aggregate({ where: { status: "ativo" }, _max: { visualizacoes: true } }),
+    prisma.pedidoImpressao.findMany({
+      where: { authorId: authorSession.id },
+      orderBy: { createdAt: "desc" },
+      select: { id: true, numero: true, titulo: true, tiragem: true, status: true, createdAt: true },
+    }),
   ]);
 
   const temSenha = authorSession.senhaHash != null;
@@ -63,6 +68,14 @@ export default async function PainelPage({ searchParams }: { searchParams: Promi
   return (
     <PainelApp
       bienal={bienal}
+      pedidosImpressao={pedidosImpressao.map((p) => ({
+        id: p.id,
+        numero: p.numero,
+        titulo: p.titulo,
+        tiragem: p.tiragem,
+        status: p.status,
+        enviadoEm: p.createdAt.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" }),
+      }))}
       author={author}
       temSenha={temSenha}
       mercadoPagoStatus={mercadopago}

@@ -523,3 +523,68 @@ export async function sendLeitorSenhaEmail(to: string, url: string) {
     `,
   });
 }
+
+// ── Pedido de impressão de livro ("Imprimir meu livro") ─────────────────────────────────────────
+
+export type PedidoImpressaoEmailInfo = {
+  numeroTexto: string;
+  autorNome: string;
+  autorEmail: string;
+  autorTelefone: string | null;
+  /** Pares "rótulo → valor" das especificações, na ordem em que devem aparecer. */
+  especificacoes: Array<[string, string]>;
+  observacoes: string | null;
+  capa: { nome: string; tamanho: string; url: string };
+  miolo: { nome: string; tamanho: string; url: string };
+};
+
+function tabelaEspecificacoes(linhas: Array<[string, string]>): string {
+  return `<table style="border-collapse: collapse; width: 100%; font-size: 14px;">${linhas
+    .map(
+      ([rotulo, valor]) =>
+        `<tr><td style="padding: 6px 10px; border: 1px solid #E0E0E0; background: #F6F6F6; width: 40%;"><b>${escaparHtml(rotulo)}</b></td><td style="padding: 6px 10px; border: 1px solid #E0E0E0;">${escaparHtml(valor)}</td></tr>`
+    )
+    .join("")}</table>`;
+}
+
+/** Aviso à equipe (contato@) com as especificações e os links para baixar capa e miolo. */
+export async function sendPedidoImpressaoEquipeEmail(info: PedidoImpressaoEmailInfo) {
+  await enviarEOuFalhar({
+    from: EMAIL_FROM,
+    to: EMAIL_CONTATO,
+    replyTo: info.autorEmail,
+    subject: `[Impressão] Pedido ${info.numeroTexto}: ${info.especificacoes[0]?.[1] ?? ""}`.slice(0, 200),
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 620px; margin: 0 auto; color: #262626;">
+        <h2 style="color: #002776;">Novo pedido de impressão ${escaparHtml(info.numeroTexto)}</h2>
+        <p><b>Autor(a):</b> ${escaparHtml(info.autorNome)} (${escaparHtml(info.autorEmail)}${info.autorTelefone ? `, ${escaparHtml(info.autorTelefone)}` : ""})</p>
+        ${tabelaEspecificacoes(info.especificacoes)}
+        ${info.observacoes ? `<p><b>Observações do autor:</b></p><p style="white-space: pre-wrap; background:#F6F6F6; padding:12px; border-radius:8px;">${escaparHtml(info.observacoes)}</p>` : ""}
+        <h3 style="color: #002776; margin-top: 24px;">Arquivos</h3>
+        <p><b>Capa:</b> <a href="${info.capa.url}">baixar PDF</a> (${escaparHtml(info.capa.nome)}, ${escaparHtml(info.capa.tamanho)})</p>
+        <p><b>Miolo:</b> <a href="${info.miolo.url}">baixar PDF</a> (${escaparHtml(info.miolo.nome)}, ${escaparHtml(info.miolo.tamanho)})</p>
+        <p style="font-size: 13px; color: #666;">Os links não pedem login e podem ser encaminhados à gráfica. Responder a este e-mail fala direto com o autor.</p>
+      </div>
+    `,
+  });
+}
+
+/** Confirmação para o autor de que o pedido de impressão foi recebido. */
+export async function sendPedidoImpressaoAutorEmail(to: string, info: Pick<PedidoImpressaoEmailInfo, "numeroTexto" | "autorNome" | "especificacoes">) {
+  await resend.emails.send({
+    from: EMAIL_FROM,
+    to,
+    subject: `Recebemos o seu pedido de impressão ${info.numeroTexto}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 620px; margin: 0 auto; color: #262626;">
+        <h1 style="color: #002776; font-size: 22px;">Pedido de impressão recebido</h1>
+        <p style="font-size: 15px; line-height: 1.6;">
+          Olá, ${escaparHtml(info.autorNome)}. Recebemos o seu pedido <b>${escaparHtml(info.numeroTexto)}</b> com os arquivos de capa e miolo.
+          Nossa equipe vai conferir as informações e entrar em contato por este e-mail com o orçamento e os próximos passos.
+        </p>
+        ${tabelaEspecificacoes(info.especificacoes)}
+        <p style="font-size: 13px; color: #666; margin-top: 16px;">Você acompanha a situação do pedido no painel, em "Imprimir meu livro".</p>
+      </div>
+    `,
+  });
+}

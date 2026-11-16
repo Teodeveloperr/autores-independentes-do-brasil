@@ -111,6 +111,7 @@ model Author {
   mercadoPagoToken     AuthorMercadoPagoToken?
   passkeys             AuthorPasskey[]
   reservaBienal        ReservaBienalPremiumPlus?
+  pedidosImpressao     PedidoImpressao[]
   assinaturaPagamentos SubscriptionPayment[]
   portfolioEventos     PortfolioEvento[]
   chatMensagens        ChatMensagem[]
@@ -680,4 +681,47 @@ model AcessoEbook {
 
   @@unique([leitorId, bookId])
   @@index([bookId])
+}
+
+// Pedido de impressão de livro feito pelo autor no painel ("Imprimir meu livro"). As especificações
+// e os links dos arquivos seguem por e-mail para a equipe (contato@), que trata com a gráfica.
+// Os PDFs de capa e miolo ficam no armazenamento PRIVADO (mesmo store dos e-books), em
+// impressao/<authorId>/<pasta>/, e só saem pela rota de download com o token do pedido.
+model PedidoImpressao {
+  id       String @id @default(cuid())
+  numero   Int    @unique @default(autoincrement())
+  authorId String
+  author   Author @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  titulo       String
+  formato      String
+  paginas      Int
+  tiragem      Int
+  temIsbn      Boolean
+  mioloCor     String
+  mioloPapel   String
+  encadernacao String
+  capaPapel    String
+  capaCor      String
+  laminacao    String
+  orelhas      Boolean
+  acabamentos  String[]
+  observacoes  String?
+
+  capaPath   String
+  capaNome   String
+  capaBytes  Int
+  mioloPath  String
+  mioloNome  String
+  mioloBytes Int
+
+  // "enviado" | "em_conferencia" | "prova_disponivel" | "aprovado" | "em_producao" | "concluido" | "cancelado"
+  status String @default("enviado")
+  // Hash do token que libera o download dos arquivos pelos links do e-mail.
+  tokenHash String @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([authorId])
 }

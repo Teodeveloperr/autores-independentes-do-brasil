@@ -1,7 +1,7 @@
 import "server-only";
 import { del } from "@vercel/blob";
 import { prisma } from "@/lib/db";
-import { apagarEbookDoArmazenamento } from "@/lib/ebookStorage";
+import { apagarEbookDoArmazenamento, apagarImpressaoDoArmazenamento } from "@/lib/ebookStorage";
 
 export async function excluirAutorCompletamente(id: string): Promise<void> {
   const author = await prisma.author.findUnique({
@@ -20,6 +20,7 @@ export async function excluirAutorCompletamente(id: string): Promise<void> {
   for (const b of author?.books ?? []) {
     if (b.formato === "ebook") await apagarEbookDoArmazenamento(b.id);
   }
+  await apagarImpressaoDoArmazenamento(id);
 
   if (blobUrls.length > 0) {
     try {
@@ -140,6 +141,9 @@ export async function excluirOuEncerrarAutor(id: string): Promise<"excluido" | "
   for (const b of author.books) {
     if (b.formato === "ebook" && !idsRetidos.includes(b.id)) await apagarEbookDoArmazenamento(b.id);
   }
+  // Pedidos de impressão levam dados pessoais e o original do livro: saem junto com a conta.
+  await prisma.pedidoImpressao.deleteMany({ where: { authorId: author.id } });
+  await apagarImpressaoDoArmazenamento(author.id);
   await apagarArquivos([
     author.fotoUrl,
     author.bannerUrl,
