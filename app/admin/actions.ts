@@ -26,6 +26,7 @@ import { REGIOES_OPORTUNIDADES } from "@/lib/regioes";
 import { emailSchema, textoSchema, intSchema, primeiroErroZod } from "@/lib/validation";
 import { validarImagemAssinatura } from "@/lib/contrato/assinaturaImagem";
 import { PLANO_PREMIUM_PLUS } from "@/lib/contrato/config";
+import { STATUS_IMPRESSAO } from "@/lib/impressao";
 import { removerHorarioPremiumPlus, reservarHorarioPremiumPlus, validarHorarioPremiumPlus } from "@/lib/contrato/agenda";
 import { TIPOS_CHAVE_PIX, chavePixValida } from "@/lib/pixKey";
 import type { ChatMensagemRow } from "@/app/painel/actions";
@@ -1027,5 +1028,16 @@ export async function liberarAcessoEbookManual(email: string, bookId: string): P
     return { error: "Não foi possível concluir agora. Confira se o acesso foi criado na lista." };
   }
   revalidatePath("/admin");
+  return {};
+}
+
+/** Muda a situação de um pedido de impressão (aparece para o autor em "Meus pedidos de impressão"). */
+export async function atualizarStatusPedidoImpressao(id: string, status: string): Promise<{ error?: string }> {
+  await requireAdmin();
+  if (!Object.prototype.hasOwnProperty.call(STATUS_IMPRESSAO, status)) return { error: "Situação inválida." };
+  const atualizado = await prisma.pedidoImpressao.updateMany({ where: { id }, data: { status } });
+  if (atualizado.count === 0) return { error: "Pedido não encontrado." };
+  revalidatePath("/admin");
+  revalidatePath("/painel");
   return {};
 }

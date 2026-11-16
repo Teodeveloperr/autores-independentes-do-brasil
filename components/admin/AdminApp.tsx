@@ -4,7 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { adminLogout } from "@/app/admin/actions";
-import type { AdminView, Article, AuthorWithCount, CollectiveEvent, CollectiveGalleryPhoto, Opportunity, ReviewWithAuthor, OrderWithAuthor, OrderComReceita, SubscriptionPaymentRow, TalkShowVideo, ContratoAdminRow, PremiumPlusBienalRow, AcessoEbookAdminRow, EbookAdminRow } from "./types";
+import type { AdminView, Article, AuthorWithCount, CollectiveEvent, CollectiveGalleryPhoto, Opportunity, ReviewWithAuthor, OrderWithAuthor, OrderComReceita, SubscriptionPaymentRow, TalkShowVideo, ContratoAdminRow, PremiumPlusBienalRow, AcessoEbookAdminRow, EbookAdminRow, PedidoImpressaoAdminRow, PedidoKitAdminRow } from "./types";
 import AdminAgendaView from "./AdminAgendaView";
 import AdminOportunidadesView from "./AdminOportunidadesView";
 import AdminGaleriaView from "./AdminGaleriaView";
@@ -17,6 +17,7 @@ import AdminPedidosView from "./AdminPedidosView";
 import AdminReceitaView from "./AdminReceitaView";
 import AdminContratosView from "./AdminContratosView";
 import AdminEbooksView from "./AdminEbooksView";
+import AdminImpressaoView from "./AdminImpressaoView";
 import AdminSegurancaView from "./AdminSegurancaView";
 import AdminConfiguracoesView from "./AdminConfiguracoesView";
 
@@ -51,6 +52,8 @@ export default function AdminApp({
   premiumPlusBienal,
   acessosEbook,
   ebooks,
+  pedidosImpressao,
+  pedidosKit,
   totpEnabled,
   premiumPlusPixKey,
   premiumPlusPixKeyType,
@@ -73,6 +76,8 @@ export default function AdminApp({
   premiumPlusBienal: PremiumPlusBienalRow[];
   acessosEbook: AcessoEbookAdminRow[];
   ebooks: EbookAdminRow[];
+  pedidosImpressao: PedidoImpressaoAdminRow[];
+  pedidosKit: PedidoKitAdminRow[];
   totpEnabled: boolean;
   premiumPlusPixKey: string | null;
   premiumPlusPixKeyType: string | null;
@@ -81,6 +86,8 @@ export default function AdminApp({
 }) {
   const [view, setView] = useState<AdminView>("dash");
   const totalLivros = autores.reduce((sum, a) => sum + a._count.books, 0);
+  // Pedidos de impressão que ainda ninguém da equipe tratou (situação "Enviado").
+  const novosImpressao = pedidosImpressao.filter((p) => p.status === "enviado").length;
 
   return (
     <div className="app-shell" style={{ display: "flex", minHeight: "100vh", background: "#F6F6F6" }}>
@@ -104,6 +111,12 @@ export default function AdminApp({
         <button onClick={() => setView("receita")} style={sidebarBtn(view === "receita")}>💰 Receita</button>
         <button onClick={() => setView("contratos")} style={sidebarBtn(view === "contratos")}>📑 Contratos</button>
         <button onClick={() => setView("ebooks")} style={sidebarBtn(view === "ebooks")}>📖 E-books</button>
+        <button onClick={() => setView("impressao")} style={sidebarBtn(view === "impressao")}>
+          🖨️ Impressão e kits
+          {novosImpressao > 0 && (
+            <span style={{ marginLeft: "auto", background: "#FFDF00", color: "#002776", fontSize: "11px", fontWeight: 700, padding: "1px 8px", borderRadius: "10px" }}>{novosImpressao}</span>
+          )}
+        </button>
         <button onClick={() => setView("seguranca")} style={sidebarBtn(view === "seguranca")}>🔐 Segurança</button>
         <button onClick={() => setView("configuracoes")} style={sidebarBtn(view === "configuracoes")}>⚙️ Configurações</button>
         <button
@@ -227,6 +240,7 @@ export default function AdminApp({
           )}
           {view === "contratos" && <AdminContratosView contratos={contratos} assinaturaContratada={assinaturaContratada} premiumPlusBienal={premiumPlusBienal} />}
           {view === "ebooks" && <AdminEbooksView acessos={acessosEbook} ebooks={ebooks} />}
+          {view === "impressao" && <AdminImpressaoView pedidosImpressao={pedidosImpressao} pedidosKit={pedidosKit} />}
           {view === "seguranca" && <AdminSegurancaView totpEnabled={totpEnabled} />}
           {view === "configuracoes" && <AdminConfiguracoesView premiumPlusPixKey={premiumPlusPixKey} premiumPlusPixKeyType={premiumPlusPixKeyType} />}
         </div>

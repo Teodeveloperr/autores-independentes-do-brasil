@@ -40,6 +40,8 @@ export default async function AdminPage() {
     premiumPlusBienal,
     acessosEbook,
     ebooks,
+    pedidosImpressao,
+    pedidosKit,
   ] = await Promise.all([
     prisma.collectiveEvent.findMany({ orderBy: { createdAt: "desc" } }),
     prisma.opportunity.findMany({ orderBy: { prazoFinal: "asc" } }),
@@ -87,6 +89,18 @@ export default async function AdminPage() {
       orderBy: { createdAt: "desc" },
       select: { id: true, titulo: true, ebookStatus: true, ebookPaginas: true, ebookErro: true, ebookAtualizadoEm: true, author: { select: { nome: true } }, _count: { select: { acessosEbook: true } } },
     }),
+    // Sem o hash do token nem os caminhos dos PDFs: os arquivos abrem por uma rota própria só do admin.
+    prisma.pedidoImpressao.findMany({
+      orderBy: { createdAt: "desc" },
+      omit: { tokenHash: true, capaPath: true, mioloPath: true },
+      include: { author: { select: { nome: true, email: true } } },
+    }),
+    // Sem CPF nem o código do link de agradecimento (o CPF fica na Asaas).
+    prisma.pedidoKit.findMany({
+      orderBy: { createdAt: "desc" },
+      omit: { cpf: true, token: true, asaasCustomerId: true },
+      include: { pagamentos: { orderBy: { createdAt: "asc" } } },
+    }),
   ]);
 
   return (
@@ -107,6 +121,8 @@ export default async function AdminPage() {
       premiumPlusBienal={premiumPlusBienal}
       acessosEbook={acessosEbook}
       ebooks={ebooks}
+      pedidosImpressao={pedidosImpressao}
+      pedidosKit={pedidosKit}
       totpEnabled={admin.totpEnabled}
       premiumPlusPixKey={admin.premiumPlusPixKey}
       premiumPlusPixKeyType={admin.premiumPlusPixKeyType}

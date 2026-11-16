@@ -1,6 +1,6 @@
 import type { Prisma } from "@/app/generated/prisma/client";
 
-export type AdminView = "dash" | "agenda" | "oportunidades" | "galeria" | "autores" | "blog" | "talkshow" | "chat" | "avaliacoes" | "pedidos" | "receita" | "contratos" | "ebooks" | "seguranca" | "configuracoes";
+export type AdminView = "dash" | "agenda" | "oportunidades" | "galeria" | "autores" | "blog" | "talkshow" | "chat" | "avaliacoes" | "pedidos" | "receita" | "contratos" | "ebooks" | "impressao" | "seguranca" | "configuracoes";
 
 export type CollectiveEvent = Prisma.CollectiveEventGetPayload<Record<string, never>>;
 export type Opportunity = Prisma.OpportunityGetPayload<Record<string, never>>;
@@ -26,4 +26,14 @@ export type AcessoEbookAdminRow = Prisma.AcessoEbookGetPayload<{
 }>;
 export type EbookAdminRow = Prisma.BookGetPayload<{
   select: { id: true; titulo: true; ebookStatus: true; ebookPaginas: true; ebookErro: true; ebookAtualizadoEm: true; author: { select: { nome: true } }; _count: { select: { acessosEbook: true } } };
+}>;
+// Pedido de impressão no admin: sem os caminhos dos PDFs nem o hash do token (os arquivos abrem pela rota do admin).
+export type PedidoImpressaoAdminRow = Prisma.PedidoImpressaoGetPayload<{
+  omit: { tokenHash: true; capaPath: true; mioloPath: true };
+  include: { author: { select: { nome: true; email: true } } };
+}>;
+// Kit da Bienal no admin: sem CPF nem o código do link de agradecimento.
+export type PedidoKitAdminRow = Prisma.PedidoKitGetPayload<{
+  omit: { cpf: true; token: true; asaasCustomerId: true };
+  include: { pagamentos: true };
 }>;
