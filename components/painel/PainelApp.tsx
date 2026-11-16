@@ -47,7 +47,9 @@ export default function PainelApp({
   maxVisualizacoesGlobal,
   bienal,
   pedidosImpressao,
+  abaInicial,
 }: {
+  abaInicial?: PainelView;
   bienal: DadosBienalPainel | null;
   pedidosImpressao: PedidoImpressaoResumo[];
   author: AuthorWithRelations;
@@ -57,7 +59,7 @@ export default function PainelApp({
   previaUrl: string | null;
   maxVisualizacoesGlobal: number;
 }) {
-  const [view, setView] = useState<PainelView>("dash");
+  const [view, setView] = useState<PainelView>(abaInicial ?? "dash");
 
   const unreadCount = author.conversas.filter((c) => c.unread).length;
   const nome = author.nome || "Autor(a)";

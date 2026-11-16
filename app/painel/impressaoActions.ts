@@ -2,7 +2,8 @@
 
 import crypto from "node:crypto";
 import { revalidatePath } from "next/cache";
-import { requireAuthor } from "@/lib/auth";
+import { getCurrentAuthor, requireAuthor } from "@/lib/auth";
+import { verificarTurnstile } from "@/lib/turnstile";
 import { prisma } from "@/lib/db";
 import {
   sendOrcamentoImpressaoAutorEmail,
@@ -20,7 +21,7 @@ import {
   validarEspecificacoes,
   type EspecificacoesImpressao,
 } from "@/lib/impressao";
-import { checkRateLimit } from "@/lib/rateLimit";
+import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 
 // Pedido de impressão de livro feito no painel. Os PDFs já subiram direto do navegador para o
 // armazenamento privado (rota /api/painel/impressao/upload); aqui o servidor confere tudo de novo,
@@ -154,9 +155,11 @@ export async function enviarPedidoImpressao(
  */
 export async function solicitarOrcamentoImpressao(
   contato: { nome: string; email: string; telefone: string; projeto: string },
-  especificacoes: Partial<EspecificacoesImpressao>
+  especificacoes: Partial<EspecificacoesImpressao>,
+  turnstileToken?: string | null
 ): Promise<{ error?: string; ok?: boolean }> {
-  const author = await requireAuthor();
+  // Também atende a página pública /imprimir (sem cadastro): aí vale o anti-robô e o limite por IP.
+  const author = await getCurrentAuthor();
 
   const nome = String(contato.nome ?? "").trim();
   const email = String(contato.email ?? "").trim();
@@ -168,8 +171,13 @@ export async function solicitarOrcamentoImpressao(
   if (digitos.length < 10 || digitos.length > 13 || telefone.length > 30) return { error: "Informe um telefone com DDD." };
   if (projeto.length < 2 || projeto.length > 200) return { error: "Informe o nome do projeto." };
 
-  const permitido = await checkRateLimit(`impressao-orcamento:${author.id}`, 5, 60);
-  if (!permitido) return { error: "Muitos pedidos em pouco tempo. Aguarde alguns minutos." };
+  if (!author && !(await verificarTurnstile(turnstileToken ?? null))) {
+    return { error: "Não conseguimos confirmar que você não é um robô. Recarregue a página e tente de novo." };
+  }
+  const chaveLimite = author ? `impressao-orcamento:${author.id}` : `impressao-orcamento-ip:${await getClientIp()}`;
+  const permitido =
+    (await checkRateLimit(chaveLimite, 5, 60)) && (await checkRateLimit(`impressao-orcamento-email:${email.toLowerCase()}`, 3, 24 * 60));
+  if (!permitido) return { error: "Muitos pedidos em pouco tempo. Aguarde um pouco e tente de novo." };
 
   const texto = (v: unknown, padrao = "A definir") => String(v ?? "").trim().slice(0, 200) || padrao;
   const numero = (v: unknown, sufixo = "") => (Number(v) > 0 ? `${Math.floor(Number(v))}${sufixo}` : "A definir");

@@ -23,6 +23,7 @@ import {
   validarEspecificacoes,
   type EspecificacoesImpressao,
 } from "@/lib/impressao";
+import TurnstileWidget from "@/components/TurnstileWidget";
 import type { PedidoImpressaoResumo } from "./types";
 
 // Tela "Imprimir meu livro": o autor configura o livro, escolhe os PDFs de capa e miolo, folheia a
@@ -175,7 +176,20 @@ function conferir(e: EspecificacoesImpressao, capa: ArquivoPdf, miolo: ArquivoPd
   return itens;
 }
 
-export default function ImprimirView({ authorId, pedidos, nomeInicial = "", emailInicial = "" }: { authorId: string; pedidos: PedidoImpressaoResumo[]; nomeInicial?: string; emailInicial?: string }) {
+export default function ImprimirView({
+  authorId = "",
+  pedidos = [],
+  nomeInicial = "",
+  emailInicial = "",
+  publico = false,
+}: {
+  authorId?: string;
+  pedidos?: PedidoImpressaoResumo[];
+  nomeInicial?: string;
+  emailInicial?: string;
+  /** Página aberta ao público (sem cadastro): só a configuração e o pedido de orçamento por e-mail. */
+  publico?: boolean;
+}) {
   const router = useRouter();
   const [orc, setOrc] = useState({ nome: nomeInicial, email: emailInicial, telefone: "", projeto: "" });
   const [orcErro, setOrcErro] = useState("");
@@ -294,9 +308,13 @@ export default function ImprimirView({ authorId, pedidos, nomeInicial = "", emai
     setOrcErro("");
     setOrcEnviando(true);
     try {
-      const r = await solicitarOrcamentoImpressao(orc, e);
-      if (r.error) setOrcErro(r.error);
-      else setOrcOk(true);
+      const token = new FormData(ev.currentTarget as HTMLFormElement).get("cf-turnstile-response");
+      const r = await solicitarOrcamentoImpressao(orc, e, typeof token === "string" ? token : null);
+      if (r.error) {
+        setOrcErro(r.error);
+        // O token do anti-robô vale uma vez só: pede outro para a próxima tentativa.
+        (window as unknown as { turnstile?: { reset: () => void } }).turnstile?.reset();
+      } else setOrcOk(true);
     } catch (err) {
       console.error(err);
       setOrcErro("Não foi possível enviar agora. Confira a conexão e tente de novo.");
@@ -491,10 +509,12 @@ export default function ImprimirView({ authorId, pedidos, nomeInicial = "", emai
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-      <div>
-        <h2 style={{ fontSize: "22px", fontWeight: 700, color: "#002776", marginBottom: "4px" }}>Imprimir meu livro</h2>
-        <p style={{ fontSize: "13px", color: "#666", lineHeight: 1.6 }}>Configure o livro, envie a capa e o miolo e peça a impressão sem sair da plataforma.</p>
-      </div>
+      {!publico && (
+        <div>
+          <h2 style={{ fontSize: "22px", fontWeight: 700, color: "#002776", marginBottom: "4px" }}>Imprimir meu livro</h2>
+          <p style={{ fontSize: "13px", color: "#666", lineHeight: 1.6 }}>Configure o livro, envie a capa e o miolo e peça a impressão sem sair da plataforma.</p>
+        </div>
+      )}
 
       {enviado && (
         <div role="status" style={{ background: "#E3F4EA", color: "#0a6130", padding: "14px 18px", borderRadius: "8px", fontSize: "14px", lineHeight: 1.6 }}>
@@ -505,7 +525,9 @@ export default function ImprimirView({ authorId, pedidos, nomeInicial = "", emai
       <div style={{ background: "#002776", color: "white", borderRadius: "12px", padding: "22px 24px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "18px" }}>
         {[
           ["1", "Configure o livro", "Formato, papel, encadernação e tiragem."],
-          ["2", "Envie capa e miolo", "Folheie a pré-impressão antes de enviar."],
+          publico
+            ? ["2", "Peça o orçamento", "Informe seus contatos no fim da página."]
+            : ["2", "Envie capa e miolo", "Folheie a pré-impressão antes de enviar."],
           ["3", "Receba o orçamento", "Nossa equipe responde por e-mail."],
         ].map(([n, titulo, texto]) => (
           <div key={n} style={{ display: "flex", gap: "12px", alignItems: "flex-start" }}>
@@ -593,6 +615,7 @@ export default function ImprimirView({ authorId, pedidos, nomeInicial = "", emai
             </div>
           </section>
 
+          {!publico && (
           <section style={{ ...card, display: "flex", flexDirection: "column", gap: "14px" }}>
             <div>
               <h2 style={{ ...h2, marginBottom: "4px" }}>4. Envie seus arquivos</h2>
@@ -615,6 +638,7 @@ export default function ImprimirView({ authorId, pedidos, nomeInicial = "", emai
             </div>
             <p style={{ margin: 0, fontSize: "12px", color: "#555" }}>Na pré-impressão você folheia a capa e o miolo e também pode enviar o pedido de lá. Nada é cobrado agora: o orçamento chega por e-mail.</p>
           </section>
+          )}
         </div>
 
         <aside style={{ flex: "1 1 280px", minWidth: 0, display: "flex", flexDirection: "column", gap: "16px" }}>
@@ -622,15 +646,15 @@ export default function ImprimirView({ authorId, pedidos, nomeInicial = "", emai
           <div style={card}>
             <h2 style={{ ...h2, fontSize: "15px", marginBottom: "10px" }}>Depois do envio</h2>
             <ol style={{ margin: 0, paddingLeft: "18px", fontSize: "13px", lineHeight: 1.7, color: "#444" }}>
-              <li>Nossa equipe confere o pedido e os arquivos.</li>
+              <li>{publico ? "Nossa equipe analisa a sua configuração." : "Nossa equipe confere o pedido e os arquivos."}</li>
               <li>Você recebe o orçamento por e-mail.</li>
-              <li>Com a sua aprovação, o livro segue para a gráfica.</li>
+              <li>{publico ? "Com a sua aprovação, combinamos o envio dos arquivos e a produção." : "Com a sua aprovação, o livro segue para a gráfica."}</li>
             </ol>
           </div>
         </aside>
       </div>
 
-      {pedidos.length > 0 && (
+      {!publico && pedidos.length > 0 && (
         <section style={card}>
           <h2 style={h2}>Meus pedidos de impressão</h2>
           <div style={{ overflowX: "auto" }}>
@@ -693,6 +717,7 @@ export default function ImprimirView({ authorId, pedidos, nomeInicial = "", emai
                 <input id="orc-projeto" type="text" required maxLength={200} value={orc.projeto} onChange={(ev) => { setOrc({ ...orc, projeto: ev.target.value }); setOrcErro(""); }} style={campo} />
               </div>
             </div>
+            {publico && <TurnstileWidget />}
             {orcErro && (
               <div role="alert" style={{ background: "#FDEDEC", color: "#A93226", padding: "12px 16px", borderRadius: "8px", fontSize: "13px" }}>{orcErro}</div>
             )}

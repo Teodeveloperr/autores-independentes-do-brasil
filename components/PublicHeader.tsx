@@ -17,6 +17,7 @@ type NavKey =
   | "cadastro"
   | "oportunidades"
   | "bienal"
+  | "imprimir"
   | "talkshow"
   | "contato";
 
@@ -71,6 +72,8 @@ export default async function PublicHeader({
   const [author, admin] = await Promise.all([getCurrentAuthor(), getCurrentAdmin()]);
   const resolvedCta = cta ?? { href: "/login", label: "LOGIN/CADASTRO" };
   const cats = categorias(showContato);
+  // Quem já tem conta usa a aba do painel; quem não tem, a página pública.
+  const imprimirHref = author ? "/painel?aba=imprimir" : "/imprimir";
 
   const utilLinks = [
     ...(author ? [{ key: "painel", label: "MEU PAINEL", href: "/painel", active: false }] : []),
@@ -84,7 +87,7 @@ export default async function PublicHeader({
       label: c.label,
       items: c.items.map((item) => ({ key: item.key, label: item.label, href: item.href, active: active === item.key })),
     })),
-    { label: "", items: utilLinks },
+    { label: "", items: [{ key: "imprimir", label: "🖨️ IMPRIMIR MEU LIVRO", href: imprimirHref, active: active === "imprimir" }, ...utilLinks] },
   ];
 
   return (
@@ -129,6 +132,19 @@ export default async function PublicHeader({
         {cats.map((c) => (
           <NavDropdown key={c.label} label={c.label} items={c.items} activeKey={active} />
         ))}
+        <Link
+          href={imprimirHref}
+          style={{
+            border: "2px solid #009B3A",
+            color: active === "imprimir" ? "white" : "#009B3A",
+            background: active === "imprimir" ? "#009B3A" : "white",
+            fontWeight: 700,
+            padding: "5px 12px",
+            borderRadius: "4px",
+          }}
+        >
+          IMPRIMIR MEU LIVRO
+        </Link>
         {author && (
           <Link href="/painel" style={{ color: "#009B3A", fontWeight: 600 }}>
             MEU PAINEL

@@ -12,9 +12,9 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = { title: "Meu Painel" };
 
-export default async function PainelPage({ searchParams }: { searchParams: Promise<{ mercadopago?: string }> }) {
+export default async function PainelPage({ searchParams }: { searchParams: Promise<{ mercadopago?: string; aba?: string }> }) {
   const authorSession = await requireAuthor();
-  const { mercadopago } = await searchParams;
+  const { mercadopago, aba } = await searchParams;
 
   // Quem entra no painel já precisa ter o endereço amigável do perfil (aba "Divulgar meu perfil").
   await garantirSlug(authorSession.id);
@@ -67,6 +67,7 @@ export default async function PainelPage({ searchParams }: { searchParams: Promi
 
   return (
     <PainelApp
+      abaInicial={aba === "imprimir" ? "imprimir" : undefined}
       bienal={bienal}
       pedidosImpressao={pedidosImpressao.map((p) => ({
         id: p.id,
