@@ -3,9 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { upload } from "@vercel/blob/client";
-import { enviarPedidoImpressao } from "@/app/painel/impressaoActions";
+import { enviarPedidoImpressao, solicitarOrcamentoImpressao } from "@/app/painel/impressaoActions";
 import {
-  ACABAMENTOS,
   CAPA_CORES,
   CAPA_PAPEIS,
   ENCADERNACOES,
@@ -176,8 +175,12 @@ function conferir(e: EspecificacoesImpressao, capa: ArquivoPdf, miolo: ArquivoPd
   return itens;
 }
 
-export default function ImprimirView({ authorId, pedidos }: { authorId: string; pedidos: PedidoImpressaoResumo[] }) {
+export default function ImprimirView({ authorId, pedidos, nomeInicial = "", emailInicial = "" }: { authorId: string; pedidos: PedidoImpressaoResumo[]; nomeInicial?: string; emailInicial?: string }) {
   const router = useRouter();
+  const [orc, setOrc] = useState({ nome: nomeInicial, email: emailInicial, telefone: "", projeto: "" });
+  const [orcErro, setOrcErro] = useState("");
+  const [orcEnviando, setOrcEnviando] = useState(false);
+  const [orcOk, setOrcOk] = useState(false);
   const [e, setE] = useState<EspecificacoesImpressao>(ESPECIFICACOES_PADRAO);
   const [capa, setCapa] = useState<ArquivoPdf | null>(null);
   const [miolo, setMiolo] = useState<ArquivoPdf | null>(null);
@@ -285,6 +288,23 @@ export default function ImprimirView({ authorId, pedidos }: { authorId: string; 
     }
   }
 
+  async function pedirOrcamento(ev: React.FormEvent) {
+    ev.preventDefault();
+    if (orcEnviando) return;
+    setOrcErro("");
+    setOrcEnviando(true);
+    try {
+      const r = await solicitarOrcamentoImpressao(orc, e);
+      if (r.error) setOrcErro(r.error);
+      else setOrcOk(true);
+    } catch (err) {
+      console.error(err);
+      setOrcErro("Não foi possível enviar agora. Confira a conexão e tente de novo.");
+    } finally {
+      setOrcEnviando(false);
+    }
+  }
+
   const resumo: Array<[string, string]> = [
     ["Título", e.titulo.trim() || "A definir"],
     ["Formato", e.formato],
@@ -296,7 +316,6 @@ export default function ImprimirView({ authorId, pedidos }: { authorId: string; 
     ["Capa", `${e.capaPapel}, ${e.capaCor}`],
     ["Laminação", e.laminacao],
     ["Orelhas", e.orelhas ? "Sim" : "Não"],
-    ["Extras", e.acabamentos.length ? e.acabamentos.join(", ") : "Nenhum"],
   ];
 
   const blocoResumo = (
@@ -569,23 +588,6 @@ export default function ImprimirView({ authorId, pedidos }: { authorId: string; 
             </div>
 
             <div>
-              <div style={grupo}>Acabamentos e extras (opcionais)</div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(230px, 1fr))", gap: "4px 16px" }}>
-                {ACABAMENTOS.map((a) => (
-                  <label key={a} style={{ display: "flex", gap: "10px", alignItems: "center", minHeight: "40px", fontSize: "14px" }}>
-                    <input
-                      type="checkbox"
-                      checked={e.acabamentos.includes(a)}
-                      onChange={(ev) => mudar("acabamentos", ev.target.checked ? [...e.acabamentos, a] : e.acabamentos.filter((x) => x !== a))}
-                      style={{ width: "18px", height: "18px", accentColor: "#009B3A" }}
-                    />
-                    {a}
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            <div>
               <label htmlFor="imp-obs" style={rotulo}>Observações (opcional)</label>
               <textarea id="imp-obs" rows={3} maxLength={2000} value={e.observacoes} onChange={(ev) => mudar("observacoes", ev.target.value)} placeholder="Algo que a gráfica precise saber sobre o seu livro." style={{ ...campo, resize: "vertical", fontFamily: "inherit" }} />
             </div>
@@ -661,6 +663,47 @@ export default function ImprimirView({ authorId, pedidos }: { authorId: string; 
           </div>
         </section>
       )}
+
+      <section style={card}>
+        <h2 style={{ ...h2, marginBottom: "4px" }}>Receber esse orçamento em meu e-mail</h2>
+        <p style={{ margin: "0 0 16px", fontSize: "13px", color: "#555" }}>
+          Enviamos a configuração que você montou acima para a nossa equipe, que responde com o orçamento por e-mail. Não precisa enviar os arquivos agora.
+        </p>
+        {orcOk ? (
+          <div role="status" style={{ background: "#E8F5EC", color: "#0B5D2A", padding: "14px 16px", borderRadius: "8px", fontSize: "14px", lineHeight: 1.6 }}>
+            <strong>Pedido de orçamento enviado.</strong> Você receberá a resposta no e-mail informado.
+          </div>
+        ) : (
+          <form onSubmit={pedirOrcamento} style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "14px" }}>
+              <div>
+                <label htmlFor="orc-nome" style={rotulo}>Nome</label>
+                <input id="orc-nome" type="text" autoComplete="name" required maxLength={120} value={orc.nome} onChange={(ev) => { setOrc({ ...orc, nome: ev.target.value }); setOrcErro(""); }} style={campo} />
+              </div>
+              <div>
+                <label htmlFor="orc-email" style={rotulo}>E-mail</label>
+                <input id="orc-email" type="email" autoComplete="email" required maxLength={200} value={orc.email} onChange={(ev) => { setOrc({ ...orc, email: ev.target.value }); setOrcErro(""); }} style={campo} />
+              </div>
+              <div>
+                <label htmlFor="orc-telefone" style={rotulo}>Telefone</label>
+                <input id="orc-telefone" type="tel" autoComplete="tel" inputMode="tel" required maxLength={30} value={orc.telefone} onChange={(ev) => { setOrc({ ...orc, telefone: ev.target.value }); setOrcErro(""); }} placeholder="(00) 00000-0000" style={campo} />
+              </div>
+              <div>
+                <label htmlFor="orc-projeto" style={rotulo}>Nome do projeto</label>
+                <input id="orc-projeto" type="text" required maxLength={200} value={orc.projeto} onChange={(ev) => { setOrc({ ...orc, projeto: ev.target.value }); setOrcErro(""); }} style={campo} />
+              </div>
+            </div>
+            {orcErro && (
+              <div role="alert" style={{ background: "#FDEDEC", color: "#A93226", padding: "12px 16px", borderRadius: "8px", fontSize: "13px" }}>{orcErro}</div>
+            )}
+            <div>
+              <button type="submit" disabled={orcEnviando} style={{ ...botaoVerde, opacity: orcEnviando ? 0.6 : 1 }}>
+                {orcEnviando ? "Enviando..." : "Receber orçamento"}
+              </button>
+            </div>
+          </form>
+        )}
+      </section>
     </div>
   );
 }

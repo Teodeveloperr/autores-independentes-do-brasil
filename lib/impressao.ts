@@ -8,7 +8,6 @@ export const ENCADERNACOES = ["Brochura fresada e colada", "Brochura costurada e
 export const CAPA_PAPEIS = ["Cartão triplex 250g", "Cartão triplex 300g", "Couché 170g", "Percalux"] as const;
 export const CAPA_CORES = ["4x0 (só frente)", "4x4 (frente e verso)"] as const;
 export const LAMINACOES = ["Fosca", "Brilho", "Soft touch"] as const;
-export const ACABAMENTOS = ["Verniz UV localizado", "Hot-stamping na capa", "Marcador de páginas", "Fita de cetim", "Sobrecapa", "Embalagem individual (shrink)", "Prova física antes da tiragem", "Verificação profissional dos arquivos"] as const;
 
 export const IMPRESSAO_MAX_CAPA_BYTES = 100 * 1024 * 1024;
 export const IMPRESSAO_MAX_MIOLO_BYTES = 200 * 1024 * 1024;
@@ -39,7 +38,6 @@ export type EspecificacoesImpressao = {
   capaCor: string;
   laminacao: string;
   orelhas: boolean;
-  acabamentos: string[];
   observacoes: string;
 };
 
@@ -56,7 +54,6 @@ export const ESPECIFICACOES_PADRAO: EspecificacoesImpressao = {
   capaCor: "4x0 (só frente)",
   laminacao: "Fosca",
   orelhas: false,
-  acabamentos: [],
   observacoes: "",
 };
 
@@ -74,7 +71,6 @@ export function validarEspecificacoes(e: EspecificacoesImpressao): string | null
   if (!dentro(CAPA_PAPEIS, e.capaPapel)) return "Escolha o papel da capa.";
   if (!dentro(CAPA_CORES, e.capaCor)) return "Escolha a impressão da capa.";
   if (!dentro(LAMINACOES, e.laminacao)) return "Escolha a laminação da capa.";
-  if (e.acabamentos.some((a) => !dentro(ACABAMENTOS, a))) return "Acabamento inválido.";
   if (e.observacoes.length > 2000) return "As observações podem ter até 2000 caracteres.";
   return null;
 }

@@ -588,3 +588,55 @@ export async function sendPedidoImpressaoAutorEmail(to: string, info: Pick<Pedid
     `,
   });
 }
+
+export type OrcamentoImpressaoEmailInfo = {
+  nome: string;
+  email: string;
+  telefone: string;
+  projeto: string;
+  /** Pares "rótulo → valor" do que o autor já configurou na tela de impressão. */
+  especificacoes: Array<[string, string]>;
+};
+
+/** Pedido de orçamento de impressão (sem arquivos): aviso à equipe, que responde ao e-mail informado. */
+export async function sendOrcamentoImpressaoEquipeEmail(info: OrcamentoImpressaoEmailInfo) {
+  await enviarEOuFalhar({
+    from: EMAIL_FROM,
+    to: EMAIL_CONTATO,
+    replyTo: info.email,
+    subject: `[Impressão] Pedido de orçamento: ${info.projeto}`.slice(0, 200),
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 620px; margin: 0 auto; color: #262626;">
+        <h2 style="color: #002776;">Pedido de orçamento de impressão</h2>
+        ${tabelaEspecificacoes([
+          ["Nome", info.nome],
+          ["E-mail", info.email],
+          ["Telefone", info.telefone],
+          ["Projeto", info.projeto],
+        ])}
+        <h3 style="color: #002776; margin-top: 24px;">Configuração escolhida na tela</h3>
+        ${tabelaEspecificacoes(info.especificacoes)}
+        <p style="font-size: 13px; color: #666;">Nenhum arquivo foi enviado neste pedido. Responder a este e-mail fala direto com o autor.</p>
+      </div>
+    `,
+  });
+}
+
+/** Confirmação para quem pediu o orçamento por e-mail. */
+export async function sendOrcamentoImpressaoAutorEmail(to: string, info: Pick<OrcamentoImpressaoEmailInfo, "nome" | "projeto" | "especificacoes">) {
+  await resend.emails.send({
+    from: EMAIL_FROM,
+    to,
+    subject: "Recebemos o seu pedido de orçamento de impressão",
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 620px; margin: 0 auto; color: #262626;">
+        <h1 style="color: #002776; font-size: 22px;">Pedido de orçamento recebido</h1>
+        <p style="font-size: 15px; line-height: 1.6;">
+          Olá, ${escaparHtml(info.nome)}. Recebemos o seu pedido de orçamento para <b>${escaparHtml(info.projeto)}</b>.
+          Nossa equipe vai analisar e responder por este e-mail.
+        </p>
+        ${tabelaEspecificacoes(info.especificacoes)}
+      </div>
+    `,
+  });
+}

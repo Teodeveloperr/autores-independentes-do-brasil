@@ -22,7 +22,7 @@ sistema acompanha.
 |---|---|---|
 | Preços dos planos (mensal, semestral, anual) | Essencial R$ 29,90 · Premium R$ 49,90 · Premium+ R$ 900/ano | `PLANOS_PAGOS` em `lib/plans.ts` |
 | Comissão da plataforma sobre vendas de livro | Essencial 25% · Premium e Premium+ 10% | `COMISSAO_PERCENTUAL` em `lib/plans.ts` |
-| Opções do pedido de impressão (formatos, papéis, acabamentos) e limites dos PDFs | Capa até 100 MB · miolo até 200 MB | `lib/impressao.ts` |
+| Opções do pedido de impressão (formatos, papéis, encadernações) e limites dos PDFs | Capa até 100 MB · miolo até 200 MB | `lib/impressao.ts` |
 | Quais planos podem vender livros e e-books | Essencial, Premium e Premium+ | `PLANOS_COM_VENDA` em `lib/plans.ts` |
 | Oferta de desconto no Premium+ (Pix / cartão à vista) | 10% (Black Friday) | `PREMIUM_PLUS_DESCONTO_PERCENTUAL` e `PREMIUM_PLUS_OFERTA_NOME` em `lib/plans.ts` (`0` encerra a oferta) |
 | Parte do Premium+ que vai para o parceiro | 46,8% do valor pago (R$ 421,20 de R$ 900) | `PREMIUM_PLUS_VALOR_BASE_CENTAVOS` e `PREMIUM_PLUS_VALOR_PARCEIRO_CENTAVOS` em `lib/plans.ts` |

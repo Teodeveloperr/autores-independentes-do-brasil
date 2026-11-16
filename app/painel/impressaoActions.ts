@@ -4,7 +4,12 @@ import crypto from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { requireAuthor } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { sendPedidoImpressaoAutorEmail, sendPedidoImpressaoEquipeEmail } from "@/lib/email";
+import {
+  sendOrcamentoImpressaoAutorEmail,
+  sendOrcamentoImpressaoEquipeEmail,
+  sendPedidoImpressaoAutorEmail,
+  sendPedidoImpressaoEquipeEmail,
+} from "@/lib/email";
 import { apagarArquivosPrivados, arquivoPrivadoEhPdf, tamanhoArquivoPrivado } from "@/lib/ebookStorage";
 import {
   IMPRESSAO_MAX_CAPA_BYTES,
@@ -39,7 +44,6 @@ export async function enviarPedidoImpressao(
     tiragem: Number(especificacoes.tiragem),
     temIsbn: !!especificacoes.temIsbn,
     orelhas: !!especificacoes.orelhas,
-    acabamentos: Array.isArray(especificacoes.acabamentos) ? [...new Set(especificacoes.acabamentos.map(String))] : [],
   };
   const erro = validarEspecificacoes(dados);
   if (erro) return { error: erro };
@@ -88,7 +92,7 @@ export async function enviarPedidoImpressao(
       capaCor: dados.capaCor,
       laminacao: dados.laminacao,
       orelhas: dados.orelhas,
-      acabamentos: dados.acabamentos,
+      acabamentos: [],
       observacoes: dados.observacoes || null,
       capaPath,
       capaNome: nomeSeguro(arquivos.capaNome, "capa.pdf"),
@@ -116,7 +120,6 @@ export async function enviarPedidoImpressao(
     ["Capa: impressão", pedido.capaCor],
     ["Capa: laminação", pedido.laminacao],
     ["Capa: orelhas", pedido.orelhas ? "Sim" : "Não"],
-    ["Acabamentos e extras", pedido.acabamentos.length ? pedido.acabamentos.join(", ") : "Nenhum"],
   ];
 
   try {
@@ -143,4 +146,59 @@ export async function enviarPedidoImpressao(
 
   revalidatePath("/painel");
   return { numero: numeroTexto };
+}
+
+/**
+ * "Receber esse orçamento em meu e-mail": o autor informa os contatos e a equipe recebe a
+ * configuração que ele montou na tela, sem arquivos e sem criar pedido.
+ */
+export async function solicitarOrcamentoImpressao(
+  contato: { nome: string; email: string; telefone: string; projeto: string },
+  especificacoes: Partial<EspecificacoesImpressao>
+): Promise<{ error?: string; ok?: boolean }> {
+  const author = await requireAuthor();
+
+  const nome = String(contato.nome ?? "").trim();
+  const email = String(contato.email ?? "").trim();
+  const telefone = String(contato.telefone ?? "").trim();
+  const projeto = String(contato.projeto ?? "").trim();
+  if (nome.length < 2 || nome.length > 120) return { error: "Informe o seu nome." };
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 200) return { error: "Informe um e-mail válido." };
+  const digitos = telefone.replace(/\D/g, "");
+  if (digitos.length < 10 || digitos.length > 13 || telefone.length > 30) return { error: "Informe um telefone com DDD." };
+  if (projeto.length < 2 || projeto.length > 200) return { error: "Informe o nome do projeto." };
+
+  const permitido = await checkRateLimit(`impressao-orcamento:${author.id}`, 5, 60);
+  if (!permitido) return { error: "Muitos pedidos em pouco tempo. Aguarde alguns minutos." };
+
+  const texto = (v: unknown, padrao = "A definir") => String(v ?? "").trim().slice(0, 200) || padrao;
+  const numero = (v: unknown, sufixo = "") => (Number(v) > 0 ? `${Math.floor(Number(v))}${sufixo}` : "A definir");
+  const e = especificacoes ?? {};
+  const linhas: Array<[string, string]> = [
+    ["Título do livro", texto(e.titulo)],
+    ["Formato", texto(e.formato)],
+    ["Número de páginas", numero(e.paginas)],
+    ["Tiragem", numero(e.tiragem, " exemplares")],
+    ["Tem ISBN", e.temIsbn ? "Sim" : "Não"],
+    ["Miolo: impressão", texto(e.mioloCor)],
+    ["Miolo: papel", texto(e.mioloPapel)],
+    ["Encadernação", texto(e.encadernacao)],
+    ["Capa: papel", texto(e.capaPapel)],
+    ["Capa: impressão", texto(e.capaCor)],
+    ["Capa: laminação", texto(e.laminacao)],
+    ["Capa: orelhas", e.orelhas ? "Sim" : "Não"],
+  ];
+  const observacoes = String(e.observacoes ?? "").trim().slice(0, 2000);
+  if (observacoes) linhas.push(["Observações", observacoes]);
+
+  try {
+    await sendOrcamentoImpressaoEquipeEmail({ nome, email, telefone, projeto, especificacoes: linhas });
+  } catch (err) {
+    console.error("[impressao] Falha ao enviar o pedido de orçamento:", err);
+    return { error: "Não foi possível enviar agora. Tente de novo em instantes." };
+  }
+  await sendOrcamentoImpressaoAutorEmail(email, { nome, projeto, especificacoes: linhas }).catch((err) =>
+    console.error("[impressao] Falha ao enviar a confirmação do orçamento:", err)
+  );
+  return { ok: true };
 }
