@@ -1,8 +1,9 @@
 import "server-only";
-import type { SubscriptionPayment } from "@/app/generated/prisma/client";
+import type { PedidoKitPagamento, SubscriptionPayment } from "@/app/generated/prisma/client";
 import { prisma } from "@/lib/db";
 import { criarTransferenciaPix } from "@/lib/asaas";
 import { valorParceiroPremiumPlusCentavos } from "@/lib/plans";
+import { valorParceiroKitCentavos } from "@/lib/kits";
 
 /**
  * Repassa automaticamente, via Pix, a fatia do parceiro de cada assinatura Premium+ —
@@ -62,6 +63,53 @@ export async function processarRepasseParceiro(pagamento: SubscriptionPayment): 
       repasseParceiroValorCentavos: valorRepasse,
       repasseParceiroErro: null,
     },
+  });
+  return { ok: true };
+}
+
+/**
+ * Repassa ao parceiro, via Pix, a fatia (90%) de um pagamento de kit da Bienal. Mesma chave Pix do
+ * Premium+ (Admin.premiumPlusPixKey). Antes de transferir, "reserva" o pagamento (status
+ * "processando"), para duas execuções do cron ao mesmo tempo nunca pagarem duas vezes; se a
+ * transferência falhar, volta para "erro" e o próximo cron tenta de novo.
+ */
+export async function processarRepasseKit(pagamento: PedidoKitPagamento): Promise<{ ok: true } | { ok: false; erro: string }> {
+  if (pagamento.repasseStatus === "transferido" || pagamento.repasseStatus === "cancelado") return { ok: true };
+  if (!pagamento.disponivelEm) return { ok: false, erro: "Pagamento ainda não está disponível para movimentação na Asaas." };
+
+  const admin = await prisma.admin.findFirst({ orderBy: { createdAt: "asc" } });
+  if (!admin?.premiumPlusPixKey || !admin?.premiumPlusPixKeyType) {
+    const erro = "Chave Pix do parceiro não configurada.";
+    await prisma.pedidoKitPagamento.update({ where: { id: pagamento.id }, data: { repasseStatus: "erro", repasseErro: erro } });
+    return { ok: false, erro };
+  }
+
+  const reserva = await prisma.pedidoKitPagamento.updateMany({
+    where: { id: pagamento.id, repasseStatus: { in: ["pendente", "erro"] } },
+    data: { repasseStatus: "processando" },
+  });
+  if (reserva.count === 0) return { ok: false, erro: "Repasse já está em andamento." };
+
+  // Teto de segurança: nunca repassa mais que a fatia do que foi realmente pago.
+  const valorRepasse = Math.min(pagamento.repasseValorCentavos, valorParceiroKitCentavos(pagamento.valorCentavos));
+
+  const transferencia = await criarTransferenciaPix({
+    valueCentavos: valorRepasse,
+    pixKey: admin.premiumPlusPixKey,
+    pixKeyType: admin.premiumPlusPixKeyType,
+    description: `Repasse parceiro Kit Bienal - ${pagamento.id.slice(-6)}`,
+    externalReference: pagamento.id,
+  });
+
+  if (!transferencia) {
+    const erro = "Falha ao criar transferência na Asaas.";
+    await prisma.pedidoKitPagamento.update({ where: { id: pagamento.id }, data: { repasseStatus: "erro", repasseErro: erro } });
+    return { ok: false, erro };
+  }
+
+  await prisma.pedidoKitPagamento.update({
+    where: { id: pagamento.id },
+    data: { repasseStatus: "transferido", repasseAsaasTransferId: transferencia.id, repasseValorCentavos: valorRepasse, repasseErro: null, repasseEm: new Date() },
   });
   return { ok: true };
 }

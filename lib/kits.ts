@@ -59,3 +59,10 @@ export function rotuloStatusKit(status: string): string {
 export function valorKit(centavos: number): string {
   return "R$ " + (centavos / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
+
+/** Parte de cada pagamento de kit que vai para o parceiro (os 10% restantes ficam na plataforma). */
+export const KIT_PERCENTUAL_PARCEIRO = 90;
+
+export function valorParceiroKitCentavos(valorPagoCentavos: number): number {
+  return Math.round((valorPagoCentavos * KIT_PERCENTUAL_PARCEIRO) / 100);
+}

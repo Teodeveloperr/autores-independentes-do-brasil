@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 import { verificarWebhookAsaas, buscarCobranca } from "@/lib/asaas";
 import { sendOrderConfirmationEmail, sendNewSaleEmail, sendNovaCobrancaAssinaturaEmail, sendWelcomeEmail } from "@/lib/email";
 import { marcarContratoPago } from "@/lib/contrato/servico";
-import { marcarPedidoKitPago } from "@/lib/kitsServico";
+import { marcarPedidoKitPago, registrarPagamentoKit } from "@/lib/kitsServico";
 import { ehEbook } from "@/lib/ebook";
 import { entregarEbooksDoPedido, repassarEbooksDisponiveis, revogarEbooksDoPedido } from "@/lib/pedidoEbook";
 import { valorParceiroPremiumPlusCentavos, CICLO_MESES, type CicloAssinatura } from "@/lib/plans";
@@ -272,6 +272,12 @@ export async function POST(request: NextRequest) {
     });
     if (kitEstornado) {
       await prisma.pedidoKit.update({ where: { id: kitEstornado.id }, data: { status: "cancelado" } });
+      // Repasse que ainda não saiu é cancelado; o que já saiu não volta sozinho e fica com aviso para o admin.
+      await prisma.pedidoKitPagamento.updateMany({ where: { asaasPaymentId: paymentId, repasseStatus: { in: ["pendente", "erro"] } }, data: { repasseStatus: "cancelado" } });
+      await prisma.pedidoKitPagamento.updateMany({
+        where: { asaasPaymentId: paymentId, repasseStatus: "transferido" },
+        data: { repasseErro: `Pagamento estornado/contestado depois do repasse (${evento}). Conferir e cobrar do parceiro.` },
+      });
       console.error(`[asaas] Kit da Bienal (pedido ${kitEstornado.numero}) ${evento}: marcado como cancelado. Conferir com o cliente.`);
       return NextResponse.json({ received: true }, { status: 200 });
     }
@@ -316,6 +322,8 @@ export async function POST(request: NextRequest) {
   });
   if (pedidoKit) {
     await marcarPedidoKitPago(pedidoKit.id, cobranca.netValueCentavos);
+    // Fatia do parceiro (90%): o repasse sai pelo cron quando o saldo estiver disponível na Asaas.
+    await registrarPagamentoKit(pedidoKit.id, cobranca, evento);
     return NextResponse.json({ received: true }, { status: 200 });
   }
 

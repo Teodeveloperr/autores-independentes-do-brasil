@@ -1,6 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/db";
-import { kitPorId, resumoDoKit } from "@/lib/kits";
+import { kitPorId, resumoDoKit, valorParceiroKitCentavos } from "@/lib/kits";
 import { sendPedidoKitCompradorEmail, sendPedidoKitEquipeEmail } from "@/lib/email";
 
 /**
@@ -46,4 +46,43 @@ export async function garantirEmailsDoKitPago(pedidoId: string): Promise<void> {
     return;
   }
   await sendPedidoKitCompradorEmail(info).catch((err) => console.error(`[kit] Falha ao enviar a confirmação ao comprador do kit ${pedidoId}:`, err));
+}
+
+/**
+ * Registra um pagamento recebido do kit (à vista ou uma parcela) com a fatia do parceiro (90%).
+ * Chamado a cada PAYMENT_CONFIRMED/PAYMENT_RECEIVED: o primeiro cria a linha; o PAYMENT_RECEIVED
+ * (saldo disponível na Asaas; no cartão chega semanas depois) só preenche disponivelEm, que libera o repasse.
+ */
+export async function registrarPagamentoKit(
+  pedidoId: string,
+  cobranca: { id: string; valueCentavos: number; netValueCentavos: number | null },
+  evento: string
+): Promise<void> {
+  const disponivel = evento === "PAYMENT_RECEIVED" ? new Date() : null;
+  const existente = await prisma.pedidoKitPagamento.findUnique({ where: { asaasPaymentId: cobranca.id } });
+
+  if (!existente) {
+    try {
+      await prisma.pedidoKitPagamento.create({
+        data: {
+          pedidoId,
+          asaasPaymentId: cobranca.id,
+          valorCentavos: cobranca.valueCentavos,
+          valorLiquidoCentavos: cobranca.netValueCentavos,
+          disponivelEm: disponivel,
+          repasseValorCentavos: valorParceiroKitCentavos(cobranca.valueCentavos),
+        },
+      });
+      return;
+    } catch {
+      // Dois eventos do mesmo pagamento ao mesmo tempo: o outro criou primeiro, segue para a atualização.
+    }
+  }
+
+  if (disponivel) {
+    await prisma.pedidoKitPagamento.updateMany({
+      where: { asaasPaymentId: cobranca.id, disponivelEm: null },
+      data: { disponivelEm: disponivel, ...(cobranca.netValueCentavos != null ? { valorLiquidoCentavos: cobranca.netValueCentavos } : {}) },
+    });
+  }
 }

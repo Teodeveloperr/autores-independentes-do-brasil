@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { atribuirSlugsFaltantes } from "@/lib/autorSlug";
 import { prisma } from "@/lib/db";
 import { processarRepasse, enviarConfirmacaoRecebimento } from "@/lib/repasse";
-import { processarRepasseParceiro } from "@/lib/repasseParceiro";
+import { processarRepasseKit, processarRepasseParceiro } from "@/lib/repasseParceiro";
 import { repassarEbooksDisponiveis } from "@/lib/pedidoEbook";
 import { cancelarAutorizacaoPixAutomatico, cancelarAssinaturaAsaas, buscarCobranca, cancelarCobranca } from "@/lib/asaas";
 import { sendPlanoParceladoVencendoEmail } from "@/lib/email";
@@ -72,6 +72,17 @@ export async function GET(request: Request) {
   for (const pagamento of pagamentosParceiroPendentes) {
     const resultado = await processarRepasseParceiro(pagamento);
     if (resultado.ok) repassesParceiroLiberados++;
+  }
+
+  // Fatia do parceiro (90%) em cada pagamento de kit da Bienal (ver lib/repasseParceiro.ts): sai assim que o saldo
+  // fica disponível na Asaas, para a mesma chave Pix do Premium+.
+  const pagamentosKitPendentes = await prisma.pedidoKitPagamento.findMany({
+    where: { repasseStatus: { in: ["pendente", "erro"] }, disponivelEm: { not: null } },
+  });
+  let repassesKitLiberados = 0;
+  for (const pagamento of pagamentosKitPendentes) {
+    const resultado = await processarRepasseKit(pagamento);
+    if (resultado.ok) repassesKitLiberados++;
   }
 
   // Pedidos criados no checkout mas nunca pagos (a pessoa desistiu antes de concluir o
@@ -196,6 +207,8 @@ export async function GET(request: Request) {
     repassesEbookLiberados: repassesEbook.repassados,
     repassesParceiroProcessados: pagamentosParceiroPendentes.length,
     repassesParceiroLiberados,
+    repassesKitProcessados: pagamentosKitPendentes.length,
+    repassesKitLiberados,
     pedidosCancelados,
     cadastrosPendentesLimpos: cadastrosAbandonados.length,
     planosAdminVencidos: planosAdminVencidos.length,

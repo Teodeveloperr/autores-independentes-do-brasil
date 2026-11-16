@@ -767,5 +767,34 @@ model PedidoKit {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  pagamentos PedidoKitPagamento[]
+
   @@index([asaasInstallmentId])
+}
+
+// Cada pagamento recebido de um kit da Bienal (1 cobrança à vista, ou cada parcela do cartão em 2x).
+// 90% (KIT_PERCENTUAL_PARCEIRO, lib/kits.ts) é repassado via Pix ao parceiro, na mesma chave do
+// Premium+ (Admin.premiumPlusPixKey), e 10% fica na plataforma. O repasse só sai quando a Asaas
+// libera o saldo (disponivelEm, preenchido em PAYMENT_RECEIVED); o cron processa os pendentes.
+model PedidoKitPagamento {
+  id       String    @id @default(cuid())
+  pedidoId String
+  pedido   PedidoKit @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+
+  asaasPaymentId       String    @unique
+  valorCentavos        Int
+  valorLiquidoCentavos Int?
+  disponivelEm         DateTime?
+
+  // Fatia do parceiro e andamento do repasse.
+  repasseValorCentavos   Int
+  // "pendente" | "processando" | "transferido" | "erro" | "cancelado" (estornado antes do repasse)
+  repasseStatus          String    @default("pendente")
+  repasseAsaasTransferId String?
+  repasseErro            String?
+  repasseEm              DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([pedidoId])
 }
