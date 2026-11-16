@@ -4,6 +4,7 @@ import { CartProvider } from "@/components/CartContext";
 import CartDrawer from "@/components/CartDrawer";
 import CartConflictModal from "@/components/CartConflictModal";
 import VisitTracker from "@/components/VisitTracker";
+import GoogleAdsTag from "@/components/GoogleAdsTag";
 import "./globals.css";
 
 const cinzel = Cinzel({
@@ -58,6 +59,7 @@ export default function RootLayout({
           <CartConflictModal />
         </CartProvider>
         <VisitTracker />
+        <GoogleAdsTag />
       </body>
     </html>
   );

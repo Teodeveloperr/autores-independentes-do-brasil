@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import PublicHeader from "@/components/PublicHeader";
 import PublicFooter from "@/components/PublicFooter";
+import { RedefinirCookiesButton } from "@/components/GoogleAdsTag";
 
 export const metadata: Metadata = { title: "Política de Privacidade" };
 
@@ -19,7 +20,7 @@ export default function PoliticaDePrivacidadePage() {
             Como o Autores Independentes do Brasil coleta, usa e protege os seus dados pessoais.
           </p>
           <div className="section-pad-md" style={{ background: "white", color: "#262626", padding: "40px", borderRadius: "8px", maxWidth: "820px", margin: "0 auto" }}>
-            <p style={{ fontSize: "12px", color: "#999", marginBottom: "24px" }}>Última atualização: 27 de outubro de 2026</p>
+            <p style={{ fontSize: "12px", color: "#999", marginBottom: "24px" }}>Última atualização: 16 de novembro de 2026</p>
 
             <p style={pStyle}>
               Esta Política de Privacidade explica quais dados pessoais o Autores Independentes do Brasil coleta ao longo
@@ -70,7 +71,20 @@ export default function PoliticaDePrivacidadePage() {
             <h2 style={h2Style}>4. Cookies e carrinho de compras</h2>
             <p style={pStyle}>
               Usamos cookies e armazenamento local do navegador para manter o carrinho de compras entre as páginas e para
-              manter sua sessão logada (como autor ou administrador). Não usamos cookies de rastreamento publicitário.
+              manter sua sessão logada (como autor ou administrador). Esses são necessários para o site funcionar.
+            </p>
+            <p style={pStyle}>
+              <strong>Cookies de publicidade (Google Ads):</strong> para medir o resultado dos nossos anúncios, usamos a
+              tag do Google Ads, que grava cookies e envia ao Google dados de navegação, como as páginas visitadas, o
+              endereço IP e identificadores do navegador. Ela só é ativada se você clicar em &quot;Aceitar&quot; no aviso
+              de cookies; se recusar, nada é carregado. O tratamento desses dados pelo Google segue a{" "}
+              <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" style={{ color: "#002776", fontWeight: 600 }}>
+                Política de Privacidade do Google
+              </a>
+              . Você pode mudar de ideia quando quiser:
+            </p>
+            <p style={pStyle}>
+              <RedefinirCookiesButton />
             </p>
 
             <h2 style={h2Style}>4.1. Armazenamento dos e-books e da conta de leitor</h2>
