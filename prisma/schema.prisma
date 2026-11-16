@@ -690,14 +690,19 @@ model AcessoEbook {
 model PedidoImpressao {
   id       String @id @default(cuid())
   numero   Int    @unique @default(autoincrement())
-  authorId String
-  author   Author @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  // Vazio nos pedidos feitos na página pública /imprimir (quem não tem conta); aí valem os dados de contato.
+  authorId String?
+  author   Author? @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  contatoNome     String?
+  contatoEmail    String?
+  contatoTelefone String?
 
   titulo       String
   formato      String
   paginas      Int
   tiragem      Int
   temIsbn      Boolean
+  isbn         String?
   mioloCor     String
   mioloPapel   String
   encadernacao String

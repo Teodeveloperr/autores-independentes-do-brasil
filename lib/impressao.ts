@@ -31,6 +31,8 @@ export type EspecificacoesImpressao = {
   paginas: number;
   tiragem: number;
   temIsbn: boolean;
+  /** Número do ISBN (só dígitos e X final), preenchido quando o livro tem ISBN. */
+  isbn: string;
   mioloCor: string;
   mioloPapel: string;
   encadernacao: string;
@@ -47,6 +49,7 @@ export const ESPECIFICACOES_PADRAO: EspecificacoesImpressao = {
   paginas: 0,
   tiragem: 0,
   temIsbn: true,
+  isbn: "",
   mioloCor: "Preto e branco",
   mioloPapel: "Pólen Natural 80g",
   encadernacao: "Brochura fresada e colada",
@@ -57,6 +60,32 @@ export const ESPECIFICACOES_PADRAO: EspecificacoesImpressao = {
   observacoes: "",
 };
 
+/** Deixa só dígitos (e o X final do ISBN-10): tira hífens, espaços e o prefixo "ISBN". */
+export function normalizarIsbn(valor: string): string {
+  return String(valor ?? "").toUpperCase().replace(/^\s*ISBN(-1[03])?:?/, "").replace(/[^0-9X]/g, "");
+}
+
+/** ISBN-10 ou ISBN-13 com o dígito verificador correto. */
+export function isbnValido(valor: string): boolean {
+  const s = normalizarIsbn(valor);
+  if (/^\d{13}$/.test(s)) {
+    const soma = [...s].slice(0, 12).reduce((t, d, i) => t + Number(d) * (i % 2 === 0 ? 1 : 3), 0);
+    return (10 - (soma % 10)) % 10 === Number(s[12]);
+  }
+  if (/^\d{9}[\dX]$/.test(s)) {
+    const soma = [...s].slice(0, 9).reduce((t, d, i) => t + Number(d) * (10 - i), 0);
+    const resto = (11 - (soma % 11)) % 11;
+    return (resto === 10 ? "X" : String(resto)) === s[9];
+  }
+  return false;
+}
+
+/** ISBN-13 com hífens depois do prefixo, só para exibir; os demais ficam como vieram. */
+export function isbnLegivel(valor: string): string {
+  const s = normalizarIsbn(valor);
+  return /^\d{13}$/.test(s) ? `${s.slice(0, 3)}-${s.slice(3, 5)}-${s.slice(5, 9)}-${s.slice(9, 12)}-${s[12]}` : s;
+}
+
 /** Confere as especificações. Devolve a mensagem do primeiro problema, ou null se está tudo certo. */
 export function validarEspecificacoes(e: EspecificacoesImpressao): string | null {
   const dentro = (lista: readonly string[], valor: string) => lista.includes(valor);
@@ -65,6 +94,7 @@ export function validarEspecificacoes(e: EspecificacoesImpressao): string | null
   if (!dentro(FORMATOS, e.formato)) return "Escolha o formato do livro.";
   if (!Number.isInteger(e.paginas) || e.paginas < 1 || e.paginas > IMPRESSAO_MAX_PAGINAS) return "Informe o número de páginas do miolo.";
   if (!Number.isInteger(e.tiragem) || e.tiragem < 1 || e.tiragem > IMPRESSAO_MAX_TIRAGEM) return "Informe a tiragem (quantidade de exemplares).";
+  if (e.temIsbn && !isbnValido(e.isbn)) return "Informe o número do ISBN (10 ou 13 dígitos) ou marque que o livro não tem ISBN.";
   if (!dentro(MIOLO_CORES, e.mioloCor)) return "Escolha a cor da impressão do miolo.";
   if (!dentro(MIOLO_PAPEIS, e.mioloPapel)) return "Escolha o papel do miolo.";
   if (!dentro(ENCADERNACOES, e.encadernacao)) return "Escolha a encadernação.";

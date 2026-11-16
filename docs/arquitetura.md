@@ -63,14 +63,14 @@ Os dois stores do Blob são **separados**: toda chamada ao store de e-books pass
 
 - **Autores**: `Author`, `AuthorEvent`, `AuthorPhoto`, `AuthorPasskey`, `PasswordResetToken`, `PortfolioEvento`, `Review`, `Conversation`/`Message`
 - **Livros e pedidos**: `Book` (físico ou e-book), `Order` (uma linha por livro), `EbookPagina`
-- **Impressão de livros**: `PedidoImpressao` (pedido feito na aba "Imprimir meu livro" do painel; os PDFs de capa e miolo ficam no armazenamento privado, em `impressao/<authorId>/`, e a equipe recebe por e-mail as especificações e os links de download, que usam o token do pedido em `/api/impressao/arquivo`). Opções do formulário e limites em `lib/impressao.ts`. Ainda sem preço, pagamento e tela no admin.
+- **Impressão de livros**: `PedidoImpressao` (pedido feito na aba "Imprimir meu livro" do painel ou na página pública `/imprimir`, sem conta, com `authorId` vazio e os dados de contato no pedido; guarda também o ISBN; os PDFs de capa e miolo ficam no armazenamento privado, em `impressao/<authorId>/` ou `impressao/publico/<pasta>/` — neste caso o upload só é liberado após o anti-robô, com uma pasta assinada em `lib/impressaoPublico.ts` —, e a equipe recebe por e-mail as especificações e os links de download, que usam o token do pedido em `/api/impressao/arquivo`). Opções do formulário e limites em `lib/impressao.ts`. Ainda sem preço, pagamento e tela no admin.
 - **Leitores**: `Leitor`, `LeitorSessao`, `LeitorLink`, `AcessoEbook`
 - **Assinaturas**: campos de plano e Asaas em `Author`, `SubscriptionPayment`, `PendingSignup` (cadastro que espera o pagamento)
 - **Contrato da Bienal**: `ContratoBienal`, `ContratoReserva`, `ContratoConfig`, `ReservaBienalPremiumPlus` (horário do plano Premium+, mesmo estoque do balcão)
 - **Institucional**: `CollectiveEvent`, `CollectiveGalleryPhoto`, `Article`, `Opportunity`, `TalkShowVideo`, `ChatMensagem`, `SiteVisit`
 - **Administração**: `Admin`, `RateLimitAttempt`
 
-**Migrações**: pasta `prisma/migrations/` (60). São **aditivas**. O `npm run build` roda `prisma migrate deploy`,
+**Migrações**: pasta `prisma/migrations/` (61). São **aditivas**. O `npm run build` roda `prisma migrate deploy`,
 então **toda migração commitada é aplicada no banco no próximo deploy**. Procedimento seguro em [operacao.md](operacao.md#migrações-do-banco).
 
 ## Tarefas agendadas (`vercel.json`)

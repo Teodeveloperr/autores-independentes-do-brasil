@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { upload } from "@vercel/blob/client";
-import { enviarPedidoImpressao, solicitarOrcamentoImpressao } from "@/app/painel/impressaoActions";
+import { enviarPedidoImpressao, enviarPedidoImpressaoPublico, iniciarEnvioImpressaoPublico, solicitarOrcamentoImpressao } from "@/app/painel/impressaoActions";
+import type { SessaoEnvioPublico } from "@/lib/impressaoPublico";
 import {
   CAPA_CORES,
   CAPA_PAPEIS,
@@ -13,6 +14,8 @@ import {
   IMPRESSAO_MAX_CAPA_BYTES,
   IMPRESSAO_MAX_MIOLO_BYTES,
   LAMINACOES,
+  isbnLegivel,
+  isbnValido,
   MIOLO_CORES,
   MIOLO_PAPEIS,
   STATUS_IMPRESSAO,
@@ -73,6 +76,23 @@ function Opcoes({ lista, valor, onChange, colunas }: { lista: readonly string[];
       ))}
     </div>
   );
+}
+
+/** Anti-robô (Turnstile). Fica dentro de um <form> porque o script grava o token num campo escondido do formulário. */
+function AntiRobo() {
+  return (
+    <form onSubmit={(ev) => ev.preventDefault()}>
+      <TurnstileWidget />
+    </form>
+  );
+}
+
+function tokenAntiRobo(): string | null {
+  return document.querySelector<HTMLInputElement>('input[name="cf-turnstile-response"]')?.value || null;
+}
+
+function reiniciarAntiRobo() {
+  (window as unknown as { turnstile?: { reset: () => void } }).turnstile?.reset();
 }
 
 function pastaAleatoria(): string {
@@ -243,6 +263,12 @@ export default function ImprimirView({
     if (erroDados) return erroDados;
     if (!capa) return "Escolha o PDF da capa.";
     if (!miolo) return "Escolha o PDF do miolo.";
+    if (publico) {
+      if (orc.nome.trim().length < 2) return "Informe o seu nome.";
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(orc.email.trim())) return "Informe um e-mail válido.";
+      const digitos = orc.telefone.replace(/\D/g, "");
+      if (digitos.length < 10 || digitos.length > 13) return "Informe um telefone com DDD.";
+    }
     return null;
   }
 
@@ -262,10 +288,26 @@ export default function ImprimirView({
     setErro("");
 
     try {
+      // Sem conta: o servidor confere o anti-robô e entrega a pasta de envio assinada.
+      let sessao: SessaoEnvioPublico | null = null;
+      if (publico) {
+        setEnviando("Verificando...");
+        const inicio = await iniciarEnvioImpressaoPublico(tokenAntiRobo());
+        reiniciarAntiRobo();
+        if (inicio.error || !inicio.sessao) {
+          setErro(inicio.error ?? "Não foi possível iniciar o envio.");
+          return;
+        }
+        sessao = inicio.sessao;
+      }
+      const dono = publico ? "publico" : authorId;
+      const pastaEnvio = sessao ? sessao.pasta : pasta;
+
       const subir = async (parte: Parte, pdf: ArquivoPdf) => {
-        await upload(`${prefixoImpressao(authorId, pasta)}${parte}.pdf`, pdf.arquivo, {
+        await upload(`${prefixoImpressao(dono, pastaEnvio)}${parte}.pdf`, pdf.arquivo, {
           access: "private",
           handleUploadUrl: "/api/painel/impressao/upload",
+          clientPayload: sessao ? JSON.stringify(sessao) : undefined,
           contentType: "application/pdf",
           multipart: pdf.arquivo.size > 8 * 1024 * 1024,
           onUploadProgress: ({ percentage }) => setEnviando(`Enviando ${parte === "capa" ? "a capa" : "o miolo"}: ${Math.round(percentage)}%`),
@@ -277,7 +319,9 @@ export default function ImprimirView({
       await subir("miolo", miolo);
 
       setEnviando("Registrando o pedido...");
-      const r = await enviarPedidoImpressao(e, { pasta, capaNome: capa.arquivo.name, mioloNome: miolo.arquivo.name });
+      const r = sessao
+        ? await enviarPedidoImpressaoPublico(e, { nome: orc.nome, email: orc.email, telefone: orc.telefone }, { sessao, capaNome: capa.arquivo.name, mioloNome: miolo.arquivo.name })
+        : await enviarPedidoImpressao(e, { pasta, capaNome: capa.arquivo.name, mioloNome: miolo.arquivo.name });
       if (r.error || !r.numero) {
         setErro(r.error ?? "Não foi possível enviar o pedido.");
         return;
@@ -328,7 +372,7 @@ export default function ImprimirView({
     ["Formato", e.formato],
     ["Páginas", e.paginas > 0 ? String(e.paginas) : "A definir"],
     ["Tiragem", e.tiragem > 0 ? `${e.tiragem} exemplares` : "A definir"],
-    ["ISBN", e.temIsbn ? "Sim" : "Não"],
+    ["ISBN", e.temIsbn ? (e.isbn.trim() ? isbnLegivel(e.isbn) : "A informar") : "Não tem"],
     ["Miolo", `${e.mioloCor}, ${e.mioloPapel}`],
     ["Encadernação", e.encadernacao],
     ["Capa", `${e.capaPapel}, ${e.capaCor}`],
@@ -357,10 +401,13 @@ export default function ImprimirView({
   );
 
   const confirmacao = (
-    <label style={{ display: "flex", gap: "10px", alignItems: "flex-start", fontSize: "13px", lineHeight: 1.5 }}>
-      <input type="checkbox" checked={aceite} onChange={(ev) => { setAceite(ev.target.checked); setErro(""); }} style={{ width: "18px", height: "18px", marginTop: "1px", accentColor: "#009B3A" }} />
-      <span>Confirmo que conferi a capa e o miolo, que tenho os direitos sobre a obra e que quero enviar estes arquivos para orçamento e impressão.</span>
-    </label>
+    <>
+      <label style={{ display: "flex", gap: "10px", alignItems: "flex-start", fontSize: "13px", lineHeight: 1.5 }}>
+        <input type="checkbox" checked={aceite} onChange={(ev) => { setAceite(ev.target.checked); setErro(""); }} style={{ width: "18px", height: "18px", marginTop: "1px", accentColor: "#009B3A" }} />
+        <span>Confirmo que conferi a capa e o miolo, que tenho os direitos sobre a obra e que quero enviar estes arquivos para orçamento e impressão.</span>
+      </label>
+      {publico && <AntiRobo />}
+    </>
   );
 
   // ── Pré-impressão ────────────────────────────────────────────────────────────────────────────
@@ -525,9 +572,7 @@ export default function ImprimirView({
       <div style={{ background: "#002776", color: "white", borderRadius: "12px", padding: "22px 24px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "18px" }}>
         {[
           ["1", "Configure o livro", "Formato, papel, encadernação e tiragem."],
-          publico
-            ? ["2", "Peça o orçamento", "Informe seus contatos no fim da página."]
-            : ["2", "Envie capa e miolo", "Folheie a pré-impressão antes de enviar."],
+          ["2", "Envie capa e miolo", "Folheie a pré-impressão antes de enviar."],
           ["3", "Receba o orçamento", "Nossa equipe responde por e-mail."],
         ].map(([n, titulo, texto]) => (
           <div key={n} style={{ display: "flex", gap: "12px", alignItems: "flex-start" }}>
@@ -568,8 +613,28 @@ export default function ImprimirView({
               </div>
               <div>
                 <div style={rotulo}>O livro tem ISBN?</div>
-                <Opcoes lista={["Sim", "Não"]} valor={e.temIsbn ? "Sim" : "Não"} onChange={(v) => mudar("temIsbn", v === "Sim")} />
+                <Opcoes lista={["Sim", "Não"]} valor={e.temIsbn ? "Sim" : "Não"} onChange={(v) => setE((atual) => ({ ...atual, temIsbn: v === "Sim", isbn: v === "Sim" ? atual.isbn : "" }))} />
               </div>
+              {e.temIsbn && (
+                <div style={{ gridColumn: "1 / -1" }}>
+                  <label htmlFor="imp-isbn" style={rotulo}>Número do ISBN</label>
+                  <input
+                    id="imp-isbn"
+                    type="text"
+                    inputMode="text"
+                    autoComplete="off"
+                    maxLength={24}
+                    value={e.isbn}
+                    onChange={(ev) => mudar("isbn", ev.target.value)}
+                    placeholder="Ex.: 978-65-00000-00-0"
+                    aria-invalid={e.isbn.trim() !== "" && !isbnValido(e.isbn)}
+                    style={{ ...campo, maxWidth: "320px", borderColor: e.isbn.trim() !== "" && !isbnValido(e.isbn) ? "#A93226" : "#CFCFCF" }}
+                  />
+                  {e.isbn.trim() !== "" && !isbnValido(e.isbn) && (
+                    <div style={{ marginTop: "6px", fontSize: "12px", color: "#A93226" }}>Confira o número: o ISBN tem 10 ou 13 dígitos.</div>
+                  )}
+                </div>
+              )}
             </div>
 
             <div>
@@ -615,7 +680,6 @@ export default function ImprimirView({
             </div>
           </section>
 
-          {!publico && (
           <section style={{ ...card, display: "flex", flexDirection: "column", gap: "14px" }}>
             <div>
               <h2 style={{ ...h2, marginBottom: "4px" }}>4. Envie seus arquivos</h2>
@@ -625,6 +689,25 @@ export default function ImprimirView({
               {caixaArquivo("capa", capa, "Capa", "PDF com contracapa, lombada e capa")}
               {caixaArquivo("miolo", miolo, "Miolo", "PDF com todas as páginas internas")}
             </div>
+            {publico && (
+              <div>
+                <div style={grupo}>Seus dados</div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "12px" }}>
+                  <div>
+                    <label htmlFor="env-nome" style={rotulo}>Nome</label>
+                    <input id="env-nome" type="text" autoComplete="name" maxLength={120} value={orc.nome} onChange={(ev) => { setOrc({ ...orc, nome: ev.target.value }); setErro(""); }} style={campo} />
+                  </div>
+                  <div>
+                    <label htmlFor="env-email" style={rotulo}>E-mail</label>
+                    <input id="env-email" type="email" autoComplete="email" maxLength={200} value={orc.email} onChange={(ev) => { setOrc({ ...orc, email: ev.target.value }); setErro(""); }} style={campo} />
+                  </div>
+                  <div>
+                    <label htmlFor="env-telefone" style={rotulo}>Telefone</label>
+                    <input id="env-telefone" type="tel" autoComplete="tel" inputMode="tel" maxLength={30} value={orc.telefone} onChange={(ev) => { setOrc({ ...orc, telefone: ev.target.value }); setErro(""); }} placeholder="(00) 00000-0000" style={campo} />
+                  </div>
+                </div>
+              </div>
+            )}
             {confirmacao}
             {blocoErro}
             {enviando && <div role="status" style={{ fontSize: "13px", color: "#002776", fontWeight: 600 }}>{enviando}</div>}
@@ -638,7 +721,6 @@ export default function ImprimirView({
             </div>
             <p style={{ margin: 0, fontSize: "12px", color: "#555" }}>Na pré-impressão você folheia a capa e o miolo e também pode enviar o pedido de lá. Nada é cobrado agora: o orçamento chega por e-mail.</p>
           </section>
-          )}
         </div>
 
         <aside style={{ flex: "1 1 280px", minWidth: 0, display: "flex", flexDirection: "column", gap: "16px" }}>
@@ -646,9 +728,9 @@ export default function ImprimirView({
           <div style={card}>
             <h2 style={{ ...h2, fontSize: "15px", marginBottom: "10px" }}>Depois do envio</h2>
             <ol style={{ margin: 0, paddingLeft: "18px", fontSize: "13px", lineHeight: 1.7, color: "#444" }}>
-              <li>{publico ? "Nossa equipe analisa a sua configuração." : "Nossa equipe confere o pedido e os arquivos."}</li>
+              <li>Nossa equipe confere o pedido e os arquivos.</li>
               <li>Você recebe o orçamento por e-mail.</li>
-              <li>{publico ? "Com a sua aprovação, combinamos o envio dos arquivos e a produção." : "Com a sua aprovação, o livro segue para a gráfica."}</li>
+              <li>Com a sua aprovação, o livro segue para a gráfica.</li>
             </ol>
           </div>
         </aside>

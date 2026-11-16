@@ -9,11 +9,11 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Imprimir meu livro",
-  description: "Monte a configuração do seu livro (formato, papel, encadernação e tiragem) e receba o orçamento de impressão por e-mail.",
+  description: "Configure o seu livro, envie a capa e o miolo em PDF e receba o orçamento de impressão por e-mail.",
 };
 
 // Página pública do "Imprimir meu livro", para quem não tem conta na plataforma. Autores cadastrados
-// usam a aba do painel (com envio dos arquivos e pré-impressão).
+// usam a aba do painel (mesmo fluxo, com os pedidos listados lá).
 export default async function ImprimirPage() {
   const author = await getCurrentAuthor();
 
@@ -24,7 +24,7 @@ export default async function ImprimirPage() {
         <div style={{ maxWidth: "820px", margin: "0 auto", textAlign: "center" }}>
           <h1 style={{ fontSize: "34px", fontWeight: 700, marginBottom: "12px" }}>Imprimir meu livro</h1>
           <p style={{ fontSize: "16px", lineHeight: 1.6 }}>
-            Não precisa ter cadastro nem assinatura. Monte a configuração do seu livro e receba o orçamento de impressão por e-mail.
+            Não precisa ter cadastro nem assinatura. Configure o seu livro, envie a capa e o miolo em PDF e receba o orçamento de impressão por e-mail.
           </p>
         </div>
       </section>
@@ -32,7 +32,7 @@ export default async function ImprimirPage() {
         <div style={{ maxWidth: "1100px", margin: "0 auto", display: "flex", flexDirection: "column", gap: "20px" }}>
           {author && (
             <div style={{ background: "#FFF6CC", color: "#5c4800", padding: "14px 18px", borderRadius: "8px", fontSize: "14px", lineHeight: 1.6 }}>
-              Você tem conta na plataforma: no painel dá para enviar a capa e o miolo, folhear a pré-impressão e acompanhar o pedido.{" "}
+              Você tem conta na plataforma: no painel você acompanha seus pedidos de impressão.{" "}
               <Link href="/painel?aba=imprimir" style={{ color: "#002776", fontWeight: 700, textDecoration: "underline" }}>
                 Ir para o meu painel
               </Link>

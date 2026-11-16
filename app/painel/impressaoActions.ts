@@ -15,43 +15,43 @@ import { apagarArquivosPrivados, arquivoPrivadoEhPdf, tamanhoArquivoPrivado } fr
 import {
   IMPRESSAO_MAX_CAPA_BYTES,
   IMPRESSAO_MAX_MIOLO_BYTES,
+  isbnLegivel,
+  normalizarIsbn,
   numeroDoPedidoImpressao,
   prefixoImpressao,
   tamanhoLegivel,
   validarEspecificacoes,
   type EspecificacoesImpressao,
 } from "@/lib/impressao";
+import { PASTA_PUBLICA, criarSessaoEnvioPublico, sessaoEnvioPublicoValida, type SessaoEnvioPublico } from "@/lib/impressaoPublico";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 
-// Pedido de impressão de livro feito no painel. Os PDFs já subiram direto do navegador para o
-// armazenamento privado (rota /api/painel/impressao/upload); aqui o servidor confere tudo de novo,
-// grava o pedido e avisa a equipe por e-mail, com os links para baixar os arquivos.
+// Pedido de impressão de livro. Os PDFs já subiram direto do navegador para o armazenamento privado
+// (rota /api/painel/impressao/upload); aqui o servidor confere tudo de novo, grava o pedido e avisa a
+// equipe por e-mail, com os links para baixar os arquivos. Serve ao autor logado (painel) e a quem
+// não tem conta (página pública /imprimir).
 
-export async function enviarPedidoImpressao(
-  especificacoes: EspecificacoesImpressao,
-  arquivos: { pasta: string; capaNome: string; mioloNome: string }
-): Promise<{ error?: string; numero?: string }> {
-  const author = await requireAuthor();
-  if (author.status !== "ativo") return { error: "Sua conta precisa estar ativa para pedir impressão." };
+type Remetente = { authorId: string | null; nome: string; email: string; telefone: string | null };
+type Arquivos = { pasta: string; capaNome: string; mioloNome: string };
 
-  const permitido = await checkRateLimit(`impressao-pedido:${author.id}`, 6, 60);
-  if (!permitido) return { error: "Muitos pedidos em pouco tempo. Aguarde alguns minutos." };
-
-  const dados: EspecificacoesImpressao = {
+function limparEspecificacoes(especificacoes: EspecificacoesImpressao): EspecificacoesImpressao {
+  const temIsbn = !!especificacoes.temIsbn;
+  return {
     ...especificacoes,
     titulo: String(especificacoes.titulo ?? "").trim(),
     observacoes: String(especificacoes.observacoes ?? "").trim(),
     paginas: Number(especificacoes.paginas),
     tiragem: Number(especificacoes.tiragem),
-    temIsbn: !!especificacoes.temIsbn,
+    temIsbn,
+    isbn: temIsbn ? normalizarIsbn(especificacoes.isbn) : "",
     orelhas: !!especificacoes.orelhas,
   };
-  const erro = validarEspecificacoes(dados);
-  if (erro) return { error: erro };
+}
 
-  if (!/^[a-f0-9]{32}$/.test(arquivos.pasta)) return { error: "Envio inválido. Escolha os arquivos novamente." };
-  const capaPath = `${prefixoImpressao(author.id, arquivos.pasta)}capa.pdf`;
-  const mioloPath = `${prefixoImpressao(author.id, arquivos.pasta)}miolo.pdf`;
+/** Confere os arquivos enviados, grava o pedido e avisa a equipe e o solicitante. `dono` é a pasta do envio: id do autor ou "publico". */
+async function registrarPedido(remetente: Remetente, dono: string, dados: EspecificacoesImpressao, arquivos: Arquivos): Promise<{ error?: string; numero?: string }> {
+  const capaPath = `${prefixoImpressao(dono, arquivos.pasta)}capa.pdf`;
+  const mioloPath = `${prefixoImpressao(dono, arquivos.pasta)}miolo.pdf`;
 
   const jaExiste = await prisma.pedidoImpressao.findFirst({ where: { capaPath }, select: { numero: true } });
   if (jaExiste) return { numero: numeroDoPedidoImpressao(jaExiste.numero) };
@@ -80,12 +80,16 @@ export async function enviarPedidoImpressao(
 
   const pedido = await prisma.pedidoImpressao.create({
     data: {
-      authorId: author.id,
+      authorId: remetente.authorId,
+      contatoNome: remetente.authorId ? null : remetente.nome,
+      contatoEmail: remetente.authorId ? null : remetente.email,
+      contatoTelefone: remetente.authorId ? null : remetente.telefone,
       titulo: dados.titulo,
       formato: dados.formato,
       paginas: dados.paginas,
       tiragem: dados.tiragem,
       temIsbn: dados.temIsbn,
+      isbn: dados.temIsbn ? dados.isbn : null,
       mioloCor: dados.mioloCor,
       mioloPapel: dados.mioloPapel,
       encadernacao: dados.encadernacao,
@@ -113,7 +117,7 @@ export async function enviarPedidoImpressao(
     ["Formato", pedido.formato],
     ["Número de páginas", String(pedido.paginas)],
     ["Tiragem", `${pedido.tiragem} exemplares`],
-    ["Tem ISBN", pedido.temIsbn ? "Sim" : "Não"],
+    ["ISBN", pedido.temIsbn ? isbnLegivel(pedido.isbn ?? "") : "O livro não tem ISBN"],
     ["Miolo: impressão", pedido.mioloCor],
     ["Miolo: papel", pedido.mioloPapel],
     ["Encadernação", pedido.encadernacao],
@@ -126,28 +130,102 @@ export async function enviarPedidoImpressao(
   try {
     await sendPedidoImpressaoEquipeEmail({
       numeroTexto,
-      autorNome: author.nome,
-      autorEmail: author.email,
-      autorTelefone: null,
+      autorNome: remetente.authorId ? remetente.nome : `${remetente.nome} (sem cadastro na plataforma)`,
+      autorEmail: remetente.email,
+      autorTelefone: remetente.telefone,
       especificacoes: linhas,
       observacoes: pedido.observacoes,
       capa: { nome: pedido.capaNome, tamanho: tamanhoLegivel(pedido.capaBytes), url: link("capa") },
       miolo: { nome: pedido.mioloNome, tamanho: tamanhoLegivel(pedido.mioloBytes), url: link("miolo") },
     });
   } catch (err) {
-    // Sem o aviso a equipe não saberia do pedido: desfaz e deixa o autor tentar de novo (os arquivos ficam).
+    // Sem o aviso a equipe não saberia do pedido: desfaz e deixa tentar de novo (os arquivos ficam).
     console.error("[impressao] Falha ao avisar a equipe do pedido", numeroTexto, err);
     await prisma.pedidoImpressao.delete({ where: { id: pedido.id } }).catch(() => undefined);
     return { error: "Não foi possível enviar o pedido agora. Tente de novo em instantes." };
   }
 
-  await sendPedidoImpressaoAutorEmail(author.email, { numeroTexto, autorNome: author.nome, especificacoes: linhas }).catch((err) =>
-    console.error("[impressao] Falha ao enviar a confirmação ao autor:", err)
+  await sendPedidoImpressaoAutorEmail(remetente.email, { numeroTexto, autorNome: remetente.nome, especificacoes: linhas }).catch((err) =>
+    console.error("[impressao] Falha ao enviar a confirmação do pedido:", err)
   );
 
-  revalidatePath("/painel");
   return { numero: numeroTexto };
 }
+
+export async function enviarPedidoImpressao(especificacoes: EspecificacoesImpressao, arquivos: Arquivos): Promise<{ error?: string; numero?: string }> {
+  const author = await requireAuthor();
+  if (author.status !== "ativo") return { error: "Sua conta precisa estar ativa para pedir impressão." };
+
+  const permitido = await checkRateLimit(`impressao-pedido:${author.id}`, 6, 60);
+  if (!permitido) return { error: "Muitos pedidos em pouco tempo. Aguarde alguns minutos." };
+
+  const dados = limparEspecificacoes(especificacoes);
+  const erro = validarEspecificacoes(dados);
+  if (erro) return { error: erro };
+
+  if (!/^[a-f0-9]{32}$/.test(arquivos.pasta)) return { error: "Envio inválido. Escolha os arquivos novamente." };
+
+  const r = await registrarPedido({ authorId: author.id, nome: author.nome, email: author.email, telefone: null }, author.id, dados, arquivos);
+  if (r.numero) revalidatePath("/painel");
+  return r;
+}
+
+type ContatoPublico = { nome: string; email: string; telefone: string };
+
+/** Confere nome, e-mail e telefone de quem pede sem ter conta. Devolve a mensagem do problema, ou null. */
+function validarContato(c: ContatoPublico): string | null {
+  const nome = String(c.nome ?? "").trim();
+  const email = String(c.email ?? "").trim();
+  const telefone = String(c.telefone ?? "").trim();
+  if (nome.length < 2 || nome.length > 120) return "Informe o seu nome.";
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 200) return "Informe um e-mail válido.";
+  const digitos = telefone.replace(/\D/g, "");
+  if (digitos.length < 10 || digitos.length > 13 || telefone.length > 30) return "Informe um telefone com DDD.";
+  return null;
+}
+
+/**
+ * Página pública /imprimir, passo 1: confere o anti-robô e entrega a "sessão de envio" (pasta
+ * assinada e com validade) que libera o upload dos PDFs. Quem já tem conta não precisa disto.
+ */
+export async function iniciarEnvioImpressaoPublico(turnstileToken: string | null): Promise<{ error?: string; sessao?: SessaoEnvioPublico }> {
+  if (!(await verificarTurnstile(turnstileToken))) {
+    return { error: "Não conseguimos confirmar que você não é um robô. Recarregue a página e tente de novo." };
+  }
+  const permitido = await checkRateLimit(`impressao-sessao-ip:${await getClientIp()}`, 10, 60);
+  if (!permitido) return { error: "Muitos envios em pouco tempo. Aguarde um pouco e tente de novo." };
+  return { sessao: criarSessaoEnvioPublico() };
+}
+
+/** Página pública /imprimir, passo 2: cria o pedido com os arquivos já enviados, para quem não tem conta. */
+export async function enviarPedidoImpressaoPublico(
+  especificacoes: EspecificacoesImpressao,
+  contato: ContatoPublico,
+  arquivos: { sessao: SessaoEnvioPublico; capaNome: string; mioloNome: string }
+): Promise<{ error?: string; numero?: string }> {
+  if (!sessaoEnvioPublicoValida(arquivos.sessao)) return { error: "O envio expirou. Recarregue a página e envie os arquivos de novo." };
+
+  const erroContato = validarContato(contato);
+  if (erroContato) return { error: erroContato };
+
+  const email = String(contato.email).trim();
+  const permitido =
+    (await checkRateLimit(`impressao-pedido-ip:${await getClientIp()}`, 6, 60)) &&
+    (await checkRateLimit(`impressao-pedido-email:${email.toLowerCase()}`, 4, 24 * 60));
+  if (!permitido) return { error: "Muitos pedidos em pouco tempo. Aguarde um pouco e tente de novo." };
+
+  const dados = limparEspecificacoes(especificacoes);
+  const erro = validarEspecificacoes(dados);
+  if (erro) return { error: erro };
+
+  return registrarPedido(
+    { authorId: null, nome: String(contato.nome).trim(), email, telefone: String(contato.telefone).trim() },
+    PASTA_PUBLICA,
+    dados,
+    { pasta: arquivos.sessao.pasta, capaNome: arquivos.capaNome, mioloNome: arquivos.mioloNome }
+  );
+}
+
 
 /**
  * "Receber esse orçamento em meu e-mail": o autor informa os contatos e a equipe recebe a
@@ -187,7 +265,7 @@ export async function solicitarOrcamentoImpressao(
     ["Formato", texto(e.formato)],
     ["Número de páginas", numero(e.paginas)],
     ["Tiragem", numero(e.tiragem, " exemplares")],
-    ["Tem ISBN", e.temIsbn ? "Sim" : "Não"],
+    ["ISBN", e.temIsbn ? isbnLegivel(String(e.isbn ?? "")) || "Tem, número não informado" : "O livro não tem ISBN"],
     ["Miolo: impressão", texto(e.mioloCor)],
     ["Miolo: papel", texto(e.mioloPapel)],
     ["Encadernação", texto(e.encadernacao)],
