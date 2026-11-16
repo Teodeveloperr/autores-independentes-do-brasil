@@ -107,8 +107,6 @@ export default async function HomePage() {
 
       <HomeBannerCarousel />
 
-      <KitsBienalHome />
-
       <section className="responsive-grid section-pad-lg" style={{ background: "white", padding: "48px 40px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "60px", alignItems: "center", marginTop: "20px" }}>
         <div>
           <h2 style={{ fontSize: "32px", fontWeight: 700, color: "#002776", marginBottom: "24px" }}>Sobre o coletivo</h2>
@@ -128,6 +126,8 @@ export default async function HomePage() {
           />
         </div>
       </section>
+
+      <KitsBienalHome />
 
       <section className="section-pad-lg" style={{ background: "white", padding: "48px 40px", marginTop: "20px" }}>
         <div className="section-pad-md" style={{ background: "#002776", color: "white", padding: "32px", borderRadius: "8px", textAlign: "center" }}>
