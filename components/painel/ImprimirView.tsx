@@ -283,7 +283,7 @@ export default function ImprimirView({
   async function enviar() {
     const p = problema();
     if (p) return setErro(p);
-    if (!aceite) return setErro("Marque a confirmação antes de enviar o pedido.");
+    if (!aceite) return setErro("Marque a confirmação antes de finalizar o pedido.");
     if (!capa || !miolo) return;
     setErro("");
 
@@ -501,7 +501,7 @@ export default function ImprimirView({
               {enviando && <div role="status" style={{ fontSize: "13px", color: "#002776", fontWeight: 600 }}>{enviando}</div>}
               <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
                 <button type="button" onClick={enviar} disabled={!!enviando} style={{ ...botaoVerde, opacity: enviando ? 0.6 : 1 }}>
-                  {enviando ? "Enviando..." : "Enviar pedido"}
+                  {enviando ? "Enviando..." : "Finalizar pedido"}
                 </button>
                 <button type="button" onClick={() => setEtapa("formulario")} disabled={!!enviando} style={botaoBorda}>
                   Voltar e trocar os arquivos
@@ -716,10 +716,10 @@ export default function ImprimirView({
                 Visualizar pré-impressão
               </button>
               <button type="button" onClick={enviar} disabled={!!enviando} style={{ ...botaoVerde, opacity: enviando ? 0.6 : 1 }}>
-                {enviando ? "Enviando..." : "Enviar pedido"}
+                {enviando ? "Enviando..." : "Finalizar pedido"}
               </button>
             </div>
-            <p style={{ margin: 0, fontSize: "12px", color: "#555" }}>Na pré-impressão você folheia a capa e o miolo e também pode enviar o pedido de lá. Nada é cobrado agora: o orçamento chega por e-mail.</p>
+            <p style={{ margin: 0, fontSize: "12px", color: "#555" }}>Na pré-impressão você folheia a capa e o miolo e também pode finalizar o pedido de lá. Nada é cobrado agora: o orçamento chega por e-mail.</p>
           </section>
         </div>
 
