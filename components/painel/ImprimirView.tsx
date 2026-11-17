@@ -21,6 +21,8 @@ import {
   FORMATOS,
   IMPRESSAO_MAX_CAPA_BYTES,
   IMPRESSAO_MAX_MIOLO_BYTES,
+  IMPRESSAO_MAX_TIRAGEM,
+  IMPRESSAO_MIN_TIRAGEM,
   LAMINACOES,
   isbnLegivel,
   isbnValido,
@@ -34,6 +36,7 @@ import {
   validarEspecificacoes,
   type EspecificacoesImpressao,
 } from "@/lib/impressao";
+import { calcularPrecoImpressao, formatarReais } from "@/lib/precoImpressao";
 import TurnstileWidget from "@/components/TurnstileWidget";
 import type { PedidoImpressaoResumo } from "./types";
 
@@ -450,6 +453,9 @@ export default function ImprimirView({
     </div>
   );
 
+  // Valor estimado, calculado com a tabela da gráfica. No kit a impressão já está paga, então não aparece.
+  const preco = kit ? null : calcularPrecoImpressao(e);
+
   const blocoResumo = (
     <div style={card}>
       <h2 style={{ ...h2, fontSize: "15px", marginBottom: "12px" }}>Resumo do pedido</h2>
@@ -461,6 +467,36 @@ export default function ImprimirView({
           </div>
         ))}
       </dl>
+      {preco && (
+        <div style={{ marginTop: "16px", paddingTop: "14px", borderTop: "2px solid #FFDF00" }}>
+          <div style={{ fontSize: "12px", fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "#002776", marginBottom: "8px" }}>Valor estimado</div>
+          {preco.ok ? (
+            <>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "12px" }}>
+                <span style={{ fontSize: "13px", color: "#555" }}>Total</span>
+                <strong style={{ fontSize: "24px", color: "#002776" }}>{formatarReais(preco.totalCentavos)}</strong>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", gap: "12px", fontSize: "13px", color: "#555", marginTop: "2px" }}>
+                <span>Por exemplar</span>
+                <span style={{ fontWeight: 600, color: "#262626" }}>{formatarReais(preco.porExemplarCentavos)}</span>
+              </div>
+              <dl style={{ margin: "12px 0 0", display: "grid", gridTemplateColumns: "1fr auto", gap: "4px 12px", fontSize: "12px", color: "#555" }}>
+                {preco.linhas.map((l) => (
+                  <div key={l.rotulo} style={{ display: "contents" }}>
+                    <dt>{l.rotulo}</dt>
+                    <dd style={{ margin: 0, textAlign: "right" }}>{formatarReais(l.centavos)}</dd>
+                  </div>
+                ))}
+              </dl>
+              <p style={{ margin: "12px 0 0", fontSize: "12px", color: "#555", lineHeight: 1.5 }}>
+                Frete não incluído: é calculado na entrega, conforme o seu endereço. O valor final é confirmado pela nossa equipe.
+              </p>
+            </>
+          ) : (
+            <p role="status" style={{ margin: 0, fontSize: "13px", color: preco.motivo === "invalido" ? "#A93226" : "#555", lineHeight: 1.5 }}>{preco.mensagem}</p>
+          )}
+        </div>
+      )}
     </div>
   );
 
@@ -698,7 +734,8 @@ export default function ImprimirView({
               </div>
               <div>
                 <label htmlFor="imp-tiragem" style={rotulo}>Tiragem (exemplares)</label>
-                <input id="imp-tiragem" type="number" min={1} inputMode="numeric" value={e.tiragem || ""} onChange={(ev) => mudar("tiragem", Math.max(0, Math.floor(Number(ev.target.value) || 0)))} placeholder="Ex.: 100" style={campo} />
+                <input id="imp-tiragem" type="number" min={IMPRESSAO_MIN_TIRAGEM} max={IMPRESSAO_MAX_TIRAGEM} inputMode="numeric" value={e.tiragem || ""} onChange={(ev) => mudar("tiragem", Math.max(0, Math.floor(Number(ev.target.value) || 0)))} placeholder="Ex.: 100" style={campo} />
+                <div style={{ marginTop: "6px", fontSize: "12px", color: "#555" }}>De {IMPRESSAO_MIN_TIRAGEM} a {IMPRESSAO_MAX_TIRAGEM} exemplares. Acima disso, fale com a nossa equipe.</div>
               </div>
               {blocoIsbn}
             </div>
