@@ -42,6 +42,8 @@ export function ehCapaDura(encadernacao: string): boolean {
  * não o cobra), e a laminação escolhida continua somando por cima.
  */
 const CAPA_DURA_FAIXA_50 = 1.6;
+/** Capa de uma encadernação em capa dura na faixa de 30 a 49, por exemplar (medido no simulador com 40 cópias). */
+const CAPA_DURA_FAIXA_30 = 2.5;
 
 /** Diz se o papel da capa combina com a encadernação (a planilha amarra um ao outro). */
 export function capaCompativel(encadernacao: string, capaPapel: string): boolean {
@@ -209,11 +211,9 @@ export function calcularPrecoImpressao(e: EntradaPreco): ResultadoPreco {
   if (valorPapel === undefined || valorCor === null) return consulta("Esta combinação de formato, papel e cor ainda não tem valor automático. Peça o orçamento por e-mail.");
 
   const dura = ehCapaDura(e.encadernacao);
-  // Capa dura na faixa de 30 a 49 ainda não foi conferida no simulador.
-  if (dura && faixa !== FAIXA_50) return consulta("Capa dura com menos de 50 exemplares ainda não tem valor automático. Peça o orçamento por e-mail.");
 
   const encadernacao = faixa.encadernacao[e.encadernacao];
-  const capaPapel = dura ? CAPA_DURA_FAIXA_50 : faixa.capaPapel[e.capaPapel];
+  const capaPapel = dura ? (faixa === FAIXA_50 ? CAPA_DURA_FAIXA_50 : CAPA_DURA_FAIXA_30) : faixa.capaPapel[e.capaPapel];
   const capaImpressao = dura ? 0 : faixa.capaImpressao[e.capaCor];
   const laminacao = faixa.laminacao[e.laminacao];
   if ([encadernacao, capaPapel, capaImpressao, laminacao].some((v) => v === undefined)) {
