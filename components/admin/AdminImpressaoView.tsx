@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { atualizarStatusPedidoImpressao } from "@/app/admin/actions";
+import { atualizarStatusPedidoImpressao, gerarLinkGraficaPedidoImpressao, reenviarEmailPedidoImpressao } from "@/app/admin/actions";
 import { STATUS_IMPRESSAO, isbnLegivel, numeroDoPedidoImpressao, tamanhoLegivel } from "@/lib/impressao";
 import { KITS, kitPorId, rotuloStatusKit, valorKit, valorParceiroKitCentavos } from "@/lib/kits";
 import type { PedidoImpressaoAdminRow, PedidoKitAdminRow } from "./types";
@@ -64,6 +64,44 @@ function PedidoImpressaoCard({ p }: { p: PedidoImpressaoAdminRow }) {
     });
   }
 
+  const [pendenteLink, iniciarLink] = useTransition();
+  const [links, setLinks] = useState<{ capa: string; miolo: string } | null>(null);
+  const [aviso, setAviso] = useState<{ ok: boolean; texto: string } | null>(null);
+  const [copiado, setCopiado] = useState("");
+
+  function gerarLink() {
+    if (!window.confirm("Gerar um novo link invalida o link anterior (inclusive o do e-mail e qualquer um que você já tenha mandado à gráfica). Continuar?")) return;
+    setAviso(null);
+    iniciarLink(async () => {
+      const r = await gerarLinkGraficaPedidoImpressao(p.id);
+      if (r.error || !r.capa || !r.miolo) setAviso({ ok: false, texto: r.error ?? "Não foi possível gerar o link." });
+      else {
+        setLinks({ capa: r.capa, miolo: r.miolo });
+        setAviso({ ok: true, texto: "Link gerado. Copie e envie à gráfica; o link anterior não vale mais." });
+      }
+    });
+  }
+
+  function reenviarEmail() {
+    if (!window.confirm("Reenviar o e-mail do pedido para contato@ com links novos? Os links anteriores deixam de funcionar.")) return;
+    setAviso(null);
+    setLinks(null);
+    iniciarLink(async () => {
+      const r = await reenviarEmailPedidoImpressao(p.id);
+      setAviso(r.error ? { ok: false, texto: r.error } : { ok: true, texto: "E-mail reenviado para contato@ com os links novos." });
+    });
+  }
+
+  async function copiar(rotuloLink: string, url: string) {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopiado(rotuloLink);
+      setTimeout(() => setCopiado(""), 2000);
+    } catch {
+      setAviso({ ok: false, texto: "Não foi possível copiar automaticamente. Selecione o link e copie." });
+    }
+  }
+
   const linhas: Array<[string, string]> = [
     ["Formato", p.formato],
     ["Páginas do miolo", String(p.paginas)],
@@ -84,6 +122,11 @@ function PedidoImpressaoCard({ p }: { p: PedidoImpressaoAdminRow }) {
           <div style={{ fontSize: "12px", color: "#666", marginTop: "2px" }}>
             {data(p.createdAt)} · {p.tiragem} un. · {p.formato} ·{" "}
             <span style={{ fontWeight: 600 }}>{nome}</span>
+            {p.pedidoKit && (
+              <span style={{ marginLeft: "6px", fontSize: "11px", fontWeight: 700, padding: "1px 8px", borderRadius: "10px", background: "#E8F5EC", color: "#0B5D2A" }}>
+                {(kitPorId(p.pedidoKit.kit)?.nome ?? "KIT").toUpperCase()} (kit #{p.pedidoKit.numero})
+              </span>
+            )}
             {semConta && <span style={{ marginLeft: "6px", fontSize: "11px", fontWeight: 700, padding: "1px 8px", borderRadius: "10px", background: "#FFF6CC", color: "#5c4800" }}>SEM CADASTRO</span>}
             {email && (
               <>
@@ -132,6 +175,48 @@ function PedidoImpressaoCard({ p }: { p: PedidoImpressaoAdminRow }) {
           <a href={`/api/admin/impressao/${p.id}/miolo`} style={{ background: "#002776", color: "white", padding: "9px 16px", borderRadius: "6px", fontSize: "13px", fontWeight: 600 }}>
             Baixar miolo ({tamanhoLegivel(p.mioloBytes)})
           </a>
+        </div>
+
+        <div style={{ marginTop: "14px", paddingTop: "14px", borderTop: "1px solid #EEE", display: "flex", flexDirection: "column", gap: "10px" }}>
+          <div style={{ fontSize: "12px", color: "#666", lineHeight: 1.5 }}>
+            Para a gráfica: gere um link de download (sem login) ou reenvie o e-mail do pedido para contato@. Em ambos os casos o link anterior deixa de funcionar.
+          </div>
+          <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+            <button
+              type="button"
+              disabled={pendenteLink}
+              onClick={gerarLink}
+              style={{ background: "white", border: "2px solid #002776", color: "#002776", padding: "8px 16px", borderRadius: "6px", fontSize: "13px", fontWeight: 700, opacity: pendenteLink ? 0.6 : 1 }}
+            >
+              {pendenteLink ? "Gerando..." : "Gerar link para a gráfica"}
+            </button>
+            <button
+              type="button"
+              disabled={pendenteLink}
+              onClick={reenviarEmail}
+              style={{ background: "white", border: "2px solid #002776", color: "#002776", padding: "8px 16px", borderRadius: "6px", fontSize: "13px", fontWeight: 700, opacity: pendenteLink ? 0.6 : 1 }}
+            >
+              Reenviar e-mail com os links
+            </button>
+          </div>
+          {aviso && (
+            <div role="status" style={{ fontSize: "13px", color: aviso.ok ? "#0B5D2A" : "#A93226", background: aviso.ok ? "#E8F5EC" : "#FDEDEC", padding: "8px 12px", borderRadius: "6px" }}>
+              {aviso.texto}
+            </div>
+          )}
+          {links && (
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              {([["Capa", links.capa], ["Miolo", links.miolo]] as const).map(([rotuloLink, url]) => (
+                <div key={rotuloLink} style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
+                  <span style={{ fontSize: "12px", fontWeight: 700, width: "48px" }}>{rotuloLink}</span>
+                  <input readOnly value={url} onFocus={(e) => e.currentTarget.select()} style={{ flex: "1 1 280px", minWidth: 0, padding: "8px 10px", border: "1px solid #CFCFCF", borderRadius: "6px", fontSize: "12px", fontFamily: "monospace" }} />
+                  <button type="button" onClick={() => copiar(rotuloLink, url)} style={{ background: "#002776", color: "white", padding: "8px 14px", borderRadius: "6px", fontSize: "12px", fontWeight: 700 }}>
+                    {copiado === rotuloLink ? "Copiado!" : "Copiar"}
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </details>
     </div>
@@ -224,6 +309,13 @@ function PedidosKit({ pedidos }: { pedidos: PedidoKitAdminRow[] }) {
                   Pagamentos recebidos: {p.pagamentos.length} de {p.parcelas} · Parceiro: <b>{valorKit(repasse.transferido)}</b> transferido
                   {repasse.pendente > 0 && <> · <b>{valorKit(repasse.pendente)}</b> a transferir</>}
                   {" "}· Plataforma: {valorKit(p.pagamentos.filter((pg) => pg.repasseStatus !== "cancelado").reduce((t, pg) => t + pg.valorCentavos - pg.repasseValorCentavos, 0))}
+                </div>
+              )}
+              {p.status === "pago" && (
+                <div style={{ fontSize: "12px", color: p.impressao ? "#0B5D2A" : "#A87900", lineHeight: 1.6 }}>
+                  {p.impressao
+                    ? `Livro enviado: ${numeroDoPedidoImpressao(p.impressao.numero)} (${STATUS_IMPRESSAO[p.impressao.status] ?? p.impressao.status}). Veja na aba Pedidos de impressão.`
+                    : "Ainda não enviou o livro para impressão (o cliente recebeu o link por e-mail)."}
                 </div>
               )}
               {repasse.erros.map((e, i) => (

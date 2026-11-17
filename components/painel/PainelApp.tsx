@@ -47,8 +47,10 @@ export default function PainelApp({
   maxVisualizacoesGlobal,
   bienal,
   pedidosImpressao,
+  kitsPendentes,
   abaInicial,
 }: {
+  kitsPendentes: Array<{ token: string; nome: string; numero: number }>;
   abaInicial?: PainelView;
   bienal: DadosBienalPainel | null;
   pedidosImpressao: PedidoImpressaoResumo[];
@@ -173,7 +175,7 @@ export default function PainelApp({
           {view === "dash" && <DashboardView author={author} onNavigate={setView} maxVisualizacoesGlobal={maxVisualizacoesGlobal} />}
           {view === "perfil" && <PerfilView author={author} />}
           {view === "livros" && <LivrosView author={author} />}
-          {view === "imprimir" && <ImprimirView authorId={author.id} pedidos={pedidosImpressao} nomeInicial={author.nome ?? ""} emailInicial={author.email ?? ""} />}
+          {view === "imprimir" && <ImprimirView authorId={author.id} pedidos={pedidosImpressao} kitsPendentes={kitsPendentes}nomeInicial={author.nome ?? ""} emailInicial={author.email ?? ""} />}
           {view === "pedidos" && <PedidosView author={author} />}
           {view === "eventos" && <EventosView author={author} />}
           {view === "bienal" && <BienalView plano={author.plano} bienal={bienal} />}

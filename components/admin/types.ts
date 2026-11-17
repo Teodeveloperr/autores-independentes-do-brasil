@@ -30,10 +30,10 @@ export type EbookAdminRow = Prisma.BookGetPayload<{
 // Pedido de impressão no admin: sem os caminhos dos PDFs nem o hash do token (os arquivos abrem pela rota do admin).
 export type PedidoImpressaoAdminRow = Prisma.PedidoImpressaoGetPayload<{
   omit: { tokenHash: true; capaPath: true; mioloPath: true };
-  include: { author: { select: { nome: true; email: true } } };
+  include: { author: { select: { nome: true; email: true } }; pedidoKit: { select: { numero: true; kit: true } } };
 }>;
 // Kit da Bienal no admin: sem CPF nem o código do link de agradecimento.
 export type PedidoKitAdminRow = Prisma.PedidoKitGetPayload<{
   omit: { cpf: true; token: true; asaasCustomerId: true };
-  include: { pagamentos: true };
+  include: { pagamentos: true; impressao: { select: { numero: true; status: true } } };
 }>;

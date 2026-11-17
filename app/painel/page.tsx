@@ -7,6 +7,7 @@ import PainelApp from "@/components/painel/PainelApp";
 import type { DadosBienalPainel } from "@/components/painel/types";
 import { PLANO_PREMIUM_PLUS, premiumPlusPodeEscolher } from "@/lib/contrato/config";
 import { carregarOcupacao, horariosDasReservas } from "@/lib/contrato/agenda";
+import { kitPorId } from "@/lib/kits";
 
 export const dynamic = "force-dynamic";
 
@@ -19,7 +20,7 @@ export default async function PainelPage({ searchParams }: { searchParams: Promi
   // Quem entra no painel já precisa ter o endereço amigável do perfil (aba "Divulgar meu perfil").
   await garantirSlug(authorSession.id);
 
-  const [author, visualizacoesAgg, pedidosImpressao] = await Promise.all([
+  const [author, visualizacoesAgg, pedidosImpressao, kitsPendentes] = await Promise.all([
     prisma.author.findUniqueOrThrow({
       where: { id: authorSession.id },
       omit: { senhaHash: true },
@@ -42,6 +43,12 @@ export default async function PainelPage({ searchParams }: { searchParams: Promi
       where: { authorId: authorSession.id },
       orderBy: { createdAt: "desc" },
       select: { id: true, numero: true, titulo: true, tiragem: true, status: true, createdAt: true },
+    }),
+    // Kits da Bienal comprados por este autor (logado na compra), já pagos e sem livro enviado para impressão.
+    prisma.pedidoKit.findMany({
+      where: { authorId: authorSession.id, status: "pago", impressao: null },
+      orderBy: { createdAt: "desc" },
+      select: { token: true, kit: true, numero: true },
     }),
   ]);
 
@@ -77,6 +84,10 @@ export default async function PainelPage({ searchParams }: { searchParams: Promi
         status: p.status,
         enviadoEm: p.createdAt.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" }),
       }))}
+      kitsPendentes={kitsPendentes.flatMap((k) => {
+        const kit = kitPorId(k.kit);
+        return kit ? [{ token: k.token, nome: kit.nome, numero: k.numero }] : [];
+      })}
       author={author}
       temSenha={temSenha}
       mercadoPagoStatus={mercadopago}

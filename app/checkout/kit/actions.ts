@@ -2,6 +2,7 @@
 
 import crypto from "node:crypto";
 import { prisma } from "@/lib/db";
+import { getCurrentAuthor } from "@/lib/auth";
 import { criarOuBuscarCliente, criarCobranca, criarCobrancaParcelada } from "@/lib/asaas";
 import { validarCpf } from "@/lib/cpf";
 import { emailSchema } from "@/lib/validation";
@@ -45,8 +46,10 @@ export async function criarPedidoKit(
   if (!permitido) return { error: "Muitas tentativas. Aguarde alguns minutos e tente de novo." };
 
   const token = crypto.randomBytes(24).toString("base64url");
+  // Se quem compra está logado como autor, o painel dele passa a avisar do kit pendente de envio.
+  const autor = await getCurrentAuthor();
   const pedido = await prisma.pedidoKit.create({
-    data: { token, kit: kit.id, valorCentavos: kit.valorCentavos, parcelas, nome, email: email.data as string, telefone, cpf },
+    data: { token, authorId: autor?.id ?? null, kit: kit.id, valorCentavos: kit.valorCentavos, parcelas, nome, email: email.data as string, telefone, cpf },
   });
 
   const desfazer = async (mensagem: string): Promise<CriarPedidoKitResult> => {

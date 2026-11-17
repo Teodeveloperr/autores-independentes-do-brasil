@@ -3,6 +3,7 @@ import Link from "next/link";
 import PublicHeader from "@/components/PublicHeader";
 import PublicFooter from "@/components/PublicFooter";
 import ImprimirView from "@/components/painel/ImprimirView";
+import ComprouKitReenvio from "@/components/ComprouKitReenvio";
 import { getCurrentAuthor } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
@@ -38,6 +39,7 @@ export default async function ImprimirPage() {
               </Link>
             </div>
           )}
+          <ComprouKitReenvio />
           <ImprimirView publico nomeInicial={author?.nome ?? ""} emailInicial={author?.email ?? ""} />
         </div>
       </section>

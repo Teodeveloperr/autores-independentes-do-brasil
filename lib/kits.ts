@@ -66,3 +66,32 @@ export const KIT_PERCENTUAL_PARCEIRO = 90;
 export function valorParceiroKitCentavos(valorPagoCentavos: number): number {
   return Math.round((valorPagoCentavos * KIT_PERCENTUAL_PARCEIRO) / 100);
 }
+
+// ── Impressão do livro do kit ─────────────────────────────────────────────────────────────────
+// O kit já define as características da impressão: o comprador não escolhe nada, só informa o título
+// e o ISBN, envia a capa e o miolo e confirma. Papel do miolo, papel e laminação da capa e orelhas
+// não constam da arte do kit e seguem o padrão da gráfica (alterar aqui muda para todos os kits).
+
+export const ESPECIFICACOES_FIXAS_KIT = {
+  formato: "A5 (14,8x21 cm)",
+  mioloCor: "Preto e branco",
+  mioloPapel: "Pólen Natural 80g",
+  encadernacao: "Brochura fresada e colada",
+  capaPapel: "Cartão triplex 250g",
+  capaCor: "4x0 (só frente)",
+  laminacao: "Fosca",
+  orelhas: false,
+} as const;
+
+/** Lista, em palavras, do que o kit já inclui na impressão (para a tela travada). */
+export function itensDeImpressaoDoKit(kit: Pick<Kit, "copias" | "paginasMax">): Array<[string, string]> {
+  const f = ESPECIFICACOES_FIXAS_KIT;
+  return [
+    ["Cópias", `${kit.copias} exemplares`],
+    ["Páginas do miolo", `até ${kit.paginasMax}`],
+    ["Formato", f.formato],
+    ["Miolo", `${f.mioloCor}, ${f.mioloPapel}`],
+    ["Encadernação", f.encadernacao],
+    ["Capa", `colorida, ${f.capaPapel}, laminação ${f.laminacao.toLowerCase()}, sem orelhas`],
+  ];
+}

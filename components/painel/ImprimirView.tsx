@@ -3,7 +3,15 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { upload } from "@vercel/blob/client";
-import { enviarPedidoImpressao, enviarPedidoImpressaoPublico, iniciarEnvioImpressaoPublico, solicitarOrcamentoImpressao } from "@/app/painel/impressaoActions";
+import {
+  enviarPedidoImpressao,
+  enviarPedidoImpressaoKit,
+  enviarPedidoImpressaoPublico,
+  iniciarEnvioImpressaoKit,
+  iniciarEnvioImpressaoPublico,
+  solicitarOrcamentoImpressao,
+} from "@/app/painel/impressaoActions";
+import { ESPECIFICACOES_FIXAS_KIT, itensDeImpressaoDoKit } from "@/lib/kits";
 import type { SessaoEnvioPublico } from "@/lib/impressaoPublico";
 import {
   CAPA_CORES,
@@ -202,7 +210,13 @@ export default function ImprimirView({
   nomeInicial = "",
   emailInicial = "",
   publico = false,
+  kit,
+  kitsPendentes = [],
 }: {
+  /** Kit da Bienal (Prata/Ouro) comprado: a impressão vem definida pelo kit e só o título, o ISBN e os arquivos são do cliente. */
+  kit?: { token: string; id: string; nome: string; copias: number; paginasMax: number };
+  /** Kits da Bienal que este autor comprou e ainda não enviou o livro (aviso no topo do painel). */
+  kitsPendentes?: Array<{ token: string; nome: string; numero: number }>;
   authorId?: string;
   pedidos?: PedidoImpressaoResumo[];
   nomeInicial?: string;
@@ -215,7 +229,7 @@ export default function ImprimirView({
   const [orcErro, setOrcErro] = useState("");
   const [orcEnviando, setOrcEnviando] = useState(false);
   const [orcOk, setOrcOk] = useState(false);
-  const [e, setE] = useState<EspecificacoesImpressao>(ESPECIFICACOES_PADRAO);
+  const [e, setE] = useState<EspecificacoesImpressao>(kit ? { ...ESPECIFICACOES_PADRAO, ...ESPECIFICACOES_FIXAS_KIT, tiragem: kit.copias } : ESPECIFICACOES_PADRAO);
   const [capa, setCapa] = useState<ArquivoPdf | null>(null);
   const [miolo, setMiolo] = useState<ArquivoPdf | null>(null);
   const [lendo, setLendo] = useState<Parte | null>(null);
@@ -249,7 +263,8 @@ export default function ImprimirView({
         setMiolo(pdf);
         setEsquerda(0);
         // Preenche o número de páginas a partir do arquivo quando o autor ainda não informou.
-        setE((atual) => (atual.paginas > 0 ? atual : { ...atual, paginas: pdf.paginas }));
+        // No kit o número de páginas é sempre o do arquivo enviado.
+        setE((atual) => (atual.paginas > 0 && !kit ? atual : { ...atual, paginas: pdf.paginas }));
       }
     } catch (err) {
       setErro(err instanceof Error ? err.message : "Não foi possível ler o arquivo.");
@@ -263,6 +278,9 @@ export default function ImprimirView({
     if (erroDados) return erroDados;
     if (!capa) return "Escolha o PDF da capa.";
     if (!miolo) return "Escolha o PDF do miolo.";
+    if (kit && miolo.paginas > kit.paginasMax) {
+      return `O ${kit.nome} inclui livros de até ${kit.paginasMax} páginas, e o seu miolo tem ${miolo.paginas}. Reduza o livro ou fale com a nossa equipe.`;
+    }
     if (publico) {
       if (orc.nome.trim().length < 2) return "Informe o seu nome.";
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(orc.email.trim())) return "Informe um e-mail válido.";
@@ -290,7 +308,16 @@ export default function ImprimirView({
     try {
       // Sem conta: o servidor confere o anti-robô e entrega a pasta de envio assinada.
       let sessao: SessaoEnvioPublico | null = null;
-      if (publico) {
+      if (kit) {
+        // Kit: o código secreto do link (e não o anti-robô) libera o envio.
+        setEnviando("Verificando...");
+        const inicio = await iniciarEnvioImpressaoKit(kit.token);
+        if (inicio.error || !inicio.sessao) {
+          setErro(inicio.error ?? "Não foi possível iniciar o envio.");
+          return;
+        }
+        sessao = inicio.sessao;
+      } else if (publico) {
         setEnviando("Verificando...");
         const inicio = await iniciarEnvioImpressaoPublico(tokenAntiRobo());
         reiniciarAntiRobo();
@@ -300,7 +327,7 @@ export default function ImprimirView({
         }
         sessao = inicio.sessao;
       }
-      const dono = publico ? "publico" : authorId;
+      const dono = publico || kit ? "publico" : authorId;
       const pastaEnvio = sessao ? sessao.pasta : pasta;
 
       const subir = async (parte: Parte, pdf: ArquivoPdf) => {
@@ -319,7 +346,13 @@ export default function ImprimirView({
       await subir("miolo", miolo);
 
       setEnviando("Registrando o pedido...");
-      const r = sessao
+      const r = kit && sessao
+        ? await enviarPedidoImpressaoKit(
+            kit.token,
+            { titulo: e.titulo, temIsbn: e.temIsbn, isbn: e.isbn, observacoes: e.observacoes, paginas: e.paginas },
+            { sessao, capaNome: capa.arquivo.name, mioloNome: miolo.arquivo.name }
+          )
+        : sessao
         ? await enviarPedidoImpressaoPublico(e, { nome: orc.nome, email: orc.email, telefone: orc.telefone }, { sessao, capaNome: capa.arquivo.name, mioloNome: miolo.arquivo.name })
         : await enviarPedidoImpressao(e, { pasta, capaNome: capa.arquivo.name, mioloNome: miolo.arquivo.name });
       if (r.error || !r.numero) {
@@ -379,6 +412,43 @@ export default function ImprimirView({
     ["Laminação", e.laminacao],
     ["Orelhas", e.orelhas ? "Sim" : "Não"],
   ];
+
+  // Campo do ISBN e das observações: usados na tela normal e na tela travada do kit.
+  const blocoIsbn = (
+    <>
+      <div>
+        <div style={rotulo}>O livro tem ISBN?</div>
+        <Opcoes lista={["Sim", "Não"]} valor={e.temIsbn ? "Sim" : "Não"} onChange={(v) => setE((atual) => ({ ...atual, temIsbn: v === "Sim", isbn: v === "Sim" ? atual.isbn : "" }))} />
+      </div>
+      {e.temIsbn && (
+        <div style={{ gridColumn: "1 / -1" }}>
+          <label htmlFor="imp-isbn" style={rotulo}>Número do ISBN</label>
+          <input
+            id="imp-isbn"
+            type="text"
+            inputMode="text"
+            autoComplete="off"
+            maxLength={24}
+            value={e.isbn}
+            onChange={(ev) => mudar("isbn", ev.target.value)}
+            placeholder="Ex.: 978-65-00000-00-0"
+            aria-invalid={e.isbn.trim() !== "" && !isbnValido(e.isbn)}
+            style={{ ...campo, maxWidth: "320px", borderColor: e.isbn.trim() !== "" && !isbnValido(e.isbn) ? "#A93226" : "#CFCFCF" }}
+          />
+          {e.isbn.trim() !== "" && !isbnValido(e.isbn) && (
+            <div style={{ marginTop: "6px", fontSize: "12px", color: "#A93226" }}>Confira o número: o ISBN tem 10 ou 13 dígitos.</div>
+          )}
+        </div>
+      )}
+    </>
+  );
+
+  const blocoObs = (
+    <div>
+      <label htmlFor="imp-obs" style={rotulo}>Observações (opcional)</label>
+      <textarea id="imp-obs" rows={3} maxLength={2000} value={e.observacoes} onChange={(ev) => mudar("observacoes", ev.target.value)} placeholder="Algo que a gráfica precise saber sobre o seu livro." style={{ ...campo, resize: "vertical", fontFamily: "inherit" }} />
+    </div>
+  );
 
   const blocoResumo = (
     <div style={card}>
@@ -563,6 +633,22 @@ export default function ImprimirView({
         </div>
       )}
 
+      {!publico && !kit && kitsPendentes.length > 0 && (
+        <div role="status" style={{ background: "#FFF6CC", border: "1px solid #FFDF00", borderRadius: "10px", padding: "16px 20px", display: "flex", flexDirection: "column", gap: "10px" }}>
+          <div style={{ fontWeight: 700, color: "#5c4800", fontSize: "15px" }}>🎁 Você tem um kit da Bienal esperando o seu livro</div>
+          <p style={{ margin: 0, fontSize: "13px", color: "#5c4800", lineHeight: 1.6 }}>
+            A impressão do seu kit já está definida (formato, papel e capa), por isso ela é enviada à parte. Esta aba continua livre para você imprimir outros livros com as opções que escolher.
+          </p>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
+            {kitsPendentes.map((k) => (
+              <a key={k.token} href={`/kit/imprimir?pedido=${k.token}`} style={{ background: "#009B3A", color: "white", padding: "10px 18px", borderRadius: "6px", fontSize: "14px", fontWeight: 700 }}>
+                Enviar o livro do {k.nome} (pedido {k.numero})
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
+
       {enviado && (
         <div role="status" style={{ background: "#E3F4EA", color: "#0a6130", padding: "14px 18px", borderRadius: "8px", fontSize: "14px", lineHeight: 1.6 }}>
           <strong>Pedido {enviado} enviado.</strong> Nossa equipe vai conferir as informações e responder por e-mail com o orçamento e os próximos passos.
@@ -593,12 +679,15 @@ export default function ImprimirView({
             <input id="imp-titulo" type="text" maxLength={200} value={e.titulo} onChange={(ev) => mudar("titulo", ev.target.value)} placeholder="Digite o título do seu livro" style={campo} />
           </section>
 
+          {!kit && (
           <section style={card}>
             <h2 style={{ ...h2, marginBottom: "4px" }}>2. Formato</h2>
             <p style={{ margin: "0 0 14px", fontSize: "13px", color: "#555" }}>Largura x altura do livro fechado, em centímetros.</p>
             <Opcoes lista={FORMATOS} valor={e.formato} onChange={(v) => mudar("formato", v)} colunas={104} />
           </section>
+          )}
 
+          {!kit && (
           <section style={{ ...card, display: "flex", flexDirection: "column", gap: "22px" }}>
             <h2 style={{ ...h2, margin: 0 }}>3. Especificações</h2>
 
@@ -611,30 +700,7 @@ export default function ImprimirView({
                 <label htmlFor="imp-tiragem" style={rotulo}>Tiragem (exemplares)</label>
                 <input id="imp-tiragem" type="number" min={1} inputMode="numeric" value={e.tiragem || ""} onChange={(ev) => mudar("tiragem", Math.max(0, Math.floor(Number(ev.target.value) || 0)))} placeholder="Ex.: 100" style={campo} />
               </div>
-              <div>
-                <div style={rotulo}>O livro tem ISBN?</div>
-                <Opcoes lista={["Sim", "Não"]} valor={e.temIsbn ? "Sim" : "Não"} onChange={(v) => setE((atual) => ({ ...atual, temIsbn: v === "Sim", isbn: v === "Sim" ? atual.isbn : "" }))} />
-              </div>
-              {e.temIsbn && (
-                <div style={{ gridColumn: "1 / -1" }}>
-                  <label htmlFor="imp-isbn" style={rotulo}>Número do ISBN</label>
-                  <input
-                    id="imp-isbn"
-                    type="text"
-                    inputMode="text"
-                    autoComplete="off"
-                    maxLength={24}
-                    value={e.isbn}
-                    onChange={(ev) => mudar("isbn", ev.target.value)}
-                    placeholder="Ex.: 978-65-00000-00-0"
-                    aria-invalid={e.isbn.trim() !== "" && !isbnValido(e.isbn)}
-                    style={{ ...campo, maxWidth: "320px", borderColor: e.isbn.trim() !== "" && !isbnValido(e.isbn) ? "#A93226" : "#CFCFCF" }}
-                  />
-                  {e.isbn.trim() !== "" && !isbnValido(e.isbn) && (
-                    <div style={{ marginTop: "6px", fontSize: "12px", color: "#A93226" }}>Confira o número: o ISBN tem 10 ou 13 dígitos.</div>
-                  )}
-                </div>
-              )}
+              {blocoIsbn}
             </div>
 
             <div>
@@ -674,11 +740,28 @@ export default function ImprimirView({
               </div>
             </div>
 
-            <div>
-              <label htmlFor="imp-obs" style={rotulo}>Observações (opcional)</label>
-              <textarea id="imp-obs" rows={3} maxLength={2000} value={e.observacoes} onChange={(ev) => mudar("observacoes", ev.target.value)} placeholder="Algo que a gráfica precise saber sobre o seu livro." style={{ ...campo, resize: "vertical", fontFamily: "inherit" }} />
-            </div>
+            {blocoObs}
           </section>
+          )}
+
+          {kit && (
+            <section style={{ ...card, display: "flex", flexDirection: "column", gap: "18px" }}>
+              <div>
+                <h2 style={{ ...h2, marginBottom: "4px" }}>2. Seu {kit.nome} já define a impressão</h2>
+                <p style={{ margin: 0, fontSize: "13px", color: "#555" }}>Estas características estão incluídas no kit e não podem ser alteradas. Falta só informar o ISBN e enviar os arquivos.</p>
+              </div>
+              <dl style={{ margin: 0, display: "grid", gridTemplateColumns: "auto 1fr", gap: "8px 16px", fontSize: "14px", background: "#F6F6F6", padding: "14px 16px", borderRadius: "8px" }}>
+                {itensDeImpressaoDoKit(kit).map(([rotuloItem, valor]) => (
+                  <div key={rotuloItem} style={{ display: "contents" }}>
+                    <dt style={{ color: "#555" }}>🔒 {rotuloItem}</dt>
+                    <dd style={{ margin: 0, fontWeight: 600 }}>{valor}</dd>
+                  </div>
+                ))}
+              </dl>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "14px" }}>{blocoIsbn}</div>
+              {blocoObs}
+            </section>
+          )}
 
           <section style={{ ...card, display: "flex", flexDirection: "column", gap: "14px" }}>
             <div>
@@ -736,7 +819,7 @@ export default function ImprimirView({
         </aside>
       </div>
 
-      {!publico && pedidos.length > 0 && (
+      {!publico && !kit && pedidos.length > 0 && (
         <section style={card}>
           <h2 style={h2}>Meus pedidos de impressão</h2>
           <div style={{ overflowX: "auto" }}>
@@ -770,6 +853,7 @@ export default function ImprimirView({
         </section>
       )}
 
+      {!kit && (
       <section style={card}>
         <h2 style={{ ...h2, marginBottom: "4px" }}>Receber esse orçamento em meu e-mail</h2>
         <p style={{ margin: "0 0 16px", fontSize: "13px", color: "#555" }}>
@@ -811,6 +895,7 @@ export default function ImprimirView({
           </form>
         )}
       </section>
+      )}
     </div>
   );
 }

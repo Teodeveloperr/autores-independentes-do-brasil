@@ -112,6 +112,7 @@ model Author {
   passkeys             AuthorPasskey[]
   reservaBienal        ReservaBienalPremiumPlus?
   pedidosImpressao     PedidoImpressao[]
+  pedidosKit           PedidoKit[]
   assinaturaPagamentos SubscriptionPayment[]
   portfolioEventos     PortfolioEvento[]
   chatMensagens        ChatMensagem[]
@@ -696,6 +697,9 @@ model PedidoImpressao {
   contatoNome     String?
   contatoEmail    String?
   contatoTelefone String?
+  // Preenchido quando o pedido nasce de um kit da Bienal (Prata/Ouro): as especificações vêm do kit.
+  pedidoKitId String?    @unique
+  pedidoKit   PedidoKit? @relation(fields: [pedidoKitId], references: [id], onDelete: SetNull)
 
   titulo       String
   formato      String
@@ -741,6 +745,10 @@ model PedidoKit {
   // Código aleatório do link da página de agradecimento.
   token String @unique
 
+  // Autor logado no momento da compra (vazio se comprou sem login): o painel avisa dos kits sem livro enviado.
+  authorId String?
+  author   Author? @relation(fields: [authorId], references: [id], onDelete: SetNull)
+
   // "prata" | "ouro"
   kit           String
   valorCentavos Int
@@ -768,8 +776,11 @@ model PedidoKit {
   updatedAt DateTime @updatedAt
 
   pagamentos PedidoKitPagamento[]
+  // Pedido de impressão do livro do kit (um por kit), feito pelo link enviado ao comprador.
+  impressao PedidoImpressao?
 
   @@index([asaasInstallmentId])
+  @@index([authorId])
 }
 
 // Cada pagamento recebido de um kit da Bienal (1 cobrança à vista, ou cada parcela do cartão em 2x).

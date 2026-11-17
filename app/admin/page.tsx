@@ -93,13 +93,13 @@ export default async function AdminPage() {
     prisma.pedidoImpressao.findMany({
       orderBy: { createdAt: "desc" },
       omit: { tokenHash: true, capaPath: true, mioloPath: true },
-      include: { author: { select: { nome: true, email: true } } },
+      include: { author: { select: { nome: true, email: true } }, pedidoKit: { select: { numero: true, kit: true } } },
     }),
     // Sem CPF nem o código do link de agradecimento (o CPF fica na Asaas).
     prisma.pedidoKit.findMany({
       orderBy: { createdAt: "desc" },
       omit: { cpf: true, token: true, asaasCustomerId: true },
-      include: { pagamentos: { orderBy: { createdAt: "asc" } } },
+      include: { pagamentos: { orderBy: { createdAt: "asc" } }, impressao: { select: { numero: true, status: true } } },
     }),
   ]);
 

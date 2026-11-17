@@ -48,9 +48,12 @@ export default async function KitObrigadoPage({ searchParams }: { searchParams: 
                 Seu pagamento do <b>{kit.nome}</b> foi confirmado. Seu livro vai para a Bienal do Livro Rio 2027!
               </p>
               <p style={{ fontSize: "13px", color: "#666", lineHeight: 1.6, marginBottom: "24px" }}>
-                Enviamos os detalhes para o seu e-mail. Nossa equipe vai entrar em contato para combinar o envio dos arquivos do seu livro e o seu lançamento.
+                Enviamos os detalhes e o link para enviar o seu livro para o seu e-mail. A impressão do seu kit já está definida: você só informa o título e o ISBN, envia a capa e o miolo e confirma. Nossa equipe também entra em contato para combinar o seu lançamento.
               </p>
-              <Link href="/" style={botao}>Voltar para o início</Link>
+              <Link href={`/kit/imprimir?pedido=${pedido.token}`} style={{ ...botao, background: "#009B3A", marginBottom: "12px" }}>Enviar meu livro para impressão</Link>
+              <div>
+                <Link href="/" style={{ fontSize: "13px", color: "#002776", textDecoration: "underline" }}>Voltar para o início</Link>
+              </div>
             </>
           ) : (
             <>

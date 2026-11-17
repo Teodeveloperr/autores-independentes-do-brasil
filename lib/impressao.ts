@@ -1,7 +1,7 @@
 // Pedido de impressão de livro ("Imprimir meu livro", no painel do autor): opções do formulário,
 // limites e validação. Usado no navegador e no servidor, por isso não importa nada de servidor.
 
-export const FORMATOS = ["9x13 cm", "12x19 cm", "13x20 cm", "14x21 cm", "15x21 cm", "15x22 cm", "15,5x23 cm", "16x23 cm", "17x24 cm", "20x20 cm", "21x21 cm", "23x23 cm", "25x25 cm", "21x25 cm", "21x28 cm", "21x29,7 cm"] as const;
+export const FORMATOS = ["A5 (14,8x21 cm)", "9x13 cm", "12x19 cm", "13x20 cm", "14x21 cm", "15x21 cm", "15x22 cm", "15,5x23 cm", "16x23 cm", "17x24 cm", "20x20 cm", "21x21 cm", "23x23 cm", "25x25 cm", "21x25 cm", "21x28 cm", "21x29,7 cm"] as const;
 export const MIOLO_CORES = ["Preto e branco", "Colorido (inkjet)", "Colorido (dry toner)"] as const;
 export const MIOLO_PAPEIS = ["Offset 75g", "Offset 90g", "Offset 120g", "Offset 150g", "Pólen Natural 70g", "Pólen Natural 80g", "Pólen Soft 80g", "Pólen Bold 90g", "Couché Fosco 90g", "Couché Fosco 115g", "Couché Fosco 150g", "Chambril Avena 80g"] as const;
 export const ENCADERNACOES = ["Brochura fresada e colada", "Brochura costurada e colada", "Brochura grampeada", "Espiral", "Capa dura (com costura)", "Capa dura (sem costura)", "Wire-o capa cartão", "Wire-o capa dura", "Costura na espinha"] as const;
@@ -107,9 +107,12 @@ export function validarEspecificacoes(e: EspecificacoesImpressao): string | null
 
 /** Largura e altura, em centímetros, de um formato como "15,5x23 cm". */
 export function medidasDoFormato(formato: string): { largura: number; altura: number } | null {
-  const partes = formato.replace(" cm", "").split("x").map((p) => Number(p.replace(",", ".")));
-  if (partes.length !== 2 || partes.some((n) => !Number.isFinite(n) || n <= 0)) return null;
-  return { largura: partes[0], altura: partes[1] };
+  const m = formato.match(/(\d+(?:,\d+)?)\s*x\s*(\d+(?:,\d+)?)/);
+  if (!m) return null;
+  const largura = Number(m[1].replace(",", "."));
+  const altura = Number(m[2].replace(",", "."));
+  if (!Number.isFinite(largura) || !Number.isFinite(altura) || largura <= 0 || altura <= 0) return null;
+  return { largura, altura };
 }
 
 /** Pasta dos arquivos de um pedido no armazenamento privado. */

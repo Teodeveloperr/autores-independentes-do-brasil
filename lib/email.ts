@@ -650,6 +650,8 @@ export type PedidoKitEmailInfo = {
   nome: string;
   email: string;
   telefone: string;
+  /** Link (com o código secreto do kit) para enviar o livro e confirmar a impressão. */
+  impressaoUrl?: string;
 };
 
 function formaDoKit(info: Pick<PedidoKitEmailInfo, "valorCentavos" | "parcelas">): string {
@@ -692,13 +694,42 @@ export async function sendPedidoKitCompradorEmail(info: PedidoKitEmailInfo) {
         <h1 style="color: #002776; font-size: 22px;">Pagamento confirmado!</h1>
         <p style="font-size: 15px; line-height: 1.6;">
           Olá, ${escaparHtml(info.nome)}. Recebemos o pagamento do seu <b>${escaparHtml(info.kitNome)}</b> para a Bienal do Livro Rio 2027.
-          Nossa equipe vai entrar em contato por este e-mail e pelo telefone informado para combinar o envio dos arquivos do seu livro e o seu lançamento.
+          O próximo passo é enviar o seu livro: a capa e o miolo em PDF. As características da impressão do seu kit já estão definidas, você só confirma.
         </p>
+        ${
+          info.impressaoUrl
+            ? `<p style="text-align: center; margin: 24px 0;"><a href="${info.impressaoUrl}" style="background: #009B3A; color: white; padding: 14px 28px; font-weight: bold; border-radius: 6px; text-decoration: none; display: inline-block;">Enviar meu livro para impressão</a></p>
+        <p style="font-size: 12px; color: #666;">Guarde este e-mail: o link é só seu e vale para um único envio. Se perder, peça outro na página Imprimir meu livro, em "Comprei um kit".</p>`
+            : ""
+        }
+        <p style="font-size: 14px; line-height: 1.6;">Nossa equipe também vai entrar em contato por este e-mail e pelo telefone informado para combinar o seu lançamento.</p>
         ${tabelaEspecificacoes([
           ["Pedido", String(info.numero)],
           ["Kit", info.resumo],
           ["Pagamento", formaDoKit(info)],
         ])}
+      </div>
+    `,
+  });
+}
+
+/** Reenvia ao comprador o(s) link(s) para enviar o livro de um kit da Bienal (pedido em "Comprei um kit"). */
+export async function sendKitLinkImpressaoEmail(to: string, nome: string, kits: Array<{ kitNome: string; numero: number; url: string }>) {
+  await resend.emails.send({
+    from: EMAIL_FROM,
+    to,
+    subject: "Seu link para enviar o livro do kit - Bienal do Livro Rio 2027",
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 620px; margin: 0 auto; color: #262626;">
+        <h1 style="color: #002776; font-size: 22px;">Seu link para enviar o livro</h1>
+        <p style="font-size: 15px; line-height: 1.6;">Olá, ${escaparHtml(nome)}. Você pediu o link para enviar o livro do seu kit. É só abrir, enviar a capa e o miolo em PDF e confirmar.</p>
+        ${kits
+          .map(
+            (k) =>
+              `<p style="text-align: center; margin: 18px 0;"><a href="${k.url}" style="background: #009B3A; color: white; padding: 14px 28px; font-weight: bold; border-radius: 6px; text-decoration: none; display: inline-block;">Enviar o livro do ${escaparHtml(k.kitNome)} (pedido ${k.numero})</a></p>`
+          )
+          .join("")}
+        <p style="font-size: 12px; color: #666;">Cada link vale para um único envio. Se você não pediu este e-mail, pode ignorá-lo.</p>
       </div>
     `,
   });

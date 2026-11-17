@@ -6,6 +6,7 @@ import { getCurrentAuthor, requireAuthor } from "@/lib/auth";
 import { verificarTurnstile } from "@/lib/turnstile";
 import { prisma } from "@/lib/db";
 import {
+  sendKitLinkImpressaoEmail,
   sendOrcamentoImpressaoAutorEmail,
   sendOrcamentoImpressaoEquipeEmail,
   sendPedidoImpressaoAutorEmail,
@@ -24,7 +25,10 @@ import {
   type EspecificacoesImpressao,
 } from "@/lib/impressao";
 import { PASTA_PUBLICA, criarSessaoEnvioPublico, sessaoEnvioPublicoValida, type SessaoEnvioPublico } from "@/lib/impressaoPublico";
+import { ESPECIFICACOES_FIXAS_KIT, kitPorId } from "@/lib/kits";
+import { emailSchema } from "@/lib/validation";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
+import { linhasDoPedido, linksDoPedido } from "@/lib/impressaoPedido";
 
 // Pedido de impressão de livro. Os PDFs já subiram direto do navegador para o armazenamento privado
 // (rota /api/painel/impressao/upload); aqui o servidor confere tudo de novo, grava o pedido e avisa a
@@ -49,7 +53,13 @@ function limparEspecificacoes(especificacoes: EspecificacoesImpressao): Especifi
 }
 
 /** Confere os arquivos enviados, grava o pedido e avisa a equipe e o solicitante. `dono` é a pasta do envio: id do autor ou "publico". */
-async function registrarPedido(remetente: Remetente, dono: string, dados: EspecificacoesImpressao, arquivos: Arquivos): Promise<{ error?: string; numero?: string }> {
+async function registrarPedido(
+  remetente: Remetente,
+  dono: string,
+  dados: EspecificacoesImpressao,
+  arquivos: Arquivos,
+  kit?: { id: string; nome: string; numero: number }
+): Promise<{ error?: string; numero?: string }> {
   const capaPath = `${prefixoImpressao(dono, arquivos.pasta)}capa.pdf`;
   const mioloPath = `${prefixoImpressao(dono, arquivos.pasta)}miolo.pdf`;
 
@@ -78,9 +88,12 @@ async function registrarPedido(remetente: Remetente, dono: string, dados: Especi
   const token = crypto.randomBytes(32).toString("hex");
   const nomeSeguro = (nome: string, padrao: string) => (String(nome ?? "").trim() || padrao).slice(0, 200);
 
-  const pedido = await prisma.pedidoImpressao.create({
+  let pedido;
+  try {
+    pedido = await prisma.pedidoImpressao.create({
     data: {
       authorId: remetente.authorId,
+      pedidoKitId: kit?.id ?? null,
       contatoNome: remetente.authorId ? null : remetente.nome,
       contatoEmail: remetente.authorId ? null : remetente.email,
       contatoTelefone: remetente.authorId ? null : remetente.telefone,
@@ -107,25 +120,18 @@ async function registrarPedido(remetente: Remetente, dono: string, dados: Especi
       mioloBytes,
       tokenHash: crypto.createHash("sha256").update(token).digest("hex"),
     },
-  });
+    });
+  } catch (err) {
+    // Kit com pedido de impressão já criado (dois envios ao mesmo tempo): a restrição única do banco barra o segundo.
+    if (kit && typeof err === "object" && err && (err as { code?: string }).code === "P2002") {
+      return { error: "Este kit já tem um pedido de impressão enviado." };
+    }
+    throw err;
+  }
 
   const numeroTexto = numeroDoPedidoImpressao(pedido.numero);
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://autoresdobrasil.com.br";
-  const link = (arquivo: "capa" | "miolo") => `${siteUrl}/api/impressao/arquivo?token=${token}&arquivo=${arquivo}`;
-  const linhas: Array<[string, string]> = [
-    ["Título", pedido.titulo],
-    ["Formato", pedido.formato],
-    ["Número de páginas", String(pedido.paginas)],
-    ["Tiragem", `${pedido.tiragem} exemplares`],
-    ["ISBN", pedido.temIsbn ? isbnLegivel(pedido.isbn ?? "") : "O livro não tem ISBN"],
-    ["Miolo: impressão", pedido.mioloCor],
-    ["Miolo: papel", pedido.mioloPapel],
-    ["Encadernação", pedido.encadernacao],
-    ["Capa: papel", pedido.capaPapel],
-    ["Capa: impressão", pedido.capaCor],
-    ["Capa: laminação", pedido.laminacao],
-    ["Capa: orelhas", pedido.orelhas ? "Sim" : "Não"],
-  ];
+  const linhas = linhasDoPedido(pedido, kit);
+  const links = linksDoPedido(token);
 
   try {
     await sendPedidoImpressaoEquipeEmail({
@@ -135,8 +141,8 @@ async function registrarPedido(remetente: Remetente, dono: string, dados: Especi
       autorTelefone: remetente.telefone,
       especificacoes: linhas,
       observacoes: pedido.observacoes,
-      capa: { nome: pedido.capaNome, tamanho: tamanhoLegivel(pedido.capaBytes), url: link("capa") },
-      miolo: { nome: pedido.mioloNome, tamanho: tamanhoLegivel(pedido.mioloBytes), url: link("miolo") },
+      capa: { nome: pedido.capaNome, tamanho: tamanhoLegivel(pedido.capaBytes), url: links.capa },
+      miolo: { nome: pedido.mioloNome, tamanho: tamanhoLegivel(pedido.mioloBytes), url: links.miolo },
     });
   } catch (err) {
     // Sem o aviso a equipe não saberia do pedido: desfaz e deixa tentar de novo (os arquivos ficam).
@@ -286,5 +292,105 @@ export async function solicitarOrcamentoImpressao(
   await sendOrcamentoImpressaoAutorEmail(email, { nome, projeto, especificacoes: linhas }).catch((err) =>
     console.error("[impressao] Falha ao enviar a confirmação do orçamento:", err)
   );
+  return { ok: true };
+}
+
+// ── Impressão do livro de um kit da Bienal (link enviado ao comprador) ─────────────────────────────
+
+/** Confere o link do kit: o código existe, o kit foi pago e ainda não tem pedido de impressão. */
+async function carregarKitParaImpressao(kitToken: string) {
+  if (!/^[A-Za-z0-9_-]{20,40}$/.test(String(kitToken ?? ""))) return { error: "Link inválido." } as const;
+  const pedido = await prisma.pedidoKit.findUnique({ where: { token: kitToken }, include: { impressao: { select: { numero: true } } } });
+  const kit = pedido ? kitPorId(pedido.kit) : null;
+  if (!pedido || !kit) return { error: "Link inválido." } as const;
+  if (pedido.status !== "pago") return { error: "O pagamento deste kit ainda não foi confirmado." } as const;
+  if (pedido.impressao) return { error: `Este kit já tem o pedido de impressão ${numeroDoPedidoImpressao(pedido.impressao.numero)} enviado.` } as const;
+  return { pedido, kit } as const;
+}
+
+/** Kit, passo 1: libera o envio dos PDFs (o código secreto do kit faz o papel do anti-robô). */
+export async function iniciarEnvioImpressaoKit(kitToken: string): Promise<{ error?: string; sessao?: SessaoEnvioPublico }> {
+  const carregado = await carregarKitParaImpressao(kitToken);
+  if ("error" in carregado) return { error: carregado.error };
+  const permitido = await checkRateLimit(`impressao-sessao-kit:${carregado.pedido.id}`, 10, 60);
+  if (!permitido) return { error: "Muitos envios em pouco tempo. Aguarde um pouco e tente de novo." };
+  return { sessao: criarSessaoEnvioPublico() };
+}
+
+/**
+ * Kit, passo 2: cria o pedido de impressão. As características (formato, papéis, encadernação, capa e
+ * número de cópias) vêm do kit, no servidor; do comprador só entram o título, o ISBN, as observações e
+ * o número de páginas, que não pode passar do limite do kit.
+ */
+export async function enviarPedidoImpressaoKit(
+  kitToken: string,
+  campos: { titulo: string; temIsbn: boolean; isbn: string; observacoes: string; paginas: number },
+  arquivos: { sessao: SessaoEnvioPublico; capaNome: string; mioloNome: string }
+): Promise<{ error?: string; numero?: string }> {
+  if (!sessaoEnvioPublicoValida(arquivos.sessao)) return { error: "O envio expirou. Recarregue a página e envie os arquivos de novo." };
+  const carregado = await carregarKitParaImpressao(kitToken);
+  if ("error" in carregado) return { error: carregado.error };
+  const { pedido: kitPedido, kit } = carregado;
+
+  const permitido = await checkRateLimit(`impressao-pedido-kit:${kitPedido.id}`, 6, 60);
+  if (!permitido) return { error: "Muitos pedidos em pouco tempo. Aguarde alguns minutos." };
+
+  const paginas = Number(campos.paginas);
+  if (!Number.isInteger(paginas) || paginas < 1) return { error: "Informe o número de páginas do miolo." };
+  if (paginas > kit.paginasMax) return { error: `O ${kit.nome} inclui livros de até ${kit.paginasMax} páginas. O seu miolo tem ${paginas}.` };
+
+  const dados = limparEspecificacoes({
+    ...ESPECIFICACOES_FIXAS_KIT,
+    titulo: campos.titulo,
+    paginas,
+    tiragem: kit.copias,
+    temIsbn: campos.temIsbn,
+    isbn: campos.isbn,
+    observacoes: campos.observacoes,
+  });
+  const erro = validarEspecificacoes(dados);
+  if (erro) return { error: erro };
+
+  const r = await registrarPedido(
+    { authorId: null, nome: kitPedido.nome, email: kitPedido.email, telefone: kitPedido.telefone },
+    PASTA_PUBLICA,
+    dados,
+    { pasta: arquivos.sessao.pasta, capaNome: arquivos.capaNome, mioloNome: arquivos.mioloNome },
+    { id: kitPedido.id, nome: kit.nome, numero: kitPedido.numero }
+  );
+  if (r.numero) revalidatePath("/admin");
+  return r;
+}
+
+/**
+ * "Comprei um kit" (página /imprimir): reenvia ao e-mail da compra o link para enviar o livro. A resposta
+ * é sempre a mesma, exista ou não kit pago com esse e-mail, para ninguém descobrir quem comprou.
+ */
+export async function reenviarLinkKit(emailInformado: string, turnstileToken: string | null): Promise<{ error?: string; ok?: boolean }> {
+  const email = emailSchema.safeParse(String(emailInformado ?? "").trim().slice(0, 160));
+  if (!email.success) return { error: "Informe um e-mail válido." };
+  if (!(await verificarTurnstile(turnstileToken))) {
+    return { error: "Não conseguimos confirmar que você não é um robô. Recarregue a página e tente de novo." };
+  }
+  const permitido =
+    (await checkRateLimit(`kit-link-ip:${await getClientIp()}`, 6, 60)) && (await checkRateLimit(`kit-link-email:${(email.data as string).toLowerCase()}`, 3, 60));
+  if (!permitido) return { error: "Muitos pedidos em pouco tempo. Aguarde um pouco e tente de novo." };
+
+  const kits = await prisma.pedidoKit.findMany({
+    where: { email: { equals: email.data as string, mode: "insensitive" }, status: "pago", impressao: null },
+    orderBy: { createdAt: "desc" },
+    take: 5,
+  });
+  if (kits.length > 0) {
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://autoresdobrasil.com.br";
+    await sendKitLinkImpressaoEmail(
+      email.data as string,
+      kits[0].nome,
+      kits.flatMap((k) => {
+        const kit = kitPorId(k.kit);
+        return kit ? [{ kitNome: kit.nome, numero: k.numero, url: `${siteUrl}/kit/imprimir?pedido=${k.token}` }] : [];
+      })
+    ).catch((err) => console.error("[kit] Falha ao reenviar o link de impressão:", err));
+  }
   return { ok: true };
 }

@@ -37,6 +37,7 @@ export async function garantirEmailsDoKitPago(pedidoId: string): Promise<void> {
     nome: pedido.nome,
     email: pedido.email,
     telefone: pedido.telefone,
+    impressaoUrl: `${process.env.NEXT_PUBLIC_SITE_URL || "https://autoresdobrasil.com.br"}/kit/imprimir?pedido=${pedido.token}`,
   };
   try {
     await sendPedidoKitEquipeEmail(info);

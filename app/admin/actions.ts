@@ -13,7 +13,7 @@ import { recalcularAvaliacaoAutor } from "@/lib/reviews";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 import { gerarSegredoTotp, gerarOtpauthUri, verificarCodigoTotp, gerarCodigosBackup } from "@/lib/totp";
 import { criarLinkRedefinicaoSenha } from "@/lib/passwordReset";
-import { sendAccountCreatedEmail } from "@/lib/email";
+import { sendAccountCreatedEmail, sendPedidoImpressaoEquipeEmail } from "@/lib/email";
 import { liberarAcessoEbook, revogarAcessoEbook, enviarEmailAcessoLiberado } from "@/lib/leitorAcesso";
 import { autorTemRepasseEbookPendente } from "@/lib/pedidoEbook";
 import { TODOS_PLANOS, planoAdminExpiraEm, type CicloConcessaoAdmin } from "@/lib/plans";
@@ -26,7 +26,9 @@ import { REGIOES_OPORTUNIDADES } from "@/lib/regioes";
 import { emailSchema, textoSchema, intSchema, primeiroErroZod } from "@/lib/validation";
 import { validarImagemAssinatura } from "@/lib/contrato/assinaturaImagem";
 import { PLANO_PREMIUM_PLUS } from "@/lib/contrato/config";
-import { STATUS_IMPRESSAO } from "@/lib/impressao";
+import { STATUS_IMPRESSAO, numeroDoPedidoImpressao, tamanhoLegivel } from "@/lib/impressao";
+import { linhasDoPedido, linksDoPedido, novoTokenDePedido } from "@/lib/impressaoPedido";
+import { kitPorId } from "@/lib/kits";
 import { removerHorarioPremiumPlus, reservarHorarioPremiumPlus, validarHorarioPremiumPlus } from "@/lib/contrato/agenda";
 import { TIPOS_CHAVE_PIX, chavePixValida } from "@/lib/pixKey";
 import type { ChatMensagemRow } from "@/app/painel/actions";
@@ -1039,5 +1041,52 @@ export async function atualizarStatusPedidoImpressao(id: string, status: string)
   if (atualizado.count === 0) return { error: "Pedido não encontrado." };
   revalidatePath("/admin");
   revalidatePath("/painel");
+  return {};
+}
+
+/**
+ * Gera um novo link (sem login) para baixar a capa e o miolo de um pedido de impressão, para a equipe
+ * encaminhar à gráfica. O link só é guardado como hash, então não dá para recuperar o antigo: gerar um novo
+ * invalida o anterior (inclusive o que foi no e-mail).
+ */
+export async function gerarLinkGraficaPedidoImpressao(id: string): Promise<{ error?: string; capa?: string; miolo?: string }> {
+  await requireAdmin();
+  const { token, hash } = novoTokenDePedido();
+  const atualizado = await prisma.pedidoImpressao.updateMany({ where: { id }, data: { tokenHash: hash } });
+  if (atualizado.count === 0) return { error: "Pedido não encontrado." };
+  return linksDoPedido(token);
+}
+
+/** Reenvia para contato@ o e-mail do pedido de impressão, com links novos (os anteriores deixam de valer). */
+export async function reenviarEmailPedidoImpressao(id: string): Promise<{ error?: string }> {
+  await requireAdmin();
+  const pedido = await prisma.pedidoImpressao.findUnique({
+    where: { id },
+    include: { author: { select: { nome: true, email: true } }, pedidoKit: { select: { numero: true, kit: true } } },
+  });
+  if (!pedido) return { error: "Pedido não encontrado." };
+
+  const { token, hash } = novoTokenDePedido();
+  await prisma.pedidoImpressao.update({ where: { id }, data: { tokenHash: hash } });
+  const links = linksDoPedido(token);
+  const kit = pedido.pedidoKit ? kitPorId(pedido.pedidoKit.kit) : null;
+  const nome = pedido.author?.nome ?? pedido.contatoNome ?? "—";
+  try {
+    await sendPedidoImpressaoEquipeEmail({
+      numeroTexto: numeroDoPedidoImpressao(pedido.numero),
+      autorNome: pedido.author ? nome : `${nome} (sem cadastro na plataforma)`,
+      autorEmail: pedido.author?.email ?? pedido.contatoEmail ?? "",
+      autorTelefone: pedido.contatoTelefone,
+      especificacoes: linhasDoPedido(pedido, kit && pedido.pedidoKit ? { nome: kit.nome, numero: pedido.pedidoKit.numero } : null),
+      observacoes: pedido.observacoes,
+      capa: { nome: pedido.capaNome, tamanho: tamanhoLegivel(pedido.capaBytes), url: links.capa },
+      miolo: { nome: pedido.mioloNome, tamanho: tamanhoLegivel(pedido.mioloBytes), url: links.miolo },
+    });
+  } catch (err) {
+    // E-mail não saiu: devolve o link antigo para não invalidar à toa o que já foi enviado.
+    console.error("[impressao] Falha ao reenviar o e-mail do pedido", pedido.numero, err);
+    await prisma.pedidoImpressao.update({ where: { id }, data: { tokenHash: pedido.tokenHash } }).catch(() => undefined);
+    return { error: "Não foi possível enviar o e-mail agora. Tente de novo em instantes." };
+  }
   return {};
 }
