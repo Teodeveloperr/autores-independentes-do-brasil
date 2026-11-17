@@ -36,7 +36,7 @@ import {
   validarEspecificacoes,
   type EspecificacoesImpressao,
 } from "@/lib/impressao";
-import { calcularPrecoImpressao, formatarReais } from "@/lib/precoImpressao";
+import { calcularPrecoImpressao, ehCapaDura, formatarReais } from "@/lib/precoImpressao";
 import TurnstileWidget from "@/components/TurnstileWidget";
 import type { PedidoImpressaoResumo } from "./types";
 
@@ -411,7 +411,7 @@ export default function ImprimirView({
     ["ISBN", e.temIsbn ? (e.isbn.trim() ? isbnLegivel(e.isbn) : "A informar") : "Não tem"],
     ["Miolo", `${e.mioloCor}, ${e.mioloPapel}`],
     ["Encadernação", e.encadernacao],
-    ["Capa", `${e.capaPapel}, ${e.capaCor}`],
+    ["Capa", ehCapaDura(e.encadernacao) ? e.capaPapel : `${e.capaPapel}, ${e.capaCor}`],
     ["Laminação", e.laminacao],
     ["Orelhas", e.orelhas ? "Sim" : "Não"],
   ];
@@ -762,10 +762,12 @@ export default function ImprimirView({
                 <Opcoes lista={CAPA_PAPEIS} valor={e.capaPapel} onChange={(v) => mudar("capaPapel", v)} />
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))", gap: "16px" }}>
-                <div>
-                  <div style={{ ...rotulo, marginBottom: "8px" }}>Impressão</div>
-                  <Opcoes lista={CAPA_CORES} valor={e.capaCor} onChange={(v) => mudar("capaCor", v)} />
-                </div>
+                {!ehCapaDura(e.encadernacao) && (
+                  <div>
+                    <div style={{ ...rotulo, marginBottom: "8px" }}>Impressão</div>
+                    <Opcoes lista={CAPA_CORES} valor={e.capaCor} onChange={(v) => mudar("capaCor", v)} />
+                  </div>
+                )}
                 <div>
                   <div style={{ ...rotulo, marginBottom: "8px" }}>Laminação</div>
                   <Opcoes lista={LAMINACOES} valor={e.laminacao} onChange={(v) => mudar("laminacao", v)} />
