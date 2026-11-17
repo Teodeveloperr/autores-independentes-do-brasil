@@ -6,7 +6,7 @@ import { TIRAGEM_MINIMA, TIRAGEM_MAXIMA, capaCompativel } from "./precoImpressao
 export const FORMATOS = ["A5 (14,8x21 cm)", "9x13 cm", "12x19 cm", "13x20 cm", "14x21 cm", "15x21 cm", "15x22 cm", "15,5x23 cm", "16x23 cm", "17x24 cm", "20x20 cm", "21x21 cm", "23x23 cm", "25x25 cm", "21x25 cm", "21x28 cm", "21x29,7 cm"] as const;
 export const MIOLO_CORES = ["Preto e branco", "Colorido (inkjet)", "Colorido (dry toner)"] as const;
 export const MIOLO_PAPEIS = ["Offset 75g", "Offset 90g", "Offset 120g", "Offset 150g", "Pólen Natural 70g", "Pólen Natural 80g", "Pólen Soft 80g", "Pólen Bold 90g", "Couché Fosco 90g", "Couché Fosco 115g", "Couché Fosco 150g", "Chambril Avena 80g"] as const;
-export const ENCADERNACOES = ["Brochura fresada e colada", "Brochura costurada e colada", "Brochura grampeada", "Espiral", "Capa dura (com costura)", "Capa dura (sem costura)", "Wire-o capa cartão", "Wire-o capa dura", "Costura na espinha"] as const;
+export const ENCADERNACOES = ["Brochura fresada e colada", "Brochura costurada e colada", "Espiral", "Capa dura (com costura)", "Capa dura (sem costura)", "Wire-o capa cartão", "Wire-o capa dura", "Costura na espinha"] as const;
 export const CAPA_PAPEIS = ["Cartão triplex 250g", "Cartão triplex 300g", "Couché 170g", "Percalux"] as const;
 export const CAPA_CORES = ["4x0 (só frente)", "4x4 (frente e verso)"] as const;
 export const LAMINACOES = ["Fosca", "Brilho", "Soft touch"] as const;

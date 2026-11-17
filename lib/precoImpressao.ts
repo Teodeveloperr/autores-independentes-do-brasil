@@ -52,7 +52,6 @@ type TabelaFaixa = {
 const ENCADERNACOES_50: Record<string, number> = {
   "Brochura fresada e colada": 4,
   "Brochura costurada e colada": 12,
-  "Brochura grampeada": 6,
   "Espiral": 9,
   "Capa dura (com costura)": 20,
   "Capa dura (sem costura)": 18,
@@ -64,7 +63,6 @@ const ENCADERNACOES_50: Record<string, number> = {
 const ENCADERNACOES_30: Record<string, number> = {
   "Brochura fresada e colada": 6.5,
   "Brochura costurada e colada": 16,
-  "Brochura grampeada": 8,
   "Espiral": 12,
   "Capa dura (com costura)": 26,
   "Capa dura (sem costura)": 23,
