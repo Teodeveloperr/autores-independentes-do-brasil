@@ -23,7 +23,6 @@ import {
   IMPRESSAO_MAX_MIOLO_BYTES,
   IMPRESSAO_MAX_TIRAGEM,
   IMPRESSAO_MIN_TIRAGEM,
-  LAMINACOES,
   isbnLegivel,
   isbnValido,
   MIOLO_CORES,
@@ -412,7 +411,7 @@ export default function ImprimirView({
     ["Miolo", `${e.mioloCor}, ${e.mioloPapel}`],
     ["Encadernação", e.encadernacao],
     ["Capa", ehCapaDura(e.encadernacao) ? e.capaPapel : `${e.capaPapel}, ${e.capaCor}`],
-    ["Laminação", e.laminacao],
+    ["Laminação", `${e.laminacao} (incluída)`],
     ["Orelhas", e.orelhas ? "Sim" : "Não"],
   ];
 
@@ -770,7 +769,7 @@ export default function ImprimirView({
                 )}
                 <div>
                   <div style={{ ...rotulo, marginBottom: "8px" }}>Laminação</div>
-                  <Opcoes lista={LAMINACOES} valor={e.laminacao} onChange={(v) => mudar("laminacao", v)} />
+                  <div style={{ minHeight: "44px", display: "flex", alignItems: "center", fontSize: "14px", color: "#262626" }}>Fosca, já incluída no valor</div>
                 </div>
                 <div>
                   <div style={{ ...rotulo, marginBottom: "8px" }}>Orelhas</div>

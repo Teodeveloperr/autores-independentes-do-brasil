@@ -91,7 +91,7 @@ const FAIXA_50: TabelaFaixa = {
   encadernacao: ENCADERNACOES_50,
   capaPapel: { "Cartão triplex 250g": 1.6, "Cartão triplex 300g": 2.5, "Couché 170g": 1.6, "Percalux": 3.8 },
   capaImpressao: { "4x0 (só frente)": 1.6, "4x4 (frente e verso)": 3.2 },
-  laminacao: { "Fosca": 2.2, "Brilho": 2.2, "Soft touch": 3.4 },
+  laminacao: { "Fosca": 2.2 },
   orelhas: 1.5,
 };
 
@@ -101,7 +101,7 @@ const FAIXA_30: TabelaFaixa = {
   encadernacao: ENCADERNACOES_30,
   capaPapel: { "Cartão triplex 250g": 4.8, "Cartão triplex 300g": 6.3, "Couché 170g": 5, "Percalux": 8.7 },
   capaImpressao: { "4x0 (só frente)": 0, "4x4 (frente e verso)": 2.5 },
-  laminacao: { "Fosca": 3.6, "Brilho": 3.6, "Soft touch": 5.5 },
+  laminacao: { "Fosca": 3.6 },
   orelhas: 3,
 };
 

@@ -9,7 +9,8 @@ export const MIOLO_PAPEIS = ["Offset 75g", "Offset 90g", "Offset 120g", "Offset 
 export const ENCADERNACOES = ["Brochura fresada e colada", "Brochura costurada e colada", "Espiral", "Capa dura (com costura)", "Capa dura (sem costura)", "Wire-o capa cartão", "Wire-o capa dura", "Costura na espinha"] as const;
 export const CAPA_PAPEIS = ["Cartão triplex 250g", "Cartão triplex 300g", "Couché 170g", "Percalux"] as const;
 export const CAPA_CORES = ["4x0 (só frente)", "4x4 (frente e verso)"] as const;
-export const LAMINACOES = ["Fosca", "Brilho", "Soft touch"] as const;
+/** Toda capa sai com laminação fosca, já incluída no valor: não há escolha para o autor. */
+export const LAMINACOES = ["Fosca"] as const;
 
 export const IMPRESSAO_MAX_CAPA_BYTES = 100 * 1024 * 1024;
 export const IMPRESSAO_MAX_MIOLO_BYTES = 200 * 1024 * 1024;
