@@ -1,6 +1,7 @@
 import "server-only";
 import { Resend } from "resend";
 import { brl } from "@/lib/format";
+import { formatarReais, type ResultadoPreco } from "@/lib/precoImpressao";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 const EMAIL_FROM = process.env.EMAIL_FROM || "Autores Independentes do Brasil <contato@autoresdobrasil.com.br>";
@@ -596,7 +597,31 @@ export type OrcamentoImpressaoEmailInfo = {
   projeto: string;
   /** Pares "rótulo → valor" do que o autor já configurou na tela de impressão. */
   especificacoes: Array<[string, string]>;
+  /** Valor estimado, calculado no servidor com a tabela da gráfica (sem frete). */
+  preco?: ResultadoPreco;
 };
+
+/**
+ * Bloco com o valor estimado do orçamento. A equipe vê também quando não há valor automático (e por quê);
+ * o autor só recebe o bloco quando existe um valor para mostrar.
+ */
+function blocoPrecoEmail(preco: ResultadoPreco | undefined, paraEquipe: boolean): string {
+  if (!preco) return "";
+  const titulo = paraEquipe ? "Valor estimado pelo site (tabela da gráfica, sem frete)" : "Valor estimado";
+  const cabecalho = `<h3 style="color: #002776; margin-top: 24px;">${titulo}</h3>`;
+  if (!preco.ok) {
+    return paraEquipe ? `${cabecalho}<p style="font-size: 14px;">Sem valor automático: ${escaparHtml(preco.mensagem)}</p>` : "";
+  }
+  const tabela = tabelaEspecificacoes([
+    ["Total", formatarReais(preco.totalCentavos)],
+    ["Por exemplar", formatarReais(preco.porExemplarCentavos)],
+    ...preco.linhas.map((l): [string, string] => [l.rotulo, formatarReais(l.centavos)]),
+  ]);
+  const nota = paraEquipe
+    ? `Faixa de tiragem: ${preco.faixa} exemplares. É uma estimativa do site: confirme o valor e calcule o frete antes de responder ao autor.`
+    : "Valor estimado com a tabela da nossa gráfica parceira. O frete não está incluído, e o valor final é confirmado pela nossa equipe.";
+  return `${cabecalho}${tabela}<p style="font-size: 13px; color: #666;">${nota}</p>`;
+}
 
 /** Pedido de orçamento de impressão (sem arquivos): aviso à equipe, que responde ao e-mail informado. */
 export async function sendOrcamentoImpressaoEquipeEmail(info: OrcamentoImpressaoEmailInfo) {
@@ -616,14 +641,15 @@ export async function sendOrcamentoImpressaoEquipeEmail(info: OrcamentoImpressao
         ])}
         <h3 style="color: #002776; margin-top: 24px;">Configuração escolhida na tela</h3>
         ${tabelaEspecificacoes(info.especificacoes)}
-        <p style="font-size: 13px; color: #666;">Nenhum arquivo foi enviado neste pedido. Responder a este e-mail fala direto com o autor.</p>
+        ${blocoPrecoEmail(info.preco, true)}
+        <p style="font-size: 13px; color: #666; margin-top: 16px;">Nenhum arquivo foi enviado neste pedido. Responder a este e-mail fala direto com o autor.</p>
       </div>
     `,
   });
 }
 
 /** Confirmação para quem pediu o orçamento por e-mail. */
-export async function sendOrcamentoImpressaoAutorEmail(to: string, info: Pick<OrcamentoImpressaoEmailInfo, "nome" | "projeto" | "especificacoes">) {
+export async function sendOrcamentoImpressaoAutorEmail(to: string, info: Pick<OrcamentoImpressaoEmailInfo, "nome" | "projeto" | "especificacoes" | "preco">) {
   await resend.emails.send({
     from: EMAIL_FROM,
     to,
@@ -636,6 +662,7 @@ export async function sendOrcamentoImpressaoAutorEmail(to: string, info: Pick<Or
           Nossa equipe vai analisar e responder por este e-mail.
         </p>
         ${tabelaEspecificacoes(info.especificacoes)}
+        ${blocoPrecoEmail(info.preco, false)}
       </div>
     `,
   });

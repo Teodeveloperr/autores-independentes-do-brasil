@@ -24,6 +24,7 @@ import {
   validarEspecificacoes,
   type EspecificacoesImpressao,
 } from "@/lib/impressao";
+import { calcularPrecoImpressao } from "@/lib/precoImpressao";
 import { PASTA_PUBLICA, criarSessaoEnvioPublico, sessaoEnvioPublicoValida, type SessaoEnvioPublico } from "@/lib/impressaoPublico";
 import { ESPECIFICACOES_FIXAS_KIT, kitPorId } from "@/lib/kits";
 import { emailSchema } from "@/lib/validation";
@@ -283,13 +284,27 @@ export async function solicitarOrcamentoImpressao(
   const observacoes = String(e.observacoes ?? "").trim().slice(0, 2000);
   if (observacoes) linhas.push(["Observações", observacoes]);
 
+  // O valor estimado é sempre calculado aqui, no servidor, a partir da configuração: nunca vem pronto do navegador.
+  const preco = calcularPrecoImpressao({
+    formato: String(e.formato ?? ""),
+    paginas: Number(e.paginas) || 0,
+    tiragem: Number(e.tiragem) || 0,
+    mioloCor: String(e.mioloCor ?? ""),
+    mioloPapel: String(e.mioloPapel ?? ""),
+    encadernacao: String(e.encadernacao ?? ""),
+    capaPapel: String(e.capaPapel ?? ""),
+    capaCor: String(e.capaCor ?? ""),
+    laminacao: String(e.laminacao || "Fosca"),
+    orelhas: !!e.orelhas,
+  });
+
   try {
-    await sendOrcamentoImpressaoEquipeEmail({ nome, email, telefone, projeto, especificacoes: linhas });
+    await sendOrcamentoImpressaoEquipeEmail({ nome, email, telefone, projeto, especificacoes: linhas, preco });
   } catch (err) {
     console.error("[impressao] Falha ao enviar o pedido de orçamento:", err);
     return { error: "Não foi possível enviar agora. Tente de novo em instantes." };
   }
-  await sendOrcamentoImpressaoAutorEmail(email, { nome, projeto, especificacoes: linhas }).catch((err) =>
+  await sendOrcamentoImpressaoAutorEmail(email, { nome, projeto, especificacoes: linhas, preco }).catch((err) =>
     console.error("[impressao] Falha ao enviar a confirmação do orçamento:", err)
   );
   return { ok: true };
