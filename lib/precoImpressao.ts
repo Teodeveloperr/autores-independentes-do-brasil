@@ -148,13 +148,14 @@ const PAPEIS_MIOLO: Record<string, Record<string, number>> = {
   "Offset 75g": papel(0.0223, 0.0484, 0.0546, 0.0926, 0.0968, 0.0968, 0.0982),
   "Offset 90g": papel(0.0238, 0.0521, 0.0596, 0.0993, 0.1043, 0.1043, 0.1637),
   // Offset 120g: não está na planilha; valores medidos no simulador (160 págs, 100 cópias, brochura
-  // fresada, capa triplex 250g 4x0, sem laminação). O 23x23 ainda não foi medido e pede orçamento.
+  // fresada, capa triplex 250g 4x0, sem laminação).
   "Offset 120g": {
     "9x13": 0.0356,
     ...Object.fromEntries(GRUPO_6.map((f) => [f, 0.0774])),
     "16x23": 0.0873,
     ...Object.fromEntries(GRUPO_5.map((f) => [f, 0.1481])),
     "21x29.7": 0.1548,
+    "23x23": 0.1548,
     "25x25": 0.1571,
   },
   "Offset 150g": papel(0.0298, 0.0671, 0.0796, 0.1259, 0.1491, 0.1342, 0.1936),
