@@ -147,6 +147,9 @@ function papel(p9x13: number, g6: number, p16x23: number, g5: number, p21x297: n
 const PAPEIS_MIOLO: Record<string, Record<string, number>> = {
   "Offset 75g": papel(0.0223, 0.0484, 0.0546, 0.0926, 0.0968, 0.0968, 0.0982),
   "Offset 90g": papel(0.0238, 0.0521, 0.0596, 0.0993, 0.1043, 0.1043, 0.1637),
+  // Offset 120g: não está na planilha; medido no simulador só no grupo de 12x19 a 15,5x23 (15x21,
+  // 160 págs, 100 cópias: R$ 3.053,06 ⇒ 0,0774 por página). Nos outros formatos pede orçamento.
+  "Offset 120g": Object.fromEntries(GRUPO_6.map((f) => [f, 0.0774])),
   "Offset 150g": papel(0.0298, 0.0671, 0.0796, 0.1259, 0.1491, 0.1342, 0.1936),
   "Pólen Natural 70g": papel(0.0228, 0.0496, 0.0563, 0.0948, 0.0993, 0.0993, 0.1587),
   "Pólen Natural 80g": papel(0.0239, 0.0525, 0.0601, 0.0999, 0.105, 0.105, 0.1644),
