@@ -43,8 +43,12 @@ const PAPEIS_MIOLO_POR_ENCADERNACAO: Record<string, string[]> = {
   // Capa dura (sem costura), Wire-o (cartão e dura) e Costura na espinha usam a lista base.
 };
 
-/** O papel do miolo está disponível para esta encadernação? */
-export function mioloPapelCompativel(encadernacao: string, mioloPapel: string): boolean {
+/** Papéis que o simulador oferece no miolo colorido inkjet (vistos com a brochura fresada e colada). */
+const PAPEIS_MIOLO_INKJET = ["Offset 75g", "Offset 90g", "Offset 120g", "Chambril Avena 80g"];
+
+/** O papel do miolo está disponível para esta encadernação (e, se informada, para esta cor de miolo)? */
+export function mioloPapelCompativel(encadernacao: string, mioloPapel: string, mioloCor?: string): boolean {
+  if (mioloCor === "Colorido (inkjet)") return PAPEIS_MIOLO_INKJET.includes(mioloPapel);
   return (PAPEIS_MIOLO_POR_ENCADERNACAO[encadernacao] ?? PAPEIS_MIOLO_BASE).includes(mioloPapel);
 }
 
@@ -168,6 +172,26 @@ const PAPEIS_MIOLO: Record<string, Record<string, number>> = {
   "Couché Fosco 150g": papel(0.0319, 0.0724, 0.0867, 0.1354, 0.1449, 0.1449, 0.2043),
 };
 
+/**
+ * Miolo colorido inkjet, medido no simulador (160 págs, 50 e 100 cópias): vale por classe de formato,
+ * a menor que 15,8x23 ("pequeno") e a maior ("grande"). O valor por página já inclui a cor e o Offset 75g;
+ * os outros papéis somam um acréscimo. Não segue a fórmula (papel + base) da planilha.
+ */
+const INKJET_POR_PAGINA = { pequeno: 0.0968, grande: 0.19 };
+const INKJET_ACRESCIMO_PAPEL: Record<string, { pequeno: number; grande: number }> = {
+  "Offset 75g": { pequeno: 0, grande: 0 },
+  "Offset 90g": { pequeno: 0.007, grande: 0.014 },
+  "Offset 120g": { pequeno: 0.0093, grande: 0.0186 },
+  "Chambril Avena 80g": { pequeno: 0.0085, grande: 0.018 },
+};
+
+/** Classe de formato do inkjet: pequeno quando largura < 15,8 e altura <= 23; senão, grande. */
+function classeInkjet(chave: string): "pequeno" | "grande" | null {
+  const m = chave.match(/^(\d+(?:\.\d+)?)x(\d+(?:\.\d+)?)$/);
+  if (!m) return null;
+  return Number(m[1]) < 15.8 && Number(m[2]) <= 23 ? "pequeno" : "grande";
+}
+
 /** Valor da cor do miolo, por página (dry toner). `null` = a planilha não traz o valor. */
 function valorCorMiolo(cor: string, chave: string): number | null {
   if (cor === "Preto e branco") return 0.02; // confirmado pela gráfica (a planilha antiga trazia 0,2 por engano)
@@ -232,16 +256,32 @@ export function calcularPrecoImpressao(e: EntradaPreco): ResultadoPreco {
     };
   }
 
-  if (!mioloPapelCompativel(e.encadernacao, e.mioloPapel)) {
-    return { ok: false, motivo: "invalido", mensagem: "Este papel de miolo não está disponível para a encadernação escolhida." };
+  if (!mioloPapelCompativel(e.encadernacao, e.mioloPapel, e.mioloCor)) {
+    return {
+      ok: false,
+      motivo: "invalido",
+      mensagem:
+        e.mioloCor === "Colorido (inkjet)"
+          ? "Este papel de miolo não está disponível no miolo colorido inkjet."
+          : "Este papel de miolo não está disponível para a encadernação escolhida.",
+    };
   }
 
-  if (e.mioloCor === "Colorido (inkjet)") return consulta("O miolo colorido em inkjet ainda não tem valor automático. Peça o orçamento por e-mail.");
-  const tabelaPapel = PAPEIS_MIOLO[e.mioloPapel];
-  if (!tabelaPapel) return consulta(`O papel ${e.mioloPapel} ainda não tem valor automático. Peça o orçamento por e-mail.`);
-  const valorPapel = tabelaPapel[chave];
-  const valorCor = valorCorMiolo(e.mioloCor, chave);
-  if (valorPapel === undefined || valorCor === null) return consulta("Esta combinação de formato, papel e cor ainda não tem valor automático. Peça o orçamento por e-mail.");
+  // Valor do miolo por página, em duas parcelas (décimos de milésimo) para não somar decimais.
+  let mioloPorPaginaE4: number;
+  if (e.mioloCor === "Colorido (inkjet)") {
+    const classe = classeInkjet(chave);
+    const acrescimo = classe ? INKJET_ACRESCIMO_PAPEL[e.mioloPapel]?.[classe] : undefined;
+    if (!classe || acrescimo === undefined) return consulta("Esta combinação de formato e papel no miolo inkjet ainda não tem valor automático. Peça o orçamento por e-mail.");
+    mioloPorPaginaE4 = e4(INKJET_POR_PAGINA[classe]) + e4(acrescimo);
+  } else {
+    const tabelaPapel = PAPEIS_MIOLO[e.mioloPapel];
+    if (!tabelaPapel) return consulta(`O papel ${e.mioloPapel} ainda não tem valor automático. Peça o orçamento por e-mail.`);
+    const valorPapel = tabelaPapel[chave];
+    const valorCor = valorCorMiolo(e.mioloCor, chave);
+    if (valorPapel === undefined || valorCor === null) return consulta("Esta combinação de formato, papel e cor ainda não tem valor automático. Peça o orçamento por e-mail.");
+    mioloPorPaginaE4 = e4(valorPapel) + e4(valorCor);
+  }
 
   const dura = ehCapaDura(e.encadernacao);
 
@@ -255,7 +295,7 @@ export function calcularPrecoImpressao(e: EntradaPreco): ResultadoPreco {
 
   const exemplares = e.tiragem;
   const partes: Array<[string, number]> = [
-    ["Miolo", (e4(valorPapel) + e4(valorCor)) * e.paginas * exemplares],
+    ["Miolo", mioloPorPaginaE4 * e.paginas * exemplares],
     ["Encadernação", e4(encadernacao) * exemplares],
     ["Capa", (e4(capaPapel) + e4(capaImpressao)) * exemplares],
     ["Laminação da capa", e4(laminacao) * exemplares],

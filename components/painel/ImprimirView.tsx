@@ -254,8 +254,18 @@ export default function ImprimirView({
     setE((atual) => ({
       ...atual,
       encadernacao,
-      mioloPapel: mioloPapelCompativel(encadernacao, atual.mioloPapel) ? atual.mioloPapel : "Offset 75g",
+      mioloPapel: mioloPapelCompativel(encadernacao, atual.mioloPapel, atual.mioloCor) ? atual.mioloPapel : "Offset 75g",
       capaPapel: capaCompativel(encadernacao, atual.capaPapel) ? atual.capaPapel : ehCapaDura(encadernacao) ? "Couché 170g" : "Cartão triplex 250g",
+    }));
+    setErro("");
+  };
+
+  // O inkjet só tem alguns papéis (e o Avena só existe nele): trocar a cor pode invalidar o papel marcado.
+  const mudarCorDoMiolo = (mioloCor: string) => {
+    setE((atual) => ({
+      ...atual,
+      mioloCor,
+      mioloPapel: mioloPapelCompativel(atual.encadernacao, atual.mioloPapel, mioloCor) ? atual.mioloPapel : "Offset 75g",
     }));
     setErro("");
   };
@@ -754,10 +764,10 @@ export default function ImprimirView({
               <div style={grupo}>Miolo</div>
               <div style={{ ...rotulo, marginBottom: "8px" }}>Cor da impressão</div>
               <div style={{ marginBottom: "16px" }}>
-                <Opcoes lista={MIOLO_CORES} valor={e.mioloCor} onChange={(v) => mudar("mioloCor", v)} />
+                <Opcoes lista={MIOLO_CORES} valor={e.mioloCor} onChange={mudarCorDoMiolo} />
               </div>
               <div style={{ ...rotulo, marginBottom: "8px" }}>Papel e gramatura</div>
-              <Opcoes lista={MIOLO_PAPEIS.filter((p) => mioloPapelCompativel(e.encadernacao, p))} valor={e.mioloPapel} onChange={(v) => mudar("mioloPapel", v)} colunas={150} />
+              <Opcoes lista={MIOLO_PAPEIS.filter((p) => mioloPapelCompativel(e.encadernacao, p, e.mioloCor))} valor={e.mioloPapel} onChange={(v) => mudar("mioloPapel", v)} colunas={150} />
             </div>
 
             <div>
