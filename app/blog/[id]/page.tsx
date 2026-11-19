@@ -5,6 +5,7 @@ import PublicHeader from "@/components/PublicHeader";
 import PublicFooter from "@/components/PublicFooter";
 import { prisma } from "@/lib/db";
 import { renderArticleContent } from "@/lib/richText";
+import { urlPreviaBlog } from "@/lib/previaBlog";
 
 export const dynamic = "force-dynamic";
 
@@ -18,8 +19,35 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  const artigo = await prisma.article.findUnique({ where: { id } });
-  return { title: artigo ? artigo.titulo : "Artigo não encontrado" };
+  const artigo = await prisma.article.findUnique({ where: { id }, select: { titulo: true, resumo: true, capaUrl: true } });
+  if (!artigo) return { title: "Artigo não encontrado", robots: { index: false } };
+
+  // Prévia ao compartilhar o link (WhatsApp, Instagram, Facebook): a imagem de destaque do artigo,
+  // ajustada a 1200x630 (ver ./previa/route.ts). O "openGraph" da página substitui o do layout por
+  // inteiro, então tudo é repetido aqui; sem imagem de destaque, vale a prévia padrão do site.
+  const resumo = artigo.resumo.replace(/\s+/g, " ").trim();
+  const descricao = resumo.length > 200 ? `${resumo.slice(0, 197)}...` : resumo;
+  const imagem = urlPreviaBlog(id, artigo.capaUrl) ?? "/og-default.jpg";
+  return {
+    title: artigo.titulo,
+    description: descricao || undefined,
+    alternates: { canonical: `/blog/${id}` },
+    openGraph: {
+      type: "article",
+      siteName: "Autores Independentes do Brasil",
+      locale: "pt_BR",
+      title: artigo.titulo,
+      description: descricao || undefined,
+      url: `/blog/${id}`,
+      images: [{ url: imagem, width: 1200, height: 630, type: "image/jpeg", alt: artigo.titulo }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: artigo.titulo,
+      description: descricao || undefined,
+      images: [imagem],
+    },
+  };
 }
 
 export default async function ArtigoPage({ params }: { params: Promise<{ id: string }> }) {
