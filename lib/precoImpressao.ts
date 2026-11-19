@@ -174,8 +174,9 @@ function valorCorMiolo(cor: string, chave: string): number | null {
   if (cor === "Colorido (dry toner)") {
     if (chave === "9x13") return 0.12;
     if (["12x19", "13x20", "14x21", "15x21", "15x22", "15.5x23", "16x23"].includes(chave)) return 0.188;
-    if (["17x24", "20x20", "21x21", "21x25", "21x28", "21x29.7"].includes(chave)) return 0.35;
-    return null; // 23x23 e 25x25: sem valor na planilha
+    // 23x23 e 25x25 não estão na planilha; medidos no simulador (160 págs, 100 cópias): também 0,35.
+    if (["17x24", "20x20", "21x21", "21x25", "21x28", "21x29.7", "23x23", "25x25"].includes(chave)) return 0.35;
+    return null;
   }
   return null; // colorido inkjet ainda sem valor conferido
 }
