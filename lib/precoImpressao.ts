@@ -31,6 +31,23 @@ const ENCADERNACOES_CAPA_DURA = ["Capa dura (com costura)", "Capa dura (sem cost
 const CAPAS_SO_DURA = ["Percalux"];
 const CAPAS_SO_BROCHURA = ["Cartão triplex 250g", "Cartão triplex 300g"];
 
+// Papéis de miolo que o simulador da gráfica oferece para cada encadernação (papel grosso não vai em
+// brochura fresada e colada, por exemplo). Informado a partir do simulador em 19/11/2026.
+const PAPEIS_MIOLO_BASE = ["Offset 75g", "Offset 90g", "Offset 120g", "Pólen Natural 70g", "Pólen Natural 80g", "Pólen Soft 80g", "Pólen Bold 90g", "Couché Fosco 90g"];
+const PAPEIS_MIOLO_FRESADA = [...PAPEIS_MIOLO_BASE, "Couché Fosco 115g"];
+const PAPEIS_MIOLO_POR_ENCADERNACAO: Record<string, string[]> = {
+  "Brochura fresada e colada": PAPEIS_MIOLO_FRESADA,
+  "Brochura costurada e colada": [...PAPEIS_MIOLO_FRESADA, "Offset 150g", "Couché Fosco 150g"],
+  "Espiral": [...PAPEIS_MIOLO_BASE, "Offset 150g", "Couché Fosco 150g"],
+  "Capa dura (com costura)": [...PAPEIS_MIOLO_FRESADA, "Offset 150g", "Couché Fosco 150g"],
+  // Capa dura (sem costura), Wire-o (cartão e dura) e Costura na espinha usam a lista base.
+};
+
+/** O papel do miolo está disponível para esta encadernação? */
+export function mioloPapelCompativel(encadernacao: string, mioloPapel: string): boolean {
+  return (PAPEIS_MIOLO_POR_ENCADERNACAO[encadernacao] ?? PAPEIS_MIOLO_BASE).includes(mioloPapel);
+}
+
 /** Encadernação em capa dura? No simulador da gráfica ela não tem escolha de 4x0/4x4 e o papel da capa não muda o preço. */
 export function ehCapaDura(encadernacao: string): boolean {
   return ENCADERNACOES_CAPA_DURA.includes(encadernacao);
@@ -201,6 +218,10 @@ export function calcularPrecoImpressao(e: EntradaPreco): ResultadoPreco {
         ? "Na capa dura, o papel da capa deve ser Couché 170g ou Percalux."
         : "O Percalux só é usado em capa dura. Escolha outro papel de capa ou outra encadernação.",
     };
+  }
+
+  if (!mioloPapelCompativel(e.encadernacao, e.mioloPapel)) {
+    return { ok: false, motivo: "invalido", mensagem: "Este papel de miolo não está disponível para a encadernação escolhida." };
   }
 
   if (e.mioloCor === "Colorido (inkjet)") return consulta("O miolo colorido em inkjet ainda não tem valor automático. Peça o orçamento por e-mail.");

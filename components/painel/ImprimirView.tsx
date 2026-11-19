@@ -35,7 +35,7 @@ import {
   validarEspecificacoes,
   type EspecificacoesImpressao,
 } from "@/lib/impressao";
-import { calcularPrecoImpressao, ehCapaDura, formatarReais } from "@/lib/precoImpressao";
+import { calcularPrecoImpressao, capaCompativel, ehCapaDura, formatarReais, mioloPapelCompativel } from "@/lib/precoImpressao";
 import TurnstileWidget from "@/components/TurnstileWidget";
 import type { PedidoImpressaoResumo } from "./types";
 
@@ -246,6 +246,17 @@ export default function ImprimirView({
 
   const mudar = <K extends keyof EspecificacoesImpressao>(chave: K, valor: EspecificacoesImpressao[K]) => {
     setE((atual) => ({ ...atual, [chave]: valor }));
+    setErro("");
+  };
+
+  // Trocar a encadernação pode deixar o papel do miolo ou da capa sem sentido: volta para um papel que ela aceite.
+  const mudarEncadernacao = (encadernacao: string) => {
+    setE((atual) => ({
+      ...atual,
+      encadernacao,
+      mioloPapel: mioloPapelCompativel(encadernacao, atual.mioloPapel) ? atual.mioloPapel : "Offset 75g",
+      capaPapel: capaCompativel(encadernacao, atual.capaPapel) ? atual.capaPapel : ehCapaDura(encadernacao) ? "Couché 170g" : "Cartão triplex 250g",
+    }));
     setErro("");
   };
 
@@ -746,19 +757,19 @@ export default function ImprimirView({
                 <Opcoes lista={MIOLO_CORES} valor={e.mioloCor} onChange={(v) => mudar("mioloCor", v)} />
               </div>
               <div style={{ ...rotulo, marginBottom: "8px" }}>Papel e gramatura</div>
-              <Opcoes lista={MIOLO_PAPEIS} valor={e.mioloPapel} onChange={(v) => mudar("mioloPapel", v)} colunas={150} />
+              <Opcoes lista={MIOLO_PAPEIS.filter((p) => mioloPapelCompativel(e.encadernacao, p))} valor={e.mioloPapel} onChange={(v) => mudar("mioloPapel", v)} colunas={150} />
             </div>
 
             <div>
               <div style={grupo}>Encadernação</div>
-              <Opcoes lista={ENCADERNACOES} valor={e.encadernacao} onChange={(v) => mudar("encadernacao", v)} colunas={210} />
+              <Opcoes lista={ENCADERNACOES} valor={e.encadernacao} onChange={mudarEncadernacao} colunas={210} />
             </div>
 
             <div>
               <div style={grupo}>Capa</div>
               <div style={{ ...rotulo, marginBottom: "8px" }}>Papel</div>
               <div style={{ marginBottom: "16px" }}>
-                <Opcoes lista={CAPA_PAPEIS} valor={e.capaPapel} onChange={(v) => mudar("capaPapel", v)} />
+                <Opcoes lista={CAPA_PAPEIS.filter((p) => capaCompativel(e.encadernacao, p))} valor={e.capaPapel} onChange={(v) => mudar("capaPapel", v)} />
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))", gap: "16px" }}>
                 {!ehCapaDura(e.encadernacao) && (
