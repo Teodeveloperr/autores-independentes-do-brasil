@@ -1,7 +1,7 @@
 // Pedido de impressão de livro ("Imprimir meu livro", no painel do autor): opções do formulário,
 // limites e validação. Usado no navegador e no servidor, por isso não importa nada de servidor.
 
-import { TIRAGEM_MINIMA, TIRAGEM_MAXIMA, capaCompativel, mioloPapelCompativel } from "./precoImpressao";
+import { TIRAGEM_MINIMA, TIRAGEM_MAXIMA, capaCompativel, encadernacaoDisponivel, mioloPapelCompativel } from "./precoImpressao";
 
 export const FORMATOS = ["A5 (14,8x21 cm)", "9x13 cm", "12x19 cm", "13x20 cm", "14x21 cm", "15x21 cm", "15x22 cm", "15,5x23 cm", "16x23 cm", "17x24 cm", "20x20 cm", "21x21 cm", "23x23 cm", "25x25 cm", "21x25 cm", "21x28 cm", "21x29,7 cm"] as const;
 export const MIOLO_CORES = ["Preto e branco", "Colorido (inkjet)", "Colorido (dry toner)"] as const;
@@ -105,6 +105,7 @@ export function validarEspecificacoes(e: EspecificacoesImpressao): string | null
   if (!dentro(MIOLO_CORES, e.mioloCor)) return "Escolha a cor da impressão do miolo.";
   if (!dentro(MIOLO_PAPEIS, e.mioloPapel)) return "Escolha o papel do miolo.";
   if (!dentro(ENCADERNACOES, e.encadernacao)) return "Escolha a encadernação.";
+  if (!encadernacaoDisponivel(e.formato, e.mioloCor, e.encadernacao)) return "Esta encadernação não está disponível para o formato e o tipo de miolo escolhidos.";
   if (!mioloPapelCompativel(e.encadernacao, e.mioloPapel, e.mioloCor)) return "Este papel de miolo não está disponível para a cor de miolo e a encadernação escolhidas.";
   if (!dentro(CAPA_PAPEIS, e.capaPapel)) return "Escolha o papel da capa.";
   if (!capaCompativel(e.encadernacao, e.capaPapel)) return "Este papel de capa não combina com a encadernação escolhida (capa dura usa Couché 170g ou Percalux; o Percalux só vale em capa dura).";

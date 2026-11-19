@@ -35,7 +35,7 @@ import {
   validarEspecificacoes,
   type EspecificacoesImpressao,
 } from "@/lib/impressao";
-import { calcularPrecoImpressao, capaCompativel, ehCapaDura, formatarReais, mioloPapelCompativel } from "@/lib/precoImpressao";
+import { ajustarEscolhas, calcularPrecoImpressao, capaCompativel, ehCapaDura, encadernacaoDisponivel, formatarReais, mioloPapelCompativel } from "@/lib/precoImpressao";
 import TurnstileWidget from "@/components/TurnstileWidget";
 import type { PedidoImpressaoResumo } from "./types";
 
@@ -249,24 +249,10 @@ export default function ImprimirView({
     setErro("");
   };
 
-  // Trocar a encadernação pode deixar o papel do miolo ou da capa sem sentido: volta para um papel que ela aceite.
-  const mudarEncadernacao = (encadernacao: string) => {
-    setE((atual) => ({
-      ...atual,
-      encadernacao,
-      mioloPapel: mioloPapelCompativel(encadernacao, atual.mioloPapel, atual.mioloCor) ? atual.mioloPapel : "Offset 75g",
-      capaPapel: capaCompativel(encadernacao, atual.capaPapel) ? atual.capaPapel : ehCapaDura(encadernacao) ? "Couché 170g" : "Cartão triplex 250g",
-    }));
-    setErro("");
-  };
-
-  // O inkjet só tem alguns papéis (e o Avena só existe nele): trocar a cor pode invalidar o papel marcado.
-  const mudarCorDoMiolo = (mioloCor: string) => {
-    setE((atual) => ({
-      ...atual,
-      mioloCor,
-      mioloPapel: mioloPapelCompativel(atual.encadernacao, atual.mioloPapel, mioloCor) ? atual.mioloPapel : "Offset 75g",
-    }));
+  // Formato, cor do miolo e encadernação dependem uns dos outros (a gráfica só oferece algumas
+  // combinações): ao trocar um deles, as escolhas que deixaram de valer voltam para uma opção válida.
+  const mudarComAjuste = (chave: "formato" | "mioloCor" | "encadernacao", valor: string) => {
+    setE((atual) => ajustarEscolhas({ ...atual, [chave]: valor }));
     setErro("");
   };
 
@@ -739,7 +725,7 @@ export default function ImprimirView({
           <section style={card}>
             <h2 style={{ ...h2, marginBottom: "4px" }}>2. Formato</h2>
             <p style={{ margin: "0 0 14px", fontSize: "13px", color: "#555" }}>Largura x altura do livro fechado, em centímetros.</p>
-            <Opcoes lista={FORMATOS} valor={e.formato} onChange={(v) => mudar("formato", v)} colunas={104} />
+            <Opcoes lista={FORMATOS} valor={e.formato} onChange={(v) => mudarComAjuste("formato", v)} colunas={104} />
           </section>
           )}
 
@@ -764,7 +750,7 @@ export default function ImprimirView({
               <div style={grupo}>Miolo</div>
               <div style={{ ...rotulo, marginBottom: "8px" }}>Cor da impressão</div>
               <div style={{ marginBottom: "16px" }}>
-                <Opcoes lista={MIOLO_CORES} valor={e.mioloCor} onChange={mudarCorDoMiolo} />
+                <Opcoes lista={MIOLO_CORES} valor={e.mioloCor} onChange={(v) => mudarComAjuste("mioloCor", v)} />
               </div>
               <div style={{ ...rotulo, marginBottom: "8px" }}>Papel e gramatura</div>
               <Opcoes lista={MIOLO_PAPEIS.filter((p) => mioloPapelCompativel(e.encadernacao, p, e.mioloCor))} valor={e.mioloPapel} onChange={(v) => mudar("mioloPapel", v)} colunas={150} />
@@ -772,7 +758,7 @@ export default function ImprimirView({
 
             <div>
               <div style={grupo}>Encadernação</div>
-              <Opcoes lista={ENCADERNACOES} valor={e.encadernacao} onChange={mudarEncadernacao} colunas={210} />
+              <Opcoes lista={ENCADERNACOES.filter((x) => encadernacaoDisponivel(e.formato, e.mioloCor, x))} valor={e.encadernacao} onChange={(v) => mudarComAjuste("encadernacao", v)} colunas={210} />
             </div>
 
             <div>

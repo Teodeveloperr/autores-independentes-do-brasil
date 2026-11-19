@@ -52,6 +52,55 @@ export function mioloPapelCompativel(encadernacao: string, mioloPapel: string, m
   return (PAPEIS_MIOLO_POR_ENCADERNACAO[encadernacao] ?? PAPEIS_MIOLO_BASE).includes(mioloPapel);
 }
 
+// Encadernações que o simulador da gráfica oferece em cada formato e cor de miolo (levantamento feito
+// no simulador em 19/11/2026, formato por formato). O P&B e o colorido dry toner têm a mesma lista; o
+// inkjet nunca tem costurada, capa dura com costura nem costura na espinha.
+const ENC_FRESADA = "Brochura fresada e colada";
+const ENC_COSTURADA = "Brochura costurada e colada";
+const ENC_ESPIRAL = "Espiral";
+const ENC_DURA_COM = "Capa dura (com costura)";
+const ENC_DURA_SEM = "Capa dura (sem costura)";
+const ENC_WIRE_CARTAO = "Wire-o capa cartão";
+const ENC_WIRE_DURA = "Wire-o capa dura";
+const ENC_ESPINHA = "Costura na espinha";
+
+const ENC_DRY_A = [ENC_FRESADA, ENC_COSTURADA, ENC_ESPIRAL, ENC_DURA_COM, ENC_DURA_SEM, ENC_ESPINHA];
+const ENC_DRY_B = [...ENC_DRY_A, ENC_WIRE_DURA];
+const ENC_DRY_C = [...ENC_DRY_A, ENC_WIRE_CARTAO, ENC_WIRE_DURA];
+const ENC_INKJET_A = [ENC_FRESADA, ENC_ESPIRAL, ENC_DURA_SEM];
+const ENC_INKJET_B = [...ENC_INKJET_A, ENC_WIRE_DURA];
+const ENC_INKJET_C = [...ENC_INKJET_A, ENC_WIRE_CARTAO, ENC_WIRE_DURA];
+
+// A: formatos pequenos (sem wire-o); B: quase quadrados e largos (só wire-o capa dura); C: a faixa média (todas).
+const FORMATOS_PERFIL_A = ["9x13", "12x19"];
+const FORMATOS_PERFIL_B = ["13x20", "20x20", "21x21", "23x23", "25x25", "21x25"];
+
+/** Encadernações disponíveis para o formato e a cor do miolo (formato desconhecido: perfil da faixa média). */
+export function encadernacoesDisponiveis(formato: string, mioloCor: string): string[] {
+  const chave = chaveFormato(formato);
+  const perfil = FORMATOS_PERFIL_A.includes(chave) ? "A" : FORMATOS_PERFIL_B.includes(chave) ? "B" : "C";
+  if (mioloCor === "Colorido (inkjet)") return perfil === "A" ? ENC_INKJET_A : perfil === "B" ? ENC_INKJET_B : ENC_INKJET_C;
+  const lista = perfil === "A" ? ENC_DRY_A : perfil === "B" ? ENC_DRY_B : ENC_DRY_C;
+  // Exceção vista no simulador: no 9x13, o colorido dry toner não oferece a capa dura com costura.
+  return chave === "9x13" && mioloCor === "Colorido (dry toner)" ? lista.filter((e) => e !== ENC_DURA_COM) : lista;
+}
+
+export function encadernacaoDisponivel(formato: string, mioloCor: string, encadernacao: string): boolean {
+  return encadernacoesDisponiveis(formato, mioloCor).includes(encadernacao);
+}
+
+/**
+ * Depois de trocar formato, cor do miolo ou encadernação, devolve as escolhas já ajustadas: se a
+ * encadernação deixou de existir, volta para a fresada; e o papel do miolo e o da capa voltam para um
+ * papel que a encadernação (e a cor) aceitem.
+ */
+export function ajustarEscolhas<T extends { formato: string; mioloCor: string; encadernacao: string; mioloPapel: string; capaPapel: string }>(e: T): T {
+  const encadernacao = encadernacaoDisponivel(e.formato, e.mioloCor, e.encadernacao) ? e.encadernacao : ENC_FRESADA;
+  const mioloPapel = mioloPapelCompativel(encadernacao, e.mioloPapel, e.mioloCor) ? e.mioloPapel : "Offset 75g";
+  const capaPapel = capaCompativel(encadernacao, e.capaPapel) ? e.capaPapel : ehCapaDura(encadernacao) ? "Couché 170g" : "Cartão triplex 250g";
+  return { ...e, encadernacao, mioloPapel, capaPapel };
+}
+
 /** Encadernação em capa dura? No simulador da gráfica ela não tem escolha de 4x0/4x4 e o papel da capa não muda o preço. */
 export function ehCapaDura(encadernacao: string): boolean {
   return ENCADERNACOES_CAPA_DURA.includes(encadernacao);
@@ -254,6 +303,10 @@ export function calcularPrecoImpressao(e: EntradaPreco): ResultadoPreco {
         ? "Na capa dura, o papel da capa deve ser Couché 170g ou Percalux."
         : "O Percalux só é usado em capa dura. Escolha outro papel de capa ou outra encadernação.",
     };
+  }
+
+  if (!encadernacaoDisponivel(e.formato, e.mioloCor, e.encadernacao)) {
+    return { ok: false, motivo: "invalido", mensagem: "Esta encadernação não está disponível para o formato e o tipo de miolo escolhidos." };
   }
 
   if (!mioloPapelCompativel(e.encadernacao, e.mioloPapel, e.mioloCor)) {
