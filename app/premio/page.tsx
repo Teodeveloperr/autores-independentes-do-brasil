@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 export default function PremioPage() {
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
-      <PublicHeader />
+      <PublicHeader active="premio" />
       <section style={{ background: "#1E3A8A" }}>
         {/* eslint-disable-next-line @next/next/no-img-element -- banner oficial do formulário, exibido inteiro, sem corte */}
         <img src="/premio-banner.jpg" alt="1º Prêmio Autores do Brasil de Literatura 2027" width={1600} height={400} style={{ display: "block", width: "100%", maxWidth: "1600px", height: "auto", margin: "0 auto" }} />

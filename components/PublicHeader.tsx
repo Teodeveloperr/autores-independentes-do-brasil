@@ -18,6 +18,7 @@ type NavKey =
   | "oportunidades"
   | "bienal"
   | "imprimir"
+  | "premio"
   | "talkshow"
   | "contato";
 
@@ -40,6 +41,7 @@ function categorias(showContato: boolean): { label: string; items: NavItem[] }[]
         { key: "cadastro", label: "Cadastre-se", href: "/cadastro" },
         { key: "oportunidades", label: "Oportunidades", href: "/oportunidades" },
         { key: "bienal", label: "Bienal do Rio 2027", href: "/contrato-bienal" },
+        { key: "premio", label: "Prêmio", href: "/premio" },
       ],
     },
     {

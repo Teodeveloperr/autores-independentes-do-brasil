@@ -150,6 +150,7 @@ export default function InscricaoPremioForm() {
           <input
             id={`pr-${tipo}`}
             type="file"
+            className="arquivo-premio"
             required
             accept={PREMIO_ARQUIVOS[tipo].extensoes.map((x) => `.${x}`).join(",")}
             onChange={(ev) => {
@@ -157,7 +158,7 @@ export default function InscricaoPremioForm() {
               setArquivos((a) => ({ ...a, [tipo]: f }));
               setErro(f ? validarArquivoPremio(tipo, f.name, f.size) ?? "" : "");
             }}
-            style={{ ...campo, padding: "10px" }}
+            style={{ ...campo, padding: "8px" }}
           />
         </div>
       ))}

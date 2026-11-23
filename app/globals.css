@@ -389,3 +389,28 @@ img {
     padding: 24px 16px !important;
   }
 }
+
+/* Campo "Escolher arquivo" da inscrição do prêmio (components/premio/InscricaoPremioForm). */
+.arquivo-premio {
+  cursor: pointer;
+  color: #262626;
+}
+.arquivo-premio::file-selector-button {
+  background: #009b3a;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 18px;
+  margin-right: 12px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 150ms ease;
+}
+.arquivo-premio::file-selector-button:hover {
+  background: #007a2e;
+}
+.arquivo-premio:focus-visible {
+  outline: 2px solid #002776;
+  outline-offset: 2px;
+}
