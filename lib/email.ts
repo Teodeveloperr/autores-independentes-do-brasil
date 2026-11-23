@@ -761,3 +761,62 @@ export async function sendKitLinkImpressaoEmail(to: string, nome: string, kits: 
     `,
   });
 }
+
+export type InscricaoPremioEmailInfo = {
+  destino: string;
+  nome: string;
+  nomeArtistico: string;
+  telefone: string;
+  email: string;
+  titulo: string;
+  categoria: string;
+  /** Links de download (sem login) dos arquivos enviados. */
+  arquivos: Array<{ rotulo: string; nomeOriginal: string; tamanho: string; url: string }>;
+};
+
+/** Inscrição no 1º Prêmio Literário Autores do Brasil – 2027: chega à organização com os links dos arquivos. */
+export async function sendInscricaoPremioEquipeEmail(info: InscricaoPremioEmailInfo) {
+  await enviarEOuFalhar({
+    from: EMAIL_FROM,
+    to: info.destino,
+    replyTo: info.email,
+    subject: `[Prêmio Autores do Brasil 2027] Inscrição: ${info.titulo} (${info.categoria})`.slice(0, 200),
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 620px; margin: 0 auto; color: #262626;">
+        <h2 style="color: #002776;">Nova inscrição no 1º Prêmio Autores do Brasil de Literatura 2027</h2>
+        ${tabelaEspecificacoes([
+          ["Nome completo", info.nome],
+          ["Nome artístico", info.nomeArtistico],
+          ["Telefone", info.telefone],
+          ["E-mail", info.email],
+          ["Título do livro", info.titulo],
+          ["Categoria", info.categoria],
+        ])}
+        <h3 style="color: #002776; margin-top: 24px;">Arquivos</h3>
+        ${info.arquivos.map((a) => `<p><b>${escaparHtml(a.rotulo)}:</b> <a href="${a.url}">baixar</a> (${escaparHtml(a.nomeOriginal)}, ${escaparHtml(a.tamanho)})</p>`).join("")}
+        <p style="font-size: 13px; color: #666;">Os links não pedem login e valem por 120 dias. Responder a este e-mail fala direto com o participante.</p>
+      </div>
+    `,
+  });
+}
+
+/** Confirmação para o participante de que a inscrição foi recebida. */
+export async function sendInscricaoPremioParticipanteEmail(to: string, info: { nome: string; titulo: string; categoria: string }) {
+  await resend.emails.send({
+    from: EMAIL_FROM,
+    to,
+    subject: "Recebemos a sua inscrição no 1º Prêmio Autores do Brasil de Literatura 2027",
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 620px; margin: 0 auto; color: #262626;">
+        <h1 style="color: #002776; font-size: 22px;">Inscrição recebida</h1>
+        <p style="font-size: 15px; line-height: 1.6;">
+          Olá, ${escaparHtml(info.nome)}. Recebemos a inscrição do livro <b>${escaparHtml(info.titulo)}</b> na categoria <b>${escaparHtml(info.categoria)}</b>.
+        </p>
+        <p style="font-size: 15px; line-height: 1.6;">
+          Conforme o regulamento, a inscrição só é efetivada depois da conferência dos arquivos e da confirmação do pagamento.
+          A organização entrará em contato se precisar de algum documento complementar.
+        </p>
+      </div>
+    `,
+  });
+}
