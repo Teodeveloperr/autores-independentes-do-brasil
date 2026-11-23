@@ -3,6 +3,7 @@ import Link from "next/link";
 import PublicHeader from "@/components/PublicHeader";
 import PublicFooter from "@/components/PublicFooter";
 import BlogCarousel from "@/components/BlogCarousel";
+import HomeHeroCarousel from "@/components/HomeHeroCarousel";
 import HomeBannerCarousel from "@/components/HomeBannerCarousel";
 import KitsBienalHome from "@/components/KitsBienalHome";
 import HomePremiumToast from "@/components/HomePremiumToast";
@@ -74,36 +75,7 @@ export default async function HomePage() {
 
       <div style={{ maxWidth: "1280px", width: "100%", margin: "0 auto" }}>
 
-      <section className="responsive-grid section-pad-lg" style={{ background: "white", padding: "24px 40px 60px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "60px", alignItems: "start" }}>
-        <div>
-          <h1 style={{ fontSize: "42px", fontWeight: 700, color: "#002776", lineHeight: 1.3, marginBottom: "24px" }}>
-            Literatura
-            <br />independente
-            <br /><span style={{ color: "#009B3A" }}>conectando</span>
-            <br /><span style={{ color: "#FFDF00" }}>autores e leitores</span>
-          </h1>
-          <p style={{ fontSize: "16px", color: "#262626", lineHeight: 1.6, marginBottom: "32px" }}>
-            Somos um coletivo de escritores que acredita no poder das palavras para transformar o mundo.
-          </p>
-          <div style={{ display: "flex", gap: "16px" }}>
-            <Link href="/livros" style={{ background: "#009B3A", color: "white", padding: "12px 32px", fontWeight: 600, borderRadius: "4px" }}>
-              NOSSOS LIVROS
-            </Link>
-            <Link href="/coletivo" style={{ background: "white", border: "2px solid #009B3A", color: "#009B3A", padding: "10px 32px", fontWeight: 600, borderRadius: "4px" }}>
-              O COLETIVO
-            </Link>
-          </div>
-        </div>
-        <div style={{ textAlign: "center" }}>
-          <Image
-            src="/hero-logo.webp"
-            alt="Logo do coletivo Autores Independentes do Brasil"
-            width={1189}
-            height={1263}
-            style={{ width: "60%", maxWidth: "60%", height: "auto" }}
-          />
-        </div>
-      </section>
+      <HomeHeroCarousel />
 
       <HomeBannerCarousel />
 
