@@ -28,8 +28,14 @@ const TIRAGEM_INICIO_FAIXA_GRANDE = 50;
 
 /** Encadernações em capa dura: só combinam com papéis de capa dura (Couché 170g e Percalux). */
 const ENCADERNACOES_CAPA_DURA = ["Capa dura (com costura)", "Capa dura (sem costura)", "Wire-o capa dura"];
-const CAPAS_SO_DURA = ["Percalux"];
-const CAPAS_SO_BROCHURA = ["Cartão triplex 250g", "Cartão triplex 300g"];
+const CAPAS_BROCHURA = ["Cartão triplex 250g", "Cartão triplex 300g"];
+/** Papéis de capa que o simulador oferece em cada encadernação (levantado em 19/11/2026). */
+const CAPAS_POR_ENCADERNACAO: Record<string, string[]> = {
+  "Capa dura (com costura)": ["Couché 170g", "Percalux"],
+  "Capa dura (sem costura)": ["Couché 170g", "Percalux"],
+  "Wire-o capa dura": ["Couché 170g"],
+  "Costura na espinha": ["Cartão triplex 250g"],
+};
 
 // Papéis de miolo que o simulador da gráfica oferece para cada encadernação (papel grosso não vai em
 // brochura fresada e colada, por exemplo). Informado a partir do simulador em 19/11/2026.
@@ -47,8 +53,10 @@ const PAPEIS_MIOLO_POR_ENCADERNACAO: Record<string, string[]> = {
 const PAPEIS_MIOLO_INKJET = ["Offset 75g", "Offset 90g", "Offset 120g", "Chambril Avena 80g"];
 
 /** O papel do miolo está disponível para esta encadernação (e, se informada, para esta cor de miolo)? */
-export function mioloPapelCompativel(encadernacao: string, mioloPapel: string, mioloCor?: string): boolean {
+export function mioloPapelCompativel(encadernacao: string, mioloPapel: string, mioloCor?: string, formato?: string): boolean {
   if (mioloCor === "Colorido (inkjet)") return PAPEIS_MIOLO_INKJET.includes(mioloPapel);
+  // Formatos pequenos (9x13 e 12x19) não oferecem o Couché 115g.
+  if (mioloPapel === "Couché Fosco 115g" && formato && FORMATOS_PERFIL_A.includes(chaveFormato(formato))) return false;
   return (PAPEIS_MIOLO_POR_ENCADERNACAO[encadernacao] ?? PAPEIS_MIOLO_BASE).includes(mioloPapel);
 }
 
@@ -96,7 +104,7 @@ export function encadernacaoDisponivel(formato: string, mioloCor: string, encade
  */
 export function ajustarEscolhas<T extends { formato: string; mioloCor: string; encadernacao: string; mioloPapel: string; capaPapel: string }>(e: T): T {
   const encadernacao = encadernacaoDisponivel(e.formato, e.mioloCor, e.encadernacao) ? e.encadernacao : ENC_FRESADA;
-  const mioloPapel = mioloPapelCompativel(encadernacao, e.mioloPapel, e.mioloCor) ? e.mioloPapel : "Offset 75g";
+  const mioloPapel = mioloPapelCompativel(encadernacao, e.mioloPapel, e.mioloCor, e.formato) ? e.mioloPapel : "Offset 75g";
   const capaPapel = capaCompativel(encadernacao, e.capaPapel) ? e.capaPapel : ehCapaDura(encadernacao) ? "Couché 170g" : "Cartão triplex 250g";
   return { ...e, encadernacao, mioloPapel, capaPapel };
 }
@@ -117,9 +125,7 @@ const CAPA_DURA_FAIXA_30 = 2.5;
 
 /** Diz se o papel da capa combina com a encadernação (a planilha amarra um ao outro). */
 export function capaCompativel(encadernacao: string, capaPapel: string): boolean {
-  const dura = ENCADERNACOES_CAPA_DURA.includes(encadernacao);
-  if (dura) return !CAPAS_SO_BROCHURA.includes(capaPapel);
-  return !CAPAS_SO_DURA.includes(capaPapel);
+  return (CAPAS_POR_ENCADERNACAO[encadernacao] ?? CAPAS_BROCHURA).includes(capaPapel);
 }
 
 type TabelaFaixa = {
@@ -299,9 +305,7 @@ export function calcularPrecoImpressao(e: EntradaPreco): ResultadoPreco {
     return {
       ok: false,
       motivo: "invalido",
-      mensagem: ENCADERNACOES_CAPA_DURA.includes(e.encadernacao)
-        ? "Na capa dura, o papel da capa deve ser Couché 170g ou Percalux."
-        : "O Percalux só é usado em capa dura. Escolha outro papel de capa ou outra encadernação.",
+      mensagem: "Este papel de capa não está disponível para a encadernação escolhida.",
     };
   }
 
@@ -309,7 +313,7 @@ export function calcularPrecoImpressao(e: EntradaPreco): ResultadoPreco {
     return { ok: false, motivo: "invalido", mensagem: "Esta encadernação não está disponível para o formato e o tipo de miolo escolhidos." };
   }
 
-  if (!mioloPapelCompativel(e.encadernacao, e.mioloPapel, e.mioloCor)) {
+  if (!mioloPapelCompativel(e.encadernacao, e.mioloPapel, e.mioloCor, e.formato)) {
     return {
       ok: false,
       motivo: "invalido",

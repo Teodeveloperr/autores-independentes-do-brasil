@@ -106,9 +106,9 @@ export function validarEspecificacoes(e: EspecificacoesImpressao): string | null
   if (!dentro(MIOLO_PAPEIS, e.mioloPapel)) return "Escolha o papel do miolo.";
   if (!dentro(ENCADERNACOES, e.encadernacao)) return "Escolha a encadernação.";
   if (!encadernacaoDisponivel(e.formato, e.mioloCor, e.encadernacao)) return "Esta encadernação não está disponível para o formato e o tipo de miolo escolhidos.";
-  if (!mioloPapelCompativel(e.encadernacao, e.mioloPapel, e.mioloCor)) return "Este papel de miolo não está disponível para a cor de miolo e a encadernação escolhidas.";
+  if (!mioloPapelCompativel(e.encadernacao, e.mioloPapel, e.mioloCor, e.formato)) return "Este papel de miolo não está disponível para a cor de miolo e a encadernação escolhidas.";
   if (!dentro(CAPA_PAPEIS, e.capaPapel)) return "Escolha o papel da capa.";
-  if (!capaCompativel(e.encadernacao, e.capaPapel)) return "Este papel de capa não combina com a encadernação escolhida (capa dura usa Couché 170g ou Percalux; o Percalux só vale em capa dura).";
+  if (!capaCompativel(e.encadernacao, e.capaPapel)) return "Este papel de capa não está disponível para a encadernação escolhida.";
   if (!dentro(CAPA_CORES, e.capaCor)) return "Escolha a impressão da capa.";
   if (!dentro(LAMINACOES, e.laminacao)) return "Escolha a laminação da capa.";
   if (e.observacoes.length > 2000) return "As observações podem ter até 2000 caracteres.";

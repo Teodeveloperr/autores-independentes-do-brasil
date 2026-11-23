@@ -753,7 +753,7 @@ export default function ImprimirView({
                 <Opcoes lista={MIOLO_CORES} valor={e.mioloCor} onChange={(v) => mudarComAjuste("mioloCor", v)} />
               </div>
               <div style={{ ...rotulo, marginBottom: "8px" }}>Papel e gramatura</div>
-              <Opcoes lista={MIOLO_PAPEIS.filter((p) => mioloPapelCompativel(e.encadernacao, p, e.mioloCor))} valor={e.mioloPapel} onChange={(v) => mudar("mioloPapel", v)} colunas={150} />
+              <Opcoes lista={MIOLO_PAPEIS.filter((p) => mioloPapelCompativel(e.encadernacao, p, e.mioloCor, e.formato))} valor={e.mioloPapel} onChange={(v) => mudar("mioloPapel", v)} colunas={150} />
             </div>
 
             <div>
