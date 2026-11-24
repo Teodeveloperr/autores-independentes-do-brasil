@@ -119,6 +119,14 @@ trocar plano, excluir) · Avaliações · **Pedidos** (só leitura) · **Receita
 janela do parceiro Premium+) · **Contratos** (Bienal) · **E-books** (acessos e suporte) · **Segurança** (2FA) ·
 **Configurações** (chave Pix do parceiro do Premium+).
 
+## Limpeza automática (cron `/api/cron/limpar-mensagens`, todo dia às 03:00 UTC)
+
+Apaga dados temporários para o banco e o armazenamento não crescerem à toa: conversas do chat com mais de 7 dias, tentativas do
+limitador de envios (`RateLimitAttempt`) com mais de 2 dias (a janela mais longa do sistema é de 24 h), códigos de recuperação de
+senha usados ou vencidos há mais de 1 dia e os arquivos do prêmio vencidos (7 dias após o envio ou o pagamento). O cadastro de
+quem se inscreveu, os leads e as visitas **não** são apagados. Os cadastros pendentes e pedidos abandonados são limpos pelo cron
+`processar-pedidos`. Em 25/11/2026 o banco inteiro tinha 12,5 MB: a limpeza evita crescimento, não resolve cota de plano.
+
 ## E-book gratuito do blog (pop-up de captação)
 
 O pop-up do blog (`components/blog/EbookLeadPopup.tsx`) pede nome, e-mail e WhatsApp, com o aceite do contato (LGPD), e libera o
