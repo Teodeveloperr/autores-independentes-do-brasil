@@ -98,7 +98,7 @@ export default function Regulamento() {
 
       <Titulo>9. DO CRONOGRAMA</Titulo>
       {itens([
-        "Abertura das inscrições - 23/11/2027",
+        "Abertura das inscrições - 23/11/2026",
         "Encerramento das inscrições - 24/01/2027",
         "Divulgação do resultado preliminar - 15/02/2027",
         "Interposição de recursos - 16/02 a 18/02/2027",
