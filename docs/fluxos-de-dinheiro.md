@@ -130,6 +130,39 @@ De cada pagamento do Premium+, **46,8% vão para o parceiro** por Pix e o restan
 O contrato online (`/contrato-bienal`, `lib/contrato/`) gera uma cobrança na Asaas (`criarCobrancaContrato`). No
 pagamento, `marcarContratoPago` marca o contrato como pago. É um fluxo separado: **atraso nesse pagamento não afeta o plano do autor**.
 
+## 6.1. Taxa de inscrição do prêmio literário
+
+A taxa do **1º Prêmio Autores do Brasil de Literatura 2027** (R$ 187,00 por categoria, `PREMIO_VALOR_CENTAVOS` em
+`lib/premio.ts`) pode ser paga de duas formas (`/premio`, `app/premio/actions.ts`, `lib/premioPagamento.ts`):
+
+- **Pix direto** para a chave do Instituto Palavra que Liberta (`PREMIO_PIX_INSTITUTO`), anexando o comprovante: o dinheiro
+  **não passa pela Asaas**; a organização confere o comprovante (`pagamentoStatus = "comprovante"`).
+- **Cartão de crédito à vista pela plataforma** (`formaPagamento = "cartao"`), sem comprovante:
+
+```
+Ficha + arquivos ─► inscrição "aguardando" + cobrança CREDIT_CARD na Asaas ─► página de pagamento da Asaas
+        │
+        ▼ webhook PAYMENT_CONFIRMED/RECEIVED (identificado por asaasPaymentId)
+   inscrição "pago" · e-mail à organização ("PAGA", sem comprovante a conferir) e à pessoa
+        │
+        ▼ cron diário, quando a Asaas libera o saldo (cartão: cerca de 32 dias, evento RECEIVED = disponivelEm)
+   REPASSE por Pix ao Instituto do valor LÍQUIDO (já sem a tarifa da Asaas) · nada fica com a plataforma
+```
+
+- **Só cartão à vista** (o regulamento diz "parcela única"); a Asaas pede o CPF de quem paga, que o site **não guarda**.
+- **Valor repassado** = líquido da cobrança (`valorLiquidoCentavos`), com teto de R$ 187,00. A chave é a do regulamento, ou a das
+  variáveis `PREMIO_PIX_CHAVE` / `PREMIO_PIX_TIPO`. **Atenção**: a Asaas pode cobrar uma tarifa pela própria transferência Pix;
+  se cobrar, ela sai do saldo da conta (confira o extrato da Asaas).
+- **Desistência**: inscrição "aguardando" há mais de 3 dias → o cron cancela a cobrança na Asaas (só se ela confirmar que não foi
+  paga) e marca "cancelado".
+- **Estorno/chargeback** (`PAYMENT_REFUNDED`, `PAYMENT_CHARGEBACK_REQUESTED`): a inscrição vira "estornado"; repasse que ainda não
+  saiu é cancelado; se já saiu, fica um aviso em `repasseErro` para cobrar do Instituto. **O pedido de estorno é feito pelo
+  WhatsApp (79) 99182-1546** (`PREMIO_WHATSAPP_ESTORNO`); quem opera o estorno é o admin, pelo painel da Asaas.
+- **Arquivos**: apagados do armazenamento 7 dias depois do envio (Pix) ou da **confirmação do pagamento** (cartão); aguardando
+  pagamento só perde os arquivos em 14 dias. Os dados da inscrição ficam no banco.
+- No admin (**Prêmio literário**) cada inscrição mostra o pagamento e o estado do repasse; o contador conta só as efetivas
+  (Pix com comprovante ou cartão pago).
+
 ## 7. Eventos da Asaas que o sistema trata
 
 Todos precisam estar **marcados no webhook** (Asaas → Integrações → Webhooks):

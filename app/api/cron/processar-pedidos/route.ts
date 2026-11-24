@@ -3,6 +3,7 @@ import { atribuirSlugsFaltantes } from "@/lib/autorSlug";
 import { prisma } from "@/lib/db";
 import { processarRepasse, enviarConfirmacaoRecebimento } from "@/lib/repasse";
 import { processarRepasseKit, processarRepasseParceiro } from "@/lib/repasseParceiro";
+import { cancelarInscricoesPremioAbandonadas, repassarInscricoesPremioDisponiveis } from "@/lib/premioPagamento";
 import { repassarEbooksDisponiveis } from "@/lib/pedidoEbook";
 import { cancelarAutorizacaoPixAutomatico, cancelarAssinaturaAsaas, buscarCobranca, cancelarCobranca } from "@/lib/asaas";
 import { sendPlanoParceladoVencendoEmail } from "@/lib/email";
@@ -84,6 +85,11 @@ export async function GET(request: Request) {
     const resultado = await processarRepasseKit(pagamento);
     if (resultado.ok) repassesKitLiberados++;
   }
+
+  // Taxa de inscrição do prêmio paga pela plataforma: o valor líquido vai por Pix para o Instituto assim que o saldo
+  // fica disponível na Asaas (cartão: cerca de 32 dias). E cobranças abandonadas são canceladas.
+  const repassesPremio = await repassarInscricoesPremioDisponiveis();
+  const inscricoesPremioCanceladas = await cancelarInscricoesPremioAbandonadas();
 
   // Pedidos criados no checkout mas nunca pagos (a pessoa desistiu antes de concluir o
   // pagamento) — cancela a cobrança de verdade na Asaas (senão a fatura continua válida e
@@ -209,6 +215,9 @@ export async function GET(request: Request) {
     repassesParceiroLiberados,
     repassesKitProcessados: pagamentosKitPendentes.length,
     repassesKitLiberados,
+    repassesPremioProcessados: repassesPremio.processados,
+    repassesPremioLiberados: repassesPremio.liberados,
+    inscricoesPremioCanceladas,
     pedidosCancelados,
     cadastrosPendentesLimpos: cadastrosAbandonados.length,
     planosAdminVencidos: planosAdminVencidos.length,

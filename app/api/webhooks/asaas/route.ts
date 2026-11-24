@@ -4,6 +4,7 @@ import { verificarWebhookAsaas, buscarCobranca } from "@/lib/asaas";
 import { sendOrderConfirmationEmail, sendNewSaleEmail, sendNovaCobrancaAssinaturaEmail, sendWelcomeEmail } from "@/lib/email";
 import { marcarContratoPago } from "@/lib/contrato/servico";
 import { marcarPedidoKitPago, registrarPagamentoKit } from "@/lib/kitsServico";
+import { marcarInscricaoPremioEstornada, registrarPagamentoPremio } from "@/lib/premioPagamento";
 import { ehEbook } from "@/lib/ebook";
 import { entregarEbooksDoPedido, repassarEbooksDisponiveis, revogarEbooksDoPedido } from "@/lib/pedidoEbook";
 import { valorParceiroPremiumPlusCentavos, CICLO_MESES, type CicloAssinatura } from "@/lib/plans";
@@ -213,6 +214,10 @@ export async function POST(request: NextRequest) {
     if (await prisma.pedidoKit.findUnique({ where: { asaasPaymentId: paymentId }, select: { id: true } })) {
       return NextResponse.json({ received: true }, { status: 200 });
     }
+    // E para a taxa de inscrição do prêmio literário (cartão pela plataforma): nada a ver com plano de autor.
+    if (await prisma.inscricaoPremio.findUnique({ where: { asaasPaymentId: paymentId }, select: { id: true } })) {
+      return NextResponse.json({ received: true }, { status: 200 });
+    }
     // Parcela futura de uma compra parcelada atrasar não revoga acesso — a cobrança já foi
     // "vendida" por inteiro, é assunto entre o autor, o banco e a Asaas, não motivo pra
     // derrubar o autor pro Iniciante (diferente de uma assinatura recorrente de verdade).
@@ -266,6 +271,12 @@ export async function POST(request: NextRequest) {
   if (EVENTOS_ESTORNO.has(evento) && paymentId) {
     // Kit da Bienal estornado/contestado: o pedido deixa de constar como pago (a equipe acerta o resto).
     const cobrancaEstornada = await buscarCobranca(paymentId);
+    // Taxa de inscrição do prêmio estornada/contestada: a inscrição deixa de constar como paga.
+    const inscricaoEstornada = await prisma.inscricaoPremio.findUnique({ where: { asaasPaymentId: paymentId }, select: { id: true } });
+    if (inscricaoEstornada) {
+      await marcarInscricaoPremioEstornada(inscricaoEstornada.id, evento);
+      return NextResponse.json({ received: true }, { status: 200 });
+    }
     const kitEstornado = await prisma.pedidoKit.findFirst({
       where: { OR: [{ asaasPaymentId: paymentId }, ...(cobrancaEstornada?.installment ? [{ asaasInstallmentId: cobrancaEstornada.installment }] : [])] },
       select: { id: true, numero: true },
@@ -324,6 +335,14 @@ export async function POST(request: NextRequest) {
     await marcarPedidoKitPago(pedidoKit.id, cobranca.netValueCentavos);
     // Fatia do parceiro (90%): o repasse sai pelo cron quando o saldo estiver disponível na Asaas.
     await registrarPagamentoKit(pedidoKit.id, cobranca, evento);
+    return NextResponse.json({ received: true }, { status: 200 });
+  }
+
+  // Taxa de inscrição do prêmio literário (cartão pela plataforma): identificada pelo id da cobrança, antes da lógica
+  // de autores (mesmo motivo do contrato e do kit acima). Marca como paga, avisa a organização e libera o repasse.
+  const inscricaoPremio = await prisma.inscricaoPremio.findUnique({ where: { asaasPaymentId: cobranca.id }, select: { id: true } });
+  if (inscricaoPremio) {
+    await registrarPagamentoPremio(inscricaoPremio.id, cobranca, evento);
     return NextResponse.json({ received: true }, { status: 200 });
   }
 

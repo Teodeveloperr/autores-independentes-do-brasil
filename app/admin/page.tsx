@@ -103,7 +103,7 @@ export default async function AdminPage() {
       omit: { cpf: true, token: true, asaasCustomerId: true },
       include: { pagamentos: { orderBy: { createdAt: "asc" } }, impressao: { select: { numero: true, status: true } } },
     }),
-    prisma.inscricaoPremio.findMany({ orderBy: { createdAt: "desc" }, omit: { pasta: true } }),
+    prisma.inscricaoPremio.findMany({ orderBy: { createdAt: "desc" }, omit: { pasta: true, token: true, nomesArquivos: true } }),
     prisma.leadEbook.findMany({ orderBy: { createdAt: "desc" } }),
   ]);
 

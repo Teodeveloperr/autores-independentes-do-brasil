@@ -46,17 +46,23 @@ export default function Regulamento() {
       <p>4.1. As inscrições estarão abertas até o dia 24 de janeiro de 2027.</p>
       <p>4.2. A participação será realizada mediante preenchimento da ficha de inscrição oficial, disponibilizada pelo Autores do Brasil.</p>
       <p>4.3. O valor da inscrição será de R$ 187,00 (cento e oitenta e sete reais) por categoria, pago em parcela única.</p>
-      <p>4.4. O pagamento deverá ser realizado exclusivamente via PIX:</p>
+      <p>4.4. O pagamento da taxa poderá ser realizado de uma das seguintes formas:</p>
+      {itens([
+        "I – Via PIX, para a chave e o favorecido indicados abaixo, anexando o comprovante de pagamento à inscrição; ou",
+        "II – Por cartão de crédito, exclusivamente à vista (sem parcelamento), pela plataforma do site, no momento do envio da ficha de inscrição.",
+      ])}
       <p style={{ margin: "0 0 12px 20px" }}>
         Chave PIX: <a href="mailto:institutopalavraqueliberta@gmail.com" style={{ color: "#002776", fontWeight: 600 }}>institutopalavraqueliberta@gmail.com</a>
         <br />
         Favorecido: Instituto Palavra que Liberta.
       </p>
+      <p>4.4.1. O pagamento feito pela plataforma é confirmado automaticamente e dispensa o envio do comprovante. O valor líquido recebido, já descontadas as tarifas da operadora de pagamento, é repassado integralmente ao favorecido indicado nesta cláusula.</p>
+      <p>4.4.2. O pedido de estorno de pagamento feito pela plataforma deverá ser solicitado pelo WhatsApp (79) 99182-1546, para que a organização analise o caso e providencie o estorno, quando cabível.</p>
       <p>4.5. É de inteira responsabilidade do participante realizar o envio correto e completo dos seguintes arquivos e documentos:</p>
       {itens([
         "I – Arquivo digital do miolo da obra inscrita, contendo o conteúdo integral do livro;",
         "II – Arquivo digital da capa da obra, em sua versão final;",
-        "III – Comprovante de pagamento da taxa de inscrição correspondente à categoria escolhida.",
+        "III – Comprovante de pagamento da taxa de inscrição correspondente à categoria escolhida, quando o pagamento for feito diretamente por PIX (dispensado para o pagamento por cartão pela plataforma, que é confirmado automaticamente).",
       ])}
       <p>4.6. Os arquivos deverão ser enviados pelo canal oficial indicado pela organização, observando as orientações técnicas e os formatos estabelecidos para o recebimento das inscrições.</p>
       <p>4.7. A ausência de qualquer um dos documentos ou arquivos obrigatórios poderá resultar na desclassificação da inscrição.</p>
@@ -122,7 +128,7 @@ export default function Regulamento() {
         "II – Garantir a autenticidade e a autoria da obra apresentada.",
         "III – Respeitar os direitos autorais e a legislação vigente.",
         "IV – Realizar o pagamento da taxa de inscrição correspondente à categoria escolhida.",
-        "V – Encaminhar o arquivo completo do miolo da obra, o arquivo da capa e o comprovante de pagamento.",
+        "V – Encaminhar o arquivo completo do miolo da obra, o arquivo da capa e, no pagamento direto por PIX, o comprovante de pagamento.",
         "VI – Garantir que os arquivos enviados estejam completos, legíveis e em condições adequadas para avaliação.",
         "VII – Acompanhar as publicações e comunicados oficiais do prêmio.",
         "VIII – Fornecer informações e documentos complementares quando solicitados pela organização.",

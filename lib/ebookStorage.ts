@@ -48,19 +48,6 @@ export async function listarArquivosPrivados(prefixo: string): Promise<string[]>
   return caminhos;
 }
 
-/** Apaga os arquivos de um prefixo enviados antes da data dada. Devolve quantos foram apagados. */
-export async function apagarArquivosPrivadosAntigos(prefixo: string, antesDe: Date): Promise<number> {
-  const antigos: string[] = [];
-  let cursor: string | undefined;
-  do {
-    const pagina = await list({ prefix: prefixo, limit: 1000, cursor, token: tokenEbooks() });
-    antigos.push(...pagina.blobs.filter((b) => b.uploadedAt < antesDe).map((b) => b.pathname));
-    cursor = pagina.hasMore ? pagina.cursor : undefined;
-  } while (cursor);
-  await apagarArquivosPrivados(antigos);
-  return antigos.length;
-}
-
 export async function apagarArquivosPrivados(caminhos: string[]): Promise<void> {
   for (let i = 0; i < caminhos.length; i += 100) {
     await del(caminhos.slice(i, i + 100), { token: tokenEbooks() });

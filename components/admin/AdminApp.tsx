@@ -95,6 +95,9 @@ export default function AdminApp({
   // Pedidos de impressão que ainda ninguém da equipe tratou (situação "Enviado").
   const novosImpressao = pedidosImpressao.filter((p) => p.status === "enviado").length;
 
+  // Só as inscrições efetivas (Pix com comprovante ou cartão pago) entram na contagem do menu.
+  const inscricoesEfetivasPremio = inscricoesPremio.filter((i) => i.pagamentoStatus === "comprovante" || i.pagamentoStatus === "pago").length;
+
   return (
     <div className="app-shell" style={{ display: "flex", minHeight: "100vh", background: "#F6F6F6" }}>
       <aside className="app-sidebar" style={{ flex: "0 0 250px", background: "#262626", color: "white", padding: "24px 16px", display: "flex", flexDirection: "column", gap: "6px" }}>
@@ -125,8 +128,8 @@ export default function AdminApp({
         </button>
         <button onClick={() => setView("premio")} style={sidebarBtn(view === "premio")}>
           🏆 Prêmio literário
-          {inscricoesPremio.length > 0 && (
-            <span style={{ marginLeft: "auto", background: "#FFDF00", color: "#002776", fontSize: "11px", fontWeight: 700, padding: "1px 8px", borderRadius: "10px" }}>{inscricoesPremio.length}</span>
+          {inscricoesEfetivasPremio > 0 && (
+            <span style={{ marginLeft: "auto", background: "#FFDF00", color: "#002776", fontSize: "11px", fontWeight: 700, padding: "1px 8px", borderRadius: "10px" }}>{inscricoesEfetivasPremio}</span>
           )}
         </button>
         <button onClick={() => setView("leads")} style={sidebarBtn(view === "leads")}>

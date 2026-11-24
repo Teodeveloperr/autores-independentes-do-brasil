@@ -39,4 +39,4 @@ export type PedidoKitAdminRow = Prisma.PedidoKitGetPayload<{
 }>;
 
 export type LeadEbookRow = Prisma.LeadEbookGetPayload<object>;
-export type InscricaoPremioRow = Prisma.InscricaoPremioGetPayload<{ omit: { pasta: true } }>;
+export type InscricaoPremioRow = Prisma.InscricaoPremioGetPayload<{ omit: { pasta: true; token: true; nomesArquivos: true } }>;

@@ -1,8 +1,28 @@
 // Inscrição no 1º Prêmio Literário Autores do Brasil – 2027: campos do formulário, arquivos aceitos e
 // validação. Usado no navegador e no servidor, por isso não importa nada de servidor.
-// Os dados da inscrição ficam no banco (para o contador do admin); os arquivos vão para o armazenamento
-// privado e são apagados depois de PREMIO_ARQUIVOS_DIAS dias. A organização recebe tudo por e-mail
-// (ver app/premio/actions.ts e a limpeza em app/api/cron/limpar-mensagens).
+// Os dados da inscrição ficam no banco (contador e lista do admin); os arquivos vão para o armazenamento
+// privado e são apagados PREMIO_ARQUIVOS_DIAS dias depois do envio (ou do pagamento, no cartão). A organização
+// recebe tudo por e-mail (ver app/premio/actions.ts, lib/premioPagamento.ts e docs/fluxos-de-dinheiro.md).
+
+/** Taxa de inscrição por categoria (regulamento, cláusula 4.3), em centavos. */
+export const PREMIO_VALOR_CENTAVOS = 18700;
+
+/** Estorno do pagamento feito pela plataforma: a pessoa fala com a organização por este WhatsApp. */
+export const PREMIO_WHATSAPP_ESTORNO = "(79) 99182-1546";
+export const PREMIO_WHATSAPP_ESTORNO_LINK = "https://wa.me/5579991821546";
+
+/**
+ * Conta que recebe a taxa. Pix direto: vai para esta chave. Pagamento pela plataforma: a Asaas recebe e o
+ * sistema repassa o valor LÍQUIDO (já sem a tarifa) para a mesma chave. Pode ser trocada pelas variáveis de
+ * ambiente PREMIO_PIX_CHAVE e PREMIO_PIX_TIPO (CPF, CNPJ, EMAIL, PHONE ou EVP).
+ */
+export const PREMIO_PIX_INSTITUTO = { chave: "institutopalavraqueliberta@gmail.com", tipo: "EMAIL", favorecido: "Instituto Palavra que Liberta" } as const;
+
+/** Como a taxa foi/será paga: Pix direto com comprovante, ou cartão de crédito à vista pela plataforma. */
+export type FormaPagamentoPremio = "comprovante" | "cartao";
+
+/** Situação do pagamento: "comprovante" (a organização confere), ou, no cartão: aguardando, pago, cancelado, estornado. */
+export type PagamentoStatusPremio = "comprovante" | "aguardando" | "pago" | "cancelado" | "estornado";
 
 /** Para onde vão as inscrições. Pode ser trocado pela variável de ambiente PREMIO_EMAIL_DESTINO. */
 export const PREMIO_EMAIL_PADRAO = "drdenireis@gmail.com";
@@ -37,6 +57,11 @@ export const PREMIO_ARQUIVOS: Record<ArquivoPremio, { rotulo: string; extensoes:
 };
 
 export const PREMIO_ORDEM_ARQUIVOS: ArquivoPremio[] = ["capa", "miolo", "comprovante", "foto"];
+
+/** Arquivos que a pessoa envia: quem paga pela plataforma não manda comprovante (a Asaas confirma o pagamento). */
+export function arquivosDaForma(forma: FormaPagamentoPremio): ArquivoPremio[] {
+  return forma === "cartao" ? PREMIO_ORDEM_ARQUIVOS.filter((a) => a !== "comprovante") : PREMIO_ORDEM_ARQUIVOS;
+}
 
 const TIPOS: Record<string, string> = {
   pdf: "application/pdf",

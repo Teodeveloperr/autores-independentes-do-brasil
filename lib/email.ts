@@ -2,6 +2,7 @@ import "server-only";
 import { Resend } from "resend";
 import { brl } from "@/lib/format";
 import { formatarReais, type ResultadoPreco } from "@/lib/precoImpressao";
+import { PREMIO_WHATSAPP_ESTORNO } from "@/lib/premio";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 const EMAIL_FROM = process.env.EMAIL_FROM || "Autores Independentes do Brasil <contato@autoresdobrasil.com.br>";
@@ -774,6 +775,8 @@ export type InscricaoPremioEmailInfo = {
   categoria: string;
   /** Links de download (sem login) dos arquivos enviados. */
   arquivos: Array<{ rotulo: string; nomeOriginal: string; tamanho: string; url: string }>;
+  /** Como a taxa foi paga. "cartao": pago e confirmado pela plataforma (Asaas), sem comprovante a conferir. */
+  pagamento?: { forma: "comprovante" } | { forma: "cartao"; valor: string; confirmadoEm: string };
 };
 
 /** Inscrição no 1º Prêmio Literário Autores do Brasil – 2027: chega à organização com os links dos arquivos. */
@@ -783,7 +786,7 @@ export async function sendInscricaoPremioEquipeEmail(info: InscricaoPremioEmailI
     // Cópia de segurança, com os mesmos dados e links.
     to: [...new Set([info.destino, info.copia].filter((e): e is string => !!e))],
     replyTo: info.email,
-    subject: `[Prêmio Autores do Brasil 2027] Inscrição: ${info.titulo} (${info.categoria})`.slice(0, 200),
+    subject: `[Prêmio Autores do Brasil 2027] Inscrição${info.pagamento?.forma === "cartao" ? " PAGA" : ""}: ${info.titulo} (${info.categoria})`.slice(0, 200),
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 620px; margin: 0 auto; color: #262626;">
         <h2 style="color: #002776;">Nova inscrição no 1º Prêmio Autores do Brasil de Literatura 2027</h2>
@@ -794,6 +797,12 @@ export async function sendInscricaoPremioEquipeEmail(info: InscricaoPremioEmailI
           ["E-mail", info.email],
           ["Título do livro", info.titulo],
           ["Categoria", info.categoria],
+          [
+            "Pagamento da taxa",
+            info.pagamento?.forma === "cartao"
+              ? `PAGO pela plataforma (cartão de crédito, ${info.pagamento.valor}), confirmado em ${info.pagamento.confirmadoEm}. Não há comprovante a conferir; o valor líquido é repassado ao Instituto por Pix.`
+              : "Pix direto para o Instituto: conferir o comprovante enviado.",
+          ],
         ])}
         <h3 style="color: #002776; margin-top: 24px;">Arquivos</h3>
         ${info.arquivos.map((a) => `<p><b>${escaparHtml(a.rotulo)}:</b> <a href="${a.url}">baixar</a> (${escaparHtml(a.nomeOriginal)}, ${escaparHtml(a.tamanho)})</p>`).join("")}
@@ -804,7 +813,10 @@ export async function sendInscricaoPremioEquipeEmail(info: InscricaoPremioEmailI
 }
 
 /** Confirmação para o participante de que a inscrição foi recebida. */
-export async function sendInscricaoPremioParticipanteEmail(to: string, info: { nome: string; titulo: string; categoria: string }) {
+export async function sendInscricaoPremioParticipanteEmail(
+  to: string,
+  info: { nome: string; titulo: string; categoria: string; pagamentoConfirmado?: boolean }
+) {
   await resend.emails.send({
     from: EMAIL_FROM,
     to,
@@ -815,10 +827,16 @@ export async function sendInscricaoPremioParticipanteEmail(to: string, info: { n
         <p style="font-size: 15px; line-height: 1.6;">
           Olá, ${escaparHtml(info.nome)}. Recebemos a inscrição do livro <b>${escaparHtml(info.titulo)}</b> na categoria <b>${escaparHtml(info.categoria)}</b>.
         </p>
-        <p style="font-size: 15px; line-height: 1.6;">
+        ${
+          info.pagamentoConfirmado
+            ? `<p style="font-size: 15px; line-height: 1.6;">O <b>pagamento da taxa de inscrição foi confirmado</b> pela plataforma, então você não precisa enviar comprovante.</p>
+        <p style="font-size: 15px; line-height: 1.6;">Conforme o regulamento, a inscrição é efetivada depois da conferência dos arquivos. A organização entrará em contato se precisar de algum documento complementar.</p>
+        <p style="font-size: 13px; line-height: 1.6; color: #666;">Precisa pedir estorno? Fale com a organização pelo WhatsApp ${PREMIO_WHATSAPP_ESTORNO}, para analisarmos e providenciarmos.</p>`
+            : `<p style="font-size: 15px; line-height: 1.6;">
           Conforme o regulamento, a inscrição só é efetivada depois da conferência dos arquivos e da confirmação do pagamento.
           A organização entrará em contato se precisar de algum documento complementar.
-        </p>
+        </p>`
+        }
       </div>
     `,
   });

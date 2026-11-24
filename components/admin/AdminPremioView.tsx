@@ -7,15 +7,45 @@ import type { InscricaoPremioRow } from "./types";
 
 const card: React.CSSProperties = { background: "white", borderRadius: "10px", padding: "20px" };
 
+const reais = (centavos: number) => (centavos / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+// Como a taxa foi/será paga e em que pé está (a lista mostra todas as inscrições, inclusive as que ainda aguardam pagamento).
+const PAGAMENTO_ROTULO: Record<string, { texto: string; cor: string }> = {
+  comprovante: { texto: "Pix: conferir comprovante", cor: "#A87900" },
+  aguardando: { texto: "Cartão: aguardando pagamento", cor: "#666" },
+  pago: { texto: "Cartão: pago ✅", cor: "#009B3A" },
+  cancelado: { texto: "Cartão: cancelado", cor: "#999" },
+  estornado: { texto: "Cartão: estornado", cor: "#C0392B" },
+};
+
+function repasseTexto(i: InscricaoPremioRow): string | null {
+  if (i.pagamentoStatus !== "pago" && i.pagamentoStatus !== "estornado") return null;
+  if (i.repasseStatus === "transferido") return `Repassado ao Instituto${i.repasseEm ? ` em ${dataHora(i.repasseEm)}` : ""}`;
+  if (i.repasseStatus === "erro") return `Repasse com erro: ${i.repasseErro ?? "ver o log"}`;
+  if (i.repasseStatus === "cancelado") return "Repasse cancelado";
+  return i.disponivelEm ? "Repasse na fila (sai no próximo ciclo)" : "Repasse aguarda a liberação do saldo na Asaas";
+}
+
 function dataHora(d: Date): string {
   return new Date(d).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" });
 }
 
 // Inscrições do 1º Prêmio Autores do Brasil de Literatura 2027 (formulário público em /premio).
 // Os arquivos de cada inscrição chegam por e-mail à organização, com links de download.
-export default function AdminPremioView({ inscricoes }: { inscricoes: InscricaoPremioRow[] }) {
+export default function AdminPremioView({ inscricoes: todas }: { inscricoes: InscricaoPremioRow[] }) {
   const [categoria, setCategoria] = useState("");
+  const [pagamento, setPagamento] = useState("");
   const [busca, setBusca] = useState("");
+
+  // "Inscrições recebidas" são as efetivas: Pix com comprovante ou cartão já pago. Quem ainda está na página de pagamento
+  // (ou desistiu) aparece na lista, mas não entra na contagem.
+  const inscricoes = useMemo(() => todas.filter((i) => i.pagamentoStatus === "comprovante" || i.pagamentoStatus === "pago"), [todas]);
+  const aguardando = todas.filter((i) => i.pagamentoStatus === "aguardando").length;
+  const cartaoPagas = todas.filter((i) => i.pagamentoStatus === "pago").length;
+  const repassado = todas.filter((i) => i.repasseStatus === "transferido").reduce((s, i) => s + (i.repasseValorCentavos ?? 0), 0);
+  const aRepassar = todas
+    .filter((i) => i.pagamentoStatus === "pago" && i.repasseStatus !== "transferido" && i.repasseStatus !== "cancelado")
+    .reduce((s, i) => s + (i.repasseValorCentavos ?? i.valorLiquidoCentavos ?? 0), 0);
 
   const porCategoria = useMemo(() => {
     const m = new Map<string, number>(PREMIO_CATEGORIAS.map((c) => [c, 0]));
@@ -28,17 +58,18 @@ export default function AdminPremioView({ inscricoes }: { inscricoes: InscricaoP
   const autoresUnicos = new Set(inscricoes.map((i) => i.email.toLowerCase())).size;
 
   const termo = busca.trim().toLowerCase();
-  const lista = inscricoes.filter(
+  const lista = todas.filter(
     (i) =>
       (!categoria || i.categoria === categoria) &&
+      (!pagamento || i.pagamentoStatus === pagamento) &&
       (!termo || [i.nome, i.nomeArtistico, i.email, i.titulo].some((t) => t.toLowerCase().includes(termo)))
   );
 
   function exportar() {
     baixarCsv(
       "inscricoes-premio.csv",
-      ["Nº", "Data", "Nome completo", "Nome artístico", "Telefone", "E-mail", "Título do livro", "Categoria"],
-      lista.map((i) => [i.numero, dataHora(i.createdAt), i.nome, i.nomeArtistico, i.telefone, i.email, i.titulo, i.categoria])
+      ["Nº", "Data", "Nome completo", "Nome artístico", "Telefone", "E-mail", "Título do livro", "Categoria", "Pagamento", "Repasse"],
+      lista.map((i) => [i.numero, dataHora(i.createdAt), i.nome, i.nomeArtistico, i.telefone, i.email, i.titulo, i.categoria, PAGAMENTO_ROTULO[i.pagamentoStatus]?.texto ?? i.pagamentoStatus, repasseTexto(i) ?? ""])
     );
   }
 
@@ -51,6 +82,10 @@ export default function AdminPremioView({ inscricoes }: { inscricoes: InscricaoP
           ["Inscrições recebidas", inscricoes.length],
           ["Hoje", hojeQtd],
           ["Autores diferentes", autoresUnicos],
+          ["Pagas no cartão", cartaoPagas],
+          ["Aguardando pagamento", aguardando],
+          ["Repassado ao Instituto", reais(repassado)],
+          ["A repassar ao Instituto", reais(aRepassar)],
         ].map(([rotulo, valor]) => (
           <div key={rotulo} style={card}>
             <div style={{ fontSize: "36px", fontWeight: 700, color: "#002776" }}>{valor}</div>
@@ -70,7 +105,8 @@ export default function AdminPremioView({ inscricoes }: { inscricoes: InscricaoP
           ))}
         </div>
         <p style={{ fontSize: "12px", color: "#666", margin: "12px 0 0" }}>
-          Conta as inscrições feitas no site a partir de 23/11/2026; o pagamento da taxa é conferido pela organização.
+          Conta as inscrições efetivas feitas no site a partir de 23/11/2026: Pix com comprovante (a organização confere) ou cartão já pago. O cartão
+          pago pela plataforma é confirmado sozinho e o valor líquido vai por Pix para o Instituto quando a Asaas libera o saldo (cerca de 32 dias).
         </p>
       </div>
 
@@ -89,6 +125,12 @@ export default function AdminPremioView({ inscricoes }: { inscricoes: InscricaoP
               <option key={c} value={c}>{c}</option>
             ))}
           </select>
+          <select value={pagamento} onChange={(ev) => setPagamento(ev.target.value)} style={{ padding: "10px 12px", border: "1px solid #CFCFCF", borderRadius: "6px", fontSize: "14px" }}>
+            <option value="">Todos os pagamentos</option>
+            {Object.entries(PAGAMENTO_ROTULO).map(([chave, r]) => (
+              <option key={chave} value={chave}>{r.texto}</option>
+            ))}
+          </select>
           <button onClick={exportar} disabled={lista.length === 0} style={{ background: "#009B3A", color: "white", border: "none", padding: "10px 18px", borderRadius: "6px", fontWeight: 600, fontSize: "14px" }}>
             Exportar CSV ({lista.length})
           </button>
@@ -101,7 +143,7 @@ export default function AdminPremioView({ inscricoes }: { inscricoes: InscricaoP
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
               <thead>
                 <tr style={{ textAlign: "left", color: "#666" }}>
-                  {["Nº", "Data", "Autor(a)", "Contato", "Livro", "Categoria"].map((h) => (
+                  {["Nº", "Data", "Autor(a)", "Contato", "Livro", "Categoria", "Pagamento"].map((h) => (
                     <th key={h} style={{ padding: "8px 10px", borderBottom: "2px solid #EEE" }}>{h}</th>
                   ))}
                 </tr>
@@ -123,6 +165,11 @@ export default function AdminPremioView({ inscricoes }: { inscricoes: InscricaoP
                     </td>
                     <td style={{ padding: "8px 10px", borderBottom: "1px solid #EEE" }}>{i.titulo}</td>
                     <td style={{ padding: "8px 10px", borderBottom: "1px solid #EEE" }}>{i.categoria}</td>
+                    <td style={{ padding: "8px 10px", borderBottom: "1px solid #EEE" }}>
+                      <span style={{ color: PAGAMENTO_ROTULO[i.pagamentoStatus]?.cor ?? "#666", fontWeight: 600 }}>{PAGAMENTO_ROTULO[i.pagamentoStatus]?.texto ?? i.pagamentoStatus}</span>
+                      {i.valorCentavos != null && <div style={{ color: "#666" }}>{reais(i.valorCentavos)}</div>}
+                      {repasseTexto(i) && <div style={{ fontSize: "11px", color: i.repasseStatus === "erro" ? "#C0392B" : "#666", marginTop: "2px" }}>{repasseTexto(i)}</div>}
+                    </td>
                   </tr>
                 ))}
               </tbody>
