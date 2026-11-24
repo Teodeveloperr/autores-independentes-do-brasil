@@ -43,6 +43,7 @@ export default async function AdminPage() {
     pedidosImpressao,
     pedidosKit,
     inscricoesPremio,
+    leadsEbook,
   ] = await Promise.all([
     prisma.collectiveEvent.findMany({ orderBy: { createdAt: "desc" } }),
     prisma.opportunity.findMany({ orderBy: { prazoFinal: "asc" } }),
@@ -103,6 +104,7 @@ export default async function AdminPage() {
       include: { pagamentos: { orderBy: { createdAt: "asc" } }, impressao: { select: { numero: true, status: true } } },
     }),
     prisma.inscricaoPremio.findMany({ orderBy: { createdAt: "desc" }, omit: { pasta: true } }),
+    prisma.leadEbook.findMany({ orderBy: { createdAt: "desc" } }),
   ]);
 
   return (
@@ -126,6 +128,7 @@ export default async function AdminPage() {
       pedidosImpressao={pedidosImpressao}
       pedidosKit={pedidosKit}
       inscricoesPremio={inscricoesPremio}
+      leadsEbook={leadsEbook}
       totpEnabled={admin.totpEnabled}
       premiumPlusPixKey={admin.premiumPlusPixKey}
       premiumPlusPixKeyType={admin.premiumPlusPixKeyType}

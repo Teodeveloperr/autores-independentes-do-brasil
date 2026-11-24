@@ -827,3 +827,21 @@ model InscricaoPremio {
 
   @@index([createdAt])
 }
+
+// Quem pediu o download de um e-book gratuito (pop-up do blog): nome, e-mail e WhatsApp, com o aceite
+// do contato. Uma linha por pessoa e e-book: pedir de novo atualiza os dados e soma em "downloads".
+model LeadEbook {
+  id             String   @id @default(cuid())
+  numero         Int      @default(autoincrement())
+  ebook          String
+  nome           String
+  email          String
+  whatsapp       String
+  origem         String?
+  downloads      Int      @default(1)
+  createdAt      DateTime @default(now())
+  ultimoPedidoEm DateTime @default(now())
+
+  @@unique([email, ebook])
+  @@index([createdAt])
+}

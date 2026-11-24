@@ -1,6 +1,6 @@
 import type { Prisma } from "@/app/generated/prisma/client";
 
-export type AdminView = "dash" | "agenda" | "oportunidades" | "galeria" | "autores" | "blog" | "talkshow" | "chat" | "avaliacoes" | "pedidos" | "receita" | "contratos" | "ebooks" | "impressao" | "premio" | "seguranca" | "configuracoes";
+export type AdminView = "dash" | "agenda" | "oportunidades" | "galeria" | "autores" | "blog" | "talkshow" | "chat" | "avaliacoes" | "pedidos" | "receita" | "contratos" | "ebooks" | "impressao" | "premio" | "leads" | "seguranca" | "configuracoes";
 
 export type CollectiveEvent = Prisma.CollectiveEventGetPayload<Record<string, never>>;
 export type Opportunity = Prisma.OpportunityGetPayload<Record<string, never>>;
@@ -38,4 +38,5 @@ export type PedidoKitAdminRow = Prisma.PedidoKitGetPayload<{
   include: { pagamentos: true; impressao: { select: { numero: true; status: true } } };
 }>;
 
+export type LeadEbookRow = Prisma.LeadEbookGetPayload<object>;
 export type InscricaoPremioRow = Prisma.InscricaoPremioGetPayload<{ omit: { pasta: true } }>;

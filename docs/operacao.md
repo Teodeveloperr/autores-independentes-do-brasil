@@ -119,6 +119,20 @@ trocar plano, excluir) · Avaliações · **Pedidos** (só leitura) · **Receita
 janela do parceiro Premium+) · **Contratos** (Bienal) · **E-books** (acessos e suporte) · **Segurança** (2FA) ·
 **Configurações** (chave Pix do parceiro do Premium+).
 
+## E-book gratuito do blog (pop-up de captação)
+
+O pop-up do blog (`components/blog/EbookLeadPopup.tsx`) pede nome, e-mail e WhatsApp, com o aceite do contato (LGPD), e libera o
+**Guia do Autor Independente**. Cada pessoa vira uma linha em `LeadEbook` (pedir de novo atualiza os dados e soma em `downloads`);
+a lista, a busca e o CSV estão no admin, em **Leads do e-book**.
+
+- O PDF **não fica em `public/`**: vive no Blob privado (`ebook-leads/Guia-do-Autor-Independente.pdf`) e só sai por um link assinado
+  de 2 horas (`lib/ebookLeadLinks.ts`, rota `app/api/ebook/download`), emitido depois do cadastro.
+- **Para trocar o PDF**: `npx tsx scripts/subir-ebook-guia.mts "caminho/do/novo.pdf"` (usa `EBOOKS_READ_WRITE_TOKEN` do `.env.local`).
+  A capa do pop-up é `public/ebook-capa.jpg`; refaça a imagem se a capa do PDF mudar.
+- O pop-up abre sozinho 12 s depois de a pessoa entrar no blog e não volta por 7 dias se ela fechar, nem depois que ela baixa
+  (`localStorage`). A faixa "Baixar grátis" no topo do blog reabre o pop-up.
+- Anti-robô (Turnstile) e limite de tentativas valem aqui como no resto do site. O Turnstile só funciona no domínio de produção.
+
 ## Mercado Pago (legado)
 
 Há código de assinaturas antigas (`/api/webhooks/mercadopago`) e de vínculo de conta de autor (`/api/auth/mercadopago`). O fluxo

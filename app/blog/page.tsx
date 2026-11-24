@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import PublicHeader from "@/components/PublicHeader";
 import PublicFooter from "@/components/PublicFooter";
 import BlogCatalogo from "@/components/BlogCatalogo";
+import { EbookLeadBanner, EbookLeadPopup } from "@/components/blog/EbookLeadPopup";
 import { prisma } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
@@ -17,9 +18,10 @@ export default async function BlogPage() {
       <section className="section-pad-lg" style={{ background: "#002776", color: "white", padding: "40px", flex: 1 }}>
       <div style={{ maxWidth: "1280px", width: "100%", margin: "0 auto" }}>
         <h1 style={{ fontSize: "36px", fontWeight: 700, marginBottom: "16px" }}>Blog</h1>
-        <p style={{ fontSize: "16px", marginBottom: "40px" }}>
+        <p style={{ fontSize: "16px", marginBottom: "24px" }}>
           Conteúdos, reflexões e histórias que inspiram a literatura independente.
         </p>
+        <EbookLeadBanner />
         <div className="section-pad-md" style={{ background: "white", color: "#262626", padding: "32px", borderRadius: "8px" }}>
           {artigos.length > 0 ? (
             <BlogCatalogo artigos={artigos} />
@@ -32,6 +34,7 @@ export default async function BlogPage() {
       </div>
       </section>
       <PublicFooter />
+      <EbookLeadPopup origem="blog" />
     </div>
   );
 }

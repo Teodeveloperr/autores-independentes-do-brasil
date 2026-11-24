@@ -4,8 +4,9 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { adminLogout } from "@/app/admin/actions";
-import type { AdminView, Article, AuthorWithCount, CollectiveEvent, CollectiveGalleryPhoto, Opportunity, ReviewWithAuthor, OrderWithAuthor, OrderComReceita, SubscriptionPaymentRow, TalkShowVideo, ContratoAdminRow, PremiumPlusBienalRow, AcessoEbookAdminRow, EbookAdminRow, PedidoImpressaoAdminRow, PedidoKitAdminRow, InscricaoPremioRow } from "./types";
+import type { AdminView, Article, AuthorWithCount, CollectiveEvent, CollectiveGalleryPhoto, Opportunity, ReviewWithAuthor, OrderWithAuthor, OrderComReceita, SubscriptionPaymentRow, TalkShowVideo, ContratoAdminRow, PremiumPlusBienalRow, AcessoEbookAdminRow, EbookAdminRow, PedidoImpressaoAdminRow, PedidoKitAdminRow, InscricaoPremioRow, LeadEbookRow } from "./types";
 import AdminPremioView from "./AdminPremioView";
+import AdminLeadsView from "./AdminLeadsView";
 import AdminAgendaView from "./AdminAgendaView";
 import AdminOportunidadesView from "./AdminOportunidadesView";
 import AdminGaleriaView from "./AdminGaleriaView";
@@ -56,6 +57,7 @@ export default function AdminApp({
   pedidosImpressao,
   pedidosKit,
   inscricoesPremio,
+  leadsEbook,
   totpEnabled,
   premiumPlusPixKey,
   premiumPlusPixKeyType,
@@ -80,6 +82,7 @@ export default function AdminApp({
   ebooks: EbookAdminRow[];
   pedidosImpressao: PedidoImpressaoAdminRow[];
   inscricoesPremio: InscricaoPremioRow[];
+  leadsEbook: LeadEbookRow[];
   pedidosKit: PedidoKitAdminRow[];
   totpEnabled: boolean;
   premiumPlusPixKey: string | null;
@@ -124,6 +127,12 @@ export default function AdminApp({
           🏆 Prêmio literário
           {inscricoesPremio.length > 0 && (
             <span style={{ marginLeft: "auto", background: "#FFDF00", color: "#002776", fontSize: "11px", fontWeight: 700, padding: "1px 8px", borderRadius: "10px" }}>{inscricoesPremio.length}</span>
+          )}
+        </button>
+        <button onClick={() => setView("leads")} style={sidebarBtn(view === "leads")}>
+          📥 Leads do e-book
+          {leadsEbook.length > 0 && (
+            <span style={{ marginLeft: "auto", background: "#FFDF00", color: "#002776", fontSize: "11px", fontWeight: 700, padding: "1px 8px", borderRadius: "10px" }}>{leadsEbook.length}</span>
           )}
         </button>
         <button onClick={() => setView("seguranca")} style={sidebarBtn(view === "seguranca")}>🔐 Segurança</button>
@@ -251,6 +260,7 @@ export default function AdminApp({
           {view === "ebooks" && <AdminEbooksView acessos={acessosEbook} ebooks={ebooks} />}
           {view === "impressao" && <AdminImpressaoView pedidosImpressao={pedidosImpressao} pedidosKit={pedidosKit} />}
           {view === "premio" && <AdminPremioView inscricoes={inscricoesPremio} />}
+          {view === "leads" && <AdminLeadsView leads={leadsEbook} />}
           {view === "seguranca" && <AdminSegurancaView totpEnabled={totpEnabled} />}
           {view === "configuracoes" && <AdminConfiguracoesView premiumPlusPixKey={premiumPlusPixKey} premiumPlusPixKeyType={premiumPlusPixKeyType} />}
         </div>

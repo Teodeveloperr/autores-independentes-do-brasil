@@ -414,3 +414,9 @@ img {
   outline: 2px solid #002776;
   outline-offset: 2px;
 }
+
+/* Pop-up do e-book gratuito (components/blog/EbookLeadPopup.tsx): a capa só aparece em telas largas. */
+.ebook-lead-capa { display: flex; }
+@media (max-width: 640px) {
+  .ebook-lead-capa { display: none; }
+}
