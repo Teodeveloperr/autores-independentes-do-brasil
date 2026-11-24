@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { brl } from "@/lib/format";
 import { PREMIUM_PLUS_VALOR_BASE_CENTAVOS, PREMIUM_PLUS_VALOR_PARCEIRO_CENTAVOS, valorParceiroPremiumPlusCentavos } from "@/lib/plans";
 import type { SubscriptionPaymentRow } from "./types";
@@ -54,6 +55,7 @@ export default function AdminParceiroPremiumPlus({
   rotuloMes: string;
   chaveConfigurada: boolean;
 }) {
+  const [listaAberta, setListaAberta] = useState(false);
   const todos = pagamentos.filter((p) => p.plano === "Autor Premium+");
 
   const soma = (lista: SubscriptionPaymentRow[], situacao?: Situacao) =>
@@ -96,7 +98,15 @@ export default function AdminParceiroPremiumPlus({
             <Cartao titulo="Parte do parceiro" valor={brl(parceiroMes)} cor="#6B4EAF" />
             <Cartao titulo="Parte da plataforma" valor={brl(brutoMes - parceiroMes)} cor="#009B3A" nota="Antes da tarifa da Asaas." />
           </div>
-          <div style={{ display: "flex", flexDirection: "column" }}>
+          <button
+            type="button"
+            onClick={() => setListaAberta((a) => !a)}
+            aria-expanded={listaAberta}
+            style={{ background: "none", border: "1px solid #D9D9D9", borderRadius: "6px", padding: "8px 14px", fontSize: "13px", fontWeight: 600, color: "#002776", cursor: "pointer" }}
+          >
+            {listaAberta ? "▲ Esconder os pagamentos" : `▼ Ver os ${doMes.length} pagamento${doMes.length === 1 ? "" : "s"} do mês`}
+          </button>
+          {listaAberta && <div style={{ display: "flex", flexDirection: "column", marginTop: "8px" }}>
             {doMes.map((p) => {
               const situacao = situacaoDe(p);
               const rotulo = ROTULO[situacao];
@@ -110,7 +120,7 @@ export default function AdminParceiroPremiumPlus({
                 </div>
               );
             })}
-          </div>
+          </div>}
         </>
       )}
 
