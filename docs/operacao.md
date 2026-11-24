@@ -129,8 +129,9 @@ a lista, a busca e o CSV estão no admin, em **Leads do e-book**.
   de 2 horas (`lib/ebookLeadLinks.ts`, rota `app/api/ebook/download`), emitido depois do cadastro.
 - **Para trocar o PDF**: `npx tsx scripts/subir-ebook-guia.mts "caminho/do/novo.pdf"` (usa `EBOOKS_READ_WRITE_TOKEN` do `.env.local`).
   A capa do pop-up é `public/ebook-capa.jpg`; refaça a imagem se a capa do PDF mudar.
-- O pop-up abre sozinho 2 s depois de a pessoa entrar na **home** e não volta por 7 dias se ela fechar, nem depois que ela baixa
-  (`localStorage`). Não aparece no blog.
+- O pop-up abre sozinho 2 s depois de a pessoa entrar na **home**, em **toda visita**: não guarda nada no navegador para lembrar que
+  ela fechou ou já baixou (decisão do negócio). Não aparece no blog. Para voltar a silenciar quem fechou/baixou, é preciso reintroduzir
+  essa marca no `EbookLeadPopup`.
 - Anti-robô (Turnstile) e limite de tentativas valem aqui como no resto do site. O Turnstile só funciona no domínio de produção.
 
 ## Mercado Pago (legado)

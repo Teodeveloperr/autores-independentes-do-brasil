@@ -7,27 +7,8 @@ import { pedirEbookGuia } from "@/app/blog/ebook-actions";
 import { EBOOK_GUIA, validarLeadEbook } from "@/lib/ebookLead";
 
 // Pop-up de captação do e-book gratuito (blog): pede nome, e-mail e WhatsApp e libera o download.
-// Abre sozinho na home, 2 segundos depois da entrada (e não volta por 7 dias se a pessoa fechar, nem depois
-// que ela baixa).
-
-const CHAVE_BAIXOU = "ebookGuiaBaixado";
-const CHAVE_FECHOU = "ebookGuiaFechadoEm";
-const SILENCIO_MS = 7 * 24 * 60 * 60 * 1000;
-
-function lerStorage(chave: string): string | null {
-  try {
-    return window.localStorage.getItem(chave);
-  } catch {
-    return null;
-  }
-}
-function gravarStorage(chave: string, valor: string) {
-  try {
-    window.localStorage.setItem(chave, valor);
-  } catch {
-    /* navegação privada ou bloqueio: só não lembra */
-  }
-}
+// Abre sozinho em TODA visita à home, 2 segundos depois da entrada: não guarda nada no navegador para
+// "lembrar" que a pessoa fechou ou já baixou (decisão do negócio: máxima captação).
 
 function tokenAntiRobo(): string | null {
   return document.querySelector<HTMLInputElement>('.ebook-lead-form input[name="cf-turnstile-response"]')?.value || null;
@@ -44,16 +25,11 @@ export function EbookLeadPopup({ origem, automatico = true, esperaMs = 2000 }: {
   const [link, setLink] = useState("");
   const botaoFecharRef = useRef<HTMLButtonElement>(null);
 
-  const fechar = useCallback(() => {
-    setAberto(false);
-    if (!lerStorage(CHAVE_BAIXOU)) gravarStorage(CHAVE_FECHOU, String(Date.now()));
-  }, []);
+  const fechar = useCallback(() => setAberto(false), []);
 
-  // Abre sozinho, uma vez, depois de alguns segundos (a menos que já tenha baixado ou fechado há pouco).
+  // Abre sozinho depois de alguns segundos, a cada vez que a página é aberta.
   useEffect(() => {
-    if (!automatico || lerStorage(CHAVE_BAIXOU)) return;
-    const fechouEm = Number(lerStorage(CHAVE_FECHOU));
-    if (fechouEm && Date.now() - fechouEm < SILENCIO_MS) return;
+    if (!automatico) return;
     const t = window.setTimeout(() => setAberto(true), esperaMs);
     return () => window.clearTimeout(t);
   }, [automatico, esperaMs]);
@@ -86,7 +62,6 @@ export function EbookLeadPopup({ origem, automatico = true, esperaMs = 2000 }: {
         setErro(r.error ?? "Não foi possível liberar o e-book agora.");
         return;
       }
-      gravarStorage(CHAVE_BAIXOU, "1");
       setLink(r.url);
       window.location.href = r.url; // começa o download sem sair da página
     } catch {
