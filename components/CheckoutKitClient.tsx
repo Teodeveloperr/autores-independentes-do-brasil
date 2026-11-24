@@ -5,6 +5,7 @@ import { criarPedidoKit } from "@/app/checkout/kit/actions";
 import TurnstileWidget from "@/components/TurnstileWidget";
 import { validarCpf } from "@/lib/cpf";
 import { MAX_PARCELAS_KIT, horasLegiveis, resumoDoKit, valorKit, type Kit } from "@/lib/kits";
+import { reiniciarTurnstile } from "@/lib/turnstileCliente";
 
 const campo: React.CSSProperties = { width: "100%", boxSizing: "border-box", padding: "10px", border: "1px solid #DDD", borderRadius: "6px", fontSize: "14px" };
 const rotulo: React.CSSProperties = { display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" };
@@ -33,7 +34,7 @@ export default function CheckoutKitClient({ kit }: { kit: Kit }) {
         if ("error" in resultado) {
           setErro(resultado.error);
           // O token do anti-robô vale uma vez só: pede outro para a próxima tentativa.
-          (window as unknown as { turnstile?: { reset: () => void } }).turnstile?.reset();
+          reiniciarTurnstile();
           return;
         }
         setRedirecionando(true);

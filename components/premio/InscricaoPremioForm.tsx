@@ -5,6 +5,7 @@ import { upload } from "@vercel/blob/client";
 import TurnstileWidget from "@/components/TurnstileWidget";
 import { enviarInscricaoPremio, iniciarEnvioPremio } from "@/app/premio/actions";
 import { validarCpf } from "@/lib/cpf";
+import { MENSAGEM_VERIFICACAO_INDISPONIVEL, erroDoTurnstile, reiniciarTurnstile, tokenTurnstile } from "@/lib/turnstileCliente";
 import {
   PREMIO_ARQUIVOS,
   PREMIO_CATEGORIAS,
@@ -25,9 +26,7 @@ const VALOR_TEXTO = (PREMIO_VALOR_CENTAVOS / 100).toLocaleString("pt-BR", { styl
 const campo: React.CSSProperties = { width: "100%", boxSizing: "border-box", padding: "12px", border: "1px solid #CFCFCF", borderRadius: "6px", fontSize: "14px", background: "white" };
 const rotulo: React.CSSProperties = { display: "block", fontSize: "14px", fontWeight: 600, marginBottom: "6px" };
 
-function tokenAntiRobo(): string | null {
-  return document.querySelector<HTMLInputElement>('input[name="cf-turnstile-response"]')?.value || null;
-}
+const TEM_ANTI_ROBO = Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY);
 
 export default function InscricaoPremioForm() {
   const [dados, setDados] = useState({ nome: "", nomeArtistico: "", telefone: "", email: "", titulo: "", categoria: "" });
@@ -59,9 +58,15 @@ export default function InscricaoPremioForm() {
     setErro("");
 
     try {
+      // Sem o token do anti-robô o servidor recusaria o envio: avisa já, antes de subir arquivos grandes.
+      const token = tokenTurnstile();
+      if (TEM_ANTI_ROBO && !token) {
+        setErro(MENSAGEM_VERIFICACAO_INDISPONIVEL);
+        return;
+      }
       setEnviando("Verificando...");
-      const inicio = await iniciarEnvioPremio(tokenAntiRobo());
-      (window as unknown as { turnstile?: { reset: () => void } }).turnstile?.reset();
+      const inicio = await iniciarEnvioPremio(token);
+      reiniciarTurnstile();
       if (inicio.error || !inicio.sessao) {
         setErro(inicio.error ?? "Não foi possível iniciar o envio.");
         return;
@@ -98,7 +103,14 @@ export default function InscricaoPremioForm() {
       setEnviado(true);
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (err) {
-      setErro(err instanceof Error && err.message ? err.message : "O envio falhou. Confira a sua conexão e tente de novo.");
+      console.error("[premio] Falha no envio:", err);
+      setErro(
+        erroDoTurnstile(err)
+          ? MENSAGEM_VERIFICACAO_INDISPONIVEL
+          : err instanceof Error && err.message
+            ? err.message
+            : "O envio falhou. Confira a sua conexão e tente de novo."
+      );
     } finally {
       setEnviando("");
     }

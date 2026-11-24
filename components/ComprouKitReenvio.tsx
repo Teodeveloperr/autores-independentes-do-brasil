@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { reenviarLinkKit } from "@/app/painel/impressaoActions";
 import TurnstileWidget from "@/components/TurnstileWidget";
+import { reiniciarTurnstile } from "@/lib/turnstileCliente";
 
 // "Comprei um kit" (página /imprimir): quem perdeu o link recebe outro no e-mail da compra.
 export default function ComprouKitReenvio() {
@@ -21,7 +22,7 @@ export default function ComprouKitReenvio() {
       const r = await reenviarLinkKit(email, typeof token === "string" ? token : null);
       if (r.error) {
         setErro(r.error);
-        (window as unknown as { turnstile?: { reset: () => void } }).turnstile?.reset();
+        reiniciarTurnstile();
       } else setOk(true);
     } catch {
       setErro("Não foi possível enviar agora. Tente de novo em instantes.");

@@ -38,6 +38,7 @@ import {
 import { ajustarEscolhas, calcularPrecoImpressao, capaCompativel, ehCapaDura, encadernacaoDisponivel, formatarReais, mioloPapelCompativel } from "@/lib/precoImpressao";
 import TurnstileWidget from "@/components/TurnstileWidget";
 import type { PedidoImpressaoResumo } from "./types";
+import { reiniciarTurnstile } from "@/lib/turnstileCliente";
 
 // Tela "Imprimir meu livro": o autor configura o livro, escolhe os PDFs de capa e miolo, folheia a
 // pré-impressão e envia o pedido. Os PDFs são lidos no próprio navegador (pdf.js) para a prévia e
@@ -102,7 +103,7 @@ function tokenAntiRobo(): string | null {
 }
 
 function reiniciarAntiRobo() {
-  (window as unknown as { turnstile?: { reset: () => void } }).turnstile?.reset();
+  reiniciarTurnstile();
 }
 
 function pastaAleatoria(): string {
@@ -399,7 +400,7 @@ export default function ImprimirView({
       if (r.error) {
         setOrcErro(r.error);
         // O token do anti-robô vale uma vez só: pede outro para a próxima tentativa.
-        (window as unknown as { turnstile?: { reset: () => void } }).turnstile?.reset();
+        reiniciarTurnstile();
       } else setOrcOk(true);
     } catch (err) {
       console.error(err);
