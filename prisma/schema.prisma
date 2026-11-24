@@ -809,3 +809,21 @@ model PedidoKitPagamento {
 
   @@index([pedidoId])
 }
+
+// Cada inscrição enviada no formulário público do 1º Prêmio Autores do Brasil de Literatura 2027
+// (/premio). Os arquivos ficam no armazenamento privado (pasta premio/<pasta>/) e a organização os
+// recebe por e-mail; esta tabela serve ao contador e à lista do painel admin.
+model InscricaoPremio {
+  id            String   @id @default(cuid())
+  numero        Int      @default(autoincrement())
+  nome          String
+  nomeArtistico String
+  email         String
+  telefone      String
+  titulo        String
+  categoria     String
+  pasta         String   @unique
+  createdAt     DateTime @default(now())
+
+  @@index([createdAt])
+}

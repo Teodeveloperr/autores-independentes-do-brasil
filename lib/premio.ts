@@ -25,8 +25,8 @@ export type ArquivoPremio = "capa" | "miolo" | "comprovante" | "foto";
 export const PREMIO_ARQUIVOS: Record<ArquivoPremio, { rotulo: string; extensoes: string[]; maxBytes: number; dica: string }> = {
   capa: { rotulo: "Arquivo de Capa", extensoes: ["pdf", "jpg", "png"], maxBytes: 100 * 1024 * 1024, dica: "PDF, JPG ou PNG, até 100 MB" },
   miolo: { rotulo: "Arquivo de miolo", extensoes: ["pdf", "doc", "docx"], maxBytes: 200 * 1024 * 1024, dica: "PDF, DOC ou DOCX, até 200 MB" },
-  comprovante: { rotulo: "Comprovante de pagamento", extensoes: ["pdf", "jpg", "png"], maxBytes: 20 * 1024 * 1024, dica: "PDF, JPG ou PNG, até 20 MB" },
-  foto: { rotulo: "Foto do Autor", extensoes: ["jpg", "png", "webp"], maxBytes: 20 * 1024 * 1024, dica: "JPG, PNG ou WEBP, até 20 MB" },
+  comprovante: { rotulo: "Comprovante de pagamento", extensoes: ["pdf", "jpg", "png"], maxBytes: 10 * 1024 * 1024, dica: "PDF, JPG ou PNG, até 10 MB" },
+  foto: { rotulo: "Foto do Autor", extensoes: ["jpg", "png", "webp"], maxBytes: 10 * 1024 * 1024, dica: "JPG, PNG ou WEBP, até 10 MB" },
 };
 
 export const PREMIO_ORDEM_ARQUIVOS: ArquivoPremio[] = ["capa", "miolo", "comprovante", "foto"];

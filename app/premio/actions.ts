@@ -1,5 +1,6 @@
 "use server";
 
+import { prisma } from "@/lib/db";
 import { sendInscricaoPremioEquipeEmail, sendInscricaoPremioParticipanteEmail } from "@/lib/email";
 import { tamanhoArquivoPrivado } from "@/lib/ebookStorage";
 import { criarSessaoEnvioPublico, sessaoEnvioPublicoValida, type SessaoEnvioPublico } from "@/lib/impressaoPublico";
@@ -77,6 +78,13 @@ export async function enviarInscricaoPremio(
   } catch (err) {
     console.error("[premio] Falha ao enviar a inscrição por e-mail:", err);
     return { error: "Não conseguimos enviar a inscrição agora. Tente de novo em alguns minutos." };
+  }
+  // Registro para o contador do painel admin. Se falhar, a inscrição já foi entregue por e-mail:
+  // só registramos o erro no log, sem avisar o participante de um problema que não é dele.
+  try {
+    await prisma.inscricaoPremio.create({ data: { ...limpo, telefone: limpo.telefone.slice(0, 30), pasta: sessao.pasta } });
+  } catch (err) {
+    console.error("[premio] Falha ao registrar a inscrição no banco:", err);
   }
   try {
     await sendInscricaoPremioParticipanteEmail(email, { nome: limpo.nome, titulo: limpo.titulo, categoria: limpo.categoria });
