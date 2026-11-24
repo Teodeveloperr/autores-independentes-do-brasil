@@ -778,7 +778,8 @@ export type InscricaoPremioEmailInfo = {
 export async function sendInscricaoPremioEquipeEmail(info: InscricaoPremioEmailInfo) {
   await enviarEOuFalhar({
     from: EMAIL_FROM,
-    to: info.destino,
+    // Cópia de segurança para o e-mail de contato do site, com os mesmos dados e links.
+    to: [...new Set([info.destino, EMAIL_CONTATO])],
     replyTo: info.email,
     subject: `[Prêmio Autores do Brasil 2027] Inscrição: ${info.titulo} (${info.categoria})`.slice(0, 200),
     html: `
@@ -794,7 +795,7 @@ export async function sendInscricaoPremioEquipeEmail(info: InscricaoPremioEmailI
         ])}
         <h3 style="color: #002776; margin-top: 24px;">Arquivos</h3>
         ${info.arquivos.map((a) => `<p><b>${escaparHtml(a.rotulo)}:</b> <a href="${a.url}">baixar</a> (${escaparHtml(a.nomeOriginal)}, ${escaparHtml(a.tamanho)})</p>`).join("")}
-        <p style="font-size: 13px; color: #666;">Os links não pedem login e valem por 120 dias. Responder a este e-mail fala direto com o participante.</p>
+        <p style="font-size: 13px; color: #666;">Os links não pedem login, mas os arquivos são apagados do armazenamento 7 dias após o envio: baixe e guarde uma cópia. Os dados deste e-mail continuam registrados. Responder a este e-mail fala direto com o participante.</p>
       </div>
     `,
   });

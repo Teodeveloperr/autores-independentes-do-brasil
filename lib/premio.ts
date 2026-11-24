@@ -1,10 +1,14 @@
 // Inscrição no 1º Prêmio Literário Autores do Brasil – 2027: campos do formulário, arquivos aceitos e
 // validação. Usado no navegador e no servidor, por isso não importa nada de servidor.
-// A inscrição não grava nada no banco de dados: os arquivos vão para o armazenamento privado e a
-// organização recebe tudo por e-mail (ver app/premio/actions.ts).
+// Os dados da inscrição ficam no banco (para o contador do admin); os arquivos vão para o armazenamento
+// privado e são apagados depois de PREMIO_ARQUIVOS_DIAS dias. A organização recebe tudo por e-mail
+// (ver app/premio/actions.ts e a limpeza em app/api/cron/limpar-mensagens).
 
 /** Para onde vão as inscrições. Pode ser trocado pela variável de ambiente PREMIO_EMAIL_DESTINO. */
 export const PREMIO_EMAIL_PADRAO = "drdenireis@gmail.com";
+
+/** Dias que os arquivos enviados ficam no armazenamento antes de serem apagados. */
+export const PREMIO_ARQUIVOS_DIAS = 7;
 
 /** Categorias, na ordem e com os nomes do formulário oficial. */
 export const PREMIO_CATEGORIAS = [

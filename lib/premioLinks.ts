@@ -2,10 +2,11 @@ import "server-only";
 import crypto from "node:crypto";
 
 // Links de download (sem login) dos arquivos de uma inscrição do prêmio, enviados no e-mail da
-// organização. Como a inscrição não fica no banco, o link leva o caminho do arquivo e uma validade,
+// organização. O link leva o caminho do arquivo e uma validade,
 // assinados com o segredo do site: não dá para adivinhar nem alterar.
 
-const VALIDADE_MS = 120 * 24 * 60 * 60 * 1000;
+/** Os arquivos são apagados do armazenamento depois deste prazo (ver PREMIO_ARQUIVOS_DIAS), então o link vale o mesmo tempo. */
+const VALIDADE_MS = 7 * 24 * 60 * 60 * 1000;
 
 function assinar(caminho: string, expira: number): string {
   const segredo = process.env.AUTH_SECRET;
