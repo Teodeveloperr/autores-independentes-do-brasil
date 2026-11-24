@@ -6,7 +6,6 @@ import PublicFooter from "@/components/PublicFooter";
 import { prisma } from "@/lib/db";
 import { renderArticleContent } from "@/lib/richText";
 import { urlPreviaBlog } from "@/lib/previaBlog";
-import { EbookLeadPopup } from "@/components/blog/EbookLeadPopup";
 
 export const dynamic = "force-dynamic";
 
@@ -89,7 +88,6 @@ export default async function ArtigoPage({ params }: { params: Promise<{ id: str
         </div>
       </section>
       <PublicFooter />
-      <EbookLeadPopup origem={`blog/${id}`} />
     </div>
   );
 }

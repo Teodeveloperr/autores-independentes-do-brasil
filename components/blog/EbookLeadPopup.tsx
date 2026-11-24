@@ -7,13 +7,11 @@ import { pedirEbookGuia } from "@/app/blog/ebook-actions";
 import { EBOOK_GUIA, validarLeadEbook } from "@/lib/ebookLead";
 
 // Pop-up de captação do e-book gratuito (blog): pede nome, e-mail e WhatsApp e libera o download.
-// Abre sozinho depois de alguns segundos (uma vez por visita, e não volta por 7 dias se a pessoa fechar
-// nem depois que ela baixa) e também por um botão ("EbookLeadBanner") que dispara o evento abaixo.
+// Abre sozinho na home, 2 segundos depois da entrada (e não volta por 7 dias se a pessoa fechar, nem depois
+// que ela baixa).
 
-const EVENTO_ABRIR = "ebook-lead:abrir";
 const CHAVE_BAIXOU = "ebookGuiaBaixado";
 const CHAVE_FECHOU = "ebookGuiaFechadoEm";
-const ESPERA_MS = 12000;
 const SILENCIO_MS = 7 * 24 * 60 * 60 * 1000;
 
 function lerStorage(chave: string): string | null {
@@ -38,7 +36,7 @@ function tokenAntiRobo(): string | null {
 const campo: React.CSSProperties = { width: "100%", boxSizing: "border-box", padding: "11px 12px", border: "1px solid #CFCFCF", borderRadius: "6px", fontSize: "14px", background: "white" };
 const rotulo: React.CSSProperties = { display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "4px", color: "#262626" };
 
-export function EbookLeadPopup({ origem }: { origem: string }) {
+export function EbookLeadPopup({ origem, automatico = true, esperaMs = 2000 }: { origem: string; automatico?: boolean; esperaMs?: number }) {
   const [aberto, setAberto] = useState(false);
   const [dados, setDados] = useState({ nome: "", email: "", whatsapp: "", aceite: false });
   const [erro, setErro] = useState("");
@@ -53,19 +51,12 @@ export function EbookLeadPopup({ origem }: { origem: string }) {
 
   // Abre sozinho, uma vez, depois de alguns segundos (a menos que já tenha baixado ou fechado há pouco).
   useEffect(() => {
-    if (lerStorage(CHAVE_BAIXOU)) return;
+    if (!automatico || lerStorage(CHAVE_BAIXOU)) return;
     const fechouEm = Number(lerStorage(CHAVE_FECHOU));
     if (fechouEm && Date.now() - fechouEm < SILENCIO_MS) return;
-    const t = window.setTimeout(() => setAberto(true), ESPERA_MS);
+    const t = window.setTimeout(() => setAberto(true), esperaMs);
     return () => window.clearTimeout(t);
-  }, []);
-
-  // Abre também pelo botão do blog.
-  useEffect(() => {
-    const abrir = () => setAberto(true);
-    window.addEventListener(EVENTO_ABRIR, abrir);
-    return () => window.removeEventListener(EVENTO_ABRIR, abrir);
-  }, []);
+  }, [automatico, esperaMs]);
 
   // Esc fecha; a página de trás não rola enquanto o pop-up está aberto.
   useEffect(() => {
@@ -194,27 +185,6 @@ export function EbookLeadPopup({ origem }: { origem: string }) {
           )}
         </div>
       </div>
-    </div>
-  );
-}
-
-/** Faixa fixa na página do blog: reabre o pop-up para quem fechou ou ainda não o viu. */
-export function EbookLeadBanner() {
-  return (
-    <div style={{ display: "flex", alignItems: "center", gap: "18px", background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.25)", borderRadius: "10px", padding: "14px 18px", marginBottom: "32px", flexWrap: "wrap" }}>
-      {/* eslint-disable-next-line @next/next/no-img-element -- miniatura fixa da capa */}
-      <img src="/ebook-capa.jpg" alt="" width={64} height={90} style={{ width: "64px", height: "auto", borderRadius: "3px", flexShrink: 0 }} />
-      <div style={{ flex: 1, minWidth: "220px" }}>
-        <div style={{ fontWeight: 700, fontSize: "17px" }}>E-book gratuito: {EBOOK_GUIA.titulo}</div>
-        <div style={{ fontSize: "14px", opacity: 0.9, marginTop: "2px" }}>Do texto ao livro pronto, da impressão à divulgação.</div>
-      </div>
-      <button
-        type="button"
-        onClick={() => window.dispatchEvent(new Event(EVENTO_ABRIR))}
-        style={{ background: "#FFDF00", color: "#002776", border: "none", padding: "11px 20px", borderRadius: "6px", fontWeight: 700, fontSize: "14px", cursor: "pointer" }}
-      >
-        Baixar grátis
-      </button>
     </div>
   );
 }

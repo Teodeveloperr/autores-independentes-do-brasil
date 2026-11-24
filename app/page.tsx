@@ -13,6 +13,7 @@ import HomeDemoAnimado from "@/components/HomeDemoAnimado";
 import AutoresDestaqueCarousel from "@/components/AutoresDestaqueCarousel";
 import LivrosRecentesCarousel from "@/components/LivrosRecentesCarousel";
 import ContactForm from "@/components/ContactForm";
+import { EbookLeadPopup } from "@/components/blog/EbookLeadPopup";
 import { prisma } from "@/lib/db";
 import { PLANO_RANK, PLANOS_COM_DESTAQUE, temDestaque } from "@/lib/plans";
 import { LIVRO_VENDAVEL_WHERE } from "@/lib/ebook";
@@ -254,6 +255,7 @@ export default async function HomePage() {
       </div>
 
       <HomePremiumToast />
+      <EbookLeadPopup origem="home" />
       <PublicFooter showAdminLink mostrarCredito />
     </div>
   );
