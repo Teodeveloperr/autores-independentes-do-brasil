@@ -35,7 +35,7 @@ export default function Regulamento() {
       <Titulo>3. DAS CATEGORIAS</Titulo>
       <p>O prêmio contemplará dez categorias:</p>
       <ol style={{ margin: "0 0 12px 20px", padding: 0 }}>
-        {["Conto;", "Crônica;", "Escritor(a) Estreante – Poesia;", "Escritor(a) Estreante – Romance;", "Histórias em Quadrinhos;", "Infantil;", "Juvenil;", "Poesia;", "Romance de Entretenimento;", "Romance Literário."].map((c) => (
+        {["Conto;", "Crônica;", "Escritor(a) Estreante – Poesia;", "Escritor(a) Estreante – Romance;", "Histórias em Quadrinhos;", "Infantil/Juvenil;", "Não ficção / Temas sociais;", "Poesia;", "Romance de Entretenimento;", "Romance Literário."].map((c) => (
           <li key={c}>{c}</li>
         ))}
       </ol>
