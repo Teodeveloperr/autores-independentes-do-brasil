@@ -111,7 +111,7 @@ export default function Regulamento() {
       <p>10.1. Os participantes poderão apresentar recurso contra o resultado preliminar no período de 16 a 18 de fevereiro de 2027.</p>
       <p>10.2. Os recursos deverão ser encaminhados pelo canal oficial indicado pela organização, contendo a identificação do participante, a categoria inscrita e a justificativa fundamentada.</p>
       <p>10.3. Não serão aceitos recursos apresentados fora do prazo estabelecido.</p>
-      <p>10.4. Os recursos serão analisados pela comissão responsável no período de 19 de fevereiro a 21 de setembro de 2027.</p>
+      <p>10.4. Os recursos serão analisados pela comissão responsável no período de 19 a 21 de fevereiro de 2027.</p>
       <p>10.5. Após a conclusão da análise dos recursos, a organização divulgará o resultado definitivo do prêmio pelos seus canais oficiais.</p>
       <p>10.6. As decisões da comissão responsável pelos recursos serão comunicadas oficialmente aos participantes.</p>
 
