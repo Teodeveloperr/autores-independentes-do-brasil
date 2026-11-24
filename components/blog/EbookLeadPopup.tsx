@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import TurnstileWidget from "@/components/TurnstileWidget";
+import Script from "next/script";
 import { pedirEbookGuia } from "@/app/blog/ebook-actions";
 import { EBOOK_GUIA, validarLeadEbook } from "@/lib/ebookLead";
 
@@ -10,9 +10,16 @@ import { EBOOK_GUIA, validarLeadEbook } from "@/lib/ebookLead";
 // Abre sozinho em TODA visita à home, 2 segundos depois da entrada: não guarda nada no navegador para
 // "lembrar" que a pessoa fechou ou já baixou (decisão do negócio: máxima captação).
 
-function tokenAntiRobo(): string | null {
-  return document.querySelector<HTMLInputElement>('.ebook-lead-form input[name="cf-turnstile-response"]')?.value || null;
-}
+// Anti-robô (Cloudflare Turnstile). O widget "automático" só se monta nos campos que já existem quando o
+// script carrega: o pop-up nasce depois (e a home já carregou o script pelo formulário de contato), então
+// aqui o widget é montado de forma explícita, assim que o pop-up abre.
+type TurnstileApi = {
+  render: (el: HTMLElement, opcoes: Record<string, unknown>) => string;
+  reset: (id?: string) => void;
+  remove: (id?: string) => void;
+};
+const turnstileApi = () => (window as unknown as { turnstile?: TurnstileApi }).turnstile;
+const SITE_KEY_TURNSTILE = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
 const campo: React.CSSProperties = { width: "100%", boxSizing: "border-box", padding: "11px 12px", border: "1px solid #CFCFCF", borderRadius: "6px", fontSize: "14px", background: "white" };
 const rotulo: React.CSSProperties = { display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "4px", color: "#262626" };
@@ -24,6 +31,9 @@ export function EbookLeadPopup({ origem, automatico = true, esperaMs = 2000 }: {
   const [enviando, setEnviando] = useState(false);
   const [link, setLink] = useState("");
   const botaoFecharRef = useRef<HTMLButtonElement>(null);
+  const caixaTurnstileRef = useRef<HTMLDivElement>(null);
+  const tokenTurnstileRef = useRef<string | null>(null);
+  const widgetIdRef = useRef<string | null>(null);
 
   const fechar = useCallback(() => setAberto(false), []);
 
@@ -33,6 +43,44 @@ export function EbookLeadPopup({ origem, automatico = true, esperaMs = 2000 }: {
     const t = window.setTimeout(() => setAberto(true), esperaMs);
     return () => window.clearTimeout(t);
   }, [automatico, esperaMs]);
+
+  // Monta o anti-robô quando o pop-up abre (espera o script da Cloudflare, se ainda não carregou).
+  useEffect(() => {
+    if (!aberto || link || !SITE_KEY_TURNSTILE) return;
+    let cancelado = false;
+    let tentativas = 0;
+    let timer: number | undefined;
+    const montar = () => {
+      if (cancelado) return;
+      const api = turnstileApi();
+      if (api && caixaTurnstileRef.current) {
+        try {
+          widgetIdRef.current = api.render(caixaTurnstileRef.current, {
+            sitekey: SITE_KEY_TURNSTILE,
+            callback: (token: string) => { tokenTurnstileRef.current = token; },
+            "expired-callback": () => { tokenTurnstileRef.current = null; },
+            "error-callback": () => { tokenTurnstileRef.current = null; },
+          });
+        } catch (err) {
+          console.error("[ebook-lead] Falha ao montar o anti-robô:", err);
+        }
+        return;
+      }
+      if (tentativas++ < 75) timer = window.setTimeout(montar, 200);
+    };
+    montar();
+    return () => {
+      cancelado = true;
+      window.clearTimeout(timer);
+      try {
+        if (widgetIdRef.current) turnstileApi()?.remove(widgetIdRef.current);
+      } catch {
+        /* widget já removido */
+      }
+      widgetIdRef.current = null;
+      tokenTurnstileRef.current = null;
+    };
+  }, [aberto, link]);
 
   // Esc fecha; a página de trás não rola enquanto o pop-up está aberto.
   useEffect(() => {
@@ -53,18 +101,28 @@ export function EbookLeadPopup({ origem, automatico = true, esperaMs = 2000 }: {
     if (enviando) return;
     const p = validarLeadEbook(dados);
     if (p) return setErro(p);
+    if (SITE_KEY_TURNSTILE && !tokenTurnstileRef.current) {
+      return setErro("Aguarde um instante: estamos confirmando que você não é um robô. Tente de novo em alguns segundos.");
+    }
     setErro("");
     setEnviando(true);
     try {
-      const r = await pedirEbookGuia(dados, tokenAntiRobo(), origem);
-      (window as unknown as { turnstile?: { reset: () => void } }).turnstile?.reset();
+      const r = await pedirEbookGuia(dados, tokenTurnstileRef.current, origem);
+      // O token vale uma única vez: pede outro para uma nova tentativa (sem deixar uma falha aqui esconder a resposta).
+      tokenTurnstileRef.current = null;
+      try {
+        if (widgetIdRef.current) turnstileApi()?.reset(widgetIdRef.current);
+      } catch {
+        /* sem widget para reiniciar */
+      }
       if (r.error || !r.url) {
         setErro(r.error ?? "Não foi possível liberar o e-book agora.");
         return;
       }
       setLink(r.url);
       window.location.href = r.url; // começa o download sem sair da página
-    } catch {
+    } catch (err) {
+      console.error("[ebook-lead] Falha no envio:", err);
       setErro("O envio falhou. Confira a sua conexão e tente de novo.");
     } finally {
       setEnviando(false);
@@ -147,7 +205,12 @@ export function EbookLeadPopup({ origem, automatico = true, esperaMs = 2000 }: {
                   <Link href="/politica-de-privacidade" target="_blank" style={{ color: "#002776", textDecoration: "underline" }}>Política de Privacidade</Link>.
                 </span>
               </label>
-              <TurnstileWidget />
+              {SITE_KEY_TURNSTILE && (
+                <>
+                  <Script src="https://challenges.cloudflare.com/turnstile/v0/api.js" strategy="afterInteractive" />
+                  <div ref={caixaTurnstileRef} />
+                </>
+              )}
               {erro && <div role="alert" style={{ background: "#FDECEA", color: "#B71C1C", padding: "10px 12px", borderRadius: "6px", fontSize: "13px" }}>{erro}</div>}
               <button
                 type="submit"
