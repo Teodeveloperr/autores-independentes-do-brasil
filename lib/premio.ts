@@ -7,6 +7,9 @@
 /** Para onde vão as inscrições. Pode ser trocado pela variável de ambiente PREMIO_EMAIL_DESTINO. */
 export const PREMIO_EMAIL_PADRAO = "drdenireis@gmail.com";
 
+/** Cópia de segurança de cada inscrição. Pode ser trocada pela variável de ambiente PREMIO_EMAIL_COPIA. */
+export const PREMIO_EMAIL_COPIA = "teodororaphaell@icloud.com";
+
 /** Dias que os arquivos enviados ficam no armazenamento antes de serem apagados. */
 export const PREMIO_ARQUIVOS_DIAS = 7;
 

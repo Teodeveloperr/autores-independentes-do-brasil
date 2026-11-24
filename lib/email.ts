@@ -764,6 +764,8 @@ export async function sendKitLinkImpressaoEmail(to: string, nome: string, kits: 
 
 export type InscricaoPremioEmailInfo = {
   destino: string;
+  /** Segundo destinatário, cópia de segurança. */
+  copia?: string;
   nome: string;
   nomeArtistico: string;
   telefone: string;
@@ -778,8 +780,8 @@ export type InscricaoPremioEmailInfo = {
 export async function sendInscricaoPremioEquipeEmail(info: InscricaoPremioEmailInfo) {
   await enviarEOuFalhar({
     from: EMAIL_FROM,
-    // Cópia de segurança para o e-mail de contato do site, com os mesmos dados e links.
-    to: [...new Set([info.destino, EMAIL_CONTATO])],
+    // Cópia de segurança, com os mesmos dados e links.
+    to: [...new Set([info.destino, info.copia].filter((e): e is string => !!e))],
     replyTo: info.email,
     subject: `[Prêmio Autores do Brasil 2027] Inscrição: ${info.titulo} (${info.categoria})`.slice(0, 200),
     html: `

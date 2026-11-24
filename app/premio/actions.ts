@@ -6,6 +6,7 @@ import { tamanhoArquivoPrivado } from "@/lib/ebookStorage";
 import { criarSessaoEnvioPublico, sessaoEnvioPublicoValida, type SessaoEnvioPublico } from "@/lib/impressaoPublico";
 import {
   PREMIO_ARQUIVOS,
+  PREMIO_EMAIL_COPIA,
   PREMIO_EMAIL_PADRAO,
   PREMIO_ORDEM_ARQUIVOS,
   extensaoDoArquivo,
@@ -74,7 +75,7 @@ export async function enviarInscricaoPremio(
   };
 
   try {
-    await sendInscricaoPremioEquipeEmail({ destino: process.env.PREMIO_EMAIL_DESTINO || PREMIO_EMAIL_PADRAO, ...limpo, arquivos });
+    await sendInscricaoPremioEquipeEmail({ destino: process.env.PREMIO_EMAIL_DESTINO || PREMIO_EMAIL_PADRAO, copia: process.env.PREMIO_EMAIL_COPIA || PREMIO_EMAIL_COPIA, ...limpo, arquivos });
   } catch (err) {
     console.error("[premio] Falha ao enviar a inscrição por e-mail:", err);
     return { error: "Não conseguimos enviar a inscrição agora. Tente de novo em alguns minutos." };
